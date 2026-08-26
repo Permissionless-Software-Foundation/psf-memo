@@ -20,6 +20,7 @@ class Adapters {
     this.dbCtrl = new DbCtrl()
 
     this.postDb = createEntityDb('post', 'txid', 'postData')
+    this.postHeightDb = createEntityDb('postheight', 'key', 'postHeightData')
     this.postParentDb = createEntityDb('postparent', 'txid', 'parentData')
     this.postChildDb = createEntityDb('postchild', 'key', 'childData')
     this.likeDb = createEntityDb('like', 'txid', 'likeData')

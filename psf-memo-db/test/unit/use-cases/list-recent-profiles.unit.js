@@ -53,6 +53,22 @@ describe('#ListRecentProfiles', () => {
     assert.equal(result.pagination.offset, 0)
   })
 
+  it('should sort equal-height profiles by seen descending, falsy seen last', async () => {
+    // Same blockHeight so only the `seen` tie-break matters. The dataset mixes
+    // truthy and falsy (0) seen values; a broken comparator is observable here
+    // because the falsy profiles are not already in descending input order.
+    const ties = [
+      { addr: 'addr-a', txid: 't-a', seen: 0, blockHeight: 700000 },
+      { addr: 'addr-b', txid: 't-b', seen: 0, blockHeight: 700000 },
+      { addr: 'addr-c', txid: 't-c', seen: 1, blockHeight: 700000 }
+    ]
+    uut.adapters.profileQuery.scanProfilesWithBlockHeight.resolves(ties)
+
+    const result = await uut.execute({ limit: 10, offset: 0 })
+
+    assert.deepEqual(result.profiles.map((p) => p.addr), ['addr-c', 'addr-a', 'addr-b'])
+  })
+
   it('should reject limit over 100', async () => {
     try {
       await uut.execute({ limit: 101 })

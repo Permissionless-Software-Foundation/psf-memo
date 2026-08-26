@@ -1,5 +1,14 @@
-import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas } from './helpers.js'
+import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas, postHeightKey } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
+
+// Create a record only when it does not already exist (idempotent writes).
+async function createIfMissing (db, key, value) {
+  try {
+    await db.get(key)
+  } catch (err) {
+    await db.create(key, value)
+  }
+}
 
 export async function handlePost (ctx) {
   const { adapters, txid, signerAddr, decoded, seen, blockHeight } = ctx
@@ -21,9 +30,11 @@ export async function handlePost (ctx) {
   }
 
   const postData = { addr: signerAddr, text, seen, blockHeight }
-  try {
-    await adapters.postDb.get(txid)
-  } catch (err) {
-    await adapters.postDb.create(txid, postData)
-  }
+  const heightKey = postHeightKey(blockHeight, txid)
+  await createIfMissing(adapters.postDb, txid, postData)
+  await createIfMissing(adapters.postHeightDb, heightKey, { txid, blockHeight })
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T18:12:57.389Z","module_hash":"4f16a88cac95e1533eeaa9ee78917bd2f69195d909f552f24f232b465aba7e33","functions":[{"id":"func/createIfMissing","name":"createIfMissing","line":5,"end_line":11,"hash":"d59cefaf87075a2bc41538961b609387e35393d4fbf02ecfc0633026bbfdca42"},{"id":"func/handlePost","name":"handlePost","line":13,"end_line":36,"hash":"64f7e048100212a96ca90d5161271a7055d7b7957d7c38f50f5c22062a9eee43"}]}
+// mutate4javascript-manifest-end

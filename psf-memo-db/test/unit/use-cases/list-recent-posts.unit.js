@@ -5,21 +5,26 @@ import ListRecentPosts from '../../../src/use-cases/list-recent-posts.js'
 describe('#ListRecentPosts', () => {
   let uut
   let sandbox
+  let postQuery
 
-  const mockPosts = [
-    { txid: 'tx-a', addr: 'addr-a', text: 'a', seen: 100, blockHeight: 600100 },
-    { txid: 'tx-b', addr: 'addr-b', text: 'b', seen: 200, blockHeight: 600200 },
-    { txid: 'tx-c', addr: 'addr-c', text: 'c', seen: 50, blockHeight: 600200 }
-  ]
+  const mockPosts = {
+    'tx-a': { addr: 'addr-a', text: 'a', seen: 100, blockHeight: 600100 },
+    'tx-b': { addr: 'addr-b', text: 'b', seen: 200, blockHeight: 600200 },
+    'tx-c': { addr: 'addr-c', text: 'c', seen: 50, blockHeight: 600200 }
+  }
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
+    postQuery = {
+      scanRecentPostTxids: sandbox.stub().resolves(['tx-b', 'tx-c', 'tx-a']),
+      loadPostsByTxids: sandbox.stub().callsFake(async (txids) => {
+        return txids.map((txid) => ({ txid, ...mockPosts[txid] }))
+      }),
+      buildReplyCountMap: sandbox.stub().resolves(new Map([['tx-b', 1]])),
+      countTopLevelPosts: sandbox.stub().resolves(3)
+    }
     uut = new ListRecentPosts({
-      adapters: {
-        postQuery: {
-          scanPostsWithBlockHeight: sandbox.stub().resolves([...mockPosts])
-        }
-      }
+      adapters: { postQuery }
     })
   })
 
@@ -32,11 +37,14 @@ describe('#ListRecentPosts', () => {
     assert.equal(result.posts[0].txid, 'tx-b')
     assert.equal(result.posts[1].txid, 'tx-c')
     assert.equal(result.posts[2].txid, 'tx-a')
+    assert.equal(result.posts[0].replyCount, 1)
+    assert.equal(result.posts[1].replyCount, 0)
     assert.equal(result.pagination.total, 3)
     assert.equal(result.pagination.hasMore, false)
   })
 
   it('should paginate with limit and offset', async () => {
+    postQuery.scanRecentPostTxids.resolves(['tx-c'])
     const result = await uut.execute({ limit: 1, offset: 1 })
 
     assert.equal(result.posts.length, 1)
@@ -61,5 +69,12 @@ describe('#ListRecentPosts', () => {
       assert.equal(err.status, 400)
       assert.include(err.message, 'limit cannot exceed')
     }
+  })
+
+  it('should pass limit and offset to postQuery', async () => {
+    await uut.execute({ limit: 5, offset: 10 })
+
+    assert.equal(postQuery.scanRecentPostTxids.calledOnce, true)
+    assert.deepEqual(postQuery.scanRecentPostTxids.firstCall.args[0], { limit: 5, offset: 10 })
   })
 })

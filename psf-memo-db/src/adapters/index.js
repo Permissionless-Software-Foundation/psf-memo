@@ -24,6 +24,7 @@ class Adapters {
     })
     this.postQuery = new PostQuery({
       postsDb: level.postsDb,
+      postHeightsDb: level.postHeightsDb,
       postParentsDb: level.postParentsDb,
       postChildrenDb: level.postChildrenDb
     })

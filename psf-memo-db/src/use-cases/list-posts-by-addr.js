@@ -1,51 +1,14 @@
 /*
   Use case: list posts for an address ordered by block height (most recent first), paginated.
+  Uses the postHeights secondary index for efficient sorting and pagination.
 */
 
-const DEFAULT_LIMIT = 100
-const MAX_LIMIT = 100
+import { parseLimit, parseOffset, assemblePostPage } from './lib/pagination.js'
+import { ListUseCase } from './lib/use-case.js'
 
-class ListPostsByAddr {
+class ListPostsByAddr extends ListUseCase {
   constructor (localConfig = {}) {
-    this.adapters = localConfig.adapters
-    if (!this.adapters) {
-      throw new Error('Adapters required when instantiating ListPostsByAddr use case.')
-    }
-    if (!this.adapters.postQuery) {
-      throw new Error('postQuery adapter required for ListPostsByAddr use case.')
-    }
-    this.execute = this.execute.bind(this)
-  }
-
-  parseLimit (limit) {
-    if (limit === undefined || limit === null || limit === '') {
-      return DEFAULT_LIMIT
-    }
-    const parsed = parseInt(limit, 10)
-    if (Number.isNaN(parsed) || parsed < 1) {
-      const err = new Error('limit must be a positive integer')
-      err.status = 400
-      throw err
-    }
-    if (parsed > MAX_LIMIT) {
-      const err = new Error(`limit cannot exceed ${MAX_LIMIT}`)
-      err.status = 400
-      throw err
-    }
-    return parsed
-  }
-
-  parseOffset (offset) {
-    if (offset === undefined || offset === null || offset === '') {
-      return 0
-    }
-    const parsed = parseInt(offset, 10)
-    if (Number.isNaN(parsed) || parsed < 0) {
-      const err = new Error('offset must be a non-negative integer')
-      err.status = 400
-      throw err
-    }
-    return parsed
+    super(localConfig, { useCaseName: 'ListPostsByAddr', adapterName: 'postQuery' })
   }
 
   parseAddr (addr) {
@@ -57,35 +20,24 @@ class ListPostsByAddr {
     return addr
   }
 
-  sortPosts (posts) {
-    return posts.sort((a, b) => {
-      if (b.blockHeight !== a.blockHeight) {
-        return b.blockHeight - a.blockHeight
-      }
-      return (b.seen || 0) - (a.seen || 0)
-    })
-  }
-
   async execute (inObj = {}) {
     const addr = this.parseAddr(inObj.addr)
-    const limit = this.parseLimit(inObj.limit)
-    const offset = this.parseOffset(inObj.offset)
+    const limit = parseLimit(inObj.limit)
+    const offset = parseOffset(inObj.offset)
 
-    const allPosts = await this.adapters.postQuery.scanPostsByAddr(addr)
-    const sorted = this.sortPosts(allPosts)
-    const total = sorted.length
-    const posts = sorted.slice(offset, offset + limit)
+    const txids = await this.adapters.postQuery.scanPostsByAddrTxids(addr, { limit, offset })
+    const [posts, replyCounts, total] = await Promise.all([
+      this.adapters.postQuery.loadPostsByTxids(txids),
+      this.adapters.postQuery.buildReplyCountMap(),
+      this.adapters.postQuery.countTopLevelPostsByAddr(addr)
+    ])
 
-    return {
-      posts,
-      pagination: {
-        limit,
-        offset,
-        total,
-        hasMore: offset + posts.length < total
-      }
-    }
+    return assemblePostPage({ posts, replyCounts, total, limit, offset })
   }
 }
 
 export default ListPostsByAddr
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T18:15:16.107Z","module_hash":"b925b4bf1307be2f9d7b4e5d9590f6d189c5ec7632102bb65cdb525ffe19f7b3","functions":[{"id":"func/ListPostsByAddr.constructor","name":"ListPostsByAddr.constructor","line":10,"end_line":12,"hash":"f777f3685c5b2199ec3c3a7043b3cf288a9bbf583232bd1fc58cc346373f03d6"},{"id":"func/ListPostsByAddr.parseAddr","name":"ListPostsByAddr.parseAddr","line":14,"end_line":21,"hash":"0f02fc6ebf05826429d57bf2fd64bf66dfde96ee159f6c1d4814f41cc7a25aca"},{"id":"func/ListPostsByAddr.execute","name":"ListPostsByAddr.execute","line":23,"end_line":36,"hash":"899d7d2e5c9c31a05c34f00c063ffd4f88a6d0a779f6d47000f2fb770029dc86"}]}
+// mutate4javascript-manifest-end
