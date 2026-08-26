@@ -7,6 +7,6 @@ leveldb/
 logs/
 .env
 coverage/
-
+data/
 
 .gitsigners

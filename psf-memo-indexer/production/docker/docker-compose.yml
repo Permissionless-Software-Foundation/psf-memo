@@ -1,0 +1,61 @@
+# Start the service with: docker-compose up -d
+
+services:
+  memo-db:
+    build: ./memo-db
+    container_name: memo-db
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+    ports:
+      - '5021:5021'
+    volumes:
+      - ../data/leveldb:/home/safeuser/psf-memo-db/leveldb
+      - ./memo-db/start-memo-db.sh:/home/safeuser/psf-memo-db/start-memo-db.sh
+      - ./memo-db/.env:/home/safeuser/psf-memo-db/.env
+    restart: always
+
+  tx-indexer:
+    build: ./tx-indexer
+    image: memo-tx-indexer
+    container_name: memo-tx-indexer
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+    ports:
+      - '5455:5455'
+    volumes:
+      - ./tx-indexer/start-tx-indexer.sh:/home/safeuser/psf-memo-indexer/start-tx-indexer.sh
+      - ./tx-indexer/.env:/home/safeuser/psf-memo-indexer/.env
+    restart: always
+
+  block-indexer:
+    build: ./block-indexer
+    image: memo-block-indexer
+    container_name: memo-block-indexer
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+    volumes:
+      - ./block-indexer/start-block-indexer.sh:/home/safeuser/psf-memo-indexer/start-block-indexer.sh
+      - ./block-indexer/.env:/home/safeuser/psf-memo-indexer/.env
+    restart: always
+
+  memo-client:
+    build: ./memo-client
+    image: memo-client
+    container_name: memo-client
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+    ports:
+      - '3000:80'
+    restart: always
