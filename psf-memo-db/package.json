@@ -8,6 +8,8 @@
     "prestart": "npm run docs",
     "start": "node index.js",
     "test": "export SVC_ENV=test && c8 --reporter=text mocha --exit --timeout 15000 --recursive test/unit/",
+    "property": "node --test \"test/property/*.test.js\"",
+    "acceptance": "node acceptance/acceptance.js",
     "lint": "standard --env mocha --fix",
     "docs": "./node_modules/.bin/apidoc -i src/ -o docs"
   },

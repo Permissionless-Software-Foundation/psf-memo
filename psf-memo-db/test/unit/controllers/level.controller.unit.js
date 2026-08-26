@@ -19,7 +19,7 @@ describe('#LevelRESTController', () => {
     sandbox = sinon.createSandbox()
     uut = new LevelRESTControllerLib({
       adapters: {
-        level: { postsDb: mockDb, statusDb: mockDb },
+        level: { postsDb: mockDb, postHeightsDb: mockDb, statusDb: mockDb },
         dbBackup: { zipDb: sandbox.stub().resolves(true) }
       },
       useCases: {}
@@ -43,5 +43,16 @@ describe('#LevelRESTController', () => {
     await uut.entityHandlers.post.create(ctx)
     assert.equal(ctx.body.success, true)
     assert.equal(ctx.body.txid, 'abc')
+  })
+
+  it('should expose a postheight entity handler', async () => {
+    const ctx = {
+      params: {},
+      request: { body: { key: '600000:abc', postHeightData: { txid: 'abc', blockHeight: 600000 } } },
+      body: null
+    }
+    await uut.entityHandlers.postheight.create(ctx)
+    assert.equal(ctx.body.success, true)
+    assert.equal(ctx.body.key, '600000:abc')
   })
 })

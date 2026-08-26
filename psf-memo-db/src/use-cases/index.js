@@ -47,4 +47,3 @@ class UseCases {
 }
 
 export default UseCases
-
