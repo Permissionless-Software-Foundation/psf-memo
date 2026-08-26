@@ -62,6 +62,11 @@ export function roomKey (roomName, txid) {
   return `${roomName}:${txid}`
 }
 
+export function postHeightKey (blockHeight, txid) {
+  const padded = String(blockHeight).padStart(12, '0')
+  return `${padded}:${txid}`
+}
+
 export function postChildKey (parentTxid, childTxid) {
   return `${parentTxid}:${childTxid}`
 }

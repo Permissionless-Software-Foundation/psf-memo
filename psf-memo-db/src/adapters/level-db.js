@@ -12,6 +12,7 @@ const dbDir = `${__dirname}/../../leveldb`
 const DB_NAMES = [
   'status',
   'posts',
+  'postHeights',
   'postParents',
   'postChildren',
   'likes',

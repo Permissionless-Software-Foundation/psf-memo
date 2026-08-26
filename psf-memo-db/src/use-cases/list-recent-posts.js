@@ -1,5 +1,6 @@
 /*
   Use case: list posts ordered by block height (most recent first), paginated.
+  Uses the postHeights secondary index for efficient sorting and pagination.
 */
 
 const DEFAULT_LIMIT = 100
@@ -15,6 +16,7 @@ class ListRecentPosts {
       throw new Error('postQuery adapter required for ListRecentPosts use case.')
     }
     this.execute = this.execute.bind(this)
+    this.attachReplyCounts = this.attachReplyCounts.bind(this)
   }
 
   parseLimit (limit) {
@@ -48,26 +50,26 @@ class ListRecentPosts {
     return parsed
   }
 
-  sortPosts (posts) {
-    return posts.sort((a, b) => {
-      if (b.blockHeight !== a.blockHeight) {
-        return b.blockHeight - a.blockHeight
-      }
-      return (b.seen || 0) - (a.seen || 0)
-    })
+  attachReplyCounts (posts, replyCounts) {
+    return posts.map((post) => ({
+      ...post,
+      replyCount: replyCounts.get(post.txid) ?? 0
+    }))
   }
 
   async execute (inObj = {}) {
     const limit = this.parseLimit(inObj.limit)
     const offset = this.parseOffset(inObj.offset)
 
-    const allPosts = await this.adapters.postQuery.scanPostsWithBlockHeight()
-    const sorted = this.sortPosts(allPosts)
-    const total = sorted.length
-    const posts = sorted.slice(offset, offset + limit)
+    const txids = await this.adapters.postQuery.scanRecentPostTxids({ limit, offset })
+    const [posts, replyCounts, total] = await Promise.all([
+      this.adapters.postQuery.loadPostsByTxids(txids),
+      this.adapters.postQuery.buildReplyCountMap(),
+      this.adapters.postQuery.countTopLevelPosts()
+    ])
 
     return {
-      posts,
+      posts: this.attachReplyCounts(posts, replyCounts),
       pagination: {
         limit,
         offset,

@@ -1,4 +1,4 @@
-import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas } from './helpers.js'
+import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas, postHeightKey } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
 
 export async function handlePost (ctx) {
@@ -21,9 +21,16 @@ export async function handlePost (ctx) {
   }
 
   const postData = { addr: signerAddr, text, seen, blockHeight }
+  const heightKey = postHeightKey(blockHeight, txid)
   try {
     await adapters.postDb.get(txid)
   } catch (err) {
     await adapters.postDb.create(txid, postData)
+  }
+
+  try {
+    await adapters.postHeightDb.get(heightKey)
+  } catch (err) {
+    await adapters.postHeightDb.create(heightKey, { txid, blockHeight })
   }
 }

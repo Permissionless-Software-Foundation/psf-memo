@@ -1,13 +1,17 @@
 /*
-  Adapter for scanning posts with stored block height.
-  Excludes reply posts (txids present in postParentsDb).
+  Adapter for efficient post queries using a postHeights secondary index.
 */
+
+const HEIGHT_PAD = 12
 
 class PostQuery {
   constructor (localConfig = {}) {
-    const { postsDb, postParentsDb, postChildrenDb } = localConfig
+    const { postsDb, postHeightsDb, postParentsDb, postChildrenDb } = localConfig
     if (!postsDb) {
       throw new Error('postsDb required when instantiating PostQuery adapter.')
+    }
+    if (!postHeightsDb) {
+      throw new Error('postHeightsDb required when instantiating PostQuery adapter.')
     }
     if (!postParentsDb) {
       throw new Error('postParentsDb required when instantiating PostQuery adapter.')
@@ -16,12 +20,32 @@ class PostQuery {
       throw new Error('postChildrenDb required when instantiating PostQuery adapter.')
     }
     this.postsDb = postsDb
+    this.postHeightsDb = postHeightsDb
     this.postParentsDb = postParentsDb
     this.postChildrenDb = postChildrenDb
-    this.scanPostsWithBlockHeight = this.scanPostsWithBlockHeight.bind(this)
-    this.scanPostsByAddr = this.scanPostsByAddr.bind(this)
+
+    this.scanRecentPostTxids = this.scanRecentPostTxids.bind(this)
+    this.scanPostsByAddrTxids = this.scanPostsByAddrTxids.bind(this)
+    this.loadPostsByTxids = this.loadPostsByTxids.bind(this)
+    this.countTopLevelPosts = this.countTopLevelPosts.bind(this)
+    this.countTopLevelPostsByAddr = this.countTopLevelPostsByAddr.bind(this)
     this.loadReplyTxids = this.loadReplyTxids.bind(this)
     this.buildReplyCountMap = this.buildReplyCountMap.bind(this)
+    this.txidFromPostHeight = this.txidFromPostHeight.bind(this)
+  }
+
+  static padHeight (height) {
+    return String(height).padStart(HEIGHT_PAD, '0')
+  }
+
+  static postHeightKey (blockHeight, txid) {
+    return `${PostQuery.padHeight(blockHeight)}:${txid}`
+  }
+
+  txidFromPostHeight (key, value) {
+    if (value && typeof value.txid === 'string') return value.txid
+    const parts = String(key).split(':')
+    return parts[parts.length - 1]
   }
 
   async loadReplyTxids () {
@@ -38,7 +62,7 @@ class PostQuery {
     const counts = new Map()
 
     for await (const [, child] of this.postChildrenDb.iterator()) {
-      const parentTxid = child.parentTxid
+      const parentTxid = child?.parentTxid
       if (!parentTxid) continue
       counts.set(parentTxid, (counts.get(parentTxid) || 0) + 1)
     }
@@ -46,74 +70,112 @@ class PostQuery {
     return counts
   }
 
-  async scanPostsWithBlockHeight () {
-    const [replyTxids, replyCounts] = await Promise.all([
-      this.loadReplyTxids(),
-      this.buildReplyCountMap()
-    ])
-    const posts = []
+  async scanRecentPostTxids ({ limit, offset }) {
+    const replyTxids = await this.loadReplyTxids()
+    const txids = []
+    let skipped = 0
 
-    for await (const [txid, post] of this.postsDb.iterator()) {
+    for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
+      const txid = this.txidFromPostHeight(key, value)
       if (replyTxids.has(txid)) continue
-      posts.push({
-        txid,
-        addr: post.addr,
-        text: post.text,
-        seen: post.seen,
-        blockHeight: post.blockHeight ?? 0,
-        replyCount: replyCounts.get(txid) ?? 0
-      })
+
+      if (skipped < offset) {
+        skipped++
+        continue
+      }
+
+      txids.push(txid)
+      if (txids.length >= limit) break
     }
 
-    return posts
+    return txids
   }
 
-  async scanPostsByAddr (addr) {
-    const [replyTxids, replyCounts] = await Promise.all([
-      this.loadReplyTxids(),
-      this.buildReplyCountMap()
-    ])
-    const posts = []
+  async scanPostsByAddrTxids (addr, { limit, offset }) {
+    const replyTxids = await this.loadReplyTxids()
+    const txids = []
+    let skipped = 0
 
-    for await (const [txid, post] of this.postsDb.iterator()) {
+    for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
+      const txid = this.txidFromPostHeight(key, value)
+      if (replyTxids.has(txid)) continue
+
+      let post
+      try {
+        post = await this.postsDb.get(txid)
+      } catch (err) {
+        if (err.notFound || err.code === 'LEVEL_NOT_FOUND') continue
+        throw err
+      }
+
       if (post.addr !== addr) continue
-      if (replyTxids.has(txid)) continue
-      posts.push({
-        txid,
-        addr: post.addr,
-        text: post.text,
-        seen: post.seen,
-        blockHeight: post.blockHeight ?? 0,
-        replyCount: replyCounts.get(txid) ?? 0
-      })
+
+      if (skipped < offset) {
+        skipped++
+        continue
+      }
+
+      txids.push(txid)
+      if (txids.length >= limit) break
+    }
+
+    return txids
+  }
+
+  async loadPostsByTxids (txids) {
+    const posts = []
+
+    for (const txid of txids) {
+      try {
+        const post = await this.postsDb.get(txid)
+        posts.push({
+          txid,
+          addr: post.addr,
+          text: post.text,
+          seen: post.seen,
+          blockHeight: post.blockHeight ?? 0
+        })
+      } catch (err) {
+        if (err.notFound || err.code === 'LEVEL_NOT_FOUND') continue
+        throw err
+      }
     }
 
     return posts
   }
 
-  async buildReplyCountMap () {
-  const counts = new Map()
-  let total = 0
+  async countTopLevelPosts () {
+    const replyTxids = await this.loadReplyTxids()
+    let count = 0
 
-  for await (const [childTxid, child] of this.postChildrenDb.iterator()) {
-    total++
+    for await (const [key, value] of this.postHeightsDb.iterator()) {
+      const txid = this.txidFromPostHeight(key, value)
+      if (replyTxids.has(txid)) continue
+      count++
+    }
 
-    console.log('Indexed reply:', {
-      childTxid,
-      child,
-      parentTxid: child?.parentTxid
-    })
-
-    const parentTxid = child?.parentTxid
-    if (!parentTxid) continue
-
-    counts.set(parentTxid, (counts.get(parentTxid) || 0) + 1)
+    return count
   }
 
-  console.log(`Total postChildrenDb records: ${total}`)
+  async countTopLevelPostsByAddr (addr) {
+    const replyTxids = await this.loadReplyTxids()
+    let count = 0
 
-  return counts
-}
+    for await (const [key, value] of this.postHeightsDb.iterator()) {
+      const txid = this.txidFromPostHeight(key, value)
+      if (replyTxids.has(txid)) continue
+
+      try {
+        const post = await this.postsDb.get(txid)
+        if (post.addr === addr) count++
+      } catch (err) {
+        if (err.notFound || err.code === 'LEVEL_NOT_FOUND') continue
+        throw err
+      }
+    }
+
+    return count
+  }
 }
 
 export default PostQuery
