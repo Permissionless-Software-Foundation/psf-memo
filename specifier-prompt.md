@@ -154,6 +154,7 @@ three components; each feature notes which layers need changes.
 - Post a Memo (`0x6d02`) — client only — DONE.
 - Set display name (`0x6d01`) — client only — DONE.
 - Reply to a Memo (`0x6d03`) — client only — DONE.
+- Efficient post pagination via `postHeights` secondary index — `psf-memo-db` + `psf-memo-indexer` — DONE.
 
 **Next feature:** ask the user. Likely candidates are in the backlog, ordered by
 priority.
@@ -278,6 +279,11 @@ that a single user-facing feature may require specs in more than one component.
     sort in memory. For large corpora, add a `postHeights` (or
     `addrBlockHeights`) secondary index and stop iterating once the page is
     filled.
+11. **Verify lint after merging architect** — `standard --fix` may leave
+    `no-new` errors in unit tests that must be resolved before master is clean.
+12. **Weak Gherkin examples can survive mutation** — when example values are both
+    the input and the expected output, mutating them passes trivially. Tie
+    assertions to independent fixture data where possible.
 
 ---
 
@@ -315,5 +321,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `c13adbf4aa` (postHeights secondary index specs committed).
-Next feature: **ask the user** — current handoff `post-heights-index` is with the coder.
+Current `master` HEAD: `dd59741` (post-heights-index merged from architect; lint fix applied).
+Next feature: **ask the user** — `post-heights-index` is complete and merged.
