@@ -1,0 +1,75 @@
+# Monorepo Rules
+
+## Project shape
+
+This project is a monorepo containing three coordinated pieces of infrastructure:
+
+| Component | Path | Responsibility |
+|-----------|------|----------------|
+| psf-memo-client | `psf-memo-client/` | React SPA for reading and writing Memo actions |
+| psf-memo-indexer | `psf-memo-indexer/` | BCH block + mempool indexer for the Memo protocol |
+| psf-memo-db | `psf-memo-db/` | LevelDB REST API; the indexer writes, the client reads |
+
+## Worktree discipline
+
+SwarmForge worktrees are branches of the same repository:
+
+- specifier: `master`
+- coder: `.worktrees/coder` on `swarmforge-coder`
+- refactorer: `.worktrees/refactorer` on `swarmforge-refactorer`
+- architect: `.worktrees/architect` on `swarmforge-architect`
+
+All worktrees share the same file system layout. A change in one worktree can
+touch any component directory. Do not create separate repositories or move
+component directories without explicit user direction.
+
+## Component boundaries and verification
+
+Each component has its own dependencies, scripts, and tests:
+
+```bash
+# psf-memo-client
+cd psf-memo-client
+npm run build
+npm test
+npm run lint
+
+# psf-memo-db
+cd psf-memo-db
+npm test
+npm run lint
+
+# psf-memo-indexer
+cd psf-memo-indexer
+npm test
+npm run lint
+```
+
+Run the verification commands for every component a task touches before
+handing off. The architect runs the same per-component verification when
+merging and hardening.
+
+## Specification layout
+
+- Cross-component backlog: `specs/feature-backlog.md`
+- Standing specifier briefing: `specifier-prompt.md`
+- Client feature files: `psf-memo-client/specs/*.feature`
+- Indexer feature files (future): `psf-memo-indexer/specs/*.feature`
+- DB feature files (future): `psf-memo-db/specs/*.feature`
+
+A single user-facing feature often requires specs or implementation changes in
+more than one component. Call out all affected components in the task
+description and in the backlog.
+
+## Shared dependency on the Memo protocol
+
+All components interpret the same Memo protocol action bytes (`0x6d` prefix +
+action byte). When a new action is added, coordinate the client broadcast format,
+the indexer parser/handler, and the DB storage model.
+
+## Temporary files
+
+Each component may create its own `tmp/`, `build/`, `docs/`, `coverage/`, and
+runtime data directories. These are already covered by the root `.gitignore`.
+Use the component's local `tmp/` for component-specific temporary work; use the
+root `./tmp/` for cross-component or SwarmForge tooling temporary work.
