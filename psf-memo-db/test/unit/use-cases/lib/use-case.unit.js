@@ -13,21 +13,27 @@ class DummyUseCase extends ListUseCase {
 
 describe('#ListUseCase', () => {
   it('should throw when adapters is missing', () => {
+    let thrown
     try {
+      // eslint-disable-next-line no-new
       new DummyUseCase({})
-      assert.fail('Expected error')
     } catch (err) {
-      assert.include(err.message, 'Adapters required when instantiating DummyUseCase use case.')
+      thrown = err
     }
+    assert.isDefined(thrown)
+    assert.include(thrown.message, 'Adapters required when instantiating DummyUseCase use case.')
   })
 
   it('should throw when the required adapter is missing', () => {
+    let thrown
     try {
+      // eslint-disable-next-line no-new
       new DummyUseCase({ adapters: {} })
-      assert.fail('Expected error')
     } catch (err) {
-      assert.include(err.message, 'postQuery adapter required for DummyUseCase use case.')
+      thrown = err
     }
+    assert.isDefined(thrown)
+    assert.include(thrown.message, 'postQuery adapter required for DummyUseCase use case.')
   })
 
   it('should bind execute to the instance', () => {
