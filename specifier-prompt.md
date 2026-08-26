@@ -273,6 +273,11 @@ that a single user-facing feature may require specs in more than one component.
 9. **Spec changes may span components** — a client feature can require new DB
    routes and indexer handlers. Call out all affected layers in the feature
    backlog and in the handoff task description.
+10. **Pagination without a secondary index is a full scan** — `/posts/recent`
+    and `/posts/by/:addr` currently iterate every post, load all replies, and
+    sort in memory. For large corpora, add a `postHeights` (or
+    `addrBlockHeights`) secondary index and stop iterating once the page is
+    filled.
 
 ---
 
@@ -310,5 +315,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `5a68a42` (mono-repo created with all three components).
-Next feature: **ask the user** — see `specs/feature-backlog.md` for candidates.
+Current `master` HEAD: `c13adbf4aa` (postHeights secondary index specs committed).
+Next feature: **ask the user** — current handoff `post-heights-index` is with the coder.
