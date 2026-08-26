@@ -3,5 +3,10 @@ build/
 docs/
 tmp/
 target/
+leveldb/
+logs/
+.env
+coverage/
+
 
 .gitsigners
