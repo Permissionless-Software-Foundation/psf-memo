@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-26T18:32:03.661642374Z","feature_name":"Efficient post pagination","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/efficient-post-pagination.feature","background_hash":"09cc76dccab8b5ac80dd4f72dfbca640087c6bd80ed29d9b9687a41fa20a038f","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Efficient post pagination - 2 GET /posts/by/:addr returns a page of top-level posts for that address sorted by block height descending","scenario_hash":"1d87e78064f9c2b2f227b4cc405e2ea898b15ab34dc245a97f205a8edf1cc8fc","mutation_count":18,"result":{"Total":18,"Killed":18,"Survived":0,"Errors":0},"tested_at":"2026-08-26T18:23:09.918773322Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Efficient post pagination - 1, Efficient post pagination - 2, Efficient post pagination - 3
 Feature: Efficient post pagination
 

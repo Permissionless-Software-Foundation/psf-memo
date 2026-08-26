@@ -49,3 +49,19 @@ export function attachReplyCounts (posts, replyCounts) {
     replyCount: replyCounts.get(post.txid) ?? 0
   }))
 }
+
+export function assemblePostPage ({ posts, replyCounts, total, limit, offset }) {
+  return {
+    posts: attachReplyCounts(posts, replyCounts),
+    pagination: {
+      limit,
+      offset,
+      total,
+      hasMore: offset + posts.length < total
+    }
+  }
+}
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T18:14:53.748Z","module_hash":"b9ba853191484c924ee7003cee18435e2aa00057155d94e573939f2856cf006c","functions":[{"id":"func/isEmpty","name":"isEmpty","line":13,"end_line":15,"hash":"209ecce14d6de3b7500065dd3091a7f2c006d1b08305078720ddd2ab250bc501"},{"id":"func/httpError","name":"httpError","line":17,"end_line":21,"hash":"270f69e0007e397fbd6beac1f2fd7d3a1156f9ba1cdf2d230e4e867c8b221aeb"},{"id":"func/parseLimit","name":"parseLimit","line":23,"end_line":34,"hash":"20c64d382dedbd2b65e68d66a35ccba8ecfc78dc32534a697e3865f05021eaf2"},{"id":"func/parseOffset","name":"parseOffset","line":36,"end_line":44,"hash":"55b13c976e2d53e6b69658555d97f4e63d425b5cb6b7b47b57081bd18ef16845"},{"id":"func/attachReplyCounts","name":"attachReplyCounts","line":46,"end_line":51,"hash":"99b9e818ac032752eb76fc9fcdcba0dcd1d94bee830921131a18fd01a4848f76"},{"id":"func/assemblePostPage","name":"assemblePostPage","line":53,"end_line":63,"hash":"c605049c633f08e0bd8247d6147b4a2a0ba6652f258f3f44852775f08d6c1e35"}]}
+// mutate4javascript-manifest-end

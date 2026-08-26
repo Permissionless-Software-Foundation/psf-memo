@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { parseLimit, parseOffset, attachReplyCounts } from '../../../../src/use-cases/lib/pagination.js'
+import { parseLimit, parseOffset, attachReplyCounts, assemblePostPage } from '../../../../src/use-cases/lib/pagination.js'
 
 describe('#pagination', () => {
   describe('parseLimit', () => {
@@ -12,6 +12,16 @@ describe('#pagination', () => {
     it('should parse a valid positive integer limit', () => {
       assert.equal(parseLimit('10'), 10)
       assert.equal(parseLimit(50), 50)
+    })
+
+    it('should accept the minimum limit boundary of 1', () => {
+      assert.equal(parseLimit(1), 1)
+      assert.equal(parseLimit('1'), 1)
+    })
+
+    it('should accept the maximum limit boundary of 100', () => {
+      assert.equal(parseLimit(100), 100)
+      assert.equal(parseLimit('100'), 100)
     })
 
     it('should reject a non-numeric limit', () => {
@@ -88,6 +98,30 @@ describe('#pagination', () => {
       assert.equal(result[0].replyCount, 3)
       assert.equal(result[0].text, 'x')
       assert.equal(result[1].replyCount, 0)
+    })
+  })
+
+  describe('assemblePostPage', () => {
+    it('should attach reply counts and pagination metadata', () => {
+      const posts = [{ txid: 'a', text: 'x' }, { txid: 'b', text: 'y' }]
+      const replyCounts = new Map([['a', 3]])
+
+      const result = assemblePostPage({ posts, replyCounts, total: 2, limit: 10, offset: 0 })
+
+      assert.equal(result.posts[0].replyCount, 3)
+      assert.equal(result.posts[1].replyCount, 0)
+      assert.equal(result.pagination.limit, 10)
+      assert.equal(result.pagination.offset, 0)
+      assert.equal(result.pagination.total, 2)
+      assert.equal(result.pagination.hasMore, false)
+    })
+
+    it('should report hasMore when a further page exists', () => {
+      const posts = [{ txid: 'a', text: 'x' }]
+
+      const result = assemblePostPage({ posts, replyCounts: new Map(), total: 2, limit: 1, offset: 0 })
+
+      assert.equal(result.pagination.hasMore, true)
     })
   })
 })

@@ -48,6 +48,32 @@ describe('#PostQuery', () => {
     }
   })
 
+  describe('#txidFromPostHeight', () => {
+    it('should return the txid from the value when present', () => {
+      assert.equal(uut.txidFromPostHeight('any-key', { txid: 'abc123' }), 'abc123')
+    })
+
+    it('should parse the txid from the key when value is absent', () => {
+      assert.equal(uut.txidFromPostHeight('000000600200:post-200-a', null), 'post-200-a')
+      assert.equal(uut.txidFromPostHeight('000000600200:post-200-a', undefined), 'post-200-a')
+    })
+  })
+
+  describe('#topLevelPostTxids', () => {
+    it('should iterate top-level txids in forward postHeights order by default', async () => {
+      async function * mockHeights () {
+        yield ['000000600100:post-100', { txid: 'post-100' }]
+        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: false }).returns(mockHeights())
+
+      const txids = []
+      for await (const txid of uut.topLevelPostTxids()) txids.push(txid)
+
+      assert.deepEqual(txids, ['post-100', 'post-200-a'])
+    })
+  })
+
   describe('#scanRecentPostTxids', () => {
     it('should return top-level post txids sorted by block height descending', async () => {
       async function * mockHeights () {
@@ -149,6 +175,20 @@ describe('#PostQuery', () => {
 
       assert.deepEqual(result, ['post-100'])
     })
+
+    it('should stop at limit even when more matching posts remain', async () => {
+      async function * mockHeights () {
+        yield ['000000600300:post-300', { txid: 'post-300' }]
+        yield ['000000600200:post-200', { txid: 'post-200' }]
+        yield ['000000600100:post-100', { txid: 'post-100' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => ({ addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 }))
+
+      const result = await uut.scanPostsByAddrTxids('addr-a', { limit: 2, offset: 0 })
+
+      assert.deepEqual(result, ['post-300', 'post-200'])
+    })
   })
 
   describe('#loadPostsByTxids', () => {
@@ -174,6 +214,14 @@ describe('#PostQuery', () => {
 
       assert.equal(result.length, 1)
       assert.equal(result[0].txid, 'tx2')
+    })
+
+    it('should default blockHeight to 0 when a post has no blockHeight', async () => {
+      postsDb.get.withArgs('tx1').resolves({ addr: 'a1', text: 'hello', seen: 1000 })
+
+      const result = await uut.loadPostsByTxids(['tx1'])
+
+      assert.equal(result[0].blockHeight, 0)
     })
   })
 
