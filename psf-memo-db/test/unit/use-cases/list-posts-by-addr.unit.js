@@ -43,11 +43,37 @@ describe('#ListPostsByAddr', () => {
     assert.equal(result.posts[0].txid, 'tx-c')
     assert.equal(result.posts[1].txid, 'tx-a')
     assert.equal(result.pagination.total, 2)
+    // Page is exactly full (offset 0 + 2 returned == 2 total), so hasMore must be false.
+    assert.equal(result.pagination.hasMore, false)
+  })
+
+  it('should report hasMore when a further page exists', async () => {
+    // One page of one item still leaves one more page available.
+    postQuery.scanPostsByAddrTxids.callsFake(async (addr, { limit, offset }) => {
+      return Object.entries(mockPosts)
+        .filter(([txid, post]) => post.addr === addr)
+        .map(([txid]) => txid)
+        .slice(offset, offset + limit)
+    })
+    const result = await uut.execute({ addr: 'addr-a', limit: 1, offset: 0 })
+
+    assert.equal(result.posts.length, 1)
+    assert.equal(result.pagination.hasMore, true)
   })
 
   it('should reject missing addr', async () => {
     try {
       await uut.execute({ limit: 10 })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.equal(err.status, 400)
+      assert.include(err.message, 'addr is required')
+    }
+  })
+
+  it('should reject a non-string addr', async () => {
+    try {
+      await uut.execute({ addr: 12345, limit: 10 })
       assert.fail('Expected error')
     } catch (err) {
       assert.equal(err.status, 400)

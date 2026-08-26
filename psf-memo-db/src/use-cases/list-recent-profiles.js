@@ -2,50 +2,12 @@
   Use case: list profiles ordered by block height (most recent first), paginated.
 */
 
-const DEFAULT_LIMIT = 100
-const MAX_LIMIT = 100
+import { parseLimit, parseOffset } from './lib/pagination.js'
+import { ListUseCase } from './lib/use-case.js'
 
-class ListRecentProfiles {
+class ListRecentProfiles extends ListUseCase {
   constructor (localConfig = {}) {
-    this.adapters = localConfig.adapters
-    if (!this.adapters) {
-      throw new Error('Adapters required when instantiating ListRecentProfiles use case.')
-    }
-    if (!this.adapters.profileQuery) {
-      throw new Error('profileQuery adapter required for ListRecentProfiles use case.')
-    }
-    this.execute = this.execute.bind(this)
-  }
-
-  parseLimit (limit) {
-    if (limit === undefined || limit === null || limit === '') {
-      return DEFAULT_LIMIT
-    }
-    const parsed = parseInt(limit, 10)
-    if (Number.isNaN(parsed) || parsed < 1) {
-      const err = new Error('limit must be a positive integer')
-      err.status = 400
-      throw err
-    }
-    if (parsed > MAX_LIMIT) {
-      const err = new Error(`limit cannot exceed ${MAX_LIMIT}`)
-      err.status = 400
-      throw err
-    }
-    return parsed
-  }
-
-  parseOffset (offset) {
-    if (offset === undefined || offset === null || offset === '') {
-      return 0
-    }
-    const parsed = parseInt(offset, 10)
-    if (Number.isNaN(parsed) || parsed < 0) {
-      const err = new Error('offset must be a non-negative integer')
-      err.status = 400
-      throw err
-    }
-    return parsed
+    super(localConfig, { useCaseName: 'ListRecentProfiles', adapterName: 'profileQuery' })
   }
 
   sortProfiles (profiles) {
@@ -58,8 +20,8 @@ class ListRecentProfiles {
   }
 
   async execute (inObj = {}) {
-    const limit = this.parseLimit(inObj.limit)
-    const offset = this.parseOffset(inObj.offset)
+    const limit = parseLimit(inObj.limit)
+    const offset = parseOffset(inObj.offset)
 
     const allProfiles = await this.adapters.profileQuery.scanProfilesWithBlockHeight()
     const sorted = this.sortProfiles(allProfiles)
@@ -79,3 +41,7 @@ class ListRecentProfiles {
 }
 
 export default ListRecentProfiles
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T18:15:31.955Z","module_hash":"0a41c7c2086270d2f29266eb20b2313d2ab8782fc8a32ad6dd0b27d737a41b13","functions":[{"id":"func/ListRecentProfiles.constructor","name":"ListRecentProfiles.constructor","line":9,"end_line":11,"hash":"a2c7dd0696ac463cbc142fa7ccce4a3cadf8e246a872261733d199dbd4c153d1"},{"id":"func/ListRecentProfiles.sortProfiles","name":"ListRecentProfiles.sortProfiles","line":13,"end_line":20,"hash":"8dbe8da4b9a5c52230b5f865a6d0b5a5817a266277a72b09b93b2b0f76414d9e"},{"id":"func/ListRecentProfiles.execute","name":"ListRecentProfiles.execute","line":22,"end_line":40,"hash":"d14afac95c39e7a311d9e3a1243b6a326de38906b5ad312f014ce6b6d5459de1"}]}
+// mutate4javascript-manifest-end

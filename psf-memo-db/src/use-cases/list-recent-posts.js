@@ -3,63 +3,17 @@
   Uses the postHeights secondary index for efficient sorting and pagination.
 */
 
-const DEFAULT_LIMIT = 100
-const MAX_LIMIT = 100
+import { parseLimit, parseOffset, assemblePostPage } from './lib/pagination.js'
+import { ListUseCase } from './lib/use-case.js'
 
-class ListRecentPosts {
+class ListRecentPosts extends ListUseCase {
   constructor (localConfig = {}) {
-    this.adapters = localConfig.adapters
-    if (!this.adapters) {
-      throw new Error('Adapters required when instantiating ListRecentPosts use case.')
-    }
-    if (!this.adapters.postQuery) {
-      throw new Error('postQuery adapter required for ListRecentPosts use case.')
-    }
-    this.execute = this.execute.bind(this)
-    this.attachReplyCounts = this.attachReplyCounts.bind(this)
-  }
-
-  parseLimit (limit) {
-    if (limit === undefined || limit === null || limit === '') {
-      return DEFAULT_LIMIT
-    }
-    const parsed = parseInt(limit, 10)
-    if (Number.isNaN(parsed) || parsed < 1) {
-      const err = new Error('limit must be a positive integer')
-      err.status = 400
-      throw err
-    }
-    if (parsed > MAX_LIMIT) {
-      const err = new Error(`limit cannot exceed ${MAX_LIMIT}`)
-      err.status = 400
-      throw err
-    }
-    return parsed
-  }
-
-  parseOffset (offset) {
-    if (offset === undefined || offset === null || offset === '') {
-      return 0
-    }
-    const parsed = parseInt(offset, 10)
-    if (Number.isNaN(parsed) || parsed < 0) {
-      const err = new Error('offset must be a non-negative integer')
-      err.status = 400
-      throw err
-    }
-    return parsed
-  }
-
-  attachReplyCounts (posts, replyCounts) {
-    return posts.map((post) => ({
-      ...post,
-      replyCount: replyCounts.get(post.txid) ?? 0
-    }))
+    super(localConfig, { useCaseName: 'ListRecentPosts', adapterName: 'postQuery' })
   }
 
   async execute (inObj = {}) {
-    const limit = this.parseLimit(inObj.limit)
-    const offset = this.parseOffset(inObj.offset)
+    const limit = parseLimit(inObj.limit)
+    const offset = parseOffset(inObj.offset)
 
     const txids = await this.adapters.postQuery.scanRecentPostTxids({ limit, offset })
     const [posts, replyCounts, total] = await Promise.all([
@@ -68,16 +22,12 @@ class ListRecentPosts {
       this.adapters.postQuery.countTopLevelPosts()
     ])
 
-    return {
-      posts: this.attachReplyCounts(posts, replyCounts),
-      pagination: {
-        limit,
-        offset,
-        total,
-        hasMore: offset + posts.length < total
-      }
-    }
+    return assemblePostPage({ posts, replyCounts, total, limit, offset })
   }
 }
 
 export default ListRecentPosts
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T18:15:24.894Z","module_hash":"35af93129e7bf3eddc46fa5909fdf71538afc29182af5a1a2ec06e25193fa7d3","functions":[{"id":"func/ListRecentPosts.constructor","name":"ListRecentPosts.constructor","line":10,"end_line":12,"hash":"0abcf69664af3b707dfe95a9db5caa65e3bbec6dfb740393cafb923e81aad9ae"},{"id":"func/ListRecentPosts.execute","name":"ListRecentPosts.execute","line":14,"end_line":26,"hash":"ff4bd895e3dad7ec3ed58832588e53f049de4f210a19f81ef3e074abf694dd33"}]}
+// mutate4javascript-manifest-end
