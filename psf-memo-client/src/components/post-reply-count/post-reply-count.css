@@ -1,0 +1,27 @@
+.post-reply-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+.post-reply-count-icon {
+  font-size: 0.9rem;
+}
+
+.post-reply-count-clickable,
+.post-reply-count-always-clickable {
+  cursor: pointer;
+}
+
+.post-reply-count-clickable:hover,
+.post-reply-count-always-clickable:hover {
+  color: #28a745;
+}
+
+.post-reply-count-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
