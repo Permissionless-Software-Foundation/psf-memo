@@ -1,6 +1,15 @@
 import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas, postHeightKey } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
 
+// Create a record only when it does not already exist (idempotent writes).
+async function createIfMissing (db, key, value) {
+  try {
+    await db.get(key)
+  } catch (err) {
+    await db.create(key, value)
+  }
+}
+
 export async function handlePost (ctx) {
   const { adapters, txid, signerAddr, decoded, seen, blockHeight } = ctx
   const pushDatas = normalizeTwoPushMemoDatas(decoded.pushDatas)
@@ -22,15 +31,6 @@ export async function handlePost (ctx) {
 
   const postData = { addr: signerAddr, text, seen, blockHeight }
   const heightKey = postHeightKey(blockHeight, txid)
-  try {
-    await adapters.postDb.get(txid)
-  } catch (err) {
-    await adapters.postDb.create(txid, postData)
-  }
-
-  try {
-    await adapters.postHeightDb.get(heightKey)
-  } catch (err) {
-    await adapters.postHeightDb.create(heightKey, { txid, blockHeight })
-  }
+  await createIfMissing(adapters.postDb, txid, postData)
+  await createIfMissing(adapters.postHeightDb, heightKey, { txid, blockHeight })
 }

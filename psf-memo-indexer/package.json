@@ -7,6 +7,7 @@
     "block-indexer": "node --max-old-space-size=8192 psf-memo-block-indexer.js",
     "tx-indexer": "node --max-old-space-size=4096 psf-memo-tx-indexer.js",
     "test": "c8 --reporter=text mocha --exit --recursive test/unit/",
+    "property": "node --test \"test/property/*.test.js\"",
     "acceptance": "node acceptance/acceptance.js",
     "lint": "standard --env mocha --fix"
   },

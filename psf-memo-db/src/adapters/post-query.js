@@ -32,6 +32,8 @@ class PostQuery {
     this.loadReplyTxids = this.loadReplyTxids.bind(this)
     this.buildReplyCountMap = this.buildReplyCountMap.bind(this)
     this.txidFromPostHeight = this.txidFromPostHeight.bind(this)
+    this.getPostOrNull = this.getPostOrNull.bind(this)
+    this.topLevelPostTxids = this.topLevelPostTxids.bind(this)
   }
 
   static padHeight (height) {
@@ -70,15 +72,33 @@ class PostQuery {
     return counts
   }
 
-  async scanRecentPostTxids ({ limit, offset }) {
+  // Fetch a post by txid, returning null when the post is not found.
+  async getPostOrNull (txid) {
+    try {
+      return await this.postsDb.get(txid)
+    } catch (err) {
+      if (err.notFound || err.code === 'LEVEL_NOT_FOUND') return null
+      throw err
+    }
+  }
+
+  // Iterate the txids of top-level posts (replies excluded) in postHeights
+  // key order. Pass { reverse: true } for newest-first iteration.
+  async * topLevelPostTxids ({ reverse = false } = {}) {
     const replyTxids = await this.loadReplyTxids()
+
+    for await (const [key, value] of this.postHeightsDb.iterator({ reverse })) {
+      const txid = this.txidFromPostHeight(key, value)
+      if (replyTxids.has(txid)) continue
+      yield txid
+    }
+  }
+
+  async scanRecentPostTxids ({ limit, offset }) {
     const txids = []
     let skipped = 0
 
-    for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
-      const txid = this.txidFromPostHeight(key, value)
-      if (replyTxids.has(txid)) continue
-
+    for await (const txid of this.topLevelPostTxids({ reverse: true })) {
       if (skipped < offset) {
         skipped++
         continue
@@ -92,23 +112,12 @@ class PostQuery {
   }
 
   async scanPostsByAddrTxids (addr, { limit, offset }) {
-    const replyTxids = await this.loadReplyTxids()
     const txids = []
     let skipped = 0
 
-    for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
-      const txid = this.txidFromPostHeight(key, value)
-      if (replyTxids.has(txid)) continue
-
-      let post
-      try {
-        post = await this.postsDb.get(txid)
-      } catch (err) {
-        if (err.notFound || err.code === 'LEVEL_NOT_FOUND') continue
-        throw err
-      }
-
-      if (post.addr !== addr) continue
+    for await (const txid of this.topLevelPostTxids({ reverse: true })) {
+      const post = await this.getPostOrNull(txid)
+      if (!post || post.addr !== addr) continue
 
       if (skipped < offset) {
         skipped++
@@ -126,31 +135,27 @@ class PostQuery {
     const posts = []
 
     for (const txid of txids) {
-      try {
-        const post = await this.postsDb.get(txid)
-        posts.push({
-          txid,
-          addr: post.addr,
-          text: post.text,
-          seen: post.seen,
-          blockHeight: post.blockHeight ?? 0
-        })
-      } catch (err) {
-        if (err.notFound || err.code === 'LEVEL_NOT_FOUND') continue
-        throw err
-      }
+      const post = await this.getPostOrNull(txid)
+      if (!post) continue
+      posts.push({
+        txid,
+        addr: post.addr,
+        text: post.text,
+        seen: post.seen,
+        blockHeight: post.blockHeight ?? 0
+      })
     }
 
     return posts
   }
 
   async countTopLevelPosts () {
-    const replyTxids = await this.loadReplyTxids()
     let count = 0
+    const iterator = this.topLevelPostTxids()
 
-    for await (const [key, value] of this.postHeightsDb.iterator()) {
-      const txid = this.txidFromPostHeight(key, value)
-      if (replyTxids.has(txid)) continue
+    for (;;) {
+      const { done } = await iterator.next()
+      if (done) break
       count++
     }
 
@@ -158,20 +163,11 @@ class PostQuery {
   }
 
   async countTopLevelPostsByAddr (addr) {
-    const replyTxids = await this.loadReplyTxids()
     let count = 0
 
-    for await (const [key, value] of this.postHeightsDb.iterator()) {
-      const txid = this.txidFromPostHeight(key, value)
-      if (replyTxids.has(txid)) continue
-
-      try {
-        const post = await this.postsDb.get(txid)
-        if (post.addr === addr) count++
-      } catch (err) {
-        if (err.notFound || err.code === 'LEVEL_NOT_FOUND') continue
-        throw err
-      }
+    for await (const txid of this.topLevelPostTxids()) {
+      const post = await this.getPostOrNull(txid)
+      if (post && post.addr === addr) count++
     }
 
     return count
