@@ -40,6 +40,22 @@ npm start
 
 See each component's `README.md` and `dev-docs/` for architecture details.
 
+### Production (Docker)
+
+Compose under [`psf-memo-indexer/production/docker`](psf-memo-indexer/production/docker/) builds all four services from this monorepo (no separate GitHub clones):
+
+```bash
+cd psf-memo-indexer/production/docker
+cp memo-db/.env-example memo-db/.env
+cp block-indexer/.env-example block-indexer/.env
+cp tx-indexer/.env-example tx-indexer/.env
+cp memo-client/.env-example memo-client/.env
+docker compose build
+docker compose up -d
+```
+
+Full ops notes: [`psf-memo-indexer/README.md`](psf-memo-indexer/README.md#production-docker).
+
 ## SwarmForge development
 
 This project is configured for SwarmForge with four pi-backed agents:

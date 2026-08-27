@@ -168,10 +168,11 @@ Each store is a separate LevelDB with JSON values. Keys are txids, addresses, or
 
 ```text
 production/docker/
-├── docker-compose.yml
-├── memo-db/          → build context: ../../psf-memo-db
-├── block-indexer/    → build context: indexer repo root
-└── tx-indexer/
+├── docker-compose.yml   → build context: monorepo root (../../..)
+├── memo-db/             → COPY psf-memo-db/
+├── block-indexer/       → COPY psf-memo-indexer/
+├── tx-indexer/          → COPY psf-memo-indexer/
+└── memo-client/         → COPY psf-memo-client/
 ```
 
 Volumes mount `.env` and start scripts per service, matching the SLP production pattern. LevelDB data can persist under `production/data/leveldb`.

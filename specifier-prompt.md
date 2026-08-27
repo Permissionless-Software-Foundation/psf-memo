@@ -146,17 +146,37 @@ needed.
 
 ## 5. Goal & feature backlog
 
-Saved (and updated) at `specs/feature-backlog.md`. The backlog now spans all
-three components; each feature notes which layers need changes.
+The full backlog lives at `specs/feature-backlog.md` and is refreshed below.
+Goal: reach feature parity with [memo.cash](https://memo.cash).
 
-**Completed ✓ (merged to `master`):**
+### Research (2026-08-27)
 
-- Post a Memo (`0x6d02`) — client only — DONE.
-- Set display name (`0x6d01`) — client only — DONE.
-- Reply to a Memo (`0x6d03`) — client only — DONE.
+- The live `memo.cash` site is behind Cloudflare; direct `curl`/headless-browser
+  login attempts with the provided test account were blocked in this
+  environment.
+- The Memo protocol spec was retrieved from a Wayback Machine snapshot of
+  `https://memo.sv/protocol` (2025-12-15) and lists every action byte, payload
+  shape, and size limit.
+- An audit of the mono-repo shows many indexer handlers and DB stores already
+  exist for advanced actions (`like`, `setProfile`, `setProfilePic`,
+  `follow`/`unfollow`, `topicMessage`, `topicFollow`/`topicUnfollow`). The main
+  gaps are client UI and high-level REST read APIs.
 
-**Next feature:** ask the user. Likely candidates are in the backlog, ordered by
-priority.
+### Prioritized roadmap
+
+| Tier | Features | Status |
+|------|----------|--------|
+| **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
+| **P1** | Like counts (read side), Set profile text, Set profile picture, Follow/Unfollow | next |
+| **P2** | Topics (list, feed, post, follow/unfollow) | later |
+| **P3** | Polls (create, add option, vote) | later |
+| **P4** | Mute / unmute user | later |
+| **P5** | Send money memo action, MIP-0009 token exchange | later |
+| **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
+
+**Suggested next spec:** P1.1 — add `likeCount` to the `psf-memo-db` post
+responses so the already-implemented client like/tip UI can display real
+backend counts.
 
 ---
 
@@ -265,7 +285,9 @@ that a single user-facing feature may require specs in more than one component.
    error to "Memo must not be empty." Now broadcast failures surface the real
    error (`Failed to broadcast: <msg>`). Keep that behavior in specs.
 6. **memo.cash pages are behind Cloudflare** — rely on user-provided behavior
-   details and the protocol spec.
+   details and the protocol spec. The protocol page (`memo.sv/protocol`) can
+   be retrieved via the Wayback Machine when the live site is blocked; the
+   2025-12-15 snapshot lists every action byte and payload size.
 7. **Byte vs char:** the 217 post limit and its counter count characters
    (`input.length`, UTF-16), not bytes. **Set Name (`0x6d01`) uses BYTE counting
    (77 bytes)** for memo.cash parity. Ask/decide per feature.
@@ -273,6 +295,16 @@ that a single user-facing feature may require specs in more than one component.
 9. **Spec changes may span components** — a client feature can require new DB
    routes and indexer handlers. Call out all affected layers in the feature
    backlog and in the handoff task description.
+10. **Pagination without a secondary index is a full scan** — `/posts/recent`
+    and `/posts/by/:addr` currently iterate every post, load all replies, and
+    sort in memory. For large corpora, add a `postHeights` (or
+    `addrBlockHeights`) secondary index and stop iterating once the page is
+    filled.
+11. **Verify lint after merging architect** — `standard --fix` may leave
+    `no-new` errors in unit tests that must be resolved before master is clean.
+12. **Weak Gherkin examples can survive mutation** — when example values are both
+    the input and the expected output, mutating them passes trivially. Tie
+    assertions to independent fixture data where possible.
 
 ---
 
@@ -310,5 +342,6 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `5a68a42` (mono-repo created with all three components).
-Next feature: **ask the user** — see `specs/feature-backlog.md` for candidates.
+Current `master` HEAD: `69c38d5` (Docker files updated for mono-repo).
+Next feature: **P1.1 Like counts on posts** — add backend aggregation so the
+existing like/tip broadcast UI displays real counts.

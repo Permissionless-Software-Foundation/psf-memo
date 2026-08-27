@@ -215,4 +215,4 @@ Run: `npm test` in the `psf-memo-db` directory.
 
 ## Production
 
-Docker build context is the `psf-memo-db` repo root; Dockerfile lives in [psf-memo-indexer/production/docker/memo-db/](../production/docker/memo-db/). See [architecture.md](./architecture.md#deployment-topology).
+Docker build context is the monorepo root; the Dockerfile copies `psf-memo-db/` and lives in [psf-memo-indexer/production/docker/memo-db/](../production/docker/memo-db/). See [architecture.md](./architecture.md#deployment-topology).
