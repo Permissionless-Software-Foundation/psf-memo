@@ -6,7 +6,7 @@ const HEIGHT_PAD = 12
 
 class PostQuery {
   constructor (localConfig = {}) {
-    const { postsDb, postHeightsDb, postParentsDb, postChildrenDb } = localConfig
+    const { postsDb, postHeightsDb, postParentsDb, postChildrenDb, likesDb } = localConfig
     if (!postsDb) {
       throw new Error('postsDb required when instantiating PostQuery adapter.')
     }
@@ -19,10 +19,14 @@ class PostQuery {
     if (!postChildrenDb) {
       throw new Error('postChildrenDb required when instantiating PostQuery adapter.')
     }
+    if (!likesDb) {
+      throw new Error('likesDb required when instantiating PostQuery adapter.')
+    }
     this.postsDb = postsDb
     this.postHeightsDb = postHeightsDb
     this.postParentsDb = postParentsDb
     this.postChildrenDb = postChildrenDb
+    this.likesDb = likesDb
 
     this.scanRecentPostTxids = this.scanRecentPostTxids.bind(this)
     this.scanPostsByAddrTxids = this.scanPostsByAddrTxids.bind(this)
@@ -31,6 +35,7 @@ class PostQuery {
     this.countTopLevelPostsByAddr = this.countTopLevelPostsByAddr.bind(this)
     this.loadReplyTxids = this.loadReplyTxids.bind(this)
     this.buildReplyCountMap = this.buildReplyCountMap.bind(this)
+    this.buildLikeCountMap = this.buildLikeCountMap.bind(this)
     this.txidFromPostHeight = this.txidFromPostHeight.bind(this)
     this.getPostOrNull = this.getPostOrNull.bind(this)
     this.topLevelPostTxids = this.topLevelPostTxids.bind(this)
@@ -67,6 +72,20 @@ class PostQuery {
       const parentTxid = child?.parentTxid
       if (!parentTxid) continue
       counts.set(parentTxid, (counts.get(parentTxid) || 0) + 1)
+    }
+
+    return counts
+  }
+
+  async buildLikeCountMap () {
+    const counts = new Map()
+
+    for await (const [, like] of this.likesDb.iterator()) {
+      const postTxid = like?.postTxid
+      if (!postTxid) continue
+      const post = await this.getPostOrNull(postTxid)
+      if (!post) continue
+      counts.set(postTxid, (counts.get(postTxid) || 0) + 1)
     }
 
     return counts
