@@ -25,6 +25,8 @@ const MemoReply = require('../../src/services/memo-reply')
 const ReplyThreadPage = require('../../src/services/reply-thread-page')
 const MemoSetName = require('../../src/services/memo-set-name')
 const SetNamePage = require('../../src/services/set-name-page')
+const MemoSetBio = require('../../src/services/memo-set-bio')
+const SetBioPage = require('../../src/services/set-bio-page')
 const AccountPage = require('../../src/services/account-page')
 const MemoLike = require('../../src/services/memo-like')
 const LikeTipPage = require('../../src/services/like-tip-page')
@@ -35,6 +37,7 @@ const ThreadPage = require('../../src/services/thread-page')
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
 const MEMO_SET_NAME_PREFIX = MemoSetName.MEMO_SET_NAME_PREFIX
+const MEMO_SET_BIO_PREFIX = MemoSetBio.MEMO_SET_BIO_PREFIX
 const MEMO_LIKE_PREFIX = MemoLike.MEMO_LIKE_PREFIX
 
 // Default author address used by Gherkin steps that refer to "the author address".
@@ -73,13 +76,17 @@ function makeFeed () {
   }
 }
 
-// A fake profile store recording display names set for addresses.
+// A fake profile store recording display names and bios set for addresses.
 function makeProfiles () {
   const names = {}
+  const bios = {}
   return {
     names,
+    bios,
     setName: (addr, name) => { names[addr] = name },
-    getName: (addr) => names[addr] || null
+    getName: (addr) => names[addr] || null,
+    setBio: (addr, bio) => { bios[addr] = bio },
+    getBio: (addr) => bios[addr] || null
   }
 }
 
@@ -177,6 +184,14 @@ function createWorld () {
     memoSetName,
     navigate: (path) => { world.currentPath = path }
   })
+
+  // The Set Bio Page controller shares the same profile store.
+  const memoSetBio = new MemoSetBio({ wallet, profiles })
+  world.setBioPage = new SetBioPage({
+    memoSetBio,
+    navigate: (path) => { world.currentPath = path }
+  })
+
   world.accountPage = new AccountPage({
     wallet,
     profiles,
@@ -314,6 +329,17 @@ const handlers = [
     }
   },
   {
+    name: 'type bio text',
+    pattern: /^I type a bio with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.setBioPage.setInput(example[param])
+    }
+  },
+  {
     name: 'type name text',
     pattern: /^I type a name with the text "<([A-Za-z0-9_]+)>"$/,
     run (m, example, world) {
@@ -329,6 +355,13 @@ const handlers = [
     pattern: /^I (?:submit the memo|click the post button)$/,
     async run (m, example, world) {
       await world.newPage.submit()
+    }
+  },
+  {
+    name: 'submit bio',
+    pattern: /^I submit the bio$/,
+    async run (m, example, world) {
+      await world.setBioPage.submit()
     }
   },
   {
@@ -443,6 +476,13 @@ const handlers = [
     }
   },
   {
+    name: 'click Set Bio button',
+    pattern: /^I click the Set Bio button$/,
+    run (m, example, world) {
+      world.accountPage.clickSetBio()
+    }
+  },
+  {
     name: 'click Set Name button',
     pattern: /^I click the Set Name button$/,
     run (m, example, world) {
@@ -480,6 +520,23 @@ const handlers = [
       }
       if (last.msg !== world.setNamePage.input) {
         throw new Error('Broadcast name text did not match the typed name.')
+      }
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo set-profile prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo set-profile prefix$/,
+    run (m, example, world) {
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_SET_BIO_PREFIX) {
+        throw new Error(`Expected Memo set-profile prefix ${MEMO_SET_BIO_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg !== world.setBioPage.input) {
+        throw new Error('Broadcast bio text did not match the typed bio.')
       }
     }
   },
@@ -595,6 +652,17 @@ const handlers = [
     }
   },
   {
+    name: 'set bio page shows validation/length error',
+    pattern: /^the set bio page shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'bio_validation' : 'bio_length'
+      if (world.setBioPage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.setBioPage.submitError}.`)
+      }
+    }
+  },
+  {
     name: 'remaining character count',
     pattern: /^the new post page shows a remaining character count of <([A-Za-z0-9_]+)>$/,
     run (m, example, world) {
@@ -625,6 +693,21 @@ const handlers = [
     }
   },
   {
+    name: 'set bio remaining byte count',
+    pattern: /^the set bio page shows a remaining byte count of <([A-Za-z0-9_]+)>$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = parseInt(example[param], 10)
+      if (Number.isNaN(expected)) {
+        throw new Error(`Invalid expected count for "${param}".`)
+      }
+      const actual = world.setBioPage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
+      }
+    }
+  },
+  {
     name: 'app does not broadcast any transaction',
     pattern: /^(?:the wallet|the app) does not broadcast any transaction$/,
     run (m, example, world) {
@@ -646,11 +729,32 @@ const handlers = [
     }
   },
   {
+    name: 'account page shows bio',
+    pattern: /^the account page shows my bio as "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = example[param]
+      const actual = world.accountPage.getBio()
+      if (actual !== expected) {
+        throw new Error(`Expected account bio "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
     name: 'account page shows Set Name button',
     pattern: /^the account page shows a Set Name button$/,
     run (m, example, world) {
       if (!world.accountPage.hasSetNameButton()) {
         throw new Error('Account page does not show a Set Name button.')
+      }
+    }
+  },
+  {
+    name: 'account page shows Set Bio button',
+    pattern: /^the account page shows a Set Bio button$/,
+    run (m, example, world) {
+      if (!world.accountPage.hasSetBioButton()) {
+        throw new Error('Account page does not show a Set Bio button.')
       }
     }
   },

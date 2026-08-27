@@ -20,28 +20,33 @@ function Account (props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [name, setName] = useState(null)
+  const [bio, setBio] = useState(null)
 
   const wallet = appData?.wallet
   const address = wallet?.walletInfo?.cashAddress || ''
 
   useEffect(() => {
-    const loadName = async () => {
+    const loadAccount = async () => {
       setLoading(true)
       setError(null)
 
       try {
         const memoDb = new MemoDb()
-        const profile = await memoDb.getName(address)
-        setName(profile?.name || null)
+        const [profile, nameDoc] = await Promise.all([
+          memoDb.getProfile(address),
+          memoDb.getName(address)
+        ])
+        setBio(profile?.text || null)
+        setName(nameDoc?.name || null)
       } catch (err) {
-        setError(err.message || 'Failed to load name')
+        setError(err.message || 'Failed to load account')
       }
 
       setLoading(false)
     }
 
     if (address) {
-      loadName()
+      loadAccount()
     } else {
       setLoading(false)
     }
@@ -53,7 +58,8 @@ function Account (props) {
     navigate
   })
 
-  const displayName = name || accountPage.getName() || truncateAddr(address, 24)
+  const displayName = accountPage.getName() || name || truncateAddr(address, 24)
+  const displayBio = accountPage.getBio() || bio || ''
 
   return (
     <Container className='account-page mt-4'>
@@ -77,6 +83,10 @@ function Account (props) {
                 <strong>Name: </strong>
                 {displayName}
               </p>
+              <p className='account-bio'>
+                <strong>Bio: </strong>
+                {displayBio || <span className='text-muted'>No bio set</span>}
+              </p>
               <p className='account-address'>
                 <strong>Address: </strong>
                 {address}
@@ -85,9 +95,19 @@ function Account (props) {
               {accountPage.hasSetNameButton() && (
                 <Button
                   variant='primary'
+                  className='me-2'
                   onClick={() => accountPage.clickSetName()}
                 >
                   Set Name
+                </Button>
+              )}
+
+              {accountPage.hasSetBioButton() && (
+                <Button
+                  variant='primary'
+                  onClick={() => accountPage.clickSetBio()}
+                >
+                  Set Bio
                 </Button>
               )}
             </div>

@@ -167,16 +167,17 @@ Goal: reach feature parity with [memo.cash](https://memo.cash).
 | Tier | Features | Status |
 |------|----------|--------|
 | **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
-| **P1** | Like counts (read side) ✅; client display, Set profile text, Set profile picture, Follow/Unfollow | next |
+| **P1** | Like counts (read side) ✅; client display ✅; Set profile text, Set profile picture, Follow/Unfollow | next |
 | **P2** | Topics (list, feed, post, follow/unfollow) | later |
 | **P3** | Polls (create, add option, vote) | later |
 | **P4** | Mute / unmute user | later |
 | **P5** | Send money memo action, MIP-0009 token exchange | later |
 | **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
 
-**Suggested next spec:** P1.2 — update the client feed/profile/thread UI to
-read `likeCount` from the `psf-memo-db` API instead of defaulting to 0.
-The like/tip broadcast UI is already implemented.
+**Suggested next spec:** P1.3 — add a "Set Bio" UI on the Account page that
+broadcasts the `0x6d05` Set profile text action. The indexer and DB already
+read/store profile text; the missing piece is the client write path and the
+Account page editor.
 
 ---
 
@@ -342,7 +343,7 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `4bd4b79` (likeCount read side merged to `master`;
-psf-memo-db tests and lint passing).
-Next action: **spec P1.2** — update the client feed/profile/thread UI to read
-`likeCount` from the API.
+Current `master` HEAD: `21373f4` (like-count-display merged to `master`;
+client + DB tests, build, and lint passing).
+Next action: **spec P1.3** — add a "Set Bio" UI on the Account page that
+broadcasts the `0x6d05` Set profile text action.

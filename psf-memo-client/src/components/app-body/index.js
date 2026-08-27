@@ -28,6 +28,7 @@ import RecentPosts from './posts'
 import NewPost from './new-post'
 import Profile from './profile'
 import SetName from './set-name'
+import SetBio from './set-bio'
 import Account from './account'
 
 function AppBody (props) {
@@ -47,6 +48,7 @@ function AppBody (props) {
         <Route path='/posts/recent' element={<RecentPosts appData={appData} />} />
         <Route path='/posts/new' element={<NewPost appData={appData} />} />
         <Route path='/memo/set-name' element={<SetName appData={appData} />} />
+        <Route path='/memo/set-bio' element={<SetBio appData={appData} />} />
         <Route path='/account' element={<Account appData={appData} />} />
         <Route path='/placeholder2' element={<Placeholder2 />} />
         <Route path='/placeholder3' element={<Placeholder3 />} />

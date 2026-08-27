@@ -3,53 +3,34 @@
   byte counter that counts down from the name limit.
 
   This is the testable controller behind the React "Set Name" page. It wraps
-  the Memo set-name behavior (src/services/memo-set-name.js) and adds page-level
-  concerns: holding the current input, computing the remaining byte count,
-  surfacing validation/length errors, and navigating to the account page after
-  a successful broadcast.
+  the Memo set-name behavior (src/services/memo-set-name.js) through the
+  shared ProfileTextPage base and adds the page-level config: the injected
+  handler key, the in-flight flag, the byte limit, and the local validation
+  codes.
 
   The memoSetName and navigate concerns are injected so this module stays free
-  of UI/network concerns; environmentally unsuitable I/O lives behind those small
-  adapter boundaries.
+  of UI/network concerns; environmentally unsuitable I/O lives behind those
+  small adapter boundaries.
 */
 
-const PageController = require('./page-controller')
+const ProfileTextPage = require('./profile-text-page')
 const MemoSetName = require('./memo-set-name')
-const { byteLength } = require('./utf8')
 
 const SET_NAME_PATH = '/memo/set-name'
-const ACCOUNT_PATH = '/account'
 
-class SetNamePage extends PageController {
-  constructor (deps = {}) {
-    super(deps)
-    this.memoSetName = deps.memoSetName || null
-    this.settingName = false
-    this.successPath = ACCOUNT_PATH
-    this.validationCodes = ['name_validation', 'name_length']
-  }
-
-  // Bytes remaining before the name limit is reached.
-  remainingCount () {
-    return MemoSetName.MAX_NAME_BYTES - byteLength(this.input)
-  }
-
-  // Set the in-flight setting-name flag.
-  _setBusy (value) {
-    this.settingName = value
-  }
-
-  // Run the memo set-name action for the current input.
-  async _perform (input) {
-    if (!this.memoSetName) {
-      throw new Error('Set name requires a memo set-name handler.')
-    }
-    return this.memoSetName.setName(input)
+class SetNamePage extends ProfileTextPage {
+  static config = {
+    handlerKey: 'memoSetName',
+    busyKey: 'settingName',
+    actionMethod: 'setName',
+    requiresMsg: 'Set name requires a memo set-name handler.',
+    maxBytes: MemoSetName.MAX_NAME_BYTES,
+    validationCodes: ['name_validation', 'name_length']
   }
 }
 
 SetNamePage.SET_NAME_PATH = SET_NAME_PATH
-SetNamePage.ACCOUNT_PATH = ACCOUNT_PATH
+SetNamePage.ACCOUNT_PATH = ProfileTextPage.ACCOUNT_PATH
 
 module.exports = SetNamePage
 

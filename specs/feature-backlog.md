@@ -120,7 +120,7 @@ adding/editing the client UI.
 | # | Feature | Memo action | Components | Status | Next work |
 |---|---------|-------------|------------|--------|-----------|
 | 1.1 | Like / tip a Memo — read side | `0x6d04` | D | ✅ | `likeCount` returned on `/posts/*` and `/posts/:txid/thread` |
-| 1.2 | Like / tip a Memo — client display | `0x6d04` | C | 🟡 partial | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
+| 1.2 | Like / tip a Memo — client display | `0x6d04` | C | ✅ | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
 | 1.3 | Set profile text (bio) | `0x6d05` | C, I, D | 🟡 partial | C: add "Set Bio" UI on Account page; I/D already read |
 | 1.4 | Set profile picture | `0x6d0a` | C, I, D | 🟡 partial | C: add "Set Avatar URL" UI; I/D already read |
 | 1.5 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
@@ -129,8 +129,9 @@ adding/editing the client UI.
 ### Priority order within P1
 
 1. **Like / tip a Memo — read side** ✅ DONE.
-2. **Like / tip a Memo — client display** — the API now returns `likeCount`;
-   update the feed/profile/thread UI to read it instead of defaulting to 0.
+2. **Like / tip a Memo — client display** ✅ DONE. The feed, profile, and
+   thread views now read `likeCount` from the API (profile shows a read-only
+   like button).
 3. **Set profile text** — simple text broadcast + Account page UI.
 4. **Set profile picture** — URL broadcast + Account page UI.
 5. **Follow / Unfollow user** — social graph; enables the following feed later.
@@ -144,7 +145,8 @@ adding/editing the client UI.
 - `psf-memo-db` aggregates `likesDb` into per-post `likeCount` in
   `/posts/recent`, `/posts/by/:addr`, and `/posts/:txid/thread` responses.
 - The client already has `MemoLike`, `LikeTipPage`, `LikeButton`, and
-  `LikeTipModal`; it only needs to read `likeCount` from the feed API.
+  `LikeTipModal`; the feed/profile/thread views now read `likeCount` from the
+  API (profile renders a read-only `LikeButton`).
 
 ---
 
@@ -211,16 +213,16 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested first spec for the next session
 
-**Like counts on posts** (P1.1, read side):
-- `psf-memo-db`: add a `LikeQuery` adapter that builds a `likeCount` map from
-  `likesDb`, inject it into `ListRecentPosts`, `ListPostsByAddr`, and
-  `GetPostThread`, and return `likeCount` on every post object.
-- `psf-memo-client`: read `likeCount` from the feed/profile API instead of
-  starting at 0.
-- No indexer changes needed; the `like` handler already writes `likesDb`.
+**Set profile text (bio)** (P1.3):
+- `psf-memo-client`: add a "Set Bio" UI on the Account page that broadcasts the
+  `0x6d05` Set profile text action via `minimal-slp-wallet.sendOpReturn()`.
+- `psf-memo-indexer` and `psf-memo-db` already read/store profile text, so this
+  is primarily a client broadcast + Account page UI feature.
+- The profile page already renders `profileText` from the API; the missing piece
+  is the write path (broadcast) and the Account page editor.
 
-This closes the loop on the already-implemented like/tip broadcast feature and
-is the smallest end-to-end win toward memo.cash parity.
+This is the next smallest end-to-end win toward memo.cash parity after the
+like-count read/display loop closed.
 
 ---
 
