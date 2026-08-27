@@ -123,8 +123,8 @@ adding/editing the client UI.
 | 1.2 | Like / tip a Memo — client display | `0x6d04` | C | ✅ | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
 | 1.3 | Set profile text (bio) | `0x6d05` | C | ✅ | C: "Set Bio" UI on Account page broadcasts `0x6d05` (217-byte limit) |
 | 1.4 | Set profile picture | `0x6d0a` | C, I, D | ✅ | C: "Set Avatar URL" UI broadcasts `0x6d0a` (217-byte limit); I/D already read |
-| 1.5 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
-| 1.6 | Unfollow a user | `0x6d07` | C, I, D | 🔴 missing | C: unfollow button; D: follow state |
+| 1.5 | Follow a user | `0x6d06` | C, I, D | ✅ | C: follow button on profile; D: follow state + following/followers lists |
+| 1.6 | Unfollow a user | `0x6d07` | C, I, D | ✅ | C: unfollow button; D: follow state |
 
 ### Priority order within P1
 
@@ -134,7 +134,7 @@ adding/editing the client UI.
    like button).
 3. **Set profile text** ✅ DONE. Account page "Set Bio" UI broadcasts `0x6d05` with a 217-byte limit and byte counter (task `set-bio`).
 4. **Set profile picture** ✅ DONE. Account page "Set Avatar URL" UI broadcasts `0x6d0a` with a 217-byte limit and byte counter (task `set-avatar-url`).
-5. **Follow / Unfollow user** — social graph; enables the following feed later. NEXT.
+5. **Follow / Unfollow user** ✅ DONE. Profile page Follow/Unfollow button broadcasts `0x6d06`/`0x6d07`; DB exposes follow state and following/followers lists (task `follow-user`).
 
 ### Like / tip details
 

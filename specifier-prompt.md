@@ -361,5 +361,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `d901cfc6cb` (follow/unfollow user speced and handed off to coder as task `follow-user`; client + DB read side).
-Next action: **await coder/refactorer/architect on task `follow-user`**, then merge the architect branch into `master` and verify the affected components.
+Current `master` HEAD: `7e19503` (follow/unfollow user merged to `master`; client unit 93, property 14, acceptance all-features, lint, and build passing; DB unit 109, acceptance all-features, lint passing).
+Next action: **spec P2.1/P2.2** — Topics (list / discovery / feed).
