@@ -14,11 +14,14 @@ const AccountPage = require('../../src/services/account-page')
 function makeProfiles () {
   const names = {}
   const bios = {}
+  const avatarUrls = {}
   return {
     setName: (addr, name) => { names[addr] = name },
     getName: (addr) => names[addr] || null,
     setBio: (addr, bio) => { bios[addr] = bio },
-    getBio: (addr) => bios[addr] || null
+    getBio: (addr) => bios[addr] || null,
+    setAvatarUrl: (addr, url) => { avatarUrls[addr] = url },
+    getAvatarUrl: (addr) => avatarUrls[addr] || null
   }
 }
 
@@ -102,4 +105,43 @@ test('clickSetBio navigates to the set-bio page', () => {
   page.clickSetBio()
 
   assert.deepEqual(navigated, [AccountPage.SET_BIO_PATH])
+})
+
+test('getAvatarUrl returns the stored avatar URL', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+
+  assert.equal(page.getAvatarUrl(), 'https://example.com/avatar.png')
+})
+
+test('getAvatarUrl returns null without a wallet', () => {
+  const profiles = makeProfiles()
+  const page = new AccountPage({ profiles })
+
+  assert.equal(page.getAvatarUrl(), null)
+})
+
+test('getAvatarUrl returns null without a profile store', () => {
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet })
+
+  assert.equal(page.getAvatarUrl(), null)
+})
+
+test('hasSetAvatarUrlButton is true', () => {
+  const page = new AccountPage({})
+
+  assert.equal(page.hasSetAvatarUrlButton(), true)
+})
+
+test('clickSetAvatarUrl navigates to the set-avatar-url page', () => {
+  const navigated = []
+  const page = new AccountPage({ navigate: (path) => navigated.push(path) })
+
+  page.clickSetAvatarUrl()
+
+  assert.deepEqual(navigated, [AccountPage.SET_AVATAR_URL_PATH])
 })

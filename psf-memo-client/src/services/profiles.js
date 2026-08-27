@@ -13,6 +13,7 @@ class Profiles {
   constructor () {
     this.names = new Map()
     this.bios = new Map()
+    this.avatarUrls = new Map()
   }
 
   setName (addr, name) {
@@ -33,6 +34,16 @@ class Profiles {
   getBio (addr) {
     if (!addr) return null
     return this.bios.get(addr) || null
+  }
+
+  setAvatarUrl (addr, url) {
+    if (!addr) return
+    this.avatarUrls.set(addr, url)
+  }
+
+  getAvatarUrl (addr) {
+    if (!addr) return null
+    return this.avatarUrls.get(addr) || null
   }
 }
 

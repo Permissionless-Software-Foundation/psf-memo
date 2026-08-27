@@ -121,7 +121,7 @@ adding/editing the client UI.
 |---|---------|-------------|------------|--------|-----------|
 | 1.1 | Like / tip a Memo — read side | `0x6d04` | D | ✅ | `likeCount` returned on `/posts/*` and `/posts/:txid/thread` |
 | 1.2 | Like / tip a Memo — client display | `0x6d04` | C | ✅ | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
-| 1.3 | Set profile text (bio) | `0x6d05` | C, I, D | 🟡 partial | C: add "Set Bio" UI on Account page; I/D already read |
+| 1.3 | Set profile text (bio) | `0x6d05` | C | ✅ | C: "Set Bio" UI on Account page broadcasts `0x6d05` (217-byte limit) |
 | 1.4 | Set profile picture | `0x6d0a` | C, I, D | 🟡 partial | C: add "Set Avatar URL" UI; I/D already read |
 | 1.5 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
 | 1.6 | Unfollow a user | `0x6d07` | C, I, D | 🔴 missing | C: unfollow button; D: follow state |
@@ -132,8 +132,8 @@ adding/editing the client UI.
 2. **Like / tip a Memo — client display** ✅ DONE. The feed, profile, and
    thread views now read `likeCount` from the API (profile shows a read-only
    like button).
-3. **Set profile text** — simple text broadcast + Account page UI.
-4. **Set profile picture** — URL broadcast + Account page UI.
+3. **Set profile text** ✅ DONE. Account page "Set Bio" UI broadcasts `0x6d05` with a 217-byte limit and byte counter (task `set-bio`).
+4. **Set profile picture** — URL broadcast + Account page UI. NEXT.
 5. **Follow / Unfollow user** — social graph; enables the following feed later.
 
 ### Like / tip details
@@ -211,18 +211,15 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ---
 
-## Suggested first spec for the next session
+## Suggested next spec
 
-**Set profile text (bio)** (P1.3):
-- `psf-memo-client`: add a "Set Bio" UI on the Account page that broadcasts the
-  `0x6d05` Set profile text action via `minimal-slp-wallet.sendOpReturn()`.
-- `psf-memo-indexer` and `psf-memo-db` already read/store profile text, so this
-  is primarily a client broadcast + Account page UI feature.
-- The profile page already renders `profileText` from the API; the missing piece
-  is the write path (broadcast) and the Account page editor.
+**Set profile picture (bio)** (P1.4):
+- `psf-memo-client`: add a "Set Avatar URL" UI on the Account page that broadcasts
+  the `0x6d0a` Set profile picture action via `minimal-slp-wallet.sendOpReturn()`.
+- The indexer and DB already read/store profile pictures; the missing piece is
+  the client write path and the Account page editor.
 
-This is the next smallest end-to-end win toward memo.cash parity after the
-like-count read/display loop closed.
+This is the next smallest end-to-end win after the set-bio write path closed.
 
 ---
 
