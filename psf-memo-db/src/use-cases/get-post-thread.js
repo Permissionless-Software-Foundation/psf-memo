@@ -15,6 +15,9 @@ class GetPostThread {
     this.execute = this.execute.bind(this)
     this.buildThreadNode = this.buildThreadNode.bind(this)
     this.attachLikeCounts = this.attachLikeCounts.bind(this)
+    this.fetchPostOrNull = this.fetchPostOrNull.bind(this)
+    this.loadChildTxids = this.loadChildTxids.bind(this)
+    this.compareReplies = this.compareReplies.bind(this)
   }
 
   async execute ({ txid } = {}) {
@@ -51,15 +54,9 @@ class GetPostThread {
     }
   }
 
-  async buildThreadNode (txid, visited = new Set()) {
-    if (visited.has(txid)) return null
-
-    visited.add(txid)
-
-    let post
-
+  async fetchPostOrNull (txid) {
     try {
-      post = await this.adapters.postQuery.postsDb.get(txid)
+      return await this.adapters.postQuery.postsDb.get(txid)
     } catch (err) {
       if (err.notFound || err.code === 'LEVEL_NOT_FOUND') {
         return null
@@ -67,7 +64,9 @@ class GetPostThread {
 
       throw err
     }
+  }
 
+  async loadChildTxids (txid) {
     const childTxids = []
 
     for await (
@@ -80,6 +79,30 @@ class GetPostThread {
       childTxids.push(child.childTxid)
     }
 
+    return childTxids
+  }
+
+  compareReplies (a, b) {
+    const blockDifference =
+      (a.blockHeight ?? 0) - (b.blockHeight ?? 0)
+
+    if (blockDifference !== 0) {
+      return blockDifference
+    }
+
+    return (a.seen ?? 0) - (b.seen ?? 0)
+  }
+
+  async buildThreadNode (txid, visited = new Set()) {
+    if (visited.has(txid)) return null
+
+    visited.add(txid)
+
+    const post = await this.fetchPostOrNull(txid)
+    if (!post) return null
+
+    const childTxids = await this.loadChildTxids(txid)
+
     const replies = []
 
     for (const childTxid of childTxids) {
@@ -90,16 +113,7 @@ class GetPostThread {
       }
     }
 
-    replies.sort((a, b) => {
-      const blockDifference =
-        (a.blockHeight ?? 0) - (b.blockHeight ?? 0)
-
-      if (blockDifference !== 0) {
-        return blockDifference
-      }
-
-      return (a.seen ?? 0) - (b.seen ?? 0)
-    })
+    replies.sort(this.compareReplies)
 
     return {
       txid,
