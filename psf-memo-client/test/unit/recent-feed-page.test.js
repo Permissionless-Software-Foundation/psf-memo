@@ -65,3 +65,18 @@ test('load throws when no memo db client is provided', async () => {
     /requires a memo db client/
   )
 })
+
+test('load defaults limit to 100 and offset to 0', async () => {
+  const calls = []
+  const memoDb = {
+    async getRecentPosts (params) {
+      calls.push(params)
+      return { posts: [], pagination: {} }
+    }
+  }
+  const page = new RecentFeedPage({ memoDb })
+
+  await page.load()
+
+  assert.deepEqual(calls, [{ limit: 100, offset: 0 }])
+})

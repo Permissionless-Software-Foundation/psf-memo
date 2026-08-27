@@ -47,3 +47,34 @@ test('load throws when no memo db client is provided', async () => {
     /requires a memo db client/
   )
 })
+
+test('load defaults limit to 100 and offset to 0', async () => {
+  const calls = []
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const memoDb = {
+    async getPostsByAddr (a, params) {
+      calls.push({ a, params })
+      return { posts: [], pagination: {} }
+    }
+  }
+  const page = new ProfilePage({ memoDb, addr })
+
+  await page.load()
+
+  assert.deepEqual(calls, [{ a: addr, params: { limit: 100, offset: 0 } }])
+})
+
+test('load sets pagination to null when the API returns none', async () => {
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const memoDb = {
+    async getPostsByAddr () {
+      return { posts: [], pagination: undefined }
+    }
+  }
+  const page = new ProfilePage({ memoDb, addr })
+
+  const result = await page.load()
+
+  assert.equal(result.pagination, null)
+  assert.equal(page.pagination, null)
+})

@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-27T03:45:29.024609067Z","feature_name":"Like Count Display","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/like-count-display.feature","background_hash":"fbe6cdb3df821009903f22248beed2018e00df162f6df280b81686214168733f","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Like Count Display - 1 the recent feed shows the like count returned by the API for each post","scenario_hash":"812ee12d4f7968f5c7024a15297854aa8c900ae7b19972718875e77c67106a65","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-08-27T03:40:43.303265742Z"},{"index":2,"name":"Like Count Display - 3 the profile page shows the like count returned by the API for each post","scenario_hash":"cdc53b5eddbc3f103472495a7d6650def4cd586c1567aab01f55fdc4989a5a8c","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-08-27T03:40:43.303265742Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Like Count Display - 1, Like Count Display - 2, Like Count Display - 3, Like Count Display - 4
 Feature: Like Count Display
 

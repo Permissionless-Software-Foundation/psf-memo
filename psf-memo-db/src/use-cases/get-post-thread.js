@@ -128,3 +128,7 @@ class GetPostThread {
 }
 
 export default GetPostThread
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-27T03:24:13.418Z","module_hash":"3270d9244ee4517c8d64770645d4b38e8d1937a4bb13beea79d0611960305aea","functions":[{"id":"func/GetPostThread.constructor","name":"GetPostThread.constructor","line":6,"end_line":21,"hash":"b23e82ab887fb68d199f23b4c6d94f6417556cbf7f7eeaeff7efdb5cce74f3f0"},{"id":"func/GetPostThread.execute","name":"GetPostThread.execute","line":23,"end_line":46,"hash":"968030072d4946cd4d00832fb334dc25d1286b24c1bc71252d30de6e3faebd38"},{"id":"func/GetPostThread.attachLikeCounts","name":"GetPostThread.attachLikeCounts","line":48,"end_line":55,"hash":"f7ba4717fd0cd0ba0c6cd3f7571c071a00bfc666076023a323d4848d6d4ba720"},{"id":"func/GetPostThread.fetchPostOrNull","name":"GetPostThread.fetchPostOrNull","line":57,"end_line":67,"hash":"b853fa9e3b121a3a0fae8c6828865039add3ec5950ae4cfa2db252f9db09446c"},{"id":"func/GetPostThread.loadChildTxids","name":"GetPostThread.loadChildTxids","line":69,"end_line":83,"hash":"9c1a7feff0dd92624b77127de70b2b13eea13854cf2e807b9c2c635b072a932f"},{"id":"func/GetPostThread.compareReplies","name":"GetPostThread.compareReplies","line":85,"end_line":94,"hash":"60393ba5137feda1df76d54f2b5c4da0728cc0dd556d72748ff3ba69328ba9a9"},{"id":"func/GetPostThread.buildThreadNode","name":"GetPostThread.buildThreadNode","line":96,"end_line":127,"hash":"e5ca3213bad9d22d9a87a2cf24f55cc5ffc4a6acd2d0e6c026ade991b490f43f"}]}
+// mutate4javascript-manifest-end
