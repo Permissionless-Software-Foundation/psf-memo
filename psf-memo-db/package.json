@@ -20,6 +20,7 @@
     "url": "localhost:5021"
   },
   "dependencies": {
+    "@psf/bch-js": "7.1.11",
     "dotenv": "17.2.3",
     "kcors": "2.2.2",
     "koa": "2.13.1",

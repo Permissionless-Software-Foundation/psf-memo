@@ -30,6 +30,24 @@ class MemoDb {
     return this.getLevelResource('name', addr, 'getName')
   }
 
+  async getFollowState (followerAddr, followeeAddr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/follow/state`,
+        {
+          params: {
+            follower: followerAddr,
+            followee: followeeAddr
+          }
+        }
+      )
+      return result.data.following === true
+    } catch (err) {
+      console.error('Error in getFollowState()')
+      throw err
+    }
+  }
+
   // GET a paginated 'recent' listing endpoint.
   async getRecent (path, name, params) {
     try {

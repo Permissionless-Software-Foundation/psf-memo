@@ -4,10 +4,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Container, Row, Col, Spinner, Card } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Card, Button } from 'react-bootstrap'
 import Jdenticon from '@chris.troutner/react-jdenticon'
 
 import MemoDb from '../../../services/memo-db'
+import MemoFollow from '../../../services/memo-follow'
+import ProfilePage from '../../../services/profile-page'
 import PostReplyCount from '../../post-reply-count'
 import LikeButton from '../../post-feed/like-button'
 import PostThreadModal from '../../post-thread-modal'
@@ -59,6 +61,8 @@ function Profile (props) {
   const [threadTxid, setThreadTxid] = useState(null)
   const [showThreadModal, setShowThreadModal] = useState(false)
   const [profiles, setProfiles] = useState({})
+  const [profilePage, setProfilePage] = useState(null)
+  const [busy, setBusy] = useState(false)
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -70,6 +74,28 @@ function Profile (props) {
     setThreadTxid(null)
   }
 
+  const handleFollow = async () => {
+    if (!profilePage || busy) return
+    setBusy(true)
+    try {
+      await profilePage.follow()
+    } catch (err) {
+      setError(err.message || 'Failed to follow')
+    }
+    setBusy(false)
+  }
+
+  const handleUnfollow = async () => {
+    if (!profilePage || busy) return
+    setBusy(true)
+    try {
+      await profilePage.unfollow()
+    } catch (err) {
+      setError(err.message || 'Failed to unfollow')
+    }
+    setBusy(false)
+  }
+
   useEffect(() => {
     const loadProfile = async () => {
       setLoading(true)
@@ -77,16 +103,23 @@ function Profile (props) {
 
       try {
         const memoDb = new MemoDb()
-        const [profile, profilePic, postsData] = await Promise.all([
+        const myAddr = appData?.wallet?.walletInfo?.cashAddress || null
+        const memoFollow = myAddr
+          ? new MemoFollow({ wallet: appData.wallet, profiles: appData.profiles })
+          : null
+        const page = new ProfilePage({ memoDb, addr, myAddr, memoFollow })
+
+        const [profile, profilePic, pageData] = await Promise.all([
           memoDb.getProfile(addr),
           memoDb.getProfilePic(addr),
-          memoDb.getPostsByAddr(addr, { limit: 100, offset: 0 })
+          page.load()
         ])
 
         setProfileText(profile?.text || '')
         setProfilePicUrl(profilePic?.url || null)
-        setPosts(postsData.posts || [])
-        setPagination(postsData.pagination || null)
+        setPosts(pageData.posts || [])
+        setPagination(pageData.pagination || null)
+        setProfilePage(page)
         setProfiles({}) // Future: load profile names for the post list.
       } catch (err) {
         setError(err.message || 'Failed to load profile')
@@ -101,7 +134,10 @@ function Profile (props) {
       setError('Missing profile address')
       setLoading(false)
     }
-  }, [addr])
+  }, [addr, appData?.wallet, appData?.profiles])
+
+  const showFollowButton = profilePage && profilePage.canFollow() && !profilePage.isFollowing()
+  const showUnfollowButton = profilePage && profilePage.canFollow() && profilePage.isFollowing()
 
   return (
     <Container fluid className='profile-page mt-4'>
@@ -131,6 +167,28 @@ function Profile (props) {
               <span className='profile-address-label'>BCH</span>
               <span className='profile-address-value' title={addr}>{addr}</span>
             </div>
+            {showFollowButton && (
+              <Button
+                className='mt-3'
+                variant='primary'
+                onClick={handleFollow}
+                disabled={busy}
+                data-testid='follow-button'
+              >
+                Follow
+              </Button>
+            )}
+            {showUnfollowButton && (
+              <Button
+                className='mt-3'
+                variant='outline-primary'
+                onClick={handleUnfollow}
+                disabled={busy}
+                data-testid='unfollow-button'
+              >
+                Unfollow
+              </Button>
+            )}
           </Col>
 
           <Col lg={9} md={8} className='profile-posts'>

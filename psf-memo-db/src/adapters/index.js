@@ -6,6 +6,7 @@ import LevelDb from './level-db.js'
 import DbBackup from './db-backup.js'
 import ProfileQuery from './profile-query.js'
 import PostQuery from './post-query.js'
+import FollowQuery from './follow-query.js'
 
 class Adapters {
   constructor () {
@@ -28,6 +29,9 @@ class Adapters {
       postParentsDb: level.postParentsDb,
       postChildrenDb: level.postChildrenDb,
       likesDb: level.likesDb
+    })
+    this.followQuery = new FollowQuery({
+      followsDb: level.followsDb
     })
     return true
   }

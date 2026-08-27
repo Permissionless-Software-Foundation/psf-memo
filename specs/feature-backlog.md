@@ -122,7 +122,7 @@ adding/editing the client UI.
 | 1.1 | Like / tip a Memo — read side | `0x6d04` | D | ✅ | `likeCount` returned on `/posts/*` and `/posts/:txid/thread` |
 | 1.2 | Like / tip a Memo — client display | `0x6d04` | C | ✅ | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
 | 1.3 | Set profile text (bio) | `0x6d05` | C | ✅ | C: "Set Bio" UI on Account page broadcasts `0x6d05` (217-byte limit) |
-| 1.4 | Set profile picture | `0x6d0a` | C, I, D | 🟡 partial | C: add "Set Avatar URL" UI; I/D already read |
+| 1.4 | Set profile picture | `0x6d0a` | C, I, D | ✅ | C: "Set Avatar URL" UI broadcasts `0x6d0a` (217-byte limit); I/D already read |
 | 1.5 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
 | 1.6 | Unfollow a user | `0x6d07` | C, I, D | 🔴 missing | C: unfollow button; D: follow state |
 
@@ -133,8 +133,8 @@ adding/editing the client UI.
    thread views now read `likeCount` from the API (profile shows a read-only
    like button).
 3. **Set profile text** ✅ DONE. Account page "Set Bio" UI broadcasts `0x6d05` with a 217-byte limit and byte counter (task `set-bio`).
-4. **Set profile picture** — URL broadcast + Account page UI. NEXT.
-5. **Follow / Unfollow user** — social graph; enables the following feed later.
+4. **Set profile picture** ✅ DONE. Account page "Set Avatar URL" UI broadcasts `0x6d0a` with a 217-byte limit and byte counter (task `set-avatar-url`).
+5. **Follow / Unfollow user** — social graph; enables the following feed later. NEXT.
 
 ### Like / tip details
 
@@ -213,13 +213,29 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Set profile picture (bio)** (P1.4):
-- `psf-memo-client`: add a "Set Avatar URL" UI on the Account page that broadcasts
-  the `0x6d0a` Set profile picture action via `minimal-slp-wallet.sendOpReturn()`.
-- The indexer and DB already read/store profile pictures; the missing piece is
-  the client write path and the Account page editor.
+**Follow / Unfollow user** (P1.5 / P1.6):
+- `psf-memo-client`: add a Follow button on the profile page that broadcasts the
+  `0x6d06` Follow action (and an Unfollow button broadcasting `0x6d07`).
+- `psf-memo-db`: expose follow state and following/followers lists.
+- The indexer already stores follows in `followsDb`; the missing pieces are the
+  client write path and the DB read side.
 
-This is the next smallest end-to-end win after the set-bio write path closed.
+### cashaddr conversion (use bch-js, not a new dependency)
+
+The follow/unfollow OP_RETURN payload is the followee's **20-byte hash160**
+(P2PKH). The `followsDb` store keys followees by that hash160. Convert between
+cash addresses and hash160 with **bch-js** `Address` tools, which are already
+available and preferred over adding a separate cashaddr library:
+
+- Client: `bchjs.Address.toHash160(followeeCashAddress)` returns the hash160
+  hex for the `0x6d06` / `0x6d07` payload. bch-js is embedded in
+  `minimal-slp-wallet`, so no new client dependency is needed.
+- DB read side: `bchjs.Address.toHash160(followeeCashAddress)` for the follow
+  state lookup, and `bchjs.Address.hash160ToCash(followeePkHash)` to return
+  cash addresses in the following/followers lists. Add `@psf/bch-js` to
+  `psf-memo-db` rather than a separate cashaddr package.
+
+This is the next smallest end-to-end win after the set-avatar-url write path closed.
 
 ---
 
