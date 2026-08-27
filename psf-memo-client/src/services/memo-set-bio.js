@@ -16,28 +16,19 @@
     MAX_BIO_BYTES       : maximum allowed bio length (217 bytes per memo.sv)
 */
 
-const MemoAction = require('./memo-action')
+const MemoProfileTextAction = require('./memo-profile-text-action')
 
 const MEMO_SET_BIO_PREFIX = '6d05'
 const MAX_BIO_BYTES = 217
 
-class MemoSetBio extends MemoAction {
-  static config = {
+class MemoSetBio extends MemoProfileTextAction {
+  static config = MemoProfileTextAction.profileTextConfig({
     prefix: MEMO_SET_BIO_PREFIX,
-    walletRequiredMsg: 'Memo set bio requires a wallet.',
-    lengthMessage: `Bio is too long. Maximum is ${MAX_BIO_BYTES} bytes.`,
-    emptyMessage: 'Bio must not be empty.',
-    lengthCode: 'bio_length',
-    validationCode: 'bio_validation',
+    noun: 'bio',
+    code: 'bio',
     maxBytes: MAX_BIO_BYTES,
     profileMethod: 'setBio'
-  }
-
-  // Compose and broadcast a Memo set-bio transaction for the given bio.
-  // Resolves with the transaction id, or rejects with a typed error.
-  async setBio (bio) {
-    return this.broadcast(bio)
-  }
+  })
 }
 
 MemoSetBio.MEMO_SET_BIO_PREFIX = MEMO_SET_BIO_PREFIX
@@ -46,5 +37,5 @@ MemoSetBio.MAX_BIO_BYTES = MAX_BIO_BYTES
 module.exports = MemoSetBio
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-27T15:04:21.411Z","module_hash":"d782ad96d6e43c76eceee7cd8398f990f4fc22f8867c24afc6ceeaf263ee7cb8","functions":[{"id":"func/MemoSetBio.setBio","name":"MemoSetBio.setBio","line":38,"end_line":40,"hash":"c0109c9559cc2ec6c8deb30b5b6ed951af9138ab303c795bf55d5ab931a40d0d"}]}
+// {"version":1,"tested_at":"2026-08-27T16:55:54.606Z","module_hash":"4da70e80defe9ae983bb914d305228497f4877dd43be7f63d6858bf456cf3ab7","functions":[]}
 // mutate4javascript-manifest-end

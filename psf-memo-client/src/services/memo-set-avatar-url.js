@@ -16,31 +16,26 @@
     MAX_AVATAR_URL_BYTES       : maximum allowed URL length (217 bytes per memo.sv)
 */
 
-const MemoAction = require('./memo-action')
+const MemoProfileTextAction = require('./memo-profile-text-action')
 
 const MEMO_SET_AVATAR_URL_PREFIX = '6d0a'
 const MAX_AVATAR_URL_BYTES = 217
 
-class MemoSetAvatarUrl extends MemoAction {
-  static config = {
+class MemoSetAvatarUrl extends MemoProfileTextAction {
+  static config = MemoProfileTextAction.profileTextConfig({
     prefix: MEMO_SET_AVATAR_URL_PREFIX,
-    walletRequiredMsg: 'Memo set avatar URL requires a wallet.',
-    lengthMessage: `Avatar URL is too long. Maximum is ${MAX_AVATAR_URL_BYTES} bytes.`,
-    emptyMessage: 'Avatar URL must not be empty.',
-    lengthCode: 'avatar_url_length',
-    validationCode: 'avatar_url_validation',
+    noun: 'avatar URL',
+    code: 'avatar_url',
     maxBytes: MAX_AVATAR_URL_BYTES,
     profileMethod: 'setAvatarUrl'
-  }
-
-  // Compose and broadcast a Memo set-avatar-url transaction for the given URL.
-  // Resolves with the transaction id, or rejects with a typed error.
-  async setAvatarUrl (url) {
-    return this.broadcast(url)
-  }
+  })
 }
 
 MemoSetAvatarUrl.MEMO_SET_AVATAR_URL_PREFIX = MEMO_SET_AVATAR_URL_PREFIX
 MemoSetAvatarUrl.MAX_AVATAR_URL_BYTES = MAX_AVATAR_URL_BYTES
 
 module.exports = MemoSetAvatarUrl
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-27T16:55:55.303Z","module_hash":"473dc38c01f201fb09484ef6288c8ab86ca3457f9e3871cee279c119b65bb44a","functions":[]}
+// mutate4javascript-manifest-end
