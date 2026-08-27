@@ -19,7 +19,7 @@ class ListRecentPosts extends ListUseCase {
     const [posts, replyCounts, likeCounts, total] = await Promise.all([
       this.adapters.postQuery.loadPostsByTxids(txids),
       this.adapters.postQuery.buildReplyCountMap(),
-      this.adapters.postQuery.buildLikeCountMap(),
+      this.adapters.postQuery.countLikesForTxids(txids),
       this.adapters.postQuery.countTopLevelPosts()
     ])
 

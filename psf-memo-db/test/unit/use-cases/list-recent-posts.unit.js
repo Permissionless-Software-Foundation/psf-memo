@@ -21,7 +21,7 @@ describe('#ListRecentPosts', () => {
         return txids.map((txid) => ({ txid, ...mockPosts[txid] }))
       }),
       buildReplyCountMap: sandbox.stub().resolves(new Map([['tx-b', 1]])),
-      buildLikeCountMap: sandbox.stub().resolves(new Map([['tx-b', 3], ['tx-a', 5]])),
+      countLikesForTxids: sandbox.stub().resolves(new Map([['tx-b', 3], ['tx-a', 5]])),
       countTopLevelPosts: sandbox.stub().resolves(3)
     }
     uut = new ListRecentPosts({

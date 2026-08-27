@@ -1,4 +1,4 @@
-import { txHashFromPush, logProcessError } from './helpers.js'
+import { txHashFromPush, logProcessError, postLikeKey } from './helpers.js'
 import { TX_HASH_LENGTH } from '../../lib/memo-codes.js'
 
 export async function handleLike (ctx) {
@@ -40,4 +40,5 @@ export async function handleLike (ctx) {
     blockHeight
   }
   await adapters.likeDb.create(txid, likeData)
+  await adapters.postLikeDb.create(postLikeKey(postTxid, txid), { postTxid, txid })
 }

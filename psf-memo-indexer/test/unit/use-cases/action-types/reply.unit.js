@@ -14,12 +14,15 @@ describe('#handleReply', () => {
     const postDbCreate = sinon.stub().resolves({ success: true })
     const postHeightGet = sinon.stub().rejects(new Error('not found'))
     const postHeightCreate = sinon.stub().resolves({ success: true })
+    const addrPostHeightGet = sinon.stub().rejects(new Error('not found'))
+    const addrPostHeightCreate = sinon.stub().resolves({ success: true })
 
     const adapters = {
       postParentDb: { create: postParentCreate },
       postChildDb: { create: postChildCreate },
       postDb: { get: postDbGet, create: postDbCreate },
       postHeightDb: { get: postHeightGet, create: postHeightCreate },
+      addrPostHeightDb: { get: addrPostHeightGet, create: addrPostHeightCreate },
       processErrorDb: { create: sinon.stub() }
     }
 
@@ -50,5 +53,9 @@ describe('#handleReply', () => {
     assert.equal(postHeightCreate.callCount, 1)
     assert.equal(postHeightCreate.firstCall.args[0], '000000600150:reply-abc')
     assert.equal(postHeightCreate.firstCall.args[1].txid, 'reply-abc')
+
+    assert.equal(addrPostHeightCreate.callCount, 1)
+    assert.equal(addrPostHeightCreate.firstCall.args[0], 'bitcoincash:qptest:000000600150:reply-abc')
+    assert.equal(addrPostHeightCreate.firstCall.args[1].txid, 'reply-abc')
   })
 })

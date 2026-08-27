@@ -25,12 +25,11 @@ class ListPostsByAddr extends ListUseCase {
     const limit = parseLimit(inObj.limit)
     const offset = parseOffset(inObj.offset)
 
-    const txids = await this.adapters.postQuery.scanPostsByAddrTxids(addr, { limit, offset })
-    const [posts, replyCounts, likeCounts, total] = await Promise.all([
+    const { txids, total } = await this.adapters.postQuery.scanPostsByAddrTxidsAndCount(addr, { limit, offset })
+    const [posts, replyCounts, likeCounts] = await Promise.all([
       this.adapters.postQuery.loadPostsByTxids(txids),
-      this.adapters.postQuery.buildReplyCountMap(),
-      this.adapters.postQuery.buildLikeCountMap(),
-      this.adapters.postQuery.countTopLevelPostsByAddr(addr)
+      this.adapters.postQuery.countRepliesForTxids(txids),
+      this.adapters.postQuery.countLikesForTxids(txids)
     ])
 
     return assemblePostPage({ posts, replyCounts, likeCounts, total, limit, offset })
