@@ -26,7 +26,8 @@ class Adapters {
       postsDb: level.postsDb,
       postHeightsDb: level.postHeightsDb,
       postParentsDb: level.postParentsDb,
-      postChildrenDb: level.postChildrenDb
+      postChildrenDb: level.postChildrenDb,
+      likesDb: level.likesDb
     })
     return true
   }

@@ -167,16 +167,16 @@ Goal: reach feature parity with [memo.cash](https://memo.cash).
 | Tier | Features | Status |
 |------|----------|--------|
 | **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
-| **P1** | Like counts (read side), Set profile text, Set profile picture, Follow/Unfollow | next |
+| **P1** | Like counts (read side) ✅; client display, Set profile text, Set profile picture, Follow/Unfollow | next |
 | **P2** | Topics (list, feed, post, follow/unfollow) | later |
 | **P3** | Polls (create, add option, vote) | later |
 | **P4** | Mute / unmute user | later |
 | **P5** | Send money memo action, MIP-0009 token exchange | later |
 | **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
 
-**Suggested next spec:** P1.1 — add `likeCount` to the `psf-memo-db` post
-responses so the already-implemented client like/tip UI can display real
-backend counts.
+**Suggested next spec:** P1.2 — update the client feed/profile/thread UI to
+read `likeCount` from the `psf-memo-db` API instead of defaulting to 0.
+The like/tip broadcast UI is already implemented.
 
 ---
 
@@ -342,6 +342,7 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `69c38d5` (Docker files updated for mono-repo).
-Next feature: **P1.1 Like counts on posts** — add backend aggregation so the
-existing like/tip broadcast UI displays real counts.
+Current `master` HEAD: `4bd4b79` (likeCount read side merged to `master`;
+psf-memo-db tests and lint passing).
+Next action: **spec P1.2** — update the client feed/profile/thread UI to read
+`likeCount` from the API.

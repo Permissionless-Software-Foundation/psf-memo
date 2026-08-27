@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { parseLimit, parseOffset, attachReplyCounts, assemblePostPage } from '../../../../src/use-cases/lib/pagination.js'
+import { parseLimit, parseOffset, attachReplyCounts, attachLikeCounts, assemblePostPage } from '../../../../src/use-cases/lib/pagination.js'
 
 describe('#pagination', () => {
   describe('parseLimit', () => {
@@ -101,12 +101,26 @@ describe('#pagination', () => {
     })
   })
 
+  describe('attachLikeCounts', () => {
+    it('should attach the like count for each post', () => {
+      const posts = [{ txid: 'a', text: 'x' }, { txid: 'b', text: 'y' }]
+      const counts = new Map([['b', 5]])
+
+      const result = attachLikeCounts(posts, counts)
+
+      assert.equal(result[0].likeCount, 0)
+      assert.equal(result[1].likeCount, 5)
+      assert.equal(result[0].text, 'x')
+    })
+  })
+
   describe('assemblePostPage', () => {
     it('should attach reply counts and pagination metadata', () => {
       const posts = [{ txid: 'a', text: 'x' }, { txid: 'b', text: 'y' }]
       const replyCounts = new Map([['a', 3]])
+      const likeCounts = new Map()
 
-      const result = assemblePostPage({ posts, replyCounts, total: 2, limit: 10, offset: 0 })
+      const result = assemblePostPage({ posts, replyCounts, likeCounts, total: 2, limit: 10, offset: 0 })
 
       assert.equal(result.posts[0].replyCount, 3)
       assert.equal(result.posts[1].replyCount, 0)
@@ -116,10 +130,21 @@ describe('#pagination', () => {
       assert.equal(result.pagination.hasMore, false)
     })
 
+    it('should attach like counts to every post', () => {
+      const posts = [{ txid: 'a', text: 'x' }, { txid: 'b', text: 'y' }]
+      const replyCounts = new Map()
+      const likeCounts = new Map([['a', 2]])
+
+      const result = assemblePostPage({ posts, replyCounts, likeCounts, total: 2, limit: 10, offset: 0 })
+
+      assert.equal(result.posts[0].likeCount, 2)
+      assert.equal(result.posts[1].likeCount, 0)
+    })
+
     it('should report hasMore when a further page exists', () => {
       const posts = [{ txid: 'a', text: 'x' }]
 
-      const result = assemblePostPage({ posts, replyCounts: new Map(), total: 2, limit: 1, offset: 0 })
+      const result = assemblePostPage({ posts, replyCounts: new Map(), likeCounts: new Map(), total: 2, limit: 1, offset: 0 })
 
       assert.equal(result.pagination.hasMore, true)
     })

@@ -119,19 +119,21 @@ adding/editing the client UI.
 
 | # | Feature | Memo action | Components | Status | Next work |
 |---|---------|-------------|------------|--------|-----------|
-| 1.1 | Like / tip a Memo | `0x6d04` | C, I, D | 🟡 partial | D: add `likeCount` to `/posts/*` responses; C: display count from backend, liked-by-me state |
-| 1.2 | Set profile text (bio) | `0x6d05` | C, I, D | 🟡 partial | C: add "Set Bio" UI on Account page; I/D already read |
-| 1.3 | Set profile picture | `0x6d0a` | C, I, D | 🟡 partial | C: add "Set Avatar URL" UI; I/D already read |
-| 1.4 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
-| 1.5 | Unfollow a user | `0x6d07` | C, I, D | 🔴 missing | C: unfollow button; D: follow state |
+| 1.1 | Like / tip a Memo — read side | `0x6d04` | D | ✅ | `likeCount` returned on `/posts/*` and `/posts/:txid/thread` |
+| 1.2 | Like / tip a Memo — client display | `0x6d04` | C | 🟡 partial | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
+| 1.3 | Set profile text (bio) | `0x6d05` | C, I, D | 🟡 partial | C: add "Set Bio" UI on Account page; I/D already read |
+| 1.4 | Set profile picture | `0x6d0a` | C, I, D | 🟡 partial | C: add "Set Avatar URL" UI; I/D already read |
+| 1.5 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
+| 1.6 | Unfollow a user | `0x6d07` | C, I, D | 🔴 missing | C: unfollow button; D: follow state |
 
 ### Priority order within P1
 
-1. **Like / tip a Memo** — the client can already broadcast; finish by adding
-   like counts to post feeds and profiles.
-2. **Set profile text** — simple text broadcast + Account page UI.
-3. **Set profile picture** — URL broadcast + Account page UI.
-4. **Follow / Unfollow user** — social graph; enables the following feed later.
+1. **Like / tip a Memo — read side** ✅ DONE.
+2. **Like / tip a Memo — client display** — the API now returns `likeCount`;
+   update the feed/profile/thread UI to read it instead of defaulting to 0.
+3. **Set profile text** — simple text broadcast + Account page UI.
+4. **Set profile picture** — URL broadcast + Account page UI.
+5. **Follow / Unfollow user** — social graph; enables the following feed later.
 
 ### Like / tip details
 
@@ -139,9 +141,8 @@ adding/editing the client UI.
   BCH output to the author; a tip adds a P2PKH output paying the author.
 - `psf-memo-indexer` stores each like in `likesDb` and records `tip` (sats)
   when the like tx pays the author.
-- `psf-memo-db` needs to aggregate `likesDb` into per-post `likeCount` in the
-  existing `/posts/recent`, `/posts/by/:addr`, and `/posts/:txid/thread`
-  responses.
+- `psf-memo-db` aggregates `likesDb` into per-post `likeCount` in
+  `/posts/recent`, `/posts/by/:addr`, and `/posts/:txid/thread` responses.
 - The client already has `MemoLike`, `LikeTipPage`, `LikeButton`, and
   `LikeTipModal`; it only needs to read `likeCount` from the feed API.
 

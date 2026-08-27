@@ -14,6 +14,7 @@ class GetPostThread {
 
     this.execute = this.execute.bind(this)
     this.buildThreadNode = this.buildThreadNode.bind(this)
+    this.attachLikeCounts = this.attachLikeCounts.bind(this)
   }
 
   async execute ({ txid } = {}) {
@@ -23,7 +24,10 @@ class GetPostThread {
       throw err
     }
 
-    const rootPost = await this.buildThreadNode(txid)
+    const [likeCounts, rootPost] = await Promise.all([
+      this.adapters.postQuery.buildLikeCountMap(),
+      this.buildThreadNode(txid)
+    ])
 
     if (!rootPost) {
       const err = new Error('Post not found.')
@@ -31,8 +35,19 @@ class GetPostThread {
       throw err
     }
 
+    this.attachLikeCounts(rootPost, likeCounts)
+
     return {
       post: rootPost
+    }
+  }
+
+  attachLikeCounts (node, likeCounts) {
+    node.likeCount = likeCounts.get(node.txid) ?? 0
+    if (Array.isArray(node.replies)) {
+      for (const reply of node.replies) {
+        this.attachLikeCounts(reply, likeCounts)
+      }
     }
   }
 
