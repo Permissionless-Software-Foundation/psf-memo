@@ -14,6 +14,7 @@ class Profiles {
     this.names = new Map()
     this.bios = new Map()
     this.avatarUrls = new Map()
+    this.following = new Map()
   }
 
   setName (addr, name) {
@@ -44,6 +45,20 @@ class Profiles {
   getAvatarUrl (addr) {
     if (!addr) return null
     return this.avatarUrls.get(addr) || null
+  }
+
+  // Track whether the current wallet follows a given address.
+  setFollowState (selfAddr, targetAddr, isFollowing) {
+    if (!selfAddr || !targetAddr) return
+    if (!this.following.has(selfAddr)) {
+      this.following.set(selfAddr, new Map())
+    }
+    this.following.get(selfAddr).set(targetAddr, isFollowing)
+  }
+
+  getFollowState (selfAddr, targetAddr) {
+    if (!selfAddr || !targetAddr) return false
+    return this.following.get(selfAddr)?.get(targetAddr) || false
   }
 }
 

@@ -1,13 +1,14 @@
 /*
-  Profile Page behavior: load and display a single address's Memo posts.
+  Profile Page behavior: load and display a single address's Memo posts,
+  follow state, and follow/unfollow controls.
 
   This is the testable controller behind the React "Profile" page.  It wraps
-  the MemoDb client, targets a specific address, and exposes the loaded posts so
-  the view can render per-post data such as the like count.
+  the MemoDb client, targets a specific address, exposes the loaded posts,
+  and coordinates follow state with an injected MemoFollow action.
 
-  The memoDb and address concerns are injected so this module stays free of
-  UI/network concerns; environmentally unsuitable I/O lives behind those small
-  adapter boundaries.
+  The memoDb, address, viewer address, and memoFollow concerns are injected so
+  this module stays free of UI/network concerns; environmentally unsuitable
+  I/O lives behind those small adapter boundaries.
 */
 
 const PROFILE_PATH_PREFIX = '/profile'
@@ -16,8 +17,11 @@ class ProfilePage {
   constructor (deps = {}) {
     this.memoDb = deps.memoDb || null
     this.addr = deps.addr || null
+    this.myAddr = deps.myAddr || null
+    this.memoFollow = deps.memoFollow || null
     this.posts = []
     this.pagination = null
+    this.followState = null
   }
 
   async load ({ limit = 100, offset = 0 } = {}) {
@@ -32,7 +36,48 @@ class ProfilePage {
     this.posts = data.posts || []
     this.pagination = data.pagination || null
 
-    return { posts: this.posts, pagination: this.pagination }
+    if (this.myAddr && !this.isOwnProfile()) {
+      this.followState = await this.memoDb.getFollowState(this.myAddr, this.addr)
+    } else {
+      this.followState = false
+    }
+
+    return {
+      posts: this.posts,
+      pagination: this.pagination,
+      followState: this.followState,
+      isOwnProfile: this.isOwnProfile()
+    }
+  }
+
+  isOwnProfile () {
+    return Boolean(this.myAddr) && this.myAddr === this.addr
+  }
+
+  canFollow () {
+    return Boolean(this.myAddr) && !this.isOwnProfile()
+  }
+
+  isFollowing () {
+    return this.followState === true
+  }
+
+  async follow () {
+    if (!this.memoFollow) {
+      throw new Error('Profile page requires a memo follow handler.')
+    }
+    await this.memoFollow.follow(this.addr)
+    this.followState = true
+    return { ok: true }
+  }
+
+  async unfollow () {
+    if (!this.memoFollow) {
+      throw new Error('Profile page requires a memo follow handler.')
+    }
+    await this.memoFollow.unfollow(this.addr)
+    this.followState = false
+    return { ok: true }
   }
 
   getPost (txid) {

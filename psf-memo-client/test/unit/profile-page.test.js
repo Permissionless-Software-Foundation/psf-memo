@@ -1,8 +1,9 @@
 /*
   Unit tests for the profile page controller.
 
-  The profile page loads a single address's posts from the MemoDb client.  The
-  like count returned by the API must be preserved so the view can display it.
+  The profile page loads a single address's posts from the MemoDb client and
+  fetches the follow state for the viewer. The like count returned by the API
+  must be preserved so the view can display it.
 */
 
 'use strict'
@@ -11,10 +12,24 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const ProfilePage = require('../../src/services/profile-page')
 
-function makeMemoDb (postsByAddr) {
+function makeMemoDb (postsByAddr, followState = {}) {
   return {
     async getPostsByAddr (addr, { limit, offset }) {
       return { posts: postsByAddr[addr] || [], pagination: { total: (postsByAddr[addr] || []).length } }
+    },
+    async getFollowState (followerAddr, followeeAddr) {
+      return followState[`${followerAddr}:${followeeAddr}`] || false
+    }
+  }
+}
+
+function makeMemoFollow (profilePage) {
+  return {
+    async follow (addr) {
+      profilePage.followState = true
+    },
+    async unfollow (addr) {
+      profilePage.followState = false
     }
   }
 }
@@ -48,6 +63,15 @@ test('load throws when no memo db client is provided', async () => {
   )
 })
 
+test('load throws when no address is provided', async () => {
+  const page = new ProfilePage({ memoDb: makeMemoDb({}) })
+
+  await assert.rejects(
+    () => page.load(),
+    /requires an address/
+  )
+})
+
 test('load defaults limit to 100 and offset to 0', async () => {
   const calls = []
   const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
@@ -55,6 +79,9 @@ test('load defaults limit to 100 and offset to 0', async () => {
     async getPostsByAddr (a, params) {
       calls.push({ a, params })
       return { posts: [], pagination: {} }
+    },
+    async getFollowState () {
+      return false
     }
   }
   const page = new ProfilePage({ memoDb, addr })
@@ -69,6 +96,9 @@ test('load sets pagination to null when the API returns none', async () => {
   const memoDb = {
     async getPostsByAddr () {
       return { posts: [], pagination: undefined }
+    },
+    async getFollowState () {
+      return false
     }
   }
   const page = new ProfilePage({ memoDb, addr })
@@ -77,4 +107,70 @@ test('load sets pagination to null when the API returns none', async () => {
 
   assert.equal(result.pagination, null)
   assert.equal(page.pagination, null)
+})
+
+test('load fetches follow state when a viewer address is provided', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const memoDb = makeMemoDb({}, { [`${myAddr}:${addr}`]: true })
+  const page = new ProfilePage({ memoDb, addr, myAddr })
+
+  const result = await page.load()
+
+  assert.equal(result.followState, true)
+  assert.equal(page.isFollowing(), true)
+})
+
+test('isOwnProfile returns true when viewer address matches profile address', () => {
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const page = new ProfilePage({ memoDb: {}, addr, myAddr: addr })
+
+  assert.equal(page.isOwnProfile(), true)
+  assert.equal(page.canFollow(), false)
+})
+
+test('canFollow returns true when viewing another profile', () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const page = new ProfilePage({ memoDb: {}, addr, myAddr })
+
+  assert.equal(page.canFollow(), true)
+})
+
+test('follow delegates to the memo follow handler and updates state', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const memoDb = makeMemoDb({})
+  const page = new ProfilePage({ memoDb, addr, myAddr })
+  page.memoFollow = makeMemoFollow(page)
+
+  const result = await page.follow()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.isFollowing(), true)
+})
+
+test('unfollow delegates to the memo follow handler and updates state', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const memoDb = makeMemoDb({})
+  const page = new ProfilePage({ memoDb, addr, myAddr })
+  page.memoFollow = makeMemoFollow(page)
+  page.followState = true
+
+  const result = await page.unfollow()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.isFollowing(), false)
+})
+
+test('follow throws when no memo follow handler is injected', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const page = new ProfilePage({ memoDb: makeMemoDb({}), addr, myAddr })
+
+  await assert.rejects(
+    () => page.follow(),
+    /requires a memo follow handler/
+  )
 })

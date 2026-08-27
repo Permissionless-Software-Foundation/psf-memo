@@ -94,6 +94,46 @@ test('setAvatarUrl with no address does nothing', () => {
   assert.equal(profiles.getAvatarUrl(''), null)
 })
 
+test('setFollowState stores and getFollowState retrieves follow state', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const targetAddr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+
+  profiles.setFollowState(selfAddr, targetAddr, true)
+
+  assert.equal(profiles.getFollowState(selfAddr, targetAddr), true)
+})
+
+test('getFollowState returns false for an unknown follow relationship', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const targetAddr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+
+  assert.equal(profiles.getFollowState(selfAddr, targetAddr), false)
+})
+
+test('setFollowState with no self address does nothing', () => {
+  const profiles = new Profiles()
+  const targetAddr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+
+  profiles.setFollowState('', targetAddr, true)
+
+  assert.equal(profiles.getFollowState('', targetAddr), false)
+})
+
+test('follow state storage is independent per self address', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const otherSelfAddr = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+  const targetAddr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+
+  profiles.setFollowState(selfAddr, targetAddr, true)
+  profiles.setFollowState(otherSelfAddr, targetAddr, false)
+
+  assert.equal(profiles.getFollowState(selfAddr, targetAddr), true)
+  assert.equal(profiles.getFollowState(otherSelfAddr, targetAddr), false)
+})
+
 test('avatar URL storage is independent of name and bio storage', () => {
   const profiles = new Profiles()
   const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
