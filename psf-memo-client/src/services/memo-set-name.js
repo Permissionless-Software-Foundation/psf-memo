@@ -17,7 +17,6 @@
 */
 
 const MemoAction = require('./memo-action')
-const { byteLength } = require('./utf8')
 
 const MEMO_SET_NAME_PREFIX = '6d01'
 const MAX_NAME_BYTES = 77
@@ -29,30 +28,15 @@ class MemoSetName extends MemoAction {
     lengthMessage: `Name is too long. Maximum is ${MAX_NAME_BYTES} bytes.`,
     emptyMessage: 'Name must not be empty.',
     lengthCode: 'name_length',
-    validationCode: 'name_validation'
-  }
-
-  constructor (deps = {}) {
-    super(deps)
-    this.profiles = deps.profiles
-  }
-
-  // A name is over-length when it exceeds the byte limit.
-  isTooLong (name) {
-    return byteLength(name) > MAX_NAME_BYTES
+    validationCode: 'name_validation',
+    maxBytes: MAX_NAME_BYTES,
+    profileMethod: 'setName'
   }
 
   // Compose and broadcast a Memo set-name transaction for the given name.
   // Resolves with the transaction id, or rejects with a typed error.
   async setName (name) {
     return this.broadcast(name)
-  }
-
-  // Record the new name on the injected profile store when one is present.
-  reflect (txid, name) {
-    if (this.profiles && typeof this.profiles.setName === 'function') {
-      this.profiles.setName(this.wallet.walletInfo.cashAddress, name)
-    }
   }
 }
 

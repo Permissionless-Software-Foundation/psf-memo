@@ -17,7 +17,6 @@
 */
 
 const MemoAction = require('./memo-action')
-const { byteLength } = require('./utf8')
 
 const MEMO_SET_BIO_PREFIX = '6d05'
 const MAX_BIO_BYTES = 217
@@ -29,30 +28,15 @@ class MemoSetBio extends MemoAction {
     lengthMessage: `Bio is too long. Maximum is ${MAX_BIO_BYTES} bytes.`,
     emptyMessage: 'Bio must not be empty.',
     lengthCode: 'bio_length',
-    validationCode: 'bio_validation'
-  }
-
-  constructor (deps = {}) {
-    super(deps)
-    this.profiles = deps.profiles
-  }
-
-  // A bio is over-length when it exceeds the byte limit.
-  isTooLong (bio) {
-    return byteLength(bio) > MAX_BIO_BYTES
+    validationCode: 'bio_validation',
+    maxBytes: MAX_BIO_BYTES,
+    profileMethod: 'setBio'
   }
 
   // Compose and broadcast a Memo set-bio transaction for the given bio.
   // Resolves with the transaction id, or rejects with a typed error.
   async setBio (bio) {
     return this.broadcast(bio)
-  }
-
-  // Record the new bio on the injected profile store when one is present.
-  reflect (txid, bio) {
-    if (this.profiles && typeof this.profiles.setBio === 'function') {
-      this.profiles.setBio(this.wallet.walletInfo.cashAddress, bio)
-    }
   }
 }
 

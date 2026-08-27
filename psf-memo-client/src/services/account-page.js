@@ -27,24 +27,24 @@ class AccountPage {
     return this.wallet?.walletInfo?.cashAddress || null
   }
 
-  // The current display name for the authenticated address. Falls back to null
-  // when no wallet, profile store, or stored name exists.
-  getName () {
+  // Read a profile field for the authenticated address. Falls back to null
+  // when no wallet, profile store, or stored field exists.
+  _getProfileField (method) {
     const address = this.getAddress()
-    if (!address || !this.profiles || typeof this.profiles.getName !== 'function') {
+    if (!address || !this.profiles || typeof this.profiles[method] !== 'function') {
       return null
     }
-    return this.profiles.getName(address)
+    return this.profiles[method](address)
   }
 
-  // The current bio for the authenticated address. Falls back to null when no
-  // wallet, profile store, or stored bio exists.
+  // The current display name for the authenticated address.
+  getName () {
+    return this._getProfileField('getName')
+  }
+
+  // The current bio for the authenticated address.
   getBio () {
-    const address = this.getAddress()
-    if (!address || !this.profiles || typeof this.profiles.getBio !== 'function') {
-      return null
-    }
-    return this.profiles.getBio(address)
+    return this._getProfileField('getBio')
   }
 
   // Whether the account page exposes a Set Name button.

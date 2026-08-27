@@ -7,7 +7,14 @@
   lengthCode, validationCode) or as methods:
     isTooLong(value)  - true when the value exceeds the action's limit
     reflect(txid, value) - record the broadcast result on the injected store
+
+  Optional config keys enable shared defaults for a profile text action:
+    maxBytes         - byte limit used by the default isTooLong(value)
+    profileMethod    - injected profile store method used by the default
+                       reflect(txid, value)
 */
+
+const { byteLength } = require('./utf8')
 
 class MemoAction {
   constructor (deps = {}) {
@@ -19,6 +26,35 @@ class MemoAction {
     this.emptyMessage = cfg.emptyMessage
     this.lengthCode = cfg.lengthCode
     this.validationCode = cfg.validationCode
+    this.maxBytes = cfg.maxBytes ?? null
+    this.profileMethod = cfg.profileMethod ?? null
+    // Profile text actions (config.profileMethod set) receive the injected
+    // profile store here so subclasses do not each re-wire it.
+    if (this.profileMethod) {
+      this.profiles = deps.profiles
+    }
+  }
+
+  // Default over-length check driven by the config maxBytes. Subclasses that
+  // measure limits differently override this method.
+  isTooLong (value) {
+    if (this.maxBytes === null) {
+      throw new Error('isTooLong must be provided by the subclass.')
+    }
+    return byteLength(value) > this.maxBytes
+  }
+
+  // Default reflect that records the value on the injected profile store
+  // method named by the config profileMethod. Subclasses with other stores
+  // override this method.
+  reflect (txid, value) {
+    if (
+      this.profileMethod &&
+      this.profiles &&
+      typeof this.profiles[this.profileMethod] === 'function'
+    ) {
+      this.profiles[this.profileMethod](this.wallet.walletInfo.cashAddress, value)
+    }
   }
 
   // Validate a candidate value.
