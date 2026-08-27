@@ -9,6 +9,7 @@ import Jdenticon from '@chris.troutner/react-jdenticon'
 
 import MemoDb from '../../../services/memo-db'
 import PostReplyCount from '../../post-reply-count'
+import LikeButton from '../../post-feed/like-button'
 import PostThreadModal from '../../post-thread-modal'
 import '../../../App.css'
 import './profile.css'
@@ -154,10 +155,13 @@ function Profile (props) {
                     <span className='profile-post-block ms-2'>Block {post.blockHeight}</span>
                   </div>
                   <Card.Text className='profile-post-text'>{post.text}</Card.Text>
-                  <PostReplyCount
-                    count={post.replyCount ?? 0}
-                    onClick={() => openThread(post.txid)}
-                  />
+                  <div className='profile-post-actions d-flex gap-3 align-items-center'>
+                    <LikeButton count={post.likeCount ?? 0} liked={false} readOnly />
+                    <PostReplyCount
+                      count={post.replyCount ?? 0}
+                      onClick={() => openThread(post.txid)}
+                    />
+                  </div>
                 </Card.Body>
               </Card>
             ))}
