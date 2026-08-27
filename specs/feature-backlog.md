@@ -1,8 +1,8 @@
 # psf-memo — Prioritized Feature Backlog
 
-**Status**: DRAFT — saved for future development cycles.
-**Owner**: specifier
-**Last updated**: 2026-08-26
+**Status**: DRAFT — research refresh 2026-08-27.
+**Owner**: specifier.
+**Last updated**: 2026-08-27
 
 ---
 
@@ -10,54 +10,83 @@
 
 Make `psf-memo` feature-equivalent to [memo.cash](https://memo.cash), a Bitcoin
 Cash (BCH) social network built on `OP_RETURN` transactions. Every social action
-is a BCH transaction carrying a Memo protocol payload (`0x6d` + action byte) that
-is broadcast from the client to the chain and later indexed by
+is a BCH transaction carrying a Memo protocol payload (`0x6d` + action byte)
+that is broadcast from the client to the chain and later indexed by
 `psf-memo-indexer` into `psf-memo-db`.
+
+---
+
+## Research notes
+
+- **Protocol reference**: `https://memo.sv/protocol` (Wayback Machine snapshot
+  2025-12-15). It lists action bytes, payload shapes, and byte limits. The page
+  is on the BSV fork (`memo.sv`) but the action codes match the BCH
+  `memo.cash` implementation.
+- **memo.cash access**: the live site is behind Cloudflare. Direct `curl` and
+  headless Firefox login attempts from this environment were blocked, so the
+  roadmap is derived from the protocol spec plus an audit of the existing
+  mono-repo code.
+- **Implementation audit** (2026-08-27):
+  - Indexer already has handlers for: `setName`, `post`, `reply`, `like`,
+    `setProfile`, `follow`/`unfollow`, `setProfilePic`, `topicMessage`,
+    `topicFollow`/`topicUnfollow`.
+  - `psf-memo-db` already has LevelDB stores for all of those actions and raw
+    `/level/*` CRUD routes.
+  - Client already supports: posting, replying, setting name, and the like/tip
+    broadcast UI.
+  - **Main gaps**: client UI for setting profile text/picture and
+    follow/unfollow; high-level read APIs for like counts, follow state, topic
+    feeds, polls, and mutes.
 
 ---
 
 ## Architecture constraints
 
-- **Identity/auth**: the auto-generated HD wallet (12-word mnemonic) persisted in
-  browser Local Storage by the existing React app is the Memo identity.
+- **Identity/auth**: the auto-generated HD wallet (12-word mnemonic) persisted
+  in browser Local Storage by the existing React app is the Memo identity.
 - **Write path**: broadcasting is done via `minimal-slp-wallet.sendOpReturn()`.
-  - Correct public API: `await wallet.sendOpReturn(message, prefix)`.
+  - Correct public API: `await wallet.sendOpReturn(message, prefix, bchOutput)`.
   - `prefix = '6d02'` posts a memo; other action bytes replace `02`.
-  - Binary payloads (txid, address hash) must be encoded correctly.
-- **Read path**: `psf-memo-db` REST API (`/posts/*`, `/profile/*`, `/level/*`). API
-  changes are in scope for specs.
+  - Binary payloads (txid 32 bytes, address hash 20 bytes, topic/poll text)
+    must be encoded correctly.
+- **Read path**: `psf-memo-db` REST API (`/posts/*`, `/profile/*`, `/level/*`).
+  API changes are in scope for specs.
 - **Indexer path**: `psf-memo-indexer` scans blocks and mempool for Memo
   `OP_RETURN` outputs and writes structured records to `psf-memo-db`.
-- The write path (broadcast), indexer path, and read path (DB) are asynchronous:
-  a broadcasted action becomes visible only after confirmation + indexing.
+- The write path (broadcast), indexer path, and read path (DB) are
+  asynchronous: a broadcasted action becomes visible only after confirmation +
+  indexing.
 
 ---
 
 ## Memo protocol action codes
 
-Reference: https://memo.sv/protocol
+Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
-| Action byte | Meaning |
-|-------------|---------|
-| `0x6d01` | Set name |
-| `0x6d02` | Post memo |
-| `0x6d03` | Reply to memo |
-| `0x6d04` | Like / tip memo |
-| `0x6d05` | Set profile text |
-| `0x6d06` | Follow user |
-| `0x6d07` | Unfollow user |
-| `0x6d0a` | Set profile picture |
-| `0x6d0b` | Repost memo (planned) |
-| `0x6d0c` | Post topic message |
-| `0x6d0d` | Topic follow |
-| `0x6d0e` | Topic unfollow |
-| `0x6d10` | Create poll |
-| `0x6d13` | Add poll option |
-| `0x6d14` | Poll vote |
-| `0x6d16` | Mute user |
-| `0x6d17` | Unmute user |
-| `0x6d24` | Send money |
-| `0x6d30`–`0x6d35` | MIP-0009 token sell / buy / attach signature / pin |
+| Action byte | Meaning | Payload |
+|-------------|---------|---------|
+| `0x6d01` | Set name | `name` (≤ 217 bytes) |
+| `0x6d02` | Post memo | `message` (≤ 217 bytes) |
+| `0x6d03` | Reply to memo | `txhash` (32 bytes) + `message` (≤ 184 bytes) |
+| `0x6d04` | Like / tip memo | `txhash` (32 bytes) |
+| `0x6d05` | Set profile text | `message` (≤ 217 bytes) |
+| `0x6d06` | Follow user | `address` (20 bytes) |
+| `0x6d07` | Unfollow user | `address` (20 bytes) |
+| `0x6d0a` | Set profile picture | `url` (≤ 217 bytes) |
+| `0x6d0b` | Repost memo | `txhash` (32 bytes) + `message` (≤ 184 bytes) — *planned* |
+| `0x6d0c` | Post topic message | `topic_name` + `message` (combined ≤ 214 bytes) |
+| `0x6d0d` | Topic follow | `topic_name` |
+| `0x6d0e` | Topic unfollow | `topic_name` |
+| `0x6d10` | Create poll | `poll_type` (1) + `option_count` (1) + `question` (≤ 209 bytes) |
+| `0x6d13` | Add poll option | `poll_txhash` (32) + `option` (≤ 184 bytes) |
+| `0x6d14` | Poll vote | `poll_txhash` (32) + `comment` (≤ 184 bytes) |
+| `0x6d16` | Mute user | `address` (20 bytes) |
+| `0x6d17` | Unmute user | `address` (20 bytes) |
+| `0x6d24` | Send money | `address` (20) + `message` (≤ 194 bytes) |
+| `0x6d30` | Sell tokens | MIP-0009 token exchange |
+| `0x6d31` | Token buy offer | MIP-0009 token exchange |
+| `0x6d32` | Attach token sale signature | MIP-0009 token exchange |
+| `0x6d35` | Pin token post | MIP-0009 token exchange — *planned* |
 
 ---
 
@@ -71,128 +100,134 @@ Reference: https://memo.sv/protocol
 
 ---
 
-## Tier P1 — Core social verbs (write + read)
+## Tier P0 — Already shipped to `master`
 
-These are the foundational posting and identity actions. Each is a broadcast
-action plus its read/display surface and indexer support.
+| # | Feature | Memo action | Components | Status |
+|---|---------|-------------|------------|--------|
+| 0.1 | Post a Memo | `0x6d02` | C, I, D | ✅ |
+| 0.2 | Set display name | `0x6d01` | C, I, D | ✅ |
+| 0.3 | Reply to a Memo | `0x6d03` | C, I, D | ✅ |
+| 0.4 | Efficient post pagination | read | D, I | ✅ |
 
-| # | Feature | Memo action | Components | Write | Read surface | Status |
-|---|---------|-------------|------------|-------|--------------|--------|
-| 1 | Post a Memo | `0x6d02` | C | Compose + `sendOpReturn` | Appears in recent feed & own profile after indexing | ✅ DONE |
-| 2 | Set display name | `0x6d01` | C | Broadcast name | Name shown on posts, profiles, feed | ✅ DONE |
-| 3 | Reply to a Memo | `0x6d03` | C | Broadcast reply to parent txid | Nested thread view | ✅ DONE |
-| 4 | Like / tip a Memo | `0x6d04` | C, I, D | Broadcast like for a post txid; optional BCH tip | Like count + liked state on post | TODO |
-| 5 | Set profile text (bio) | `0x6d05` | C, I, D | Broadcast bio | Shown on profile page | TODO |
-| 6 | Set profile picture | `0x6d0a` | C, I, D | Broadcast avatar URL | Avatar on profile + posts | TODO |
-| 7 | Follow a user | `0x6d06` | C, I, D | Broadcast follow of address | Follow button state; following list | TODO |
-| 8 | Unfollow a user | `0x6d07` | C, I, D | Broadcast unfollow | Follow button state; following list | TODO |
+---
+
+## Tier P1 — Core social verbs (close the read loop)
+
+These features already have indexer storage and (for like/tip) client
+broadcast. The remaining work is exposing the read side in `psf-memo-db` and
+adding/editing the client UI.
+
+| # | Feature | Memo action | Components | Status | Next work |
+|---|---------|-------------|------------|--------|-----------|
+| 1.1 | Like / tip a Memo | `0x6d04` | C, I, D | 🟡 partial | D: add `likeCount` to `/posts/*` responses; C: display count from backend, liked-by-me state |
+| 1.2 | Set profile text (bio) | `0x6d05` | C, I, D | 🟡 partial | C: add "Set Bio" UI on Account page; I/D already read |
+| 1.3 | Set profile picture | `0x6d0a` | C, I, D | 🟡 partial | C: add "Set Avatar URL" UI; I/D already read |
+| 1.4 | Follow a user | `0x6d06` | C, I, D | 🔴 missing | C: follow button on profile; D: follow state + following/followers lists |
+| 1.5 | Unfollow a user | `0x6d07` | C, I, D | 🔴 missing | C: unfollow button; D: follow state |
 
 ### Priority order within P1
 
-1. **Post a Memo** — the primary verb; unblocks all others. ✅ DONE
-2. **Set display name** — makes the feed readable. ✅ DONE
-3. **Reply to a Memo** — core conversation. ✅ DONE
-   - **Decisions (2026-08-26, from memo.cash UI review):** reply max = **184 bytes**
-     (UTF-8 byte count); reply form **inside the thread modal**; keep existing
-     comment-icon behavior; live `[remaining]` byte counter (red when over);
-     update thread **optimistically** after broadcast; **reply to a reply**
-     (nested).
-4. **Like / tip a Memo** — social signal; needs like-count API + indexer handler.
-5. **Set profile text** — bio for the profile page.
-6. **Set profile picture** — avatar for posts/profiles.
-7. **Follow a user**.
-8. **Unfollow a user**.
+1. **Like / tip a Memo** — the client can already broadcast; finish by adding
+   like counts to post feeds and profiles.
+2. **Set profile text** — simple text broadcast + Account page UI.
+3. **Set profile picture** — URL broadcast + Account page UI.
+4. **Follow / Unfollow user** — social graph; enables the following feed later.
 
 ### Like / tip details
 
-The like action (`0x6d04`) carries the liked post txid (32 bytes). A pure like
-has no BCH output to the author; a tip adds a P2PKH output paying the author.
-The indexer must:
-
-- Store the like event in `likes` keyed by like txid.
-- Update per-post like counts (likely a derived query or `likes` scan).
-- Optionally store tip amount when the like tx pays the author.
-
-The client must:
-
-- Show a heart icon on each post.
-- Open a like/tip modal with optional tip amount.
-- Validate tip amount (dust limit, spendable balance).
-- Broadcast `OP_RETURN 6d04 <postTxid>` plus any tip output.
+- The like action carries the liked post txid (32 bytes). A pure like has no
+  BCH output to the author; a tip adds a P2PKH output paying the author.
+- `psf-memo-indexer` stores each like in `likesDb` and records `tip` (sats)
+  when the like tx pays the author.
+- `psf-memo-db` needs to aggregate `likesDb` into per-post `likeCount` in the
+  existing `/posts/recent`, `/posts/by/:addr`, and `/posts/:txid/thread`
+  responses.
+- The client already has `MemoLike`, `LikeTipPage`, `LikeButton`, and
+  `LikeTipModal`; it only needs to read `likeCount` from the feed API.
 
 ---
 
-## P2 — Topics
+## Tier P2 — Topics
 
-| # | Feature | Memo action | Components |
-|---|---------|-------------|------------|
-| 9 | Post a topic message | `0x6d0c` | C, I, D |
-| 10 | Follow a topic | `0x6d0d` | C, I, D |
-| 11 | Unfollow a topic | `0x6d0e` | C, I, D |
-| 12 | Topic feed page | read | C, D |
+Topics add a second feed axis. The indexer already stores topic messages and
+follows in `roomsDb`; the DB and client need query/render support.
 
-Needs: topics index in `psf-memo-db`, topic feed endpoint, topic follow state.
-
----
-
-## P3 — Polls (later)
-
-| # | Feature | Memo action | Components |
-|---|---------|-------------|------------|
-| 13 | Create a poll | `0x6d10` | C, I, D |
-| 14 | Add a poll option | `0x6d13` | C, I, D |
-| 15 | Vote in a poll | `0x6d14` | C, I, D |
-
-Needs: poll data model + rendering + vote aggregation in `psf-memo-db`.
+| # | Feature | Memo action | Components | Status |
+|---|---------|-------------|------------|--------|
+| 2.1 | Topic list / discovery | read | D, C | 🔴 missing |
+| 2.2 | Topic feed page | read | D, C | 🔴 missing |
+| 2.3 | Post a topic message | `0x6d0c` | C, I, D | 🟡 partial (I/D store; no C UI) |
+| 2.4 | Follow a topic | `0x6d0d` | C, I, D | 🟡 partial |
+| 2.5 | Unfollow a topic | `0x6d0e` | C, I, D | 🟡 partial |
 
 ---
 
-## P4 — Moderation (later)
+## Tier P3 — Polls
 
-| # | Feature | Memo action | Components |
-|---|---------|-------------|------------|
-| 16 | Mute a user | `0x6d16` | C, D |
-| 17 | Unmute a user | `0x6d17` | C, D |
+Polls require a new data model and rendering. The indexer has no handler yet.
 
-Needs: per-wallet mute list applied to feed filtering.
-
----
-
-## P5 — Money & tokens (later)
-
-| # | Feature | Memo action | Components |
-|---|---------|-------------|------------|
-| 18 | Send money | `0x6d24` | C |
-| 19 | Token sell / buy / pin | `0x6d30`–`0x6d35` (MIP-0009) | C, I, D |
+| # | Feature | Memo action | Components | Status |
+|---|---------|-------------|------------|--------|
+| 3.1 | Create a poll | `0x6d10` | C, I, D | 🔴 missing |
+| 3.2 | Add a poll option | `0x6d13` | C, I, D | 🔴 missing |
+| 3.3 | Vote in a poll | `0x6d14` | C, I, D | 🔴 missing |
 
 ---
 
-## P6 — Discovery & UX (later)
+## Tier P4 — Moderation
+
+| # | Feature | Memo action | Components | Status |
+|---|---------|-------------|------------|--------|
+| 4.1 | Mute a user | `0x6d16` | C, D | 🔴 missing |
+| 4.2 | Unmute a user | `0x6d17` | C, D | 🔴 missing |
+
+---
+
+## Tier P5 — Money & token exchange
+
+| # | Feature | Memo action | Components | Status |
+|---|---------|-------------|------------|--------|
+| 5.1 | Send money with memo | `0x6d24` | C | 🔴 missing |
+| 5.2 | Token sell offer | `0x6d30` (MIP-0009) | C, I, D | 🔴 missing |
+| 5.3 | Token buy offer | `0x6d31` (MIP-0009) | C, I, D | 🔴 missing |
+| 5.4 | Attach token sale signature | `0x6d32` (MIP-0009) | C, I, D | 🔴 missing |
+| 5.5 | Pin token post | `0x6d35` (MIP-0009) | C, I, D | 🔴 missing |
+
+---
+
+## Tier P6 — Advanced social & discovery (later)
 
 | # | Feature | Components | Notes |
 |---|---------|------------|-------|
-| 20 | Search | C, D | posts / profiles / topics / tags |
-| 21 | Tags / hashtags | C, D | link + filter by tag |
-| 22 | Notifications | C, D | replies / likes / follows to my posts |
-| 23 | Ranked feed | C, D | memo.cash "ranked" post ordering |
-| 24 | Repost | C, I, D | `0x6d0b` (planned in protocol) |
+| 6.1 | Repost a memo | C, I, D | `0x6d0b` is marked *planned* in the protocol |
+| 6.2 | Ranked feed | C, D | memo.cash "ranked" post ordering |
+| 6.3 | Notifications | C, D | replies / likes / follows to my posts |
+| 6.4 | Search | C, D | posts / profiles / topics |
+| 6.5 | Tags / hashtags | C, D | link + filter by tag |
+| 6.6 | Following feed | C, D | feed filtered to followed users |
 
 ---
 
-## Read-only vs write capability by cycle
+## Suggested first spec for the next session
 
-- **Cycle 0 (current)**: read-only display of recent posts, profiles, post threads.
-- **Cycle 1 (P1)**: add write code paths (broadcast via `sendOpReturn`). UI is
-  read-only until a broadcasted action is confirmed + indexed; then the feed/profile
-  refresh.
-- **Later cycles**: topics, polls, moderation, money/tokens, discovery.
+**Like counts on posts** (P1.1, read side):
+- `psf-memo-db`: add a `LikeQuery` adapter that builds a `likeCount` map from
+  `likesDb`, inject it into `ListRecentPosts`, `ListPostsByAddr`, and
+  `GetPostThread`, and return `likeCount` on every post object.
+- `psf-memo-client`: read `likeCount` from the feed/profile API instead of
+  starting at 0.
+- No indexer changes needed; the `like` handler already writes `likesDb`.
+
+This closes the loop on the already-implemented like/tip broadcast feature and
+is the smallest end-to-end win toward memo.cash parity.
 
 ---
 
 ## Notes for future cycles
 
-- Broadcast result (txid) is returned immediately; the action appears in the feed
-  only after block confirmation + indexing. Specs must reflect this async visibility.
-- Mutations/specs are Gherkin feature files under per-component `specs/` in the
-  format defined by github.com/unclebob/Acceptance-Pipeline-Specification.
+- Broadcast result (txid) is returned immediately; the action appears in the
+  feed only after block confirmation + indexing. Specs must reflect this async
+  visibility.
+- Mutations/specs are Gherkin feature files under per-component `specs/` in
+  the format defined by github.com/unclebob/Acceptance-Pipeline-Specification.
 - Root `specs/` contains this backlog and cross-component architecture notes.

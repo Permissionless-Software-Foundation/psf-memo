@@ -1,8 +1,16 @@
-# Start the service with: docker-compose up -d
+# Build and start from this directory:
+#   docker compose build
+#   docker compose up -d
+#
+# Build context is the psf-memo monorepo root (../../../) so each
+# image copies its package from the local checkout rather than cloning
+# separate GitHub repositories.
 
 services:
   memo-db:
-    build: ./memo-db
+    build:
+      context: ../../..
+      dockerfile: psf-memo-indexer/production/docker/memo-db/Dockerfile
     container_name: memo-db
     logging:
       driver: json-file
@@ -18,7 +26,9 @@ services:
     restart: always
 
   tx-indexer:
-    build: ./tx-indexer
+    build:
+      context: ../../..
+      dockerfile: psf-memo-indexer/production/docker/tx-indexer/Dockerfile
     image: memo-tx-indexer
     container_name: memo-tx-indexer
     logging:
@@ -34,7 +44,9 @@ services:
     restart: always
 
   block-indexer:
-    build: ./block-indexer
+    build:
+      context: ../../..
+      dockerfile: psf-memo-indexer/production/docker/block-indexer/Dockerfile
     image: memo-block-indexer
     container_name: memo-block-indexer
     logging:
@@ -48,7 +60,9 @@ services:
     restart: always
 
   memo-client:
-    build: ./memo-client
+    build:
+      context: ../../..
+      dockerfile: psf-memo-indexer/production/docker/memo-client/Dockerfile
     image: memo-client
     container_name: memo-client
     logging:

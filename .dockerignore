@@ -1,0 +1,22 @@
+# Keep Docker build contexts lean when building from the monorepo root.
+.git
+.gitsigners
+.worktrees
+swarmforge
+docs
+doc
+test
+tools
+specs
+**/node_modules
+**/coverage
+**/leveldb
+**/logs
+**/tmp
+**/target
+**/.env
+!psf-memo-indexer/production/docker/**/.env
+psf-memo-client/build
+psf-memo-indexer/production/data
+*.md
+!README.md

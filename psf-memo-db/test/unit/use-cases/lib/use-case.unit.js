@@ -13,21 +13,11 @@ class DummyUseCase extends ListUseCase {
 
 describe('#ListUseCase', () => {
   it('should throw when adapters is missing', () => {
-    try {
-      new DummyUseCase({})
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'Adapters required when instantiating DummyUseCase use case.')
-    }
+    assert.throws(() => new DummyUseCase({}), Error, 'Adapters required when instantiating DummyUseCase use case.')
   })
 
   it('should throw when the required adapter is missing', () => {
-    try {
-      new DummyUseCase({ adapters: {} })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'postQuery adapter required for DummyUseCase use case.')
-    }
+    assert.throws(() => new DummyUseCase({ adapters: {} }), Error, 'postQuery adapter required for DummyUseCase use case.')
   })
 
   it('should bind execute to the instance', () => {

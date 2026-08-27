@@ -73,16 +73,16 @@ npm test
 
 ## Production (Docker)
 
-Docker Compose under [production/docker](./production/docker) runs the full stack. Images clone their source from GitHub at build time (same pattern as [psf-slp-indexer-g2](https://github.com/Permissionless-Software-Foundation/psf-slp-indexer-g2)).
+Docker Compose under [production/docker](./production/docker) runs the full stack. Build context is the [psf-memo](https://github.com/Permissionless-Software-Foundation/psf-memo) monorepo root; each image copies its package (`psf-memo-db`, `psf-memo-indexer`, or `psf-memo-client`) from the local checkout.
 
 ### Services
 
 | Service | Container | Host port | Purpose |
 |---------|-----------|-----------|---------|
-| `memo-db` | `memo-db` | `5021` | LevelDB REST API ([psf-memo-db](https://github.com/Permissionless-Software-Foundation/psf-memo-db)) |
+| `memo-db` | `memo-db` | `5021` | LevelDB REST API (`psf-memo-db/`) |
 | `block-indexer` | `memo-block-indexer` | — | IBD + ZMQ block indexing |
 | `tx-indexer` | `memo-tx-indexer` | `5455` | Mempool TX indexing (`/tx-start` control API) |
-| `memo-client` | `memo-client` | `3000` | React SPA ([psf-memo-client](https://github.com/Permissionless-Software-Foundation/psf-memo-client)), nginx |
+| `memo-client` | `memo-client` | `3000` | React SPA (`psf-memo-client/`), nginx |
 
 LevelDB data persists on the host at `production/data/leveldb`.
 
