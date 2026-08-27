@@ -167,16 +167,16 @@ Goal: reach feature parity with [memo.cash](https://memo.cash).
 | Tier | Features | Status |
 |------|----------|--------|
 | **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
-| **P1** | Like counts (read side) ✅; client display ✅; Set profile text, Set profile picture, Follow/Unfollow | next |
+| **P1** | Like counts (read side) ✅; client display ✅; Set profile text ✅; Set profile picture, Follow/Unfollow | next |
 | **P2** | Topics (list, feed, post, follow/unfollow) | later |
 | **P3** | Polls (create, add option, vote) | later |
 | **P4** | Mute / unmute user | later |
 | **P5** | Send money memo action, MIP-0009 token exchange | later |
 | **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
 
-**Suggested next spec:** P1.3 — add a "Set Bio" UI on the Account page that
-broadcasts the `0x6d05` Set profile text action. The indexer and DB already
-read/store profile text; the missing piece is the client write path and the
+**Suggested next spec:** P1.4 — add a "Set Avatar URL" UI on the Account page that
+broadcasts the `0x6d0a` Set profile picture action. The indexer and DB already
+read/store profile pictures; the missing piece is the client write path and the
 Account page editor.
 
 ---
@@ -305,7 +305,14 @@ that a single user-facing feature may require specs in more than one component.
     `no-new` errors in unit tests that must be resolved before master is clean.
 12. **Weak Gherkin examples can survive mutation** — when example values are both
     the input and the expected output, mutating them passes trivially. Tie
-    assertions to independent fixture data where possible.
+    assertions to independent fixture data where possible. (Observed in
+    set-bio Scenario 1: the account-page bio assertion echoes the same example
+    value that was broadcast.)
+13. **Profile-text byte limit is 217 bytes (protocol), but the indexer validates
+    looser.** The Memo protocol says `0x6d05` profile text is ≤ 217 bytes. The
+    client Set Bio UI enforces 217. The indexer's `handleSetProfile` still
+    validates against `MAX_POST_SIZE = 65000`; the looser indexer limit is a
+    separate hardening item (protocol parity would use 217).
 
 ---
 
@@ -343,7 +350,9 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `21373f4` (like-count-display merged to `master`;
-client + DB tests, build, and lint passing).
-Next action: **spec P1.3** — add a "Set Bio" UI on the Account page that
-broadcasts the `0x6d05` Set profile text action.
+Current `master` HEAD: `e321c7f` (set-bio merged to `master`; client unit 48,
+property 6, acceptance all-features, lint, and build passing). An unrelated
+`swarmforge.conf` specifier-model switch that leaked in with the merge was
+reverted to keep the merge focused on set-bio.
+Next action: **spec P1.4** — add a "Set Avatar URL" UI on the Account page that
+broadcasts the `0x6d0a` Set profile picture action.
