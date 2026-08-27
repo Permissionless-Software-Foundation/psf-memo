@@ -4,16 +4,11 @@
   Returns { followerAddr, followeeAddr, following: boolean }.
 */
 
-class FollowState {
+import { ListUseCase } from './lib/use-case.js'
+
+class FollowState extends ListUseCase {
   constructor (localConfig = {}) {
-    this.adapters = localConfig.adapters
-    if (!this.adapters) {
-      throw new Error('Adapters required when instantiating FollowState use case.')
-    }
-    if (!this.adapters.followQuery) {
-      throw new Error('followQuery adapter required for FollowState use case.')
-    }
-    this.execute = this.execute.bind(this)
+    super(localConfig, { useCaseName: 'FollowState', adapterName: 'followQuery' })
   }
 
   async execute (inObj = {}) {
