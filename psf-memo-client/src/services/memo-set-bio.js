@@ -37,5 +37,5 @@ MemoSetBio.MAX_BIO_BYTES = MAX_BIO_BYTES
 module.exports = MemoSetBio
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-27T16:55:54.606Z","module_hash":"4da70e80defe9ae983bb914d305228497f4877dd43be7f63d6858bf456cf3ab7","functions":[]}
+// {"version":1,"tested_at":"2026-08-27T16:58:18.035Z","module_hash":"4da70e80defe9ae983bb914d305228497f4877dd43be7f63d6858bf456cf3ab7","functions":[]}
 // mutate4javascript-manifest-end

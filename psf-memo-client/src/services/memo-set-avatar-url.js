@@ -37,5 +37,5 @@ MemoSetAvatarUrl.MAX_AVATAR_URL_BYTES = MAX_AVATAR_URL_BYTES
 module.exports = MemoSetAvatarUrl
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-27T16:55:55.303Z","module_hash":"473dc38c01f201fb09484ef6288c8ab86ca3457f9e3871cee279c119b65bb44a","functions":[]}
+// {"version":1,"tested_at":"2026-08-27T16:58:11.278Z","module_hash":"473dc38c01f201fb09484ef6288c8ab86ca3457f9e3871cee279c119b65bb44a","functions":[]}
 // mutate4javascript-manifest-end

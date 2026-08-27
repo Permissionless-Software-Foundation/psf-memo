@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-27T16:58:51.862423444Z","feature_name":"Set Avatar URL","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/set-avatar-url.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Set Avatar URL - 2 an empty avatar URL is rejected on the set avatar page","scenario_hash":"297768a79c84fa3e7394112d688c046be75a3f9fef80ed784b745e7b637878ee","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-27T16:58:43.073982780Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Set Avatar URL - 1, Set Avatar URL - 2, Set Avatar URL - 3, Set Avatar URL - 4, Set Avatar URL - 5
 Feature: Set Avatar URL
 

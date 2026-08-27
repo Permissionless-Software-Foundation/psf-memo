@@ -52,3 +52,7 @@ class MemoProfileTextAction extends MemoAction {
 MemoProfileTextAction.profileTextConfig = profileTextConfig
 
 module.exports = MemoProfileTextAction
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-27T16:57:59.182Z","module_hash":"101611ef1fa18260af869f9c65140a4ef35716649a5a0a64e838fe68d5114b4f","functions":[{"id":"func/profileTextConfig","name":"profileTextConfig","line":27,"end_line":40,"hash":"73d0c1953b628958acf23c16ae27f38c200bafc8568cb0daa8737ea2be2282c8"},{"id":"func/MemoProfileTextAction.constructor","name":"MemoProfileTextAction.constructor","line":45,"end_line":49,"hash":"75d5bb04a9d31690f94a3e2337cce03cbe62202bb4fd33b44949562288626605"}]}
+// mutate4javascript-manifest-end

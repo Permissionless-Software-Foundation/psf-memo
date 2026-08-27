@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-08-26T04:22:57.360768955Z","feature_name":"Set Name","feature_path":"../../specs/set-name.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Set Name - 2 an empty name is rejected on the set name page","scenario_hash":"a4fbf28bd1afbffeff2f24f685299663df57e3cc4332a115fea84c08db634670","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-26T03:34:50.405131105Z"}]}
+# {"version":1,"tested_at":"2026-08-27T16:59:00.404406977Z","feature_name":"Set Name","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/set-name.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Set Name - 2 an empty name is rejected on the set name page","scenario_hash":"a4fbf28bd1afbffeff2f24f685299663df57e3cc4332a115fea84c08db634670","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-27T16:59:00.404406977Z"}]}
 # acceptance-mutation-manifest-end
 
 # Scenarios: Set Name - 1, Set Name - 2, Set Name - 3, Set Name - 4, Set Name - 5
