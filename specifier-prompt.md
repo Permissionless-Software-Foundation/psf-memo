@@ -342,6 +342,8 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `69c38d5` (Docker files updated for mono-repo).
-Next feature: **P1.1 Like counts on posts** — add backend aggregation so the
-existing like/tip broadcast UI displays real counts.
+Current `master` HEAD: `7f14ceb866` (like-counts spec committed and handed off to coder).
+Next action: **wait for the coder → refactorer → architect pipeline to finish**
+`like-counts-on-posts`. When the architect notifies completion, merge the
+`swarmforge-architect` branch into `master` and verify `psf-memo-db` tests/lint.
+Then ask the user for the next feature from the P1 backlog.
