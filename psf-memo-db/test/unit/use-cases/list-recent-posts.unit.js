@@ -21,6 +21,7 @@ describe('#ListRecentPosts', () => {
         return txids.map((txid) => ({ txid, ...mockPosts[txid] }))
       }),
       buildReplyCountMap: sandbox.stub().resolves(new Map([['tx-b', 1]])),
+      buildLikeCountMap: sandbox.stub().resolves(new Map([['tx-b', 3], ['tx-a', 5]])),
       countTopLevelPosts: sandbox.stub().resolves(3)
     }
     uut = new ListRecentPosts({
@@ -39,6 +40,9 @@ describe('#ListRecentPosts', () => {
     assert.equal(result.posts[2].txid, 'tx-a')
     assert.equal(result.posts[0].replyCount, 1)
     assert.equal(result.posts[1].replyCount, 0)
+    assert.equal(result.posts[0].likeCount, 3)
+    assert.equal(result.posts[1].likeCount, 0)
+    assert.equal(result.posts[2].likeCount, 5)
     assert.equal(result.pagination.total, 3)
     assert.equal(result.pagination.hasMore, false)
   })

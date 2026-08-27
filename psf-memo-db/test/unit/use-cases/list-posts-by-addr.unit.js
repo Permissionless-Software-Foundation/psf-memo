@@ -27,6 +27,7 @@ describe('#ListPostsByAddr', () => {
         return txids.map((txid) => ({ txid, ...mockPosts[txid] }))
       }),
       buildReplyCountMap: sandbox.stub().resolves(new Map()),
+      buildLikeCountMap: sandbox.stub().resolves(new Map([['tx-c', 7]])),
       countTopLevelPostsByAddr: sandbox.stub().resolves(2)
     }
     uut = new ListPostsByAddr({
@@ -42,6 +43,8 @@ describe('#ListPostsByAddr', () => {
     assert.equal(result.posts.length, 2)
     assert.equal(result.posts[0].txid, 'tx-c')
     assert.equal(result.posts[1].txid, 'tx-a')
+    assert.equal(result.posts[0].likeCount, 7)
+    assert.equal(result.posts[1].likeCount, 0)
     assert.equal(result.pagination.total, 2)
     // Page is exactly full (offset 0 + 2 returned == 2 total), so hasMore must be false.
     assert.equal(result.pagination.hasMore, false)

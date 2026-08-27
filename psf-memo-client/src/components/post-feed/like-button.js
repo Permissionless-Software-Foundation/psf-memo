@@ -12,13 +12,26 @@ import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons'
 
 import './post-feed.css'
 
-function LikeButton ({ count = 0, liked = false, onClick }) {
+function LikeButton ({ count = 0, liked = false, onClick, readOnly = false }) {
   const label = count === 1 ? '1 like' : `${count} likes`
   const icon = liked ? faHeartSolid : faHeartRegular
   const className = [
     'post-like-button',
     liked ? 'post-like-button-liked' : ''
   ].filter(Boolean).join(' ')
+
+  if (readOnly) {
+    return (
+      <span
+        className={className}
+        aria-label={label}
+        title={label}
+      >
+        <FontAwesomeIcon icon={icon} className='post-like-button-icon' />
+        <span className='post-like-button-count'>{count}</span>
+      </span>
+    )
+  }
 
   return (
     <button

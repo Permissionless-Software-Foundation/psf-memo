@@ -10,6 +10,8 @@ describe('#PostQuery', () => {
   let postChildrenDb
   let postHeightsDb
 
+  let likesDb
+
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     postsDb = {
@@ -25,15 +27,20 @@ describe('#PostQuery', () => {
     postHeightsDb = {
       iterator: sandbox.stub()
     }
+    likesDb = {
+      iterator: sandbox.stub()
+    }
 
     async function * emptyParents () {}
     async function * emptyChildren () {}
     async function * emptyHeights () {}
+    async function * emptyLikes () {}
     postParentsDb.iterator.returns(emptyParents())
     postChildrenDb.iterator.returns(emptyChildren())
     postHeightsDb.iterator.returns(emptyHeights())
+    likesDb.iterator.returns(emptyLikes())
 
-    uut = new PostQuery({ postsDb, postParentsDb, postChildrenDb, postHeightsDb })
+    uut = new PostQuery({ postsDb, postParentsDb, postChildrenDb, postHeightsDb, likesDb })
   })
 
   afterEach(() => sandbox.restore())
@@ -41,10 +48,20 @@ describe('#PostQuery', () => {
   it('should throw when postHeightsDb is missing', () => {
     try {
       // eslint-disable-next-line no-new
-      new PostQuery({ postsDb, postParentsDb, postChildrenDb })
+      new PostQuery({ postsDb, postParentsDb, postChildrenDb, likesDb })
       assert.fail('Expected error')
     } catch (err) {
       assert.include(err.message, 'postHeightsDb required')
+    }
+  })
+
+  it('should throw when likesDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new PostQuery({ postsDb, postHeightsDb, postParentsDb, postChildrenDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'likesDb required')
     }
   })
 
@@ -281,6 +298,46 @@ describe('#PostQuery', () => {
 
       assert.equal(result.get('tx1'), 2)
       assert.equal(result.get('tx2'), 1)
+    })
+  })
+
+  describe('#buildLikeCountMap', () => {
+    it('should count likes per post, ignoring likes for missing posts', async () => {
+      async function * mockLikes () {
+        yield ['like-a', { postTxid: 'tx1', addr: 'addr-x', seen: 1, blockHeight: 1 }]
+        yield ['like-b', { postTxid: 'tx1', addr: 'addr-y', seen: 2, blockHeight: 2 }]
+        yield ['like-c', { postTxid: 'tx2', addr: 'addr-z', seen: 3, blockHeight: 3 }]
+        yield ['like-d', { postTxid: 'missing', addr: 'addr-w', seen: 4, blockHeight: 4 }]
+      }
+      likesDb.iterator.returns(mockLikes())
+      postsDb.get.callsFake(async (txid) => {
+        if (txid === 'missing') {
+          const err = new Error('not found')
+          err.notFound = true
+          throw err
+        }
+        return { addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 }
+      })
+
+      const result = await uut.buildLikeCountMap()
+
+      assert.equal(result.get('tx1'), 2)
+      assert.equal(result.get('tx2'), 1)
+      assert.equal(result.has('missing'), false)
+    })
+
+    it('should skip like records without a postTxid', async () => {
+      async function * mockLikes () {
+        yield ['like-a', { postTxid: 'tx1' }]
+        yield ['like-b', { addr: 'addr-x' }]
+      }
+      likesDb.iterator.returns(mockLikes())
+      postsDb.get.withArgs('tx1').resolves({ addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 })
+
+      const result = await uut.buildLikeCountMap()
+
+      assert.equal(result.get('tx1'), 1)
+      assert.equal(result.size, 1)
     })
   })
 })

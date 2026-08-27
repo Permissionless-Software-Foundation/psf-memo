@@ -28,6 +28,9 @@ const SetNamePage = require('../../src/services/set-name-page')
 const AccountPage = require('../../src/services/account-page')
 const MemoLike = require('../../src/services/memo-like')
 const LikeTipPage = require('../../src/services/like-tip-page')
+const RecentFeedPage = require('../../src/services/recent-feed-page')
+const ProfilePage = require('../../src/services/profile-page')
+const ThreadPage = require('../../src/services/thread-page')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -36,6 +39,11 @@ const MEMO_LIKE_PREFIX = MemoLike.MEMO_LIKE_PREFIX
 
 // Default author address used by Gherkin steps that refer to "the author address".
 const AUTHOR_ADDRESS = 'bitcoincash:qz7v6ztvzu2f2xd2ww8pnx9vwk0g4ncvfvavktg0jc'
+
+// Placeholder addresses used by Gherkin steps that refer to 'a second address'
+// or 'a third address'.
+const SECOND_ADDRESS = 'bitcoincash:second-address'
+const THIRD_ADDRESS = 'bitcoincash:third-address'
 
 // A fake wallet exposing the minimal-slp-wallet adapter surface the app uses.
 function makeWallet (address) {
@@ -85,6 +93,36 @@ function makeThread () {
   }
 }
 
+// A fake psf-memo-db API backing the read-only feed, profile, and thread
+// pages used to verify like count display.
+function makeMemoDb () {
+  const posts = []
+  const threads = {}
+
+  return {
+    posts,
+    threads,
+    addPost (post) {
+      posts.push(post)
+    },
+    addThread (txid, thread) {
+      threads[txid] = thread
+    },
+    async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
+      const page = posts.slice(offset, offset + limit)
+      return { posts: page, pagination: { total: posts.length, limit, offset, hasMore: offset + page.length < posts.length } }
+    },
+    async getPostsByAddr (addr, { limit = 100, offset = 0 } = {}) {
+      const filtered = posts.filter((p) => p.addr === addr)
+      const page = filtered.slice(offset, offset + limit)
+      return { posts: page, pagination: { total: filtered.length, limit, offset, hasMore: offset + page.length < filtered.length } }
+    },
+    async getPostThread (txid) {
+      return threads[txid] || { post: null }
+    }
+  }
+}
+
 // Fresh world/state object for a single scenario execution.
 function createWorld () {
   const wallet = makeWallet('')
@@ -93,6 +131,7 @@ function createWorld () {
   const thread = makeThread()
   const memoReply = new MemoReply({ wallet, thread })
   const memoLike = new MemoLike({ wallet, feed })
+  const memoDb = makeMemoDb()
 
   const world = {
     wallet,
@@ -101,10 +140,16 @@ function createWorld () {
     memoPost,
     memoReply,
     memoLike,
+    memoDb,
     currentPath: null,
     menuOpen: false,
     likedTxids: new Set()
   }
+
+  // Read-only page controllers backed by the fake psf-memo-db API.
+  world.recentFeedPage = new RecentFeedPage({ memoDb })
+  world.profilePage = new ProfilePage({ memoDb })
+  world.threadPage = new ThreadPage({ memoDb })
 
   // The New Post Page controller wraps the memo post behavior. Its navigate
   // adapter updates the world's current path so navigation can be asserted.
@@ -165,6 +210,20 @@ function resolveParam (value, example) {
     return example[param]
   }
   return String(value).trim()
+}
+
+// Look up a post that has been loaded onto one of the read-only pages.
+function findDisplayedPost (txid, world) {
+  const fromThread = world.threadPage.getPost(txid)
+  if (fromThread) return fromThread
+
+  const fromProfile = world.profilePage.getPost(txid)
+  if (fromProfile) return fromProfile
+
+  const fromFeed = world.recentFeedPage.getPost(txid)
+  if (fromFeed) return fromFeed
+
+  return null
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -328,10 +387,11 @@ const handlers = [
   {
     name: 'open reply thread',
     pattern: /^I open the thread for the post with txid (.+)$/,
-    run (m, example, world) {
-      const txid = m[1].trim()
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
       world.thread.rootTxid = txid
       world.replyPage.setParent(txid)
+      await world.threadPage.load(txid)
     }
   },
   {
@@ -796,10 +856,129 @@ const handlers = [
         throw new Error('Expected like/tip modal to be closed.')
       }
     }
+  },
+  {
+    name: 'API serves post with explicit address and like count',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by the address (.+) with a like count of (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const likeCount = parseInt(resolveParam(m[3], example), 10)
+      world.memoDb.addPost({ txid, addr, likeCount, text: 'A sample post', blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves post with explicit address and no like count',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by the address (.+) with no like count recorded$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      world.memoDb.addPost({ txid, addr, likeCount: undefined, text: 'A sample post', blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves post with second/third address and like count',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by a (second|third) address with a like count of (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = m[2] === 'second' ? SECOND_ADDRESS : THIRD_ADDRESS
+      const likeCount = parseInt(resolveParam(m[3], example), 10)
+      world.memoDb.addPost({ txid, addr, likeCount, text: 'A sample post', blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves post with second/third address and no like count',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by a (second|third) address with no like count recorded$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = m[2] === 'second' ? SECOND_ADDRESS : THIRD_ADDRESS
+      world.memoDb.addPost({ txid, addr, likeCount: undefined, text: 'A sample post', blockHeight: 100 })
+    }
+  },
+  {
+    name: 'open recent posts feed',
+    pattern: /^I open the recent posts feed$/,
+    async run (m, example, world) {
+      await world.recentFeedPage.load()
+      world.currentPath = RecentFeedPage.RECENT_FEED_PATH
+    }
+  },
+  {
+    name: 'open profile page for author',
+    pattern: /^I open the profile page for the author of the post with txid (.+)$/,
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const post = world.memoDb.posts.find((p) => p.txid === txid)
+      if (!post) {
+        throw new Error(`No API post found for txid ${txid}.`)
+      }
+      world.profilePage.addr = post.addr
+      await world.profilePage.load()
+      world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(post.addr)}`
+    }
+  },
+  {
+    name: 'thread contains a reply',
+    pattern: /^the thread for the post with txid (.+) contains a reply with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const replyTxid = resolveParam(m[2], example)
+      const expectedReplyCount = parseInt(example.expected_reply, 10)
+      const rootPost = world.memoDb.posts.find((p) => p.txid === txid)
+      if (!rootPost) {
+        throw new Error(`No API post found for txid ${txid}.`)
+      }
+      const thread = {
+        post: {
+          ...rootPost,
+          replies: [{
+            txid: replyTxid,
+            addr: 'bitcoincash:reply-author',
+            text: 'A sample reply',
+            likeCount: Number.isNaN(expectedReplyCount) ? 0 : expectedReplyCount,
+            blockHeight: rootPost.blockHeight + 1,
+            replies: []
+          }]
+        }
+      }
+      world.memoDb.addThread(txid, thread)
+    }
+  },
+  {
+    name: 'post shows like count',
+    pattern: /^the post with txid (.+) shows the like count (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const post = findDisplayedPost(txid, world)
+      if (!post) {
+        throw new Error(`Post ${txid} is not displayed.`)
+      }
+      const actual = post.likeCount ?? 0
+      if (actual !== expected) {
+        throw new Error(`Expected like count ${expected} for ${txid}, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'reply shows like count',
+    pattern: /^the reply with txid (.+) shows the like count (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const post = world.threadPage.getPost(txid)
+      if (!post) {
+        throw new Error(`Reply ${txid} is not displayed.`)
+      }
+      const actual = post.likeCount ?? 0
+      if (actual !== expected) {
+        throw new Error(`Expected like count ${expected} for reply ${txid}, got ${actual}.`)
+      }
+    }
   }
 ]
 
-// Route a single step to its handler. Throws on unsupported step text.
+// Route a single step to its handler. Throws on unsupported step text. Throws on unsupported step text.
 async function handleStep (step, example, world) {
   for (const handler of handlers) {
     const match = handler.pattern.exec(step.text)

@@ -50,9 +50,18 @@ export function attachReplyCounts (posts, replyCounts) {
   }))
 }
 
-export function assemblePostPage ({ posts, replyCounts, total, limit, offset }) {
+export function attachLikeCounts (posts, likeCounts) {
+  return posts.map((post) => ({
+    ...post,
+    likeCount: likeCounts.get(post.txid) ?? 0
+  }))
+}
+
+export function assemblePostPage ({ posts, replyCounts, likeCounts, total, limit, offset }) {
+  let enriched = attachReplyCounts(posts, replyCounts)
+  enriched = attachLikeCounts(enriched, likeCounts)
   return {
-    posts: attachReplyCounts(posts, replyCounts),
+    posts: enriched,
     pagination: {
       limit,
       offset,
