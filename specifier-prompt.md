@@ -318,6 +318,12 @@ that a single user-facing feature may require specs in more than one component.
     example value that was broadcast, so Gherkin mutation of the URL survives
     trivially. Same pattern as set-bio Scenario 1. If tightening, tie the
     assertion to independent fixture data rather than the broadcast example.
+15. **Use bch-js for cashaddr conversion, not a new dependency.** The follow
+    (`0x6d06`) / unfollow (`0x6d07`) payload is the followee's 20-byte hash160
+    (P2PKH). Convert with `bchjs.Address.toHash160()` (client, via the
+    minimal-slp-wallet embedded bch-js) and `bchjs.Address.hash160ToCash()`
+    (DB read side). Prefer bch-js over installing a separate cashaddr library.
+    See `specs/feature-backlog.md` "Suggested next spec" for the follow feature.
 
 ---
 

@@ -220,6 +220,21 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 - The indexer already stores follows in `followsDb`; the missing pieces are the
   client write path and the DB read side.
 
+### cashaddr conversion (use bch-js, not a new dependency)
+
+The follow/unfollow OP_RETURN payload is the followee's **20-byte hash160**
+(P2PKH). The `followsDb` store keys followees by that hash160. Convert between
+cash addresses and hash160 with **bch-js** `Address` tools, which are already
+available and preferred over adding a separate cashaddr library:
+
+- Client: `bchjs.Address.toHash160(followeeCashAddress)` returns the hash160
+  hex for the `0x6d06` / `0x6d07` payload. bch-js is embedded in
+  `minimal-slp-wallet`, so no new client dependency is needed.
+- DB read side: `bchjs.Address.toHash160(followeeCashAddress)` for the follow
+  state lookup, and `bchjs.Address.hash160ToCash(followeePkHash)` to return
+  cash addresses in the following/followers lists. Add `@psf/bch-js` to
+  `psf-memo-db` rather than a separate cashaddr package.
+
 This is the next smallest end-to-end win after the set-avatar-url write path closed.
 
 ---
