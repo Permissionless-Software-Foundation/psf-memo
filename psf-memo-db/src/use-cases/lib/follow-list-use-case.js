@@ -28,3 +28,7 @@ export class FollowListUseCase extends ListUseCase {
     return { [this.addrField]: addr, [this.resultField]: list }
   }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-27T18:16:27.234Z","module_hash":"1424c15ec8acd2179412ef5b347107746ef1e035a47fc1fac595e96c194526f8","functions":[{"id":"func/FollowListUseCase.constructor","name":"FollowListUseCase.constructor","line":15,"end_line":20,"hash":"f5f3b2832eb47baeb416b6b36122163d7479444e82f471a7d9b34f800639208c"},{"id":"func/FollowListUseCase.execute","name":"FollowListUseCase.execute","line":22,"end_line":29,"hash":"3d9258e7bb03192db5b56eac38819604dfdc43ee63b47cc6445754d36ab1848f"}]}
+// mutate4javascript-manifest-end

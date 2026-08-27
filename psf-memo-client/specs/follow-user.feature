@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-27T18:18:35.249787308Z","feature_name":"Follow User","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/follow-user.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Follow User - 1, Follow User - 2, Follow User - 3, Follow User - 4, Follow User - 5
 #
 # The follow/unfollow OP_RETURN payload is the followee's 20-byte hash160.

@@ -69,4 +69,34 @@ describe('#FollowState', () => {
       assert.match(err.message, /followeeAddr is required/)
     }
   })
+
+  it('should reject an empty-string followerAddr', async () => {
+    const useCase = new FollowState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ followerAddr: '', followeeAddr: 'bitcoincash:followee' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /followerAddr is required/)
+    }
+  })
+
+  it('should reject an empty-string followeeAddr', async () => {
+    const useCase = new FollowState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ followerAddr: 'bitcoincash:follower', followeeAddr: '' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /followeeAddr is required/)
+    }
+  })
+
+  it('should reject a non-string followerAddr', async () => {
+    const useCase = new FollowState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ followerAddr: 42, followeeAddr: 'bitcoincash:followee' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /followerAddr is required/)
+    }
+  })
 })

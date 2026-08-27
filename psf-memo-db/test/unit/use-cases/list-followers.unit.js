@@ -42,4 +42,24 @@ describe('#ListFollowers', () => {
       assert.match(err.message, /followeeAddr is required/)
     }
   })
+
+  it('should reject an empty-string followeeAddr', async () => {
+    const useCase = new ListFollowers({ adapters: makeAdapters([]) })
+    try {
+      await useCase.execute({ followeeAddr: '' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /followeeAddr is required/)
+    }
+  })
+
+  it('should reject a non-string followeeAddr', async () => {
+    const useCase = new ListFollowers({ adapters: makeAdapters([]) })
+    try {
+      await useCase.execute({ followeeAddr: 42 })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /followeeAddr is required/)
+    }
+  })
 })

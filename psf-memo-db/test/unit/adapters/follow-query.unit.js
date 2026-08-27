@@ -100,6 +100,14 @@ describe('#FollowQuery', () => {
     assert.sameMembers(result, [FOLLOWER, OTHER_FOLLOWER])
   })
 
+  it('_nextString returns the lexicographic exclusive upper bound of a prefix', () => {
+    const query = new FollowQuery({ followsDb: makeFollowsDb({}) })
+    // The upper bound must be exactly the prefix with its last character
+    // incremented, so a [gte, lt) scan captures precisely the prefix's records.
+    assert.equal(query._nextString(`${FOLLOWER}:`), `${FOLLOWER};`)
+    assert.equal(query._nextString('abc'), 'abd')
+  })
+
   it('listFollowers ignores unfollow records', async () => {
     const hash160 = 'cb481232299cd5743151ac4b2d63ae198e7bb0a9'
     const followsDb = makeFollowsDb({

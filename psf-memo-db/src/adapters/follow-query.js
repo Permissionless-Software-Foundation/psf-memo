@@ -82,3 +82,7 @@ class FollowQuery {
 }
 
 export default FollowQuery
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-27T18:05:09.378Z","module_hash":"00de769ca2e93299592c29a5c794911e59b972121763fd907eb568314a559a74","functions":[{"id":"func/FollowQuery.constructor","name":"FollowQuery.constructor","line":17,"end_line":27,"hash":"5389c3c9513d9d576e89969f741c5a511d4fadada98676780ee38b017e2c759a"},{"id":"func/FollowQuery.isFollowing","name":"FollowQuery.isFollowing","line":31,"end_line":41,"hash":"dde01f8501cddd45b091bbf0516994e66b80bd1ca23ffe4b8382c6ee75fbd7ea"},{"id":"func/FollowQuery.listFollowing","name":"FollowQuery.listFollowing","line":44,"end_line":53,"hash":"d354fe051ef6816b948402a94c551792340ec3a4a602aef54aa460a9a119329a"},{"id":"func/FollowQuery.listFollowers","name":"FollowQuery.listFollowers","line":56,"end_line":67,"hash":"332a2bcae7045c3af9e3fbcf5ae5134876be449ada041e7fe1525e2969ae6aee"},{"id":"func/FollowQuery._toHash160","name":"FollowQuery._toHash160","line":69,"end_line":71,"hash":"248ed673be41bc9dcaa0d2fbeed1596784b7bde8877eafe43a05e29e430f9e8b"},{"id":"func/FollowQuery._toCashAddress","name":"FollowQuery._toCashAddress","line":73,"end_line":75,"hash":"0706292919ee44a25e63565558d4d9499188c7c49b3afc39eeb20438f4d5c4d4"},{"id":"func/FollowQuery._nextString","name":"FollowQuery._nextString","line":79,"end_line":81,"hash":"faa7823440ac998c3d5920ebcfe336d7b8df7e705dd6a1177dc8ccbd21f9ecf2"}]}
+// mutate4javascript-manifest-end
