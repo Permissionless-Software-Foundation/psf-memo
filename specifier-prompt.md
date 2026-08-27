@@ -361,7 +361,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `ba2b3bf` (set-avatar-url merged to `master`; client unit
-74, property 11, acceptance all-features, lint, and build passing).
-Next action: **spec P1.5/P1.6** — Follow/Unfollow user (client write path +
-DB read side).
+Current `master` HEAD: `d901cfc6cb` (follow/unfollow user speced and handed off to coder as task `follow-user`; client + DB read side).
+Next action: **await coder/refactorer/architect on task `follow-user`**, then merge the architect branch into `master` and verify the affected components.
