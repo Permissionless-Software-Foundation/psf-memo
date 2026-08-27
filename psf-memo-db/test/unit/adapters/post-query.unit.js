@@ -345,6 +345,46 @@ describe('#PostQuery', () => {
     })
   })
 
+  describe('#likeTxidFromPostLike', () => {
+    it('should return the likeTxid from the value when present', () => {
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', { likeTxid: 'like-a' }), 'like-a')
+    })
+
+    it('should fall back to the txid field in the value', () => {
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', { txid: 'like-a' }), 'like-a')
+    })
+
+    it('should parse the like txid from the key when the value is absent', () => {
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', null), 'like-a')
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', {}), 'like-a')
+    })
+  })
+
+  describe('#getPostOrNull', () => {
+    it('should return the post when present', async () => {
+      postsDb.get.withArgs('tx1').resolves({ addr: 'a1', text: 'hello' })
+      const post = await uut.getPostOrNull('tx1')
+      assert.equal(post.text, 'hello')
+    })
+
+    it('should return null when the post is not found', async () => {
+      const err = new Error('not found')
+      err.notFound = true
+      postsDb.get.withArgs('tx1').rejects(err)
+      assert.equal(await uut.getPostOrNull('tx1'), null)
+    })
+
+    it('should rethrow errors that are not not-found', async () => {
+      postsDb.get.withArgs('tx1').rejects(new Error('leveldb is locked'))
+      try {
+        await uut.getPostOrNull('tx1')
+        assert.fail('Expected error')
+      } catch (err) {
+        assert.include(err.message, 'leveldb is locked')
+      }
+    })
+  })
+
   describe('#countLikesForTxids', () => {
     it('should count likes per txid from postLikes', async () => {
       async function * mockPostLikesTx1 () {

@@ -74,12 +74,15 @@ class PostQuery {
 
   txidFromPostHeight (key, value) {
     if (value && typeof value.txid === 'string') return value.txid
-    const parts = String(key).split(':')
-    return parts[parts.length - 1]
+    return this.txidFromKeyParts(key)
   }
 
   txidFromAddrPostHeight (key, value) {
-    if (value && typeof value.txid === 'string') return value.txid
+    return this.txidFromPostHeight(key, value)
+  }
+
+  // Fall back to the txid embedded as the final segment of a keyed index entry.
+  txidFromKeyParts (key) {
     const parts = String(key).split(':')
     return parts[parts.length - 1]
   }
@@ -155,8 +158,7 @@ class PostQuery {
   likeTxidFromPostLike (key, value) {
     if (value && typeof value.likeTxid === 'string') return value.likeTxid
     if (value && typeof value.txid === 'string') return value.txid
-    const parts = String(key).split(':')
-    return parts[parts.length - 1]
+    return this.txidFromKeyParts(key)
   }
 
   // Build a global like-count map from the postLikes secondary index,
