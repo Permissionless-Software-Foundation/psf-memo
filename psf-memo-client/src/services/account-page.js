@@ -12,6 +12,7 @@
 */
 
 const SET_NAME_PATH = '/memo/set-name'
+const SET_BIO_PATH = '/memo/set-bio'
 const ACCOUNT_PATH = '/account'
 
 class AccountPage {
@@ -36,8 +37,23 @@ class AccountPage {
     return this.profiles.getName(address)
   }
 
+  // The current bio for the authenticated address. Falls back to null when no
+  // wallet, profile store, or stored bio exists.
+  getBio () {
+    const address = this.getAddress()
+    if (!address || !this.profiles || typeof this.profiles.getBio !== 'function') {
+      return null
+    }
+    return this.profiles.getBio(address)
+  }
+
   // Whether the account page exposes a Set Name button.
   hasSetNameButton () {
+    return true
+  }
+
+  // Whether the account page exposes a Set Bio button.
+  hasSetBioButton () {
     return true
   }
 
@@ -45,9 +61,15 @@ class AccountPage {
   clickSetName () {
     this.navigate(SET_NAME_PATH)
   }
+
+  // Click the Set Bio button: navigate to the set-bio page.
+  clickSetBio () {
+    this.navigate(SET_BIO_PATH)
+  }
 }
 
 AccountPage.SET_NAME_PATH = SET_NAME_PATH
+AccountPage.SET_BIO_PATH = SET_BIO_PATH
 AccountPage.ACCOUNT_PATH = ACCOUNT_PATH
 
 module.exports = AccountPage

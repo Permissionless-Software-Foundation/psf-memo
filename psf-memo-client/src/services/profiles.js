@@ -12,6 +12,7 @@
 class Profiles {
   constructor () {
     this.names = new Map()
+    this.bios = new Map()
   }
 
   setName (addr, name) {
@@ -22,6 +23,16 @@ class Profiles {
   getName (addr) {
     if (!addr) return null
     return this.names.get(addr) || null
+  }
+
+  setBio (addr, bio) {
+    if (!addr) return
+    this.bios.set(addr, bio)
+  }
+
+  getBio (addr) {
+    if (!addr) return null
+    return this.bios.get(addr) || null
   }
 }
 
