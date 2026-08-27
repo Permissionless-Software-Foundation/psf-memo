@@ -13,6 +13,7 @@
 
 const SET_NAME_PATH = '/memo/set-name'
 const SET_BIO_PATH = '/memo/set-bio'
+const SET_AVATAR_URL_PATH = '/memo/set-avatar-url'
 const ACCOUNT_PATH = '/account'
 
 class AccountPage {
@@ -47,6 +48,11 @@ class AccountPage {
     return this._getProfileField('getBio')
   }
 
+  // The current avatar URL for the authenticated address.
+  getAvatarUrl () {
+    return this._getProfileField('getAvatarUrl')
+  }
+
   // Whether the account page exposes a Set Name button.
   hasSetNameButton () {
     return true
@@ -54,6 +60,11 @@ class AccountPage {
 
   // Whether the account page exposes a Set Bio button.
   hasSetBioButton () {
+    return true
+  }
+
+  // Whether the account page exposes a Set Avatar URL button.
+  hasSetAvatarUrlButton () {
     return true
   }
 
@@ -66,10 +77,16 @@ class AccountPage {
   clickSetBio () {
     this.navigate(SET_BIO_PATH)
   }
+
+  // Click the Set Avatar URL button: navigate to the set-avatar-url page.
+  clickSetAvatarUrl () {
+    this.navigate(SET_AVATAR_URL_PATH)
+  }
 }
 
 AccountPage.SET_NAME_PATH = SET_NAME_PATH
 AccountPage.SET_BIO_PATH = SET_BIO_PATH
+AccountPage.SET_AVATAR_URL_PATH = SET_AVATAR_URL_PATH
 AccountPage.ACCOUNT_PATH = ACCOUNT_PATH
 
 module.exports = AccountPage

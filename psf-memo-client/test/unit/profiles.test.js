@@ -69,3 +69,40 @@ test('name and bio storage are independent', () => {
   assert.equal(profiles.getName(addr), 'trout')
   assert.equal(profiles.getBio(addr), 'Building on BCH')
 })
+
+test('setAvatarUrl stores and getAvatarUrl retrieves an avatar URL', () => {
+  const profiles = new Profiles()
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+
+  profiles.setAvatarUrl(addr, 'https://example.com/avatar.png')
+
+  assert.equal(profiles.getAvatarUrl(addr), 'https://example.com/avatar.png')
+})
+
+test('getAvatarUrl returns null for an unknown address', () => {
+  const profiles = new Profiles()
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+
+  assert.equal(profiles.getAvatarUrl(addr), null)
+})
+
+test('setAvatarUrl with no address does nothing', () => {
+  const profiles = new Profiles()
+
+  profiles.setAvatarUrl('', 'https://example.com/avatar.png')
+
+  assert.equal(profiles.getAvatarUrl(''), null)
+})
+
+test('avatar URL storage is independent of name and bio storage', () => {
+  const profiles = new Profiles()
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+
+  profiles.setName(addr, 'trout')
+  profiles.setBio(addr, 'Building on BCH')
+  profiles.setAvatarUrl(addr, 'https://example.com/avatar.png')
+
+  assert.equal(profiles.getName(addr), 'trout')
+  assert.equal(profiles.getBio(addr), 'Building on BCH')
+  assert.equal(profiles.getAvatarUrl(addr), 'https://example.com/avatar.png')
+})

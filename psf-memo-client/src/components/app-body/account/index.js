@@ -21,6 +21,7 @@ function Account (props) {
   const [error, setError] = useState(null)
   const [name, setName] = useState(null)
   const [bio, setBio] = useState(null)
+  const [avatarUrl, setAvatarUrl] = useState(null)
 
   const wallet = appData?.wallet
   const address = wallet?.walletInfo?.cashAddress || ''
@@ -32,12 +33,14 @@ function Account (props) {
 
       try {
         const memoDb = new MemoDb()
-        const [profile, nameDoc] = await Promise.all([
+        const [profile, nameDoc, profilePic] = await Promise.all([
           memoDb.getProfile(address),
-          memoDb.getName(address)
+          memoDb.getName(address),
+          memoDb.getProfilePic(address)
         ])
         setBio(profile?.text || null)
         setName(nameDoc?.name || null)
+        setAvatarUrl(profilePic?.url || null)
       } catch (err) {
         setError(err.message || 'Failed to load account')
       }
@@ -60,6 +63,7 @@ function Account (props) {
 
   const displayName = accountPage.getName() || name || truncateAddr(address, 24)
   const displayBio = accountPage.getBio() || bio || ''
+  const displayAvatarUrl = accountPage.getAvatarUrl() || avatarUrl || ''
 
   return (
     <Container className='account-page mt-4'>
@@ -87,6 +91,10 @@ function Account (props) {
                 <strong>Bio: </strong>
                 {displayBio || <span className='text-muted'>No bio set</span>}
               </p>
+              <p className='account-avatar-url'>
+                <strong>Avatar URL: </strong>
+                {displayAvatarUrl || <span className='text-muted'>No avatar URL set</span>}
+              </p>
               <p className='account-address'>
                 <strong>Address: </strong>
                 {address}
@@ -105,9 +113,19 @@ function Account (props) {
               {accountPage.hasSetBioButton() && (
                 <Button
                   variant='primary'
+                  className='me-2'
                   onClick={() => accountPage.clickSetBio()}
                 >
                   Set Bio
+                </Button>
+              )}
+
+              {accountPage.hasSetAvatarUrlButton() && (
+                <Button
+                  variant='primary'
+                  onClick={() => accountPage.clickSetAvatarUrl()}
+                >
+                  Set Avatar URL
                 </Button>
               )}
             </div>

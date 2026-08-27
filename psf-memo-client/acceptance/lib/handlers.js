@@ -27,6 +27,8 @@ const MemoSetName = require('../../src/services/memo-set-name')
 const SetNamePage = require('../../src/services/set-name-page')
 const MemoSetBio = require('../../src/services/memo-set-bio')
 const SetBioPage = require('../../src/services/set-bio-page')
+const MemoSetAvatarUrl = require('../../src/services/memo-set-avatar-url')
+const SetAvatarUrlPage = require('../../src/services/set-avatar-url-page')
 const AccountPage = require('../../src/services/account-page')
 const MemoLike = require('../../src/services/memo-like')
 const LikeTipPage = require('../../src/services/like-tip-page')
@@ -38,6 +40,7 @@ const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
 const MEMO_SET_NAME_PREFIX = MemoSetName.MEMO_SET_NAME_PREFIX
 const MEMO_SET_BIO_PREFIX = MemoSetBio.MEMO_SET_BIO_PREFIX
+const MEMO_SET_AVATAR_URL_PREFIX = MemoSetAvatarUrl.MEMO_SET_AVATAR_URL_PREFIX
 const MEMO_LIKE_PREFIX = MemoLike.MEMO_LIKE_PREFIX
 
 // Default author address used by Gherkin steps that refer to "the author address".
@@ -76,17 +79,21 @@ function makeFeed () {
   }
 }
 
-// A fake profile store recording display names and bios set for addresses.
+// A fake profile store recording display names, bios, and avatar URLs set for addresses.
 function makeProfiles () {
   const names = {}
   const bios = {}
+  const avatarUrls = {}
   return {
     names,
     bios,
+    avatarUrls,
     setName: (addr, name) => { names[addr] = name },
     getName: (addr) => names[addr] || null,
     setBio: (addr, bio) => { bios[addr] = bio },
-    getBio: (addr) => bios[addr] || null
+    getBio: (addr) => bios[addr] || null,
+    setAvatarUrl: (addr, url) => { avatarUrls[addr] = url },
+    getAvatarUrl: (addr) => avatarUrls[addr] || null
   }
 }
 
@@ -189,6 +196,13 @@ function createWorld () {
   const memoSetBio = new MemoSetBio({ wallet, profiles })
   world.setBioPage = new SetBioPage({
     memoSetBio,
+    navigate: (path) => { world.currentPath = path }
+  })
+
+  // The Set Avatar URL Page controller shares the same profile store.
+  const memoSetAvatarUrl = new MemoSetAvatarUrl({ wallet, profiles })
+  world.setAvatarUrlPage = new SetAvatarUrlPage({
+    memoSetAvatarUrl,
     navigate: (path) => { world.currentPath = path }
   })
 
@@ -480,6 +494,95 @@ const handlers = [
     pattern: /^I click the Set Bio button$/,
     run (m, example, world) {
       world.accountPage.clickSetBio()
+    }
+  },
+  {
+    name: 'type avatar URL text',
+    pattern: /^I type an avatar URL with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.setAvatarUrlPage.setInput(example[param])
+    }
+  },
+  {
+    name: 'submit avatar URL',
+    pattern: /^I submit the avatar URL$/,
+    async run (m, example, world) {
+      await world.setAvatarUrlPage.submit()
+    }
+  },
+  {
+    name: 'click Set Avatar URL button',
+    pattern: /^I click the Set Avatar URL button$/,
+    run (m, example, world) {
+      world.accountPage.clickSetAvatarUrl()
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo set-profile-picture prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo set-profile-picture prefix$/,
+    run (m, example, world) {
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_SET_AVATAR_URL_PREFIX) {
+        throw new Error(`Expected Memo set-profile-picture prefix ${MEMO_SET_AVATAR_URL_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg !== world.setAvatarUrlPage.input) {
+        throw new Error('Broadcast avatar URL text did not match the typed avatar URL.')
+      }
+    }
+  },
+  {
+    name: 'set avatar page shows validation/length error',
+    pattern: /^the set avatar page shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'avatar_url_validation' : 'avatar_url_length'
+      if (world.setAvatarUrlPage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.setAvatarUrlPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'set avatar page remaining byte count',
+    pattern: /^the set avatar page shows a remaining byte count of <([A-Za-z0-9_]+)>$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = parseInt(example[param], 10)
+      if (Number.isNaN(expected)) {
+        throw new Error(`Invalid expected count for "${param}".`)
+      }
+      const actual = world.setAvatarUrlPage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'account page shows avatar URL',
+    pattern: /^the account page shows my avatar URL as "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = example[param]
+      const actual = world.accountPage.getAvatarUrl()
+      if (actual !== expected) {
+        throw new Error(`Expected account avatar URL "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
+    name: 'account page shows Set Avatar URL button',
+    pattern: /^the account page shows a Set Avatar URL button$/,
+    run (m, example, world) {
+      if (!world.accountPage.hasSetAvatarUrlButton()) {
+        throw new Error('Account page does not show a Set Avatar URL button.')
+      }
     }
   },
   {
