@@ -32,6 +32,7 @@ const SetAvatarUrlPage = require('../../src/services/set-avatar-url-page')
 const AccountPage = require('../../src/services/account-page')
 const MemoLike = require('../../src/services/memo-like')
 const LikeTipPage = require('../../src/services/like-tip-page')
+const MemoFollow = require('../../src/services/memo-follow')
 const RecentFeedPage = require('../../src/services/recent-feed-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
@@ -42,6 +43,8 @@ const MEMO_SET_NAME_PREFIX = MemoSetName.MEMO_SET_NAME_PREFIX
 const MEMO_SET_BIO_PREFIX = MemoSetBio.MEMO_SET_BIO_PREFIX
 const MEMO_SET_AVATAR_URL_PREFIX = MemoSetAvatarUrl.MEMO_SET_AVATAR_URL_PREFIX
 const MEMO_LIKE_PREFIX = MemoLike.MEMO_LIKE_PREFIX
+const MEMO_FOLLOW_PREFIX = MemoFollow.MEMO_FOLLOW_PREFIX
+const MEMO_UNFOLLOW_PREFIX = MemoFollow.MEMO_UNFOLLOW_PREFIX
 
 // Default author address used by Gherkin steps that refer to "the author address".
 const AUTHOR_ADDRESS = 'bitcoincash:qz7v6ztvzu2f2xd2ww8pnx9vwk0g4ncvfvavktg0jc'
@@ -55,6 +58,14 @@ const THIRD_ADDRESS = 'bitcoincash:third-address'
 function makeWallet (address) {
   const wallet = {
     walletInfo: { cashAddress: address },
+    bchjs: {
+      Address: {
+        toHash160 (addr) {
+          // Stable fake hash160: first 20 bytes of sha256 of the address.
+          return require('crypto').createHash('sha256').update(addr).digest('hex').slice(0, 40)
+        }
+      }
+    },
     utxos: [],
     broadcasts: [],
     getUtxos: async function () {
@@ -79,21 +90,28 @@ function makeFeed () {
   }
 }
 
-// A fake profile store recording display names, bios, and avatar URLs set for addresses.
+// A fake profile store recording display names, bios, avatar URLs, and follow state.
 function makeProfiles () {
   const names = {}
   const bios = {}
   const avatarUrls = {}
+  const following = {}
   return {
     names,
     bios,
     avatarUrls,
+    following,
     setName: (addr, name) => { names[addr] = name },
     getName: (addr) => names[addr] || null,
     setBio: (addr, bio) => { bios[addr] = bio },
     getBio: (addr) => bios[addr] || null,
     setAvatarUrl: (addr, url) => { avatarUrls[addr] = url },
-    getAvatarUrl: (addr) => avatarUrls[addr] || null
+    getAvatarUrl: (addr) => avatarUrls[addr] || null,
+    setFollowState: (selfAddr, targetAddr, isFollowing) => {
+      if (!following[selfAddr]) following[selfAddr] = {}
+      following[selfAddr][targetAddr] = isFollowing
+    },
+    getFollowState: (selfAddr, targetAddr) => following[selfAddr]?.[targetAddr] || false
   }
 }
 
@@ -112,15 +130,20 @@ function makeThread () {
 function makeMemoDb () {
   const posts = []
   const threads = {}
+  const followState = {}
 
   return {
     posts,
     threads,
+    followState,
     addPost (post) {
       posts.push(post)
     },
     addThread (txid, thread) {
       threads[txid] = thread
+    },
+    setFollowState (followerAddr, followeeAddr, following) {
+      followState[`${followerAddr}:${followeeAddr}`] = following
     },
     async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
       const page = posts.slice(offset, offset + limit)
@@ -133,6 +156,9 @@ function makeMemoDb () {
     },
     async getPostThread (txid) {
       return threads[txid] || { post: null }
+    },
+    async getFollowState (followerAddr, followeeAddr) {
+      return followState[`${followerAddr}:${followeeAddr}`] || false
     }
   }
 }
@@ -141,10 +167,12 @@ function makeMemoDb () {
 function createWorld () {
   const wallet = makeWallet('')
   const feed = makeFeed()
+  const profiles = makeProfiles()
   const memoPost = new MemoPost({ wallet, feed })
   const thread = makeThread()
   const memoReply = new MemoReply({ wallet, thread })
   const memoLike = new MemoLike({ wallet, feed })
+  const memoFollow = new MemoFollow({ wallet, profiles })
   const memoDb = makeMemoDb()
 
   const world = {
@@ -154,6 +182,7 @@ function createWorld () {
     memoPost,
     memoReply,
     memoLike,
+    memoFollow,
     memoDb,
     currentPath: null,
     menuOpen: false,
@@ -185,7 +214,6 @@ function createWorld () {
 
   // The Set Name Page and Account Page controllers share a profile store so
   // a name set on one page is visible on the other.
-  const profiles = makeProfiles()
   const memoSetName = new MemoSetName({ wallet, profiles })
   world.setNamePage = new SetNamePage({
     memoSetName,
@@ -1180,6 +1208,140 @@ const handlers = [
       const actual = post.likeCount ?? 0
       if (actual !== expected) {
         throw new Error(`Expected like count ${expected} for reply ${txid}, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'API reports I follow address',
+    pattern: /^the psf-memo-db API reports that I follow the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.setFollowState(myAddr, addr, true)
+    }
+  },
+  {
+    name: 'open profile page for address',
+    pattern: /^I open the profile page for the address (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.profilePage = new ProfilePage({
+        memoDb: world.memoDb,
+        addr,
+        myAddr,
+        memoFollow: world.memoFollow
+      })
+      await world.profilePage.load()
+      world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
+    }
+  },
+  {
+    name: 'open profile page for own address',
+    pattern: /^I open the profile page for my own address$/,
+    async run (m, example, world) {
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.profilePage = new ProfilePage({
+        memoDb: world.memoDb,
+        addr: myAddr,
+        myAddr,
+        memoFollow: world.memoFollow
+      })
+      await world.profilePage.load()
+      world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(myAddr)}`
+    }
+  },
+  {
+    name: 'profile page shows Follow button',
+    pattern: /^the profile page shows a Follow button$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.canFollow()) {
+        throw new Error('Profile page cannot show a Follow button for this address.')
+      }
+      if (world.profilePage.isFollowing()) {
+        throw new Error('Profile page shows Unfollow, but Follow was expected.')
+      }
+    }
+  },
+  {
+    name: 'profile page shows Unfollow button',
+    pattern: /^the profile page shows an Unfollow button$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.canFollow()) {
+        throw new Error('Profile page cannot show an Unfollow button for this address.')
+      }
+      if (!world.profilePage.isFollowing()) {
+        throw new Error('Profile page shows Follow, but Unfollow was expected.')
+      }
+    }
+  },
+  {
+    name: 'profile page does not show Follow button',
+    pattern: /^the profile page does not show a Follow button$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (world.profilePage.canFollow()) {
+        throw new Error('Profile page should not show a Follow button.')
+      }
+    }
+  },
+  {
+    name: 'click Follow button',
+    pattern: /^I click the Follow button$/,
+    async run (m, example, world) {
+      await world.profilePage.follow()
+    }
+  },
+  {
+    name: 'click Unfollow button',
+    pattern: /^I click the Unfollow button$/,
+    async run (m, example, world) {
+      await world.profilePage.unfollow()
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo follow prefix for address',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo follow prefix for the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_FOLLOW_PREFIX) {
+        throw new Error(`Expected Memo follow prefix ${MEMO_FOLLOW_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg.toString('hex') !== hash160) {
+        throw new Error(`Broadcast follow hash160 did not match ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo unfollow prefix for address',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo unfollow prefix for the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_UNFOLLOW_PREFIX) {
+        throw new Error(`Expected Memo unfollow prefix ${MEMO_UNFOLLOW_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg.toString('hex') !== hash160) {
+        throw new Error(`Broadcast unfollow hash160 did not match ${addr}.`)
       }
     }
   }

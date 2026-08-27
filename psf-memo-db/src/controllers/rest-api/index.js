@@ -6,6 +6,7 @@ import LevelRESTController from './level/index.js'
 import HealthRouter from './health/index.js'
 import ProfileRouter from './profile/index.js'
 import PostsRouter from './posts/index.js'
+import FollowRouter from './follow/index.js'
 
 class RESTControllers {
   constructor (localConfig = {}) {
@@ -31,6 +32,9 @@ class RESTControllers {
 
     const postsRouter = new PostsRouter(dependencies)
     postsRouter.attach(app)
+
+    const followRouter = new FollowRouter(dependencies)
+    followRouter.attach(app)
   }
 }
 

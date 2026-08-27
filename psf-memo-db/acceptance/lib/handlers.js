@@ -15,6 +15,9 @@ import Adapters from '../../src/adapters/index.js'
 import ListRecentPosts from '../../src/use-cases/list-recent-posts.js'
 import ListPostsByAddr from '../../src/use-cases/list-posts-by-addr.js'
 import GetPostThread from '../../src/use-cases/get-post-thread.js'
+import FollowState from '../../src/use-cases/follow-state.js'
+import ListFollowing from '../../src/use-cases/list-following.js'
+import ListFollowers from '../../src/use-cases/list-followers.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -82,6 +85,9 @@ async function createWorld () {
   const listRecentPosts = new ListRecentPosts({ adapters })
   const listPostsByAddr = new ListPostsByAddr({ adapters })
   const getPostThread = new GetPostThread({ adapters })
+  const followState = new FollowState({ adapters })
+  const listFollowing = new ListFollowing({ adapters })
+  const listFollowers = new ListFollowers({ adapters })
 
   let lastResponse = null
 
@@ -90,6 +96,9 @@ async function createWorld () {
     listRecentPosts,
     listPostsByAddr,
     getPostThread,
+    followState,
+    listFollowing,
+    listFollowers,
     postHeightsIteratorCounter,
     postChildrenIteratorCounter,
     postsGetCounter,
@@ -109,6 +118,11 @@ async function createWorld () {
 async function loadFixture (world, name) {
   if (name === 'posts-with-likes') {
     await loadPostsWithLikes(world)
+    return
+  }
+
+  if (name === 'follows') {
+    await loadFollows(world)
     return
   }
 
@@ -194,6 +208,28 @@ async function loadPostsWithLikes (world) {
 
   for (const like of likes) {
     await world.adapters.level.likesDb.put(like.txid, like)
+  }
+}
+
+async function loadFollows (world) {
+  const follower1 = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const follower2 = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+  const followeeHash = 'cb481232299cd5743151ac4b2d63ae198e7bb0a9'
+
+  const records = [
+    { key: `${follower1}:${followeeHash}`, followerAddr: follower1, followeePkHash: followeeHash, unfollow: false },
+    { key: `${follower2}:${followeeHash}`, followerAddr: follower2, followeePkHash: followeeHash, unfollow: false }
+  ]
+
+  for (const record of records) {
+    await world.adapters.level.followsDb.put(record.key, {
+      followerAddr: record.followerAddr,
+      followeePkHash: record.followeePkHash,
+      unfollow: record.unfollow,
+      txid: `follow-${record.followerAddr.slice(-8)}-${record.followeePkHash.slice(-8)}`,
+      seen: Date.now(),
+      blockHeight: 600000
+    })
   }
 }
 
@@ -389,6 +425,84 @@ const handlers = [
       const calls = world.postChildrenIteratorCounter.calls
       if (calls !== 1) {
         throw new Error(`Expected exactly one postChildren scan, got ${calls}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with follows store',
+    pattern: /^a psf-memo-db instance with a follows store$/,
+    async run () {
+      // World is already created with the follows store.
+    }
+  },
+  {
+    name: 'load fixture into follows store',
+    pattern: /^the fixture "(.+)" is loaded into the follows store$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'request follow state',
+    pattern: /^the client requests the follow state for follower (<[A-Za-z0-9_]+>) and followee (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const follower = resolveParam(m[1], example)
+      const followee = resolveParam(m[2], example)
+      const resp = await world.followState.execute({ followerAddr: follower, followeeAddr: followee })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'follow state reports following',
+    pattern: /^the follow state reports following (<following>)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example) === 'true'
+      const actual = world.getLastResponse().following
+      if (actual !== expected) {
+        throw new Error(`Expected following ${expected}, got ${actual}`)
+      }
+    }
+  },
+  {
+    name: 'request following list',
+    pattern: /^the client requests the following list for (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const follower = resolveParam(m[1], example)
+      const resp = await world.listFollowing.execute({ followerAddr: follower })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'following list contains addresses',
+    pattern: /^the following list contains the addresses (<[A-Za-z0-9_]+>)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example).split(',').map((s) => s.trim()).filter(Boolean)
+      const actual = world.getLastResponse().following
+      if (expected.join(',') !== actual.join(',')) {
+        throw new Error(`Expected following ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
+  },
+  {
+    name: 'request followers list',
+    pattern: /^the client requests the followers list for (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const followee = resolveParam(m[1], example)
+      const resp = await world.listFollowers.execute({ followeeAddr: followee })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'followers list contains addresses',
+    pattern: /^the followers list contains the addresses (<[A-Za-z0-9_]+>)$/,
+    run (m, example, world) {
+      const raw = resolveParam(m[1], example).trim()
+      const expected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
+      const actual = world.getLastResponse().followers
+      const expectedSet = new Set(expected)
+      const actualSet = new Set(actual)
+      if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
+        throw new Error(`Expected followers ${expected.join(',')}, got ${actual.join(',')}`)
       }
     }
   }
