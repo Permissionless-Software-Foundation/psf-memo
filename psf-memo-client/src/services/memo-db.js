@@ -52,17 +52,8 @@ class MemoDb {
     return this.getRecent('/topics', 'getTopics', {})
   }
 
-  async getTopicPosts (room, { limit = 100, offset = 0 } = {}) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/topics/${encodeURIComponent(room)}/posts`,
-        { params: { limit, offset } }
-      )
-      return result.data
-    } catch (err) {
-      console.error('Error in getTopicPosts()')
-      throw err
-    }
+  async getTopicPosts (room, opts = {}) {
+    return this.getPage(`/topics/${encodeURIComponent(room)}/posts`, 'getTopicPosts', opts)
   }
 
   // GET a paginated 'recent' listing endpoint.
@@ -70,6 +61,20 @@ class MemoDb {
     try {
       const result = await this.axios.get(`${config.backend}${path}`, {
         params
+      })
+
+      return result.data
+    } catch (err) {
+      console.error(`Error in ${name}()`)
+      throw err
+    }
+  }
+
+  // GET a paginated resource page at a full path.
+  async getPage (path, name, { limit = 100, offset = 0 } = {}) {
+    try {
+      const result = await this.axios.get(`${config.backend}${path}`, {
+        params: { limit, offset }
       })
 
       return result.data
@@ -95,18 +100,8 @@ class MemoDb {
     }
   }
 
-  async getPostsByAddr (addr, { limit = 100, offset = 0 } = {}) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/posts/by/${encodeURIComponent(addr)}`,
-        { params: { limit, offset } }
-      )
-
-      return result.data
-    } catch (err) {
-      console.error('Error in getPostsByAddr()')
-      throw err
-    }
+  async getPostsByAddr (addr, opts = {}) {
+    return this.getPage(`/posts/by/${encodeURIComponent(addr)}`, 'getPostsByAddr', opts)
   }
 
   async getPostThread (txid) {

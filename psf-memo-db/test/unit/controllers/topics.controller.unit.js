@@ -58,4 +58,31 @@ describe('#TopicsRESTController', () => {
     assert.equal(ctx.body.posts.length, 1)
     assert.equal(ctx.body.posts[0].txid, 'post-300')
   })
+
+  it('should throw a 500 when the use case fails without a status', async () => {
+    uut.useCases.listTopics.execute = sandbox.stub().rejects(new Error('boom'))
+    const ctx = { body: null, throw: sandbox.stub() }
+
+    await uut.getTopics(ctx)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 500)
+  })
+
+  it('should preserve the status when the use case throws a statused error', async () => {
+    const err = new Error('room is required')
+    err.status = 400
+    uut.useCases.listTopicPosts.execute = sandbox.stub().rejects(err)
+    const ctx = {
+      params: {},
+      query: {},
+      body: null,
+      throw: sandbox.stub()
+    }
+
+    await uut.getTopicPosts(ctx)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 400)
+  })
 })
