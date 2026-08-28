@@ -171,9 +171,9 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 | # | Feature | Memo action | Components | Status |
 |---|---------|-------------|------------|--------|
-| 3.1 | Create a poll | `0x6d10` | C, I, D | 🔴 missing |
-| 3.2 | Add a poll option | `0x6d13` | C, I, D | 🔴 missing |
-| 3.3 | Vote in a poll | `0x6d14` | C, I, D | 🔴 missing |
+| 3.1 | Create a poll | `0x6d10` | C, I, D | 🔄 specs written (task `poll-actions`) |
+| 3.2 | Add a poll option | `0x6d13` | C, I, D | 🔄 specs written (task `poll-actions`) |
+| 3.3 | Vote in a poll | `0x6d14` | C, I, D | 🔄 specs written (task `poll-actions`) |
 
 ---
 
@@ -213,22 +213,23 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Post a topic message / Follow a topic / Unfollow a topic** (P2.3 / P2.4 / P2.5):
-- `psf-memo-client`: add a topic post composer and topic follow/unfollow buttons
-  on the topic feed page that broadcast `0x6d0c` / `0x6d0d` / `0x6d0e`.
-- `psf-memo-db`: expose topic follow state and a topic's followers list.
-- The indexer already stores topic messages and follows in `roomsDb`; the
-  missing pieces are the client write path and the DB read side for follows.
+**Polls (P3.1 / P3.2 / P3.3)** — create a poll / add an option / vote:
+- `psf-memo-client`: a poll composer that broadcasts `0x6d10` (create poll),
+  an add-option composer that broadcasts `0x6d13`, and a vote composer that
+  broadcasts `0x6d14`.
+- `psf-memo-indexer`: new handlers that parse and store create-poll, add-option,
+  and vote transactions (no poll handler exists yet).
+- `psf-memo-db`: expose the read side — poll question/options/votes via
+  `/polls/:txid`, `/polls/:txid/options`, `/polls/:txid/votes`.
 
-### Topic payloads (UTF-8, no cashaddr conversion)
+### Poll payloads
 
-Unlike follow/unfollow user, topic actions carry plain UTF-8 text (the topic
-name and, for `0x6d0c`, the message). No bch-js cashaddr conversion is needed
-for topics. The `0x6d0c` topic message payload is `topic_name + message` with a
-combined limit of 214 bytes; `0x6d0d` / `0x6d0e` carry only the topic name.
+- `0x6d10` create poll: `poll_type` (1 byte) + `option_count` (1 byte) + `question` (≤ 209 bytes).
+- `0x6d13` add option: `poll_txhash` (32 bytes) + `option` (≤ 184 bytes).
+- `0x6d14` vote: `poll_txhash` (32 bytes) + `comment` (≤ 184 bytes).
 
-This is the next smallest end-to-end win after the topic list/feed read side
-closed.
+The poll txid is a 32-byte binary hash reversed to hex, like other Memo txid
+payloads. Specs are written (task `poll-actions`, handed off to the coder).
 
 ---
 
