@@ -36,6 +36,8 @@ const MemoFollow = require('../../src/services/memo-follow')
 const RecentFeedPage = require('../../src/services/recent-feed-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
+const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
+const TopicFeedPage = require('../../src/services/topic-feed-page')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -125,19 +127,43 @@ function makeThread () {
   }
 }
 
-// A fake psf-memo-db API backing the read-only feed, profile, and thread
-// pages used to verify like count display.
+// A fake psf-memo-db API backing the read-only feed, profile, thread,
+// and topic pages used to verify read-side behavior.
 function makeMemoDb () {
   const posts = []
   const threads = {}
   const followState = {}
+  const topics = []
+  const topicPosts = {}
+  const topicCounts = new Map()
 
   return {
     posts,
     threads,
     followState,
+    topics,
+    topicPosts,
+    topicCounts,
     addPost (post) {
       posts.push(post)
+    },
+    addTopic (room, postCount) {
+      topicCounts.set(room, postCount)
+      topicPosts[room] = []
+      for (let i = 0; i < postCount; i++) {
+        const txid = `${room}-post-${i + 1}`.padEnd(64, '0')
+        topicPosts[room].push({
+          txid,
+          addr: `addr-${i + 1}`,
+          text: `Sample post ${i + 1}`,
+          blockHeight: 100 + i
+        })
+      }
+    },
+    addTopicPost (room, post) {
+      if (!topicPosts[room]) topicPosts[room] = []
+      topicPosts[room].push(post)
+      topicCounts.set(room, (topicCounts.get(room) || 0) + 1)
     },
     addThread (txid, thread) {
       threads[txid] = thread
@@ -159,6 +185,19 @@ function makeMemoDb () {
     },
     async getFollowState (followerAddr, followeeAddr) {
       return followState[`${followerAddr}:${followeeAddr}`] || false
+    },
+    async getTopics () {
+      const list = []
+      for (const [room, postCount] of topicCounts.entries()) {
+        list.push({ room, postCount })
+      }
+      list.sort((a, b) => a.room.localeCompare(b.room))
+      return { topics: list }
+    },
+    async getTopicPosts (room, { limit = 100, offset = 0 } = {}) {
+      const all = topicPosts[room] || []
+      const page = all.slice(offset, offset + limit)
+      return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
     }
   }
 }
@@ -193,6 +232,10 @@ function createWorld () {
   world.recentFeedPage = new RecentFeedPage({ memoDb })
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
+  world.topicDiscoveryPage = new TopicDiscoveryPage({
+    memoDb,
+    navigate: (path) => { world.currentPath = path }
+  })
 
   // The New Post Page controller wraps the memo post behavior. Its navigate
   // adapter updates the world's current path so navigation can be asserted.
@@ -1342,6 +1385,122 @@ const handlers = [
       }
       if (last.msg.toString('hex') !== hash160) {
         throw new Error(`Broadcast unfollow hash160 did not match ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'API serves topic with post count',
+    pattern: /^the psf-memo-db API serves a topic named "([^"]+)" with (\d+) posts?$/,
+    run (m, example, world) {
+      const room = m[1]
+      const count = parseInt(m[2], 10)
+      world.memoDb.addTopic(room, count)
+    }
+  },
+  {
+    name: 'API serves post in topic with address and text',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) in the topic "([^"]+)" authored by the address (.+) with text "(.+)"$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const room = m[2]
+      const addr = resolveParam(m[3], example)
+      const text = m[4]
+      world.memoDb.addTopicPost(room, { txid, addr, text, blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves post in topic with second address and text',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) in the topic "([^"]+)" authored by a second address with text "(.+)"$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const room = m[2]
+      const text = m[3]
+      world.memoDb.addTopicPost(room, { txid, addr: SECOND_ADDRESS, text, blockHeight: 101 })
+    }
+  },
+  {
+    name: 'API serves no posts for topic',
+    pattern: /^the psf-memo-db API serves no posts for the topic "([^"]+)"$/,
+    run (m, example, world) {
+      const room = m[1]
+      world.memoDb.topicCounts.set(room, 0)
+      world.memoDb.topicPosts[room] = []
+    }
+  },
+  {
+    name: 'open topics page',
+    pattern: /^I open the topics page$/,
+    async run (m, example, world) {
+      await world.topicDiscoveryPage.load()
+      world.currentPath = TopicDiscoveryPage.TOPICS_PATH
+    }
+  },
+  {
+    name: 'topics page shows topic count',
+    pattern: /^the topics page shows the topic (<topic>) with (<count>) posts$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const topic = world.topicDiscoveryPage.getTopic(room)
+      if (!topic) {
+        throw new Error(`Topic ${room} is not shown on the topics page.`)
+      }
+      if (topic.postCount !== expected) {
+        throw new Error(`Expected ${room} to have ${expected} posts, got ${topic.postCount}.`)
+      }
+    }
+  },
+  {
+    name: 'click topic',
+    pattern: /^I click the topic (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      world.topicDiscoveryPage.openTopic(room)
+    }
+  },
+  {
+    name: 'navigate to topic feed',
+    pattern: /^the app navigates to the topic feed for (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = TopicFeedPage.topicFeedPath(room)
+      if (world.currentPath !== expected) {
+        throw new Error(`Expected to navigate to ${expected}, but current path is ${world.currentPath}.`)
+      }
+    }
+  },
+  {
+    name: 'open topic feed',
+    pattern: /^I open the topic feed for "?(<topic>|[^"]+)"?$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      world.topicFeedPage = new TopicFeedPage({ memoDb: world.memoDb, room })
+      await world.topicFeedPage.load()
+      world.currentPath = TopicFeedPage.topicFeedPath(room)
+    }
+  },
+  {
+    name: 'topic feed shows post text',
+    pattern: /^the feed shows the post with txid (<txid>) with text (<text>)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const post = world.topicFeedPage.getPost(txid)
+      if (!post) {
+        throw new Error(`Post ${txid} is not shown in the topic feed.`)
+      }
+      if (post.text !== expected) {
+        throw new Error(`Expected post ${txid} text "${expected}", got "${post.text}".`)
+      }
+    }
+  },
+  {
+    name: 'topic feed shows empty message',
+    pattern: /^the feed shows a message that there are no posts$/,
+    run (m, example, world) {
+      const posts = world.topicFeedPage.posts
+      if (!Array.isArray(posts) || posts.length !== 0) {
+        throw new Error(`Expected topic feed to be empty, but found ${Array.isArray(posts) ? posts.length : 'non-array'} posts.`)
       }
     }
   }
