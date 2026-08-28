@@ -67,6 +67,15 @@ export function postHeightKey (blockHeight, txid) {
   return `${padded}:${txid}`
 }
 
+export function addrPostHeightKey (addr, blockHeight, txid) {
+  const padded = String(blockHeight).padStart(12, '0')
+  return `${addr}:${padded}:${txid}`
+}
+
+export function postLikeKey (postTxid, likeTxid) {
+  return `${postTxid}:${likeTxid}`
+}
+
 export function postChildKey (parentTxid, childTxid) {
   return `${parentTxid}:${childTxid}`
 }

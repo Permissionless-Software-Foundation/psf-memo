@@ -21,9 +21,11 @@ class Adapters {
 
     this.postDb = createEntityDb('post', 'txid', 'postData')
     this.postHeightDb = createEntityDb('postheight', 'key', 'postHeightData')
+    this.addrPostHeightDb = createEntityDb('addrpostheight', 'key', 'addrPostHeightData')
     this.postParentDb = createEntityDb('postparent', 'txid', 'parentData')
     this.postChildDb = createEntityDb('postchild', 'key', 'childData')
     this.likeDb = createEntityDb('like', 'txid', 'likeData')
+    this.postLikeDb = createEntityDb('postlike', 'key', 'postLikeData')
     this.nameDb = createEntityDb('name', 'addr', 'nameData')
     this.profileDb = createEntityDb('profile', 'addr', 'profileData')
     this.profilePicDb = createEntityDb('profilepic', 'addr', 'profilePicData')

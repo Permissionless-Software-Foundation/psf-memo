@@ -1,4 +1,4 @@
-import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas, postHeightKey } from './helpers.js'
+import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas, postHeightKey, addrPostHeightKey } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
 
 // Create a record only when it does not already exist (idempotent writes).
@@ -31,8 +31,10 @@ export async function handlePost (ctx) {
 
   const postData = { addr: signerAddr, text, seen, blockHeight }
   const heightKey = postHeightKey(blockHeight, txid)
+  const addrHeightKey = addrPostHeightKey(signerAddr, blockHeight, txid)
   await createIfMissing(adapters.postDb, txid, postData)
   await createIfMissing(adapters.postHeightDb, heightKey, { txid, blockHeight })
+  await createIfMissing(adapters.addrPostHeightDb, addrHeightKey, { txid, addr: signerAddr, blockHeight })
 }
 
 // mutate4javascript-manifest-begin

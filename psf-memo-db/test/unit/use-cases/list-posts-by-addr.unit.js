@@ -16,19 +16,21 @@ describe('#ListPostsByAddr', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     postQuery = {
-      scanPostsByAddrTxids: sandbox.stub().callsFake(async (addr, { limit, offset }) => {
+      scanPostsByAddrTxidsAndCount: sandbox.stub().callsFake(async (addr, { limit, offset }) => {
         const all = Object.entries(mockPosts)
           .filter(([txid, post]) => post.addr === addr)
           .sort((a, b) => b[1].blockHeight - a[1].blockHeight)
           .map(([txid]) => txid)
-        return all.slice(offset, offset + limit)
+        return {
+          txids: all.slice(offset, offset + limit),
+          total: all.length
+        }
       }),
       loadPostsByTxids: sandbox.stub().callsFake(async (txids) => {
         return txids.map((txid) => ({ txid, ...mockPosts[txid] }))
       }),
-      buildReplyCountMap: sandbox.stub().resolves(new Map()),
-      buildLikeCountMap: sandbox.stub().resolves(new Map([['tx-c', 7]])),
-      countTopLevelPostsByAddr: sandbox.stub().resolves(2)
+      countRepliesForTxids: sandbox.stub().resolves(new Map()),
+      countLikesForTxids: sandbox.stub().resolves(new Map([['tx-c', 7]]))
     }
     uut = new ListPostsByAddr({
       adapters: { postQuery }
@@ -52,11 +54,15 @@ describe('#ListPostsByAddr', () => {
 
   it('should report hasMore when a further page exists', async () => {
     // One page of one item still leaves one more page available.
-    postQuery.scanPostsByAddrTxids.callsFake(async (addr, { limit, offset }) => {
-      return Object.entries(mockPosts)
+    postQuery.scanPostsByAddrTxidsAndCount.callsFake(async (addr, { limit, offset }) => {
+      const all = Object.entries(mockPosts)
         .filter(([txid, post]) => post.addr === addr)
         .map(([txid]) => txid)
-        .slice(offset, offset + limit)
+        .sort((a, b) => mockPosts[b].blockHeight - mockPosts[a].blockHeight)
+      return {
+        txids: all.slice(offset, offset + limit),
+        total: all.length
+      }
     })
     const result = await uut.execute({ addr: 'addr-a', limit: 1, offset: 0 })
 
@@ -87,8 +93,8 @@ describe('#ListPostsByAddr', () => {
   it('should pass addr, limit, and offset to postQuery', async () => {
     await uut.execute({ addr: 'addr-a', limit: 5, offset: 10 })
 
-    assert.equal(postQuery.scanPostsByAddrTxids.calledOnce, true)
-    assert.equal(postQuery.scanPostsByAddrTxids.firstCall.args[0], 'addr-a')
-    assert.deepEqual(postQuery.scanPostsByAddrTxids.firstCall.args[1], { limit: 5, offset: 10 })
+    assert.equal(postQuery.scanPostsByAddrTxidsAndCount.calledOnce, true)
+    assert.equal(postQuery.scanPostsByAddrTxidsAndCount.firstCall.args[0], 'addr-a')
+    assert.deepEqual(postQuery.scanPostsByAddrTxidsAndCount.firstCall.args[1], { limit: 5, offset: 10 })
   })
 })

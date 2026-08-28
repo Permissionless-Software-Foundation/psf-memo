@@ -33,12 +33,12 @@ function mockPostsDb (posts) {
   }
 }
 
-// A likes store that iterates [key, like] pairs.
-function mockLikesDb (likes) {
+// A postLikes store that iterates [key, postLike] pairs keyed as postTxid:likeTxid.
+function mockPostLikesDb (likes) {
   return {
     async * iterator () {
       for (const like of likes) {
-        yield [like.txid, like]
+        yield [`${like.postTxid}:${like.txid}`, like]
       }
     }
   }
@@ -47,10 +47,12 @@ function mockLikesDb (likes) {
 function makeQuery (posts, likes) {
   return new PostQuery({
     postsDb: mockPostsDb(posts),
-    likesDb: mockLikesDb(likes),
+    postLikesDb: mockPostLikesDb(likes),
     postHeightsDb: {},
+    addrPostHeightsDb: {},
     postParentsDb: {},
-    postChildrenDb: {}
+    postChildrenDb: {},
+    likesDb: {}
   })
 }
 

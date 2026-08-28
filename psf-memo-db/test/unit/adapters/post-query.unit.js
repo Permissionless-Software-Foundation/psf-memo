@@ -6,11 +6,12 @@ describe('#PostQuery', () => {
   let uut
   let sandbox
   let postsDb
+  let postHeightsDb
+  let addrPostHeightsDb
   let postParentsDb
   let postChildrenDb
-  let postHeightsDb
-
   let likesDb
+  let postLikesDb
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -18,29 +19,43 @@ describe('#PostQuery', () => {
       iterator: sandbox.stub(),
       get: sandbox.stub()
     }
-    postParentsDb = {
+    postHeightsDb = {
       iterator: sandbox.stub()
+    }
+    addrPostHeightsDb = {
+      iterator: sandbox.stub()
+    }
+    postParentsDb = {
+      iterator: sandbox.stub(),
+      get: sandbox.stub()
     }
     postChildrenDb = {
-      iterator: sandbox.stub()
-    }
-    postHeightsDb = {
       iterator: sandbox.stub()
     }
     likesDb = {
       iterator: sandbox.stub()
     }
+    postLikesDb = {
+      iterator: sandbox.stub()
+    }
 
-    async function * emptyParents () {}
-    async function * emptyChildren () {}
-    async function * emptyHeights () {}
-    async function * emptyLikes () {}
-    postParentsDb.iterator.returns(emptyParents())
-    postChildrenDb.iterator.returns(emptyChildren())
-    postHeightsDb.iterator.returns(emptyHeights())
-    likesDb.iterator.returns(emptyLikes())
+    async function * empty () {}
+    postHeightsDb.iterator.returns(empty())
+    addrPostHeightsDb.iterator.returns(empty())
+    postParentsDb.iterator.returns(empty())
+    postChildrenDb.iterator.returns(empty())
+    likesDb.iterator.returns(empty())
+    postLikesDb.iterator.returns(empty())
 
-    uut = new PostQuery({ postsDb, postParentsDb, postChildrenDb, postHeightsDb, likesDb })
+    uut = new PostQuery({
+      postsDb,
+      postHeightsDb,
+      addrPostHeightsDb,
+      postParentsDb,
+      postChildrenDb,
+      likesDb,
+      postLikesDb
+    })
   })
 
   afterEach(() => sandbox.restore())
@@ -48,20 +63,30 @@ describe('#PostQuery', () => {
   it('should throw when postHeightsDb is missing', () => {
     try {
       // eslint-disable-next-line no-new
-      new PostQuery({ postsDb, postParentsDb, postChildrenDb, likesDb })
+      new PostQuery({ postsDb, postParentsDb, postChildrenDb, likesDb, postLikesDb })
       assert.fail('Expected error')
     } catch (err) {
       assert.include(err.message, 'postHeightsDb required')
     }
   })
 
-  it('should throw when likesDb is missing', () => {
+  it('should throw when addrPostHeightsDb is missing', () => {
     try {
       // eslint-disable-next-line no-new
-      new PostQuery({ postsDb, postHeightsDb, postParentsDb, postChildrenDb })
+      new PostQuery({ postsDb, postHeightsDb, postParentsDb, postChildrenDb, likesDb, postLikesDb })
       assert.fail('Expected error')
     } catch (err) {
-      assert.include(err.message, 'likesDb required')
+      assert.include(err.message, 'addrPostHeightsDb required')
+    }
+  })
+
+  it('should throw when postLikesDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new PostQuery({ postsDb, postHeightsDb, addrPostHeightsDb, postParentsDb, postChildrenDb, likesDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'postLikesDb required')
     }
   })
 
@@ -151,60 +176,59 @@ describe('#PostQuery', () => {
   })
 
   describe('#scanPostsByAddrTxids', () => {
-    it('should return txids for the address sorted by block height descending', async () => {
-      async function * mockHeights () {
-        yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
-        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
-        yield ['000000600100:post-100', { txid: 'post-100' }]
-      }
-      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
-      postsDb.get.callsFake(async (txid) => {
-        const posts = {
-          'post-200-b': { addr: 'addr-b', text: 'b', seen: 200, blockHeight: 600200 },
-          'post-200-a': { addr: 'addr-a', text: 'a', seen: 100, blockHeight: 600200 },
-          'post-100': { addr: 'addr-a', text: 'c', seen: 50, blockHeight: 600100 }
-        }
-        return posts[txid]
-      })
+    beforeEach(() => {
+      const err = new Error('not found')
+      err.notFound = true
+      postParentsDb.get.rejects(err)
+    })
 
-      const result = await uut.scanPostsByAddrTxids('addr-a', { limit: 2, offset: 0 })
+    it('should return txids for the address sorted by block height descending', async () => {
+      async function * mockAddrHeights () {
+        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
+      }
+      addrPostHeightsDb.iterator
+        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff', reverse: true })
+        .returns(mockAddrHeights())
+
+      const result = await uut.scanPostsByAddrTxids('bitcoincash:qaddr-a', { limit: 2, offset: 0 })
+
+      assert.deepEqual(result, ['post-200-a', 'post-100'])
+    })
+
+    it('should skip replies when selecting posts by address', async () => {
+      async function * mockAddrHeights () {
+        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
+        yield ['bitcoincash:qaddr-a:000000600050:reply-1', { txid: 'reply-1' }]
+      }
+      postParentsDb.get.callsFake(async (txid) => {
+        if (txid === 'reply-1') return { parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600050 }
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      })
+      addrPostHeightsDb.iterator
+        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff', reverse: true })
+        .returns(mockAddrHeights())
+
+      const result = await uut.scanPostsByAddrTxids('bitcoincash:qaddr-a', { limit: 2, offset: 0 })
 
       assert.deepEqual(result, ['post-200-a', 'post-100'])
     })
 
     it('should apply offset and limit for the address', async () => {
-      async function * mockHeights () {
-        yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
-        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
-        yield ['000000600100:post-100', { txid: 'post-100' }]
+      async function * mockAddrHeights () {
+        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
       }
-      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
-      postsDb.get.callsFake(async (txid) => {
-        const posts = {
-          'post-200-b': { addr: 'addr-b', text: 'b', seen: 200, blockHeight: 600200 },
-          'post-200-a': { addr: 'addr-a', text: 'a', seen: 100, blockHeight: 600200 },
-          'post-100': { addr: 'addr-a', text: 'c', seen: 50, blockHeight: 600100 }
-        }
-        return posts[txid]
-      })
+      addrPostHeightsDb.iterator
+        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff', reverse: true })
+        .returns(mockAddrHeights())
 
-      const result = await uut.scanPostsByAddrTxids('addr-a', { limit: 1, offset: 1 })
+      const result = await uut.scanPostsByAddrTxids('bitcoincash:qaddr-a', { limit: 1, offset: 1 })
 
       assert.deepEqual(result, ['post-100'])
-    })
-
-    it('should stop at limit even when more matching posts remain', async () => {
-      async function * mockHeights () {
-        yield ['000000600300:post-300', { txid: 'post-300' }]
-        yield ['000000600200:post-200', { txid: 'post-200' }]
-        yield ['000000600100:post-100', { txid: 'post-100' }]
-      }
-      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
-      postsDb.get.callsFake(async (txid) => ({ addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 }))
-
-      const result = await uut.scanPostsByAddrTxids('addr-a', { limit: 2, offset: 0 })
-
-      assert.deepEqual(result, ['post-300', 'post-200'])
     })
   })
 
@@ -264,24 +288,44 @@ describe('#PostQuery', () => {
 
   describe('#countTopLevelPostsByAddr', () => {
     it('should count top-level posts for an address', async () => {
-      async function * mockHeights () {
-        yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
-        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
-        yield ['000000600100:post-100', { txid: 'post-100' }]
+      async function * mockAddrHeights () {
+        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
       }
-      postHeightsDb.iterator.returns(mockHeights())
-      postsDb.get.callsFake(async (txid) => {
-        const posts = {
-          'post-200-b': { addr: 'addr-b', text: 'b', seen: 200, blockHeight: 600200 },
-          'post-200-a': { addr: 'addr-a', text: 'a', seen: 100, blockHeight: 600200 },
-          'post-100': { addr: 'addr-a', text: 'c', seen: 50, blockHeight: 600100 }
-        }
-        return posts[txid]
-      })
+      async function * mockParents () {
+        yield ['reply-1', { parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600050 }]
+      }
+      addrPostHeightsDb.iterator
+        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff' })
+        .returns(mockAddrHeights())
+      postParentsDb.iterator.returns(mockParents())
 
-      const result = await uut.countTopLevelPostsByAddr('addr-a')
+      const result = await uut.countTopLevelPostsByAddr('bitcoincash:qaddr-a')
 
       assert.equal(result, 2)
+    })
+  })
+
+  describe('#countRepliesForTxids', () => {
+    it('should count replies per txid from postChildren', async () => {
+      async function * mockChildrenTx1 () {
+        yield ['tx1:reply-a', { parentTxid: 'tx1', childTxid: 'reply-a', blockHeight: 600150 }]
+        yield ['tx1:reply-b', { parentTxid: 'tx1', childTxid: 'reply-b', blockHeight: 600160 }]
+      }
+      async function * mockChildrenTx2 () {
+        yield ['tx2:reply-c', { parentTxid: 'tx2', childTxid: 'reply-c', blockHeight: 600170 }]
+      }
+      postChildrenDb.iterator
+        .withArgs(sinon.match({ gte: 'tx1:', lte: 'tx1:\uffff' }))
+        .returns(mockChildrenTx1())
+      postChildrenDb.iterator
+        .withArgs(sinon.match({ gte: 'tx2:', lte: 'tx2:\uffff' }))
+        .returns(mockChildrenTx2())
+
+      const result = await uut.countRepliesForTxids(['tx1', 'tx2'])
+
+      assert.equal(result.get('tx1'), 2)
+      assert.equal(result.get('tx2'), 1)
     })
   })
 
@@ -301,43 +345,92 @@ describe('#PostQuery', () => {
     })
   })
 
-  describe('#buildLikeCountMap', () => {
-    it('should count likes per post, ignoring likes for missing posts', async () => {
-      async function * mockLikes () {
-        yield ['like-a', { postTxid: 'tx1', addr: 'addr-x', seen: 1, blockHeight: 1 }]
-        yield ['like-b', { postTxid: 'tx1', addr: 'addr-y', seen: 2, blockHeight: 2 }]
-        yield ['like-c', { postTxid: 'tx2', addr: 'addr-z', seen: 3, blockHeight: 3 }]
-        yield ['like-d', { postTxid: 'missing', addr: 'addr-w', seen: 4, blockHeight: 4 }]
+  describe('#likeTxidFromPostLike', () => {
+    it('should return the likeTxid from the value when present', () => {
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', { likeTxid: 'like-a' }), 'like-a')
+    })
+
+    it('should fall back to the txid field in the value', () => {
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', { txid: 'like-a' }), 'like-a')
+    })
+
+    it('should parse the like txid from the key when the value is absent', () => {
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', null), 'like-a')
+      assert.equal(uut.likeTxidFromPostLike('tx1:like-a', {}), 'like-a')
+    })
+  })
+
+  describe('#getPostOrNull', () => {
+    it('should return the post when present', async () => {
+      postsDb.get.withArgs('tx1').resolves({ addr: 'a1', text: 'hello' })
+      const post = await uut.getPostOrNull('tx1')
+      assert.equal(post.text, 'hello')
+    })
+
+    it('should return null when the post is not found', async () => {
+      const err = new Error('not found')
+      err.notFound = true
+      postsDb.get.withArgs('tx1').rejects(err)
+      assert.equal(await uut.getPostOrNull('tx1'), null)
+    })
+
+    it('should rethrow errors that are not not-found', async () => {
+      postsDb.get.withArgs('tx1').rejects(new Error('leveldb is locked'))
+      try {
+        await uut.getPostOrNull('tx1')
+        assert.fail('Expected error')
+      } catch (err) {
+        assert.include(err.message, 'leveldb is locked')
       }
-      likesDb.iterator.returns(mockLikes())
+    })
+  })
+
+  describe('#countLikesForTxids', () => {
+    it('should count likes per txid from postLikes', async () => {
+      async function * mockPostLikesTx1 () {
+        yield ['tx1:like-a', { postTxid: 'tx1', txid: 'like-a' }]
+        yield ['tx1:like-b', { postTxid: 'tx1', txid: 'like-b' }]
+      }
+      async function * mockPostLikesTx2 () {
+        yield ['tx2:like-c', { postTxid: 'tx2', txid: 'like-c' }]
+      }
+      postLikesDb.iterator
+        .withArgs(sinon.match({ gte: 'tx1:', lte: 'tx1:\uffff' }))
+        .returns(mockPostLikesTx1())
+      postLikesDb.iterator
+        .withArgs(sinon.match({ gte: 'tx2:', lte: 'tx2:\uffff' }))
+        .returns(mockPostLikesTx2())
+
+      const result = await uut.countLikesForTxids(['tx1', 'tx2'])
+
+      assert.equal(result.get('tx1'), 2)
+      assert.equal(result.get('tx2'), 1)
+    })
+  })
+
+  describe('#buildLikeCountMap', () => {
+    it('should count likes per post from the postLikes index', async () => {
+      async function * mockPostLikes () {
+        yield ['tx1:like-a', { postTxid: 'tx1', txid: 'like-a' }]
+        yield ['tx1:like-b', { postTxid: 'tx1', txid: 'like-b' }]
+        yield ['tx2:like-c', { postTxid: 'tx2', txid: 'like-c' }]
+        yield ['tx3:like-d', {}]
+      }
+      postLikesDb.iterator.returns(mockPostLikes())
       postsDb.get.callsFake(async (txid) => {
-        if (txid === 'missing') {
-          const err = new Error('not found')
-          err.notFound = true
-          throw err
+        if (txid === 'tx1' || txid === 'tx2' || txid === 'tx3') {
+          return { addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 }
         }
-        return { addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 }
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
       })
 
       const result = await uut.buildLikeCountMap()
 
       assert.equal(result.get('tx1'), 2)
       assert.equal(result.get('tx2'), 1)
-      assert.equal(result.has('missing'), false)
-    })
-
-    it('should skip like records without a postTxid', async () => {
-      async function * mockLikes () {
-        yield ['like-a', { postTxid: 'tx1' }]
-        yield ['like-b', { addr: 'addr-x' }]
-      }
-      likesDb.iterator.returns(mockLikes())
-      postsDb.get.withArgs('tx1').resolves({ addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 })
-
-      const result = await uut.buildLikeCountMap()
-
-      assert.equal(result.get('tx1'), 1)
-      assert.equal(result.size, 1)
+      assert.equal(result.get('tx3'), 1)
     })
   })
 })

@@ -37,9 +37,11 @@ export function makeCrudHandlers ({ dbProp, keyParam, bodyIdField, bodyDataField
 export const ENTITY_CONFIG = [
   { route: 'post', dbProp: 'postsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'postData' },
   { route: 'postheight', dbProp: 'postHeightsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'postHeightData' },
+  { route: 'addrpostheight', dbProp: 'addrPostHeightsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'addrPostHeightData' },
   { route: 'postparent', dbProp: 'postParentsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'parentData' },
   { route: 'postchild', dbProp: 'postChildrenDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'childData' },
   { route: 'like', dbProp: 'likesDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'likeData' },
+  { route: 'postlike', dbProp: 'postLikesDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'postLikeData' },
   { route: 'name', dbProp: 'namesDb', keyParam: 'addr', bodyIdField: 'addr', bodyDataField: 'nameData' },
   { route: 'profile', dbProp: 'profilesDb', keyParam: 'addr', bodyIdField: 'addr', bodyDataField: 'profileData' },
   { route: 'profilepic', dbProp: 'profilePicsDb', keyParam: 'addr', bodyIdField: 'addr', bodyDataField: 'profilePicData' },

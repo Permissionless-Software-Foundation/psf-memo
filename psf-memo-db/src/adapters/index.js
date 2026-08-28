@@ -26,9 +26,11 @@ class Adapters {
     this.postQuery = new PostQuery({
       postsDb: level.postsDb,
       postHeightsDb: level.postHeightsDb,
+      addrPostHeightsDb: level.addrPostHeightsDb,
       postParentsDb: level.postParentsDb,
       postChildrenDb: level.postChildrenDb,
-      likesDb: level.likesDb
+      likesDb: level.likesDb,
+      postLikesDb: level.postLikesDb
     })
     this.followQuery = new FollowQuery({
       followsDb: level.followsDb

@@ -74,13 +74,17 @@ async function createWorld () {
   adapters.start()
 
   const postHeightsIteratorCounter = { calls: 0 }
+  const addrPostHeightsIteratorCounter = { calls: 0 }
   const postChildrenIteratorCounter = { calls: 0 }
   const postsGetCounter = { calls: 0 }
   const likesIteratorCounter = { calls: 0 }
+  const postLikesIteratorCounter = { calls: 0 }
   wrapIterator(adapters.level.postHeightsDb, postHeightsIteratorCounter)
+  wrapIterator(adapters.level.addrPostHeightsDb, addrPostHeightsIteratorCounter)
   wrapIterator(adapters.level.postChildrenDb, postChildrenIteratorCounter)
   wrapGet(adapters.level.postsDb, postsGetCounter)
   wrapIterator(adapters.level.likesDb, likesIteratorCounter)
+  wrapIterator(adapters.level.postLikesDb, postLikesIteratorCounter)
 
   const listRecentPosts = new ListRecentPosts({ adapters })
   const listPostsByAddr = new ListPostsByAddr({ adapters })
@@ -100,9 +104,11 @@ async function createWorld () {
     listFollowing,
     listFollowers,
     postHeightsIteratorCounter,
+    addrPostHeightsIteratorCounter,
     postChildrenIteratorCounter,
     postsGetCounter,
     likesIteratorCounter,
+    postLikesIteratorCounter,
     getLastResponse: () => lastResponse,
     setLastResponse: (resp) => { lastResponse = resp },
     close: async () => {
@@ -118,6 +124,16 @@ async function createWorld () {
 async function loadFixture (world, name) {
   if (name === 'posts-with-likes') {
     await loadPostsWithLikes(world)
+    return
+  }
+
+  if (name === 'posts-with-likes-and-indexes') {
+    await loadPostsWithLikes(world)
+    return
+  }
+
+  if (name === 'posts-and-likes-without-indexes') {
+    await loadPostsAndLikesCore(world)
     return
   }
 
@@ -148,6 +164,10 @@ async function loadFixture (world, name) {
       String(post.blockHeight).padStart(12, '0') + ':' + post.txid,
       { txid: post.txid, blockHeight: post.blockHeight }
     )
+    await world.adapters.level.addrPostHeightsDb.put(
+      `${post.addr}:${String(post.blockHeight).padStart(12, '0')}:${post.txid}`,
+      { txid: post.txid, addr: post.addr, blockHeight: post.blockHeight }
+    )
   }
 
   await world.adapters.level.postsDb.put('reply-1', {
@@ -164,7 +184,7 @@ async function loadFixture (world, name) {
   await world.adapters.level.postChildrenDb.put('post-200-a:reply-1', reply)
 }
 
-async function loadPostsWithLikes (world) {
+async function loadPostsAndLikesCore (world) {
   const posts = [
     { txid: 'post-200-a', addr: 'bitcoincash:qaddr-a', text: 'a', seen: 100, blockHeight: 600200 },
     { txid: 'post-200-b', addr: 'bitcoincash:qaddr-b', text: 'b', seen: 200, blockHeight: 600200 },
@@ -211,6 +231,73 @@ async function loadPostsWithLikes (world) {
   }
 }
 
+async function loadPostsWithLikes (world) {
+  await loadPostsAndLikesCore(world)
+
+  // Also populate the secondary indexes expected by the efficient-query read path.
+  const topLevelPosts = [
+    { txid: 'post-200-a', addr: 'bitcoincash:qaddr-a', blockHeight: 600200 },
+    { txid: 'post-200-b', addr: 'bitcoincash:qaddr-b', blockHeight: 600200 },
+    { txid: 'post-100', addr: 'bitcoincash:qaddr-a', blockHeight: 600100 }
+  ]
+  for (const post of topLevelPosts) {
+    await world.adapters.level.addrPostHeightsDb.put(
+      `${post.addr}:${String(post.blockHeight).padStart(12, '0')}:${post.txid}`,
+      { txid: post.txid, addr: post.addr, blockHeight: post.blockHeight }
+    )
+  }
+
+  const likes = [
+    { txid: 'like-1', postTxid: 'post-200-a' },
+    { txid: 'like-2', postTxid: 'post-200-a' },
+    { txid: 'like-3', postTxid: 'post-200-b' },
+    { txid: 'like-4', postTxid: 'reply-1' }
+  ]
+  for (const like of likes) {
+    await world.adapters.level.postLikesDb.put(
+      `${like.postTxid}:${like.txid}`,
+      { postTxid: like.postTxid, txid: like.txid }
+    )
+  }
+}
+
+async function backfillIndexes (world) {
+  const posts = []
+  for await (const [txid, post] of world.adapters.level.postsDb.iterator()) {
+    posts.push({ txid, ...post })
+  }
+
+  for (const post of posts) {
+    const key = `${post.addr}:${String(post.blockHeight ?? 0).padStart(12, '0')}:${post.txid}`
+    try {
+      await world.adapters.level.addrPostHeightsDb.get(key)
+    } catch (err) {
+      if (err.notFound || err.code === 'LEVEL_NOT_FOUND') {
+        await world.adapters.level.addrPostHeightsDb.put(key, {
+          txid: post.txid,
+          addr: post.addr,
+          blockHeight: post.blockHeight ?? 0
+        })
+      }
+    }
+  }
+
+  for await (const [txid, like] of world.adapters.level.likesDb.iterator()) {
+    if (!like.postTxid) continue
+    const key = `${like.postTxid}:${txid}`
+    try {
+      await world.adapters.level.postLikesDb.get(key)
+    } catch (err) {
+      if (err.notFound || err.code === 'LEVEL_NOT_FOUND') {
+        await world.adapters.level.postLikesDb.put(key, {
+          postTxid: like.postTxid,
+          txid
+        })
+      }
+    }
+  }
+}
+
 async function loadFollows (world) {
   const follower1 = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const follower2 = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
@@ -249,6 +336,13 @@ const handlers = [
     }
   },
   {
+    name: 'db instance with new indexes',
+    pattern: /^a psf-memo-db instance with posts, postHeights, addrPostHeights, (?:postChildren, )?likes, and postLikes stores$/,
+    async run () {
+      // World is already created with all stores.
+    }
+  },
+  {
     name: 'load fixture',
     pattern: /^the fixture "(.+)" is loaded into the posts (?:store|and likes stores)$/,
     async run (m, example, world) {
@@ -260,6 +354,20 @@ const handlers = [
     pattern: /^the fixture "(.+)" is loaded into the posts and likes stores$/,
     async run (m, example, world) {
       await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'run backfill utility',
+    pattern: /^the backfill utility is run$/,
+    async run (m, example, world) {
+      await backfillIndexes(world)
+    }
+  },
+  {
+    name: 'run backfill utility again',
+    pattern: /^the backfill utility is run again$/,
+    async run (m, example, world) {
+      await backfillIndexes(world)
     }
   },
   {
@@ -346,6 +454,17 @@ const handlers = [
     }
   },
   {
+    name: 'bounded addrPostHeights reads',
+    pattern: /^no more than (<limit>) addrPostHeights entries are read after applying the offset$/,
+    run (m, example, world) {
+      const limit = parseInt(resolveParam(m[1], example), 10)
+      const reads = world.addrPostHeightsIteratorCounter.calls
+      if (reads > limit) {
+        throw new Error(`Read ${reads} addrPostHeights entries, expected at most ${limit}`)
+      }
+    }
+  },
+  {
     name: 'bounded posts loaded by txid',
     pattern: /^no more than (<limit>) posts are loaded by txid$/,
     run (m, example, world) {
@@ -368,6 +487,27 @@ const handlers = [
       }
       if (post.replyCount !== expected) {
         throw new Error(`Expected replyCount ${expected} for ${txid}, got ${post.replyCount}`)
+      }
+    }
+  },
+  {
+    name: 'bounded postChildren iterations',
+    pattern: /^the postChildren store was iterated at most (<max_iterations>) times$/,
+    run (m, example, world) {
+      const max = parseInt(resolveParam(m[1], example), 10)
+      const calls = world.postChildrenIteratorCounter.calls
+      if (calls > max) {
+        throw new Error(`Expected at most ${max} postChildren iterations, got ${calls}`)
+      }
+    }
+  },
+  {
+    name: 'single postChildren scan',
+    pattern: /^the postChildren store was iterated exactly once$/,
+    run (m, example, world) {
+      const calls = world.postChildrenIteratorCounter.calls
+      if (calls !== 1) {
+        throw new Error(`Expected exactly one postChildren scan, got ${calls}`)
       }
     }
   },
@@ -419,12 +559,45 @@ const handlers = [
     }
   },
   {
-    name: 'single postChildren scan',
-    pattern: /^the postChildren store was iterated exactly once$/,
+    name: 'bounded postLikes iterations',
+    pattern: /^the postLikes store was iterated at most (<max_iterations>) times$/,
     run (m, example, world) {
-      const calls = world.postChildrenIteratorCounter.calls
-      if (calls !== 1) {
-        throw new Error(`Expected exactly one postChildren scan, got ${calls}`)
+      const max = parseInt(resolveParam(m[1], example), 10)
+      const calls = world.postLikesIteratorCounter.calls
+      if (calls > max) {
+        throw new Error(`Expected at most ${max} postLikes iterations, got ${calls}`)
+      }
+    }
+  },
+  {
+    name: 'addrPostHeights contains entry',
+    pattern: /^the addrPostHeights store contains (<count>) entry whose key starts with (<addr>) and ends with (<postTxid>)$/,
+    async run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const addr = resolveParam(m[2], example)
+      const txid = resolveParam(m[3], example)
+      let count = 0
+      for await (const [key] of world.adapters.level.addrPostHeightsDb.iterator()) {
+        if (key.startsWith(`${addr}:`) && key.endsWith(`:${txid}`)) count++
+      }
+      if (count !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} addrPostHeights entry/entries for ${addr}/${txid}, got ${count}`)
+      }
+    }
+  },
+  {
+    name: 'postLikes contains entry',
+    pattern: /^the postLikes store contains (<count>) entry whose key starts with (<postTxid>) and ends with (<likeTxid>)$/,
+    async run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const postTxid = resolveParam(m[2], example)
+      const likeTxid = resolveParam(m[3], example)
+      let count = 0
+      for await (const [key] of world.adapters.level.postLikesDb.iterator()) {
+        if (key.startsWith(`${postTxid}:`) && key.endsWith(`:${likeTxid}`)) count++
+      }
+      if (count !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} postLikes entry/entries for ${postTxid}/${likeTxid}, got ${count}`)
       }
     }
   },

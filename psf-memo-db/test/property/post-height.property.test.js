@@ -22,9 +22,11 @@ test('postHeightKey round-trips the txid for a broad range of heights', async ()
   const query = new PostQuery({
     postsDb: {},
     postHeightsDb: {},
+    addrPostHeightsDb: {},
     postParentsDb: {},
     postChildrenDb: {},
-    likesDb: {}
+    likesDb: {},
+    postLikesDb: {}
   })
 
   await forAll(

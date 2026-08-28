@@ -1,14 +1,15 @@
 /*
   Project step handlers for the psf-memo-indexer acceptance pipeline.
 
-  These handlers exercise the real Memo action handlers (handlePost, handleReply)
-  against an in-memory database that exposes the same CRUD surface as the
-  psf-memo-db entity routes used by the indexer.
+  These handlers exercise the real Memo action handlers (handlePost, handleReply,
+  handleLike) against an in-memory database that exposes the same CRUD surface as
+  the psf-memo-db entity routes used by the indexer.
 */
 
 import crypto from 'node:crypto'
 import { handlePost } from '../../src/use-cases/action-types/post.js'
 import { handleReply } from '../../src/use-cases/action-types/reply.js'
+import { handleLike } from '../../src/use-cases/action-types/like.js'
 
 function makeInMemoryDb () {
   const store = new Map()
@@ -69,14 +70,20 @@ function resolveTxid (value, example, world) {
 async function createWorld () {
   const postsDb = makeInMemoryDb()
   const postHeightsDb = makeInMemoryDb()
+  const addrPostHeightsDb = makeInMemoryDb()
   const postParentsDb = makeInMemoryDb()
   const postChildrenDb = makeInMemoryDb()
+  const likesDb = makeInMemoryDb()
+  const postLikesDb = makeInMemoryDb()
 
   const adapters = {
     postDb: postsDb,
     postHeightDb: postHeightsDb,
+    addrPostHeightDb: addrPostHeightsDb,
     postParentDb: postParentsDb,
     postChildDb: postChildrenDb,
+    likeDb: likesDb,
+    postLikeDb: postLikesDb,
     processErrorDb: makeInMemoryDb()
   }
 
@@ -84,8 +91,11 @@ async function createWorld () {
     adapters,
     postsDb,
     postHeightsDb,
+    addrPostHeightsDb,
     postParentsDb,
     postChildrenDb,
+    likesDb,
+    postLikesDb,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -99,6 +109,13 @@ const handlers = [
     pattern: /^a psf-memo-db instance with posts and postHeights stores$/,
     async run () {
       // World is already created with both stores.
+    }
+  },
+  {
+    name: 'db instance with new indexes',
+    pattern: /^a psf-memo-db instance with posts, postHeights, addrPostHeights, likes, and postLikes stores$/,
+    async run () {
+      // World is already created with all stores.
     }
   },
   {
@@ -173,6 +190,37 @@ const handlers = [
     }
   },
   {
+    name: 'process a Memo like transaction',
+    pattern: /^the indexer processes a Memo like transaction (.+) for post (.+) from (.+) at block height (.+)$/,
+    async run (m, example, world) {
+      const txid = resolveTxid(m[1], example, world)
+      const postTxid = resolveTxid(m[2], example, world)
+      const addr = resolveParam(m[3], example)
+      const height = parseInt(resolveParam(m[4], example), 10)
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d04', 'hex')
+      const postHash = Buffer.from(postTxid, 'hex').reverse()
+
+      await handleLike({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        txDetails: { vout: [] },
+        decoded: {
+          action: 'like',
+          prefix,
+          pushDatas: [prefix, postHash]
+        }
+      })
+    }
+  },
+  {
     name: 'process the same Memo post transaction again',
     pattern: /^the indexer processes the same Memo post transaction (.+) again$/,
     async run (m, example, world) {
@@ -225,6 +273,21 @@ const handlers = [
     }
   },
   {
+    name: 'addrPostHeights store contains entry',
+    pattern: /^the addrPostHeights store contains (.+) entry whose key starts with (.+) and ends with (.+)$/,
+    run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const addr = resolveParam(m[2], example)
+      const txid = resolveTxid(m[3], example, world)
+      const matching = world.addrPostHeightsDb.entries().filter(([key, value]) => {
+        return key.startsWith(`${addr}:`) && (key.endsWith(`:${txid}`) || value?.txid === txid)
+      })
+      if (matching.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} addrPostHeights entry/entries for ${addr}/${txid}, got ${matching.length}`)
+      }
+    }
+  },
+  {
     name: 'postParents store contains link',
     pattern: /^the postParents store contains a link from (.+) to (.+)$/,
     run (m, example, world) {
@@ -249,6 +312,21 @@ const handlers = [
       })
       if (!link) {
         throw new Error(`Expected postChildren link from ${parentTxid} to ${childTxid}`)
+      }
+    }
+  },
+  {
+    name: 'postLikes store contains entry',
+    pattern: /^the postLikes store contains (.+) entry whose key starts with (.+) and ends with (.+)$/,
+    run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const postTxid = resolveTxid(m[2], example, world)
+      const likeTxid = resolveTxid(m[3], example, world)
+      const matching = world.postLikesDb.entries().filter(([key, value]) => {
+        return key.startsWith(`${postTxid}:`) && (key.endsWith(`:${likeTxid}`) || value?.txid === likeTxid)
+      })
+      if (matching.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} postLikes entry/entries for ${postTxid}/${likeTxid}, got ${matching.length}`)
       }
     }
   }
