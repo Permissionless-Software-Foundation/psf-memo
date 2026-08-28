@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `883f014` (ZMQ-mode DB backups fix merged to `master`; indexer unit 54, property 4, acceptance 3 files, lint passing).
-Next action: **spec P2.3/P2.4/P2.5** — Topics (post a topic message / follow a topic / unfollow a topic).
+Current `master` HEAD: `b8a10d3` (specs for P2.3/P2.4/P2.5 topic post/follow/unfollow written and handed to coder as task `topic-actions`).
+Next action: **await coder → refactorer → architect for task `topic-actions`**, then merge the architect branch into `master` and verify the affected components (client + DB).
