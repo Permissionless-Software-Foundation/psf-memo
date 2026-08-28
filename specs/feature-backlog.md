@@ -159,9 +159,9 @@ follows in `roomsDb`; the DB and client need query/render support.
 |---|---------|-------------|------------|--------|
 | 2.1 | Topic list / discovery | read | D, C | ✅ |
 | 2.2 | Topic feed page | read | D, C | ✅ |
-| 2.3 | Post a topic message | `0x6d0c` | C, I, D | 🟡 spec'd → coder (task `topic-actions`) |
-| 2.4 | Follow a topic | `0x6d0d` | C, I, D | 🟡 spec'd → coder (task `topic-actions`) |
-| 2.5 | Unfollow a topic | `0x6d0e` | C, I, D | 🟡 spec'd → coder (task `topic-actions`) |
+| 2.3 | Post a topic message | `0x6d0c` | C, I, D | ✅ shipped (task `topic-actions`) |
+| 2.4 | Follow a topic | `0x6d0d` | C, I, D | ✅ shipped (task `topic-actions`) |
+| 2.5 | Unfollow a topic | `0x6d0e` | C, I, D | ✅ shipped (task `topic-actions`) |
 
 ---
 

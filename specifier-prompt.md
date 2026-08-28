@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `b8a10d3` (specs for P2.3/P2.4/P2.5 topic post/follow/unfollow written and handed to coder as task `topic-actions`).
-Next action: **await coder → refactorer → architect for task `topic-actions`**, then merge the architect branch into `master` and verify the affected components (client + DB).
+Current `master` HEAD: `61616eb` (task `topic-actions` — topic post/follow/unfollow — merged from architect and verified: client build/test/lint/acceptance and DB test/lint/acceptance all pass).
+Next action: **spec P3.1/P3.2/P3.3** — Polls (create a poll / add an option / vote).
