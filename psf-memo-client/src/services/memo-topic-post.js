@@ -83,3 +83,7 @@ MemoTopicPost.MEMO_TOPIC_MESSAGE_PREFIX = MEMO_TOPIC_MESSAGE_PREFIX
 MemoTopicPost.MAX_TOPIC_MESSAGE_BYTES = MAX_TOPIC_MESSAGE_BYTES
 
 module.exports = MemoTopicPost
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T18:18:11.190Z","module_hash":"c73b1395983accf085921554a84c8ef9ad8014ba8d8ddfa794e051ae4a487f04","functions":[{"id":"func/MemoTopicPost.constructor","name":"MemoTopicPost.constructor","line":34,"end_line":38,"hash":"34483e7579cbde3babf17cc43f64bc6535537b6391169a75cb51025029283289"},{"id":"func/MemoTopicPost.isTooLong","name":"MemoTopicPost.isTooLong","line":42,"end_line":44,"hash":"a8d16816cf0aeda1be759f796aee75e9cc5d89ccbcc288b5d2551917121be27a"},{"id":"func/MemoTopicPost.remainingBytes","name":"MemoTopicPost.remainingBytes","line":46,"end_line":48,"hash":"11a07f6539fa6b74feabfdd258f83ede4556213951aa85266a959871ff616df1"},{"id":"func/MemoTopicPost.post","name":"MemoTopicPost.post","line":51,"end_line":67,"hash":"dec3508e4969efd3edfefbc0752ca4608bac9521fbda62cf2ce5d7bf0a5696c7"},{"id":"func/MemoTopicPost.reflect","name":"MemoTopicPost.reflect","line":70,"end_line":79,"hash":"8a136fe98fa6752b2247b9bc0064b9860cfa34e518abaa33e50e95833120d529"}]}
+// mutate4javascript-manifest-end

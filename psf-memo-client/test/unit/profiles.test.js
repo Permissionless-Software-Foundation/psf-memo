@@ -168,6 +168,27 @@ test('setTopicFollowState with no room does nothing', () => {
   assert.equal(profiles.getTopicFollowState(selfAddr, ''), false)
 })
 
+test('_setMapState stores nothing when either input is missing', () => {
+  const profiles = new Profiles()
+
+  // Missing self address, present room.
+  profiles.setTopicFollowState('', 'bitcoin', true)
+  // Present self address, missing room.
+  profiles.setTopicFollowState('bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d', '', true)
+
+  assert.equal(profiles.topicFollowing.size, 0)
+})
+
+test('_getMapState ignores stored state when either input is missing', () => {
+  const profiles = new Profiles()
+
+  // Manually store under a missing room to prove the read guard alone reports
+  // not-following instead of leaking the stored value.
+  profiles.topicFollowing.set('bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d', new Map([['', true]]))
+
+  assert.equal(profiles.getTopicFollowState('bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d', ''), false)
+})
+
 test('topic follow state storage is independent per self address', () => {
   const profiles = new Profiles()
   const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'

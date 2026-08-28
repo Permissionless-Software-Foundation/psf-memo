@@ -89,3 +89,7 @@ class UseCases {
 }
 
 export default UseCases
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T20:07:25.668Z","module_hash":"4056d0f29e6828f95ab07f34186b3cef9d93f244c3d6914aa52463abdc224f32","functions":[{"id":"func/UseCases.constructor","name":"UseCases.constructor","line":18,"end_line":38,"hash":"bf14b8bc15f8a9ad966bb4d2a2de92072be3ec695af1aef5604495f5cf681e34"},{"id":"func/UseCases.start","name":"UseCases.start","line":40,"end_line":88,"hash":"f6fbf584c0e6786294a352fdae4e7a01fef1d24d31ca5202a33f5ed5e1772020"}]}
+// mutate4javascript-manifest-end

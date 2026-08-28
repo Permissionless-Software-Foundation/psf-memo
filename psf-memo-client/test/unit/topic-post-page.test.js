@@ -96,3 +96,8 @@ test('remainingCount requires a memo topic post handler', () => {
 test('exposes the combined byte limit', () => {
   assert.equal(TopicPostPage.MAX_TOPIC_MESSAGE_BYTES, 214)
 })
+
+test('starts not busy', () => {
+  const page = new TopicPostPage({})
+  assert.equal(page.postingTopic, false)
+})

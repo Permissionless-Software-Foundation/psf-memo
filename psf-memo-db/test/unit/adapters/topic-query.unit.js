@@ -312,4 +312,21 @@ describe('#TopicQuery', () => {
       assert.deepEqual(result, [])
     })
   })
+
+  describe('#followAddrFromValue', () => {
+    it('should return the addr from the value when present', () => {
+      const result = uut.followAddrFromValue({ addr: 'addr-a' }, 'bitcoin:addr-a')
+      assert.equal(result, 'addr-a')
+    })
+
+    it('should fall back to the last key segment when the value has no addr', () => {
+      const result = uut.followAddrFromValue({ room: 'bitcoin', type: 'follow' }, 'bitcoin:addr-a')
+      assert.equal(result, 'addr-a')
+    })
+
+    it('should return null when the key has no address segment', () => {
+      const result = uut.followAddrFromValue({ room: 'lone', type: 'follow' }, 'lone')
+      assert.equal(result, null)
+    })
+  })
 })

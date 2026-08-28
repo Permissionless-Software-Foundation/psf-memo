@@ -119,6 +119,13 @@ test('load throws when no room is provided', async () => {
   )
 })
 
+test('starts not following and with no followers', () => {
+  const page = new TopicFeedPage({ room: 'bitcoin' })
+
+  assert.equal(page.followState, false)
+  assert.deepEqual(page.followers, [])
+})
+
 test('getPost returns a loaded post by txid', async () => {
   const posts = [{ txid: 'a'.repeat(64), text: 'hello bitcoin' }]
   const page = new TopicFeedPage({ memoDb: makeMemoDb(posts, {}), room: 'bitcoin' })
