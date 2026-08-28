@@ -232,6 +232,75 @@ describe('#PostQuery', () => {
     })
   })
 
+  describe('#scanPostsByAddrTxidsAndCount', () => {
+    it('should return the total top-level post count for the address', async () => {
+      async function * mockAddrHeights () {
+        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
+      }
+      const err = new Error('not found')
+      err.notFound = true
+      postParentsDb.get.rejects(err)
+      addrPostHeightsDb.iterator
+        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff', reverse: true })
+        .returns(mockAddrHeights())
+
+      const result = await uut.scanPostsByAddrTxidsAndCount('bitcoincash:qaddr-a', { limit: 2, offset: 0 })
+
+      assert.equal(result.total, 2)
+    })
+
+    it('should not push txids beyond the limit even when more posts remain', async () => {
+      async function * mockAddrHeights () {
+        yield ['bitcoincash:qaddr-a:000000600300:post-300-a', { txid: 'post-300-a' }]
+        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
+      }
+      const err = new Error('not found')
+      err.notFound = true
+      postParentsDb.get.rejects(err)
+      addrPostHeightsDb.iterator
+        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff', reverse: true })
+        .returns(mockAddrHeights())
+
+      const result = await uut.scanPostsByAddrTxidsAndCount('bitcoincash:qaddr-a', { limit: 1, offset: 0 })
+
+      assert.deepEqual(result.txids, ['post-300-a'])
+      assert.equal(result.total, 3)
+    })
+  })
+
+  describe('#isReply', () => {
+    it('should return true when the txid has a parent post', async () => {
+      postParentsDb.get.withArgs('reply-1').resolves({ parentTxid: 'parent-1' })
+      assert.equal(await uut.isReply('reply-1'), true)
+    })
+
+    it('should return false when the txid is not a reply (not found)', async () => {
+      const err = new Error('not found')
+      err.notFound = true
+      postParentsDb.get.withArgs('post-1').rejects(err)
+      assert.equal(await uut.isReply('post-1'), false)
+    })
+
+    it('should return false when the txid is not a reply (LEVEL_NOT_FOUND)', async () => {
+      const err = new Error('missing')
+      err.code = 'LEVEL_NOT_FOUND'
+      postParentsDb.get.withArgs('post-1').rejects(err)
+      assert.equal(await uut.isReply('post-1'), false)
+    })
+
+    it('should rethrow errors that are not not-found', async () => {
+      postParentsDb.get.withArgs('post-1').rejects(new Error('leveldb is locked'))
+      try {
+        await uut.isReply('post-1')
+        assert.fail('Expected error')
+      } catch (err) {
+        assert.include(err.message, 'leveldb is locked')
+      }
+    })
+  })
+
   describe('#loadPostsByTxids', () => {
     it('should load posts by txid', async () => {
       postsDb.get.withArgs('tx1').resolves({ addr: 'a1', text: 'hello', seen: 1000, blockHeight: 600100 })

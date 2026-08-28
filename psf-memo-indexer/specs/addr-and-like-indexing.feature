@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-28T05:15:33.889716973Z","feature_name":"Address and like indexing","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/addr-and-like-indexing.feature","background_hash":"b101284b0969f57e8cd628a2b644538ae5a1d8c7466422ba3338457cbf8c4f79","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Address and like indexing - 1, Address and like indexing - 2, Address and like indexing - 3, Address and like indexing - 4
 Feature: Address and like indexing
 

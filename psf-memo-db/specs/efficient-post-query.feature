@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-28T05:13:52.736034084Z","feature_name":"Efficient post query","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/efficient-post-query.feature","background_hash":"3d649fb198f0f3ee58e20f11cd09a2e17b0431cd170a61b3fc26b4d7dfd6af7b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Efficient post query - 1, Efficient post query - 2, Efficient post query - 3, Efficient post query - 4
 Feature: Efficient post query
 

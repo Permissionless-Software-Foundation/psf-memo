@@ -58,3 +58,7 @@ export async function handleLike (ctx) {
   await adapters.likeDb.create(txid, likeData)
   await adapters.postLikeDb.create(postLikeKey(postTxid, txid), { postTxid, txid })
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T03:17:51.436Z","module_hash":"49c10735bf45a2f790741791beb7088e3528e2f7538967452ea0a9e1eb3755ea","functions":[{"id":"func/isPaymentTo","name":"isPaymentTo","line":5,"end_line":8,"hash":"f7b4506a33c69a70ac52b1c98d9fcc5372b6cddf05e112d25c8ca24ef50c860c"},{"id":"func/computeLikeTip","name":"computeLikeTip","line":13,"end_line":24,"hash":"586f4f371d626325e411e43e8364c16622b36ad06f2d6599f8fcdcf5e071c105"},{"id":"func/handleLike","name":"handleLike","line":26,"end_line":60,"hash":"a445c23bfc8eb141a13ddbdb11d34367420a3753c1a29ef38fa6663a628d63ff"}]}
+// mutate4javascript-manifest-end

@@ -38,5 +38,5 @@ export async function handlePost (ctx) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-26T18:12:57.389Z","module_hash":"4f16a88cac95e1533eeaa9ee78917bd2f69195d909f552f24f232b465aba7e33","functions":[{"id":"func/createIfMissing","name":"createIfMissing","line":5,"end_line":11,"hash":"d59cefaf87075a2bc41538961b609387e35393d4fbf02ecfc0633026bbfdca42"},{"id":"func/handlePost","name":"handlePost","line":13,"end_line":36,"hash":"64f7e048100212a96ca90d5161271a7055d7b7957d7c38f50f5c22062a9eee43"}]}
+// {"version":1,"tested_at":"2026-08-28T04:25:56.092Z","module_hash":"0f471223ce221777762f87eb02cc7921f2db624ecb1e333a148f9c682c383330","functions":[{"id":"func/createIfMissing","name":"createIfMissing","line":5,"end_line":11,"hash":"d59cefaf87075a2bc41538961b609387e35393d4fbf02ecfc0633026bbfdca42"},{"id":"func/handlePost","name":"handlePost","line":13,"end_line":38,"hash":"928ea72312ac9d0b94dbe93adef0b775bc8df158177c1b0adbac8cafe2da76d8"}]}
 // mutate4javascript-manifest-end

@@ -3,6 +3,7 @@ import sinon from 'sinon'
 import {
   normalizeTwoPushMemoDatas,
   stripLeadingEmptyPushes,
+  txHashFromPush,
   logProcessError
 } from '../../../../src/use-cases/action-types/helpers.js'
 import { PREFIX_SET_PROFILE_PIC, PREFIX_POST } from '../../../../src/lib/memo-codes.js'
@@ -44,6 +45,21 @@ describe('#action-types/helpers', () => {
       assert.equal(normalized.length, 2)
       assert.equal(normalized[1].toString('utf8'), 'hello')
     })
+
+    it('should not split a single 2-byte memo-prefix push', () => {
+      const prefix = Buffer.from([0x6d, 0x05])
+      const normalized = normalizeTwoPushMemoDatas([prefix])
+      assert.equal(normalized.length, 1)
+      assert.deepEqual(normalized[0], prefix)
+    })
+
+    it('should not split when extra pushes follow a memo-prefix push', () => {
+      const prefix = Buffer.from([0x6d, 0x05, 0x01])
+      const tail = [Buffer.from([0xaa]), Buffer.from([0xbb])]
+      const normalized = normalizeTwoPushMemoDatas([prefix, ...tail])
+      assert.equal(normalized.length, 3)
+      assert.deepEqual(normalized[0], prefix)
+    })
   })
 
   describe('#stripLeadingEmptyPushes', () => {
@@ -52,6 +68,42 @@ describe('#action-types/helpers', () => {
       const result = stripLeadingEmptyPushes([Buffer.alloc(0), payload])
       assert.equal(result.length, 1)
       assert.deepEqual(result[0], payload)
+    })
+
+    it('should not strip a leading non-empty single-byte push', () => {
+      const payload = Buffer.from([0xcd])
+      const result = stripLeadingEmptyPushes([Buffer.from([0xab]), payload])
+      assert.equal(result.length, 2)
+      assert.deepEqual(result[0], Buffer.from([0xab]))
+      assert.deepEqual(result[1], payload)
+    })
+
+    it('should keep a lone empty push (only strip when more than one remains)', () => {
+      const result = stripLeadingEmptyPushes([Buffer.alloc(0)])
+      assert.equal(result.length, 1)
+      assert.equal(result[0].length, 0)
+    })
+
+    it('should keep stripping empties when a later push is falsy', () => {
+      const result = stripLeadingEmptyPushes([Buffer.alloc(0), null, Buffer.from([0xab])])
+      assert.equal(result.length, 2)
+      assert.equal(result[0], null)
+      assert.deepEqual(result[1], Buffer.from([0xab]))
+    })
+  })
+
+  describe('#txHashFromPush', () => {
+    it('should return null for a null buffer', () => {
+      assert.equal(txHashFromPush(null), null)
+    })
+
+    it('should return null for a buffer that is not 32 bytes', () => {
+      assert.equal(txHashFromPush(Buffer.from('short', 'utf8')), null)
+    })
+
+    it('should reverse a 32-byte buffer and encode as hex', () => {
+      const buf = Buffer.alloc(32, 0xab)
+      assert.equal(txHashFromPush(buf), 'ab'.repeat(32))
     })
   })
 
