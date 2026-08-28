@@ -6,25 +6,22 @@
   prefix followed by the poll's 32-byte txid and the option text. The option
   text is limited to 184 bytes.
 
-  The wallet and an injected poll store are used so this module stays testable
-  and free of UI/network concerns; environmentally unsuitable I/O lives behind
-  those small adapter boundaries.
+  It shares the txid-embedding broadcast flow with MemoTxidAction and builds
+  its wire payload from the shared txid+text helper.
 
   Constants
     MEMO_ADD_POLL_OPTION_PREFIX : hex prefix for the Memo add-poll-option action (0x6d13)
     MAX_OPTION_BYTES            : maximum option byte length (184)
-    POLL_TXID_BYTES             : poll txid byte length (32)
 */
 
-const MemoAction = require('./memo-action')
+const MemoTxidAction = require('./memo-txid-action')
 const { byteLength } = require('./utf8')
-const { hexToBytes } = require('./hex')
+const { buildTxidTextPayload } = require('./hex')
 
 const MEMO_ADD_POLL_OPTION_PREFIX = '6d13'
 const MAX_OPTION_BYTES = 184
-const POLL_TXID_BYTES = 32
 
-class MemoPollOption extends MemoAction {
+class MemoPollOption extends MemoTxidAction {
   static config = {
     prefix: MEMO_ADD_POLL_OPTION_PREFIX,
     walletRequiredMsg: 'Memo poll option requires a wallet.',
@@ -34,40 +31,14 @@ class MemoPollOption extends MemoAction {
     validationCode: 'poll_option_validation'
   }
 
-  constructor (deps = {}) {
-    super(deps)
-    this.pollTxid = deps.pollTxid || ''
-    this.polls = deps.polls || null
-  }
-
   // A poll option is over-length when its UTF-8 byte count exceeds the limit.
   isTooLong (option) {
     return byteLength(option) > MAX_OPTION_BYTES
   }
 
   // Compose and broadcast a Memo add-poll-option action.
-  async add (option) {
-    const check = this.validate(option)
-    this._throwIfInvalid(check)
-
-    if (!this.wallet) {
-      throw new Error(this.walletRequiredMsg)
-    }
-
-    if (!this.pollTxid) {
-      const err = new Error('Poll txid is required.')
-      err.code = 'poll_option_validation'
-      throw err
-    }
-
-    await this.wallet.getUtxos()
-
-    const raw = buildAddPollOptionPayload(this.pollTxid, option)
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
-
-    this.reflect(txid, option)
-
-    return txid
+  add (option) {
+    return this.broadcastTxid(option, buildTxidTextPayload)
   }
 
   // Record the new option on the injected poll store when one is present.
@@ -81,17 +52,6 @@ class MemoPollOption extends MemoAction {
       })
     }
   }
-}
-
-// Build the raw OP_RETURN message payload for an add-poll-option action.
-// The protocol wire format is: <poll txid 32 bytes><option UTF-8 bytes>.
-function buildAddPollOptionPayload (pollTxid, option) {
-  const txidBytes = hexToBytes(pollTxid, POLL_TXID_BYTES, 'Poll txid')
-  const textBytes = new TextEncoder().encode(option)
-  const raw = new Uint8Array(txidBytes.length + textBytes.length)
-  raw.set(txidBytes, 0)
-  raw.set(textBytes, txidBytes.length)
-  return raw
 }
 
 MemoPollOption.MEMO_ADD_POLL_OPTION_PREFIX = MEMO_ADD_POLL_OPTION_PREFIX

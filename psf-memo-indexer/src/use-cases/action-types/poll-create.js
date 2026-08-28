@@ -19,30 +19,42 @@ function normalizePollCreateDatas (pushDatas) {
     return { ok: false, error: `invalid create-poll push data count ${pushDatas?.length || 0}` }
   }
 
-  let payload
+  const { ok, payload, error } = buildCreatePollPayload(pushDatas)
+  if (!ok) {
+    return { ok: false, error }
+  }
+
+  return {
+    ok: true,
+    pollType: payload[0],
+    optionCount: payload[1],
+    question: utf8FromPush(payload.subarray(2))
+  }
+}
+
+// Resolve the poll payload buffer the create-poll action encodes, which Memo
+// wallets may write as either a single combined push (prefix + poll_type +
+// option_count + question) or as separate pushes. Returns
+// { ok: false, error } on malformed input, or { ok: true, payload }.
+function buildCreatePollPayload (pushDatas) {
   if (pushDatas.length === 2) {
     // Combined push: prefix(2) + poll_type(1) + option_count(1) + question.
     const combined = pushDatas[1]
     if (combined.length < 2) {
       return { ok: false, error: 'create-poll payload too short' }
     }
-    payload = combined
-  } else {
-    // Separate pushes for poll_type, option_count, and question.
-    if (pushDatas.length !== 4) {
-      return { ok: false, error: `invalid create-poll push data count ${pushDatas.length}` }
-    }
-    const typeBuf = pushDatas[1]
-    const countBuf = pushDatas[2]
-    const questionBuf = pushDatas[3]
-    payload = Buffer.concat([typeBuf, countBuf, questionBuf])
+    return { ok: true, payload: combined }
   }
 
-  const pollType = payload[0]
-  const optionCount = payload[1]
-  const question = utf8FromPush(payload.subarray(2))
+  // Separate pushes for poll_type, option_count, and question.
+  if (pushDatas.length !== 4) {
+    return { ok: false, error: `invalid create-poll push data count ${pushDatas.length}` }
+  }
 
-  return { ok: true, pollType, optionCount, question }
+  const typeBuf = pushDatas[1]
+  const countBuf = pushDatas[2]
+  const questionBuf = pushDatas[3]
+  return { ok: true, payload: Buffer.concat([typeBuf, countBuf, questionBuf]) }
 }
 
 export async function handleCreatePoll (ctx) {

@@ -52,23 +52,23 @@ class PollQuery {
   }
 
   async getPollOptions (txid) {
-    const options = []
-    for await (const [key, value] of this.pollOptionsDb.iterator()) {
-      if (value?.pollTxid === txid) {
-        options.push({ ...value, txid: key })
-      }
-    }
-    return options
+    return this._collectByPollTxid(this.pollOptionsDb, txid)
   }
 
   async getPollVotes (txid) {
-    const votes = []
-    for await (const [key, value] of this.pollVotesDb.iterator()) {
+    return this._collectByPollTxid(this.pollVotesDb, txid)
+  }
+
+  // Collect every record in `db` that references the given poll txid, keeping
+  // each stored record's `txid` key alongside its value.
+  async _collectByPollTxid (db, txid) {
+    const items = []
+    for await (const [key, value] of db.iterator()) {
       if (value?.pollTxid === txid) {
-        votes.push({ ...value, txid: key })
+        items.push({ ...value, txid: key })
       }
     }
-    return votes
+    return items
   }
 }
 

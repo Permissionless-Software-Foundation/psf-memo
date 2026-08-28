@@ -6,25 +6,22 @@
   by the poll's 32-byte txid and a comment. The comment is limited to 184
   bytes.
 
-  The wallet and an injected poll store are used so this module stays testable
-  and free of UI/network concerns; environmentally unsuitable I/O lives behind
-  those small adapter boundaries.
+  It shares the txid-embedding broadcast flow with MemoTxidAction and builds
+  its wire payload from the shared txid+text helper.
 
   Constants
     MEMO_POLL_VOTE_PREFIX : hex prefix for the Memo poll-vote action (0x6d14)
     MAX_COMMENT_BYTES     : maximum comment byte length (184)
-    POLL_TXID_BYTES       : poll txid byte length (32)
 */
 
-const MemoAction = require('./memo-action')
+const MemoTxidAction = require('./memo-txid-action')
 const { byteLength } = require('./utf8')
-const { hexToBytes } = require('./hex')
+const { buildTxidTextPayload } = require('./hex')
 
 const MEMO_POLL_VOTE_PREFIX = '6d14'
 const MAX_COMMENT_BYTES = 184
-const POLL_TXID_BYTES = 32
 
-class MemoPollVote extends MemoAction {
+class MemoPollVote extends MemoTxidAction {
   static config = {
     prefix: MEMO_POLL_VOTE_PREFIX,
     walletRequiredMsg: 'Memo poll vote requires a wallet.',
@@ -34,40 +31,14 @@ class MemoPollVote extends MemoAction {
     validationCode: 'poll_vote_validation'
   }
 
-  constructor (deps = {}) {
-    super(deps)
-    this.pollTxid = deps.pollTxid || ''
-    this.polls = deps.polls || null
-  }
-
   // A poll vote comment is over-length when its UTF-8 byte count exceeds the limit.
   isTooLong (comment) {
     return byteLength(comment) > MAX_COMMENT_BYTES
   }
 
   // Compose and broadcast a Memo poll-vote action.
-  async vote (comment) {
-    const check = this.validate(comment)
-    this._throwIfInvalid(check)
-
-    if (!this.wallet) {
-      throw new Error(this.walletRequiredMsg)
-    }
-
-    if (!this.pollTxid) {
-      const err = new Error('Poll txid is required.')
-      err.code = 'poll_vote_validation'
-      throw err
-    }
-
-    await this.wallet.getUtxos()
-
-    const raw = buildPollVotePayload(this.pollTxid, comment)
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
-
-    this.reflect(txid, comment)
-
-    return txid
+  vote (comment) {
+    return this.broadcastTxid(comment, buildTxidTextPayload)
   }
 
   // Record the new vote on the injected poll store when one is present.
@@ -81,17 +52,6 @@ class MemoPollVote extends MemoAction {
       })
     }
   }
-}
-
-// Build the raw OP_RETURN message payload for a poll-vote action.
-// The protocol wire format is: <poll txid 32 bytes><comment UTF-8 bytes>.
-function buildPollVotePayload (pollTxid, comment) {
-  const txidBytes = hexToBytes(pollTxid, POLL_TXID_BYTES, 'Poll txid')
-  const textBytes = new TextEncoder().encode(comment)
-  const raw = new Uint8Array(txidBytes.length + textBytes.length)
-  raw.set(txidBytes, 0)
-  raw.set(textBytes, txidBytes.length)
-  return raw
 }
 
 MemoPollVote.MEMO_POLL_VOTE_PREFIX = MEMO_POLL_VOTE_PREFIX

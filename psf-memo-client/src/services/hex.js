@@ -25,4 +25,15 @@ function hexToBytes (hex, byteLength = 32, label = 'Value') {
   return bytes
 }
 
-module.exports = { hexToBytes }
+// Build the raw OP_RETURN payload for a txid-referencing Memo action: the
+// given 32-byte txid followed by a UTF-8 encoded value.
+function buildTxidTextPayload (txid, text) {
+  const txidBytes = hexToBytes(txid, 32, 'Poll txid')
+  const textBytes = new TextEncoder().encode(text)
+  const raw = new Uint8Array(txidBytes.length + textBytes.length)
+  raw.set(txidBytes, 0)
+  raw.set(textBytes, txidBytes.length)
+  return raw
+}
+
+module.exports = { hexToBytes, buildTxidTextPayload }
