@@ -7,6 +7,7 @@ import DbBackup from './db-backup.js'
 import ProfileQuery from './profile-query.js'
 import PostQuery from './post-query.js'
 import FollowQuery from './follow-query.js'
+import TopicQuery from './topic-query.js'
 
 class Adapters {
   constructor () {
@@ -34,6 +35,10 @@ class Adapters {
     })
     this.followQuery = new FollowQuery({
       followsDb: level.followsDb
+    })
+    this.topicQuery = new TopicQuery({
+      roomsDb: level.roomsDb,
+      postsDb: level.postsDb
     })
     return true
   }

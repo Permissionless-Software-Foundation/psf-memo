@@ -48,6 +48,23 @@ class MemoDb {
     }
   }
 
+  async getTopics () {
+    return this.getRecent('/topics', 'getTopics', {})
+  }
+
+  async getTopicPosts (room, { limit = 100, offset = 0 } = {}) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/topics/${encodeURIComponent(room)}/posts`,
+        { params: { limit, offset } }
+      )
+      return result.data
+    } catch (err) {
+      console.error('Error in getTopicPosts()')
+      throw err
+    }
+  }
+
   // GET a paginated 'recent' listing endpoint.
   async getRecent (path, name, params) {
     try {

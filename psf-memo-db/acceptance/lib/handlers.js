@@ -18,6 +18,8 @@ import GetPostThread from '../../src/use-cases/get-post-thread.js'
 import FollowState from '../../src/use-cases/follow-state.js'
 import ListFollowing from '../../src/use-cases/list-following.js'
 import ListFollowers from '../../src/use-cases/list-followers.js'
+import ListTopics from '../../src/use-cases/list-topics.js'
+import ListTopicPosts from '../../src/use-cases/list-topic-posts.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -92,6 +94,8 @@ async function createWorld () {
   const followState = new FollowState({ adapters })
   const listFollowing = new ListFollowing({ adapters })
   const listFollowers = new ListFollowers({ adapters })
+  const listTopics = new ListTopics({ adapters })
+  const listTopicPosts = new ListTopicPosts({ adapters })
 
   let lastResponse = null
 
@@ -103,6 +107,8 @@ async function createWorld () {
     followState,
     listFollowing,
     listFollowers,
+    listTopics,
+    listTopicPosts,
     postHeightsIteratorCounter,
     addrPostHeightsIteratorCounter,
     postChildrenIteratorCounter,
@@ -139,6 +145,11 @@ async function loadFixture (world, name) {
 
   if (name === 'follows') {
     await loadFollows(world)
+    return
+  }
+
+  if (name === 'topics-with-posts') {
+    await loadTopicsWithPosts(world)
     return
   }
 
@@ -317,6 +328,39 @@ async function loadFollows (world) {
       seen: Date.now(),
       blockHeight: 600000
     })
+  }
+}
+
+async function loadTopicsWithPosts (world) {
+  const roomEntries = [
+    { key: 'bitcoin:post-300', room: 'bitcoin', txid: 'post-300', type: 'post', blockHeight: 300 },
+    { key: 'bitcoin:post-200', room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 },
+    { key: 'bitcoin:addr-f', room: 'bitcoin', addr: 'addr-f', type: 'follow', unfollow: false },
+    { key: 'cash:post-250', room: 'cash', txid: 'post-250', type: 'post', blockHeight: 250 },
+    { key: 'dev:post-100', room: 'dev', txid: 'post-100', type: 'post', blockHeight: 100 },
+    { key: 'lone:addr-f', room: 'lone', addr: 'addr-f', type: 'follow', unfollow: false }
+  ]
+
+  const posts = {
+    'post-300': { addr: 'addr-a', text: 'hello bitcoin', seen: 1, blockHeight: 300 },
+    'post-200': { addr: 'addr-b', text: 'bitcoin again', seen: 2, blockHeight: 200 },
+    'post-250': { addr: 'addr-a', text: 'cash rules', seen: 3, blockHeight: 250 },
+    'post-100': { addr: 'addr-c', text: 'dev stuff', seen: 4, blockHeight: 100 }
+  }
+
+  for (const entry of roomEntries) {
+    await world.adapters.level.roomsDb.put(entry.key, {
+      room: entry.room,
+      txid: entry.txid,
+      addr: entry.addr,
+      type: entry.type,
+      unfollow: entry.unfollow,
+      blockHeight: entry.blockHeight
+    })
+  }
+
+  for (const [txid, post] of Object.entries(posts)) {
+    await world.adapters.level.postsDb.put(txid, post)
   }
 }
 
@@ -676,6 +720,64 @@ const handlers = [
       const actualSet = new Set(actual)
       if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
         throw new Error(`Expected followers ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with rooms and posts stores',
+    pattern: /^a psf-memo-db instance with a rooms store and a posts store$/,
+    async run () {
+      // World is already created with both stores.
+    }
+  },
+  {
+    name: 'load fixture into rooms and posts stores',
+    pattern: /^the fixture "(.+)" is loaded into the rooms and posts stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'request topics',
+    pattern: /^the client requests \/topics$/,
+    async run (m, example, world) {
+      const resp = await world.listTopics.execute()
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'response contains topic with post count',
+    pattern: /^the response contains the topic (<topic>) with post count (<count>)$/,
+    run (m, example, world) {
+      const topic = resolveParam(m[1], example)
+      const expectedCount = parseInt(resolveParam(m[2], example), 10)
+      const found = world.getLastResponse().topics.find((t) => t.room === topic)
+      if (!found) {
+        throw new Error(`Topic ${topic} not found in response`)
+      }
+      if (found.postCount !== expectedCount) {
+        throw new Error(`Expected post count ${expectedCount} for ${topic}, got ${found.postCount}`)
+      }
+    }
+  },
+  {
+    name: 'request topic posts',
+    pattern: /^the client requests \/topics\/([^/]+)\/posts(?: with limit (<limit>) and offset (<offset>))?$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const limit = m[2] ? parseInt(resolveParam(m[2], example), 10) : undefined
+      const offset = m[3] ? parseInt(resolveParam(m[3], example), 10) : undefined
+      const resp = await world.listTopicPosts.execute({ room, limit, offset })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'response contains no posts',
+    pattern: /^the response contains no posts$/,
+    run (m, example, world) {
+      const posts = world.getLastResponse().posts
+      if (!Array.isArray(posts) || posts.length !== 0) {
+        throw new Error(`Expected no posts, got ${Array.isArray(posts) ? posts.length : 'non-array'}`)
       }
     }
   }
