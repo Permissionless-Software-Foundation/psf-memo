@@ -48,9 +48,12 @@ async function start () {
           process.exit(1)
         }
 
-        if (nextBlockHeight % config.dbBackupEpoch === 0) {
+        const backedUp = await useCases.backupDb.maybeBackupDb(
+          nextBlockHeight,
+          config.dbBackupEpoch
+        )
+        if (backedUp) {
           console.log(`Creating DB backup at block ${nextBlockHeight}`)
-          await useCases.backupDb.maybeBackupDb(nextBlockHeight, config.dbBackupEpoch)
         }
 
         biggestBlockHeight = await queue.addToQueue(adapters.rpc.getBlockCount, {})

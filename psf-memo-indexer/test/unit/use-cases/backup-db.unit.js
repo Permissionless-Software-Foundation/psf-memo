@@ -56,6 +56,14 @@ describe('#BackupDb', () => {
       assert.equal(adapters.dbCtrl.backupDb.callCount, 0)
     })
 
+    it('should request a backup at height 1 with epoch 1', async () => {
+      const result = await uut.maybeBackupDb(1, 1)
+
+      assert.equal(result, true)
+      assert.equal(adapters.dbCtrl.backupDb.callCount, 1)
+      assert.deepEqual(adapters.dbCtrl.backupDb.firstCall.args, [1, 1])
+    })
+
     it('should support a configurable epoch smaller than 1000', async () => {
       const result = await uut.maybeBackupDb(500, 500)
 
