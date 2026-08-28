@@ -29,6 +29,10 @@ export default {
 
   exitOnMissingBackup: process.env.EXIT_ON_MISSING_BACKUP === 'true',
 
+  dbBackupEpoch: process.env.DB_BACKUP_EPOCH
+    ? parseInt(process.env.DB_BACKUP_EPOCH, 10)
+    : 1000,
+
   debugLevel: process.env.DEBUG_LEVEL !== undefined
     ? parseInt(process.env.DEBUG_LEVEL, 10)
     : 0

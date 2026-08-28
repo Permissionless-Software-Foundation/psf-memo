@@ -10,6 +10,7 @@ import crypto from 'node:crypto'
 import { handlePost } from '../../src/use-cases/action-types/post.js'
 import { handleReply } from '../../src/use-cases/action-types/reply.js'
 import { handleLike } from '../../src/use-cases/action-types/like.js'
+import BackupDb from '../../src/use-cases/backup-db.js'
 
 function makeInMemoryDb () {
   const store = new Map()
@@ -75,6 +76,7 @@ async function createWorld () {
   const postChildrenDb = makeInMemoryDb()
   const likesDb = makeInMemoryDb()
   const postLikesDb = makeInMemoryDb()
+  const backupRequestsDb = makeInMemoryDb()
 
   const adapters = {
     postDb: postsDb,
@@ -84,7 +86,13 @@ async function createWorld () {
     postChildDb: postChildrenDb,
     likeDb: likesDb,
     postLikeDb: postLikesDb,
-    processErrorDb: makeInMemoryDb()
+    processErrorDb: makeInMemoryDb(),
+    dbCtrl: {
+      backupDb: async (height, epoch) => {
+        await backupRequestsDb.create(`${height}:${epoch}`, { height, epoch })
+        return true
+      }
+    }
   }
 
   return {
@@ -96,6 +104,7 @@ async function createWorld () {
     postChildrenDb,
     likesDb,
     postLikesDb,
+    backupRequestsDb,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -109,6 +118,13 @@ const handlers = [
     pattern: /^a psf-memo-db instance with posts and postHeights stores$/,
     async run () {
       // World is already created with both stores.
+    }
+  },
+  {
+    name: 'db instance that records backup requests',
+    pattern: /^a psf-memo-db instance that records backup requests$/,
+    async run () {
+      // World is already created with a backup request store.
     }
   },
   {
@@ -242,6 +258,30 @@ const handlers = [
           pushDatas: [prefix, message]
         }
       })
+    }
+  },
+  {
+    name: 'block indexer in ZMQ mode processes a block',
+    pattern: /^the block indexer in ZMQ mode processes a block at height (.+) with epoch (.+)$/,
+    async run (m, example, world) {
+      const height = parseInt(resolveParam(m[1], example), 10)
+      const epoch = parseInt(resolveParam(m[2], example), 10)
+      const backupDb = new BackupDb({ adapters: world.adapters })
+      await backupDb.maybeBackupDb(height, epoch)
+    }
+  },
+  {
+    name: 'db receives backup request',
+    pattern: /^the psf-memo-db receives (.+) backup request for block (.+) with epoch (.+)$/,
+    run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const height = parseInt(resolveParam(m[2], example), 10)
+      const epoch = parseInt(resolveParam(m[3], example), 10)
+      const key = `${height}:${epoch}`
+      const matching = world.backupRequestsDb.entries().filter(([k]) => k === key)
+      if (matching.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} backup request(s) for block ${height} epoch ${epoch}, got ${matching.length}`)
+      }
     }
   },
   {

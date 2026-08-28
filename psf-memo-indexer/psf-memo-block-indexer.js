@@ -5,11 +5,10 @@
 import RetryQueue from '@chris.troutner/retry-queue'
 import 'dotenv/config'
 
+import config from './config/index.js'
 import Adapters from './src/adapters/adapters-index.js'
 import UseCases from './src/use-cases/use-cases-index.js'
 import Controllers from './src/controllers/controllers-index.js'
-
-const EPOCH = 1000
 
 async function start () {
   try {
@@ -49,9 +48,9 @@ async function start () {
           process.exit(1)
         }
 
-        if (nextBlockHeight % EPOCH === 0) {
+        if (nextBlockHeight % config.dbBackupEpoch === 0) {
           console.log(`Creating DB backup at block ${nextBlockHeight}`)
-          await adapters.dbCtrl.backupDb(nextBlockHeight, EPOCH)
+          await useCases.backupDb.maybeBackupDb(nextBlockHeight, config.dbBackupEpoch)
         }
 
         biggestBlockHeight = await queue.addToQueue(adapters.rpc.getBlockCount, {})
@@ -86,6 +85,7 @@ async function start () {
         await adapters.statusDb.updateStatus(liveStatus)
 
         await useCases.indexBlocks.processBlock(blockHeight)
+        await useCases.backupDb.maybeBackupDb(blockHeight, config.dbBackupEpoch)
       }
 
       loopCnt++

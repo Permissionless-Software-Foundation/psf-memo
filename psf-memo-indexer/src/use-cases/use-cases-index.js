@@ -1,4 +1,5 @@
 import RetryQueue from '@chris.troutner/retry-queue'
+import BackupDb from './backup-db.js'
 import IndexBlocks from './index-blocks.js'
 import State from './state.js'
 import Utils from './utils.js'
@@ -10,6 +11,7 @@ class UseCases {
     }
     this.adapters = localConfig.adapters
     this.indexBlocks = new IndexBlocks({ adapters: this.adapters })
+    this.backupDb = new BackupDb({ adapters: this.adapters })
     this.state = new State({ adapters: this.adapters })
     this.utils = new Utils()
     this.retryQueue = new RetryQueue()
