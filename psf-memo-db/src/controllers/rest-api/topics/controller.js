@@ -17,6 +17,8 @@ class TopicsRESTControllerLib {
 
     this.getTopics = this.getTopics.bind(this)
     this.getTopicPosts = this.getTopicPosts.bind(this)
+    this.getTopicFollowState = this.getTopicFollowState.bind(this)
+    this.getTopicFollowers = this.getTopicFollowers.bind(this)
     this.handleError = this.handleError.bind(this)
   }
 
@@ -86,10 +88,63 @@ class TopicsRESTControllerLib {
       this.handleError(ctx, err)
     }
   }
+
+  /**
+   * @api {get} /topics/:room/follow/state Check topic follow state
+   * @apiPermission public
+   * @apiName GetTopicFollowState
+   * @apiGroup REST Topics
+   *
+   * @apiDescription Returns whether an address follows a topic.
+   *
+   * @apiParam {String} room Topic name
+   * @apiQuery {String} addr Cash address to check
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/topics/bitcoin/follow/state?addr=bitcoincash:q..."
+   *
+   * @apiSuccess {String} room Topic name
+   * @apiSuccess {String} addr Checked cash address
+   * @apiSuccess {Boolean} following True when an active topic follow exists
+   */
+  async getTopicFollowState (ctx) {
+    try {
+      const { room } = ctx.params
+      const { addr } = ctx.query
+      ctx.body = await this.useCases.topicFollowState.execute({ room, addr })
+    } catch (err) {
+      this.handleError(ctx, err)
+    }
+  }
+
+  /**
+   * @api {get} /topics/:room/followers List topic followers
+   * @apiPermission public
+   * @apiName GetTopicFollowers
+   * @apiGroup REST Topics
+   *
+   * @apiDescription Returns the addresses that currently follow a topic.
+   *
+   * @apiParam {String} room Topic name
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/topics/bitcoin/followers"
+   *
+   * @apiSuccess {String} room Topic name
+   * @apiSuccess {String[]} followers Array of follower cash addresses
+   */
+  async getTopicFollowers (ctx) {
+    try {
+      const { room } = ctx.params
+      ctx.body = await this.useCases.listTopicFollowers.execute({ room })
+    } catch (err) {
+      this.handleError(ctx, err)
+    }
+  }
 }
 
 export default TopicsRESTControllerLib
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T15:26:54.488Z","module_hash":"64ac0a8aa7c2e0b575a89161ceb19c59e6618448eaf767ef5bbccc3ce174afaa","functions":[{"id":"func/TopicsRESTControllerLib.constructor","name":"TopicsRESTControllerLib.constructor","line":8,"end_line":21,"hash":"63d2092a2bd7946dd11bdf0c4ff102e31c47a0ed6ad56a0652f26e1760d525f9"},{"id":"func/TopicsRESTControllerLib.handleError","name":"TopicsRESTControllerLib.handleError","line":23,"end_line":30,"hash":"b9ba0c7b9752ac2fda3cf058a983a8b6708715e2e4dc882903ab5ef369956e03"},{"id":"func/TopicsRESTControllerLib.getTopics","name":"TopicsRESTControllerLib.getTopics","line":47,"end_line":53,"hash":"b89a696bcd1d601ef86754974dbf181baf2ece7d592674ba4fd87887725d6fa8"},{"id":"func/TopicsRESTControllerLib.getTopicPosts","name":"TopicsRESTControllerLib.getTopicPosts","line":80,"end_line":88,"hash":"8ad5f9b1749968c3fbfea95683bb388a5d99eda0b8fe7a4dce3447d6d47e6dba"}]}
+// {"version":1,"tested_at":"2026-08-28T19:53:31.127Z","module_hash":"4c3f3e9152899ed272cb583e558c4522c0f54c37a0ae728f3ec6bc40248a3fdc","functions":[{"id":"func/TopicsRESTControllerLib.constructor","name":"TopicsRESTControllerLib.constructor","line":8,"end_line":23,"hash":"bacd230f3777dda39ec134a69a9a7c1801cb3cd09c0cc86659df324540053028"},{"id":"func/TopicsRESTControllerLib.handleError","name":"TopicsRESTControllerLib.handleError","line":25,"end_line":32,"hash":"b9ba0c7b9752ac2fda3cf058a983a8b6708715e2e4dc882903ab5ef369956e03"},{"id":"func/TopicsRESTControllerLib.getTopics","name":"TopicsRESTControllerLib.getTopics","line":49,"end_line":55,"hash":"b89a696bcd1d601ef86754974dbf181baf2ece7d592674ba4fd87887725d6fa8"},{"id":"func/TopicsRESTControllerLib.getTopicPosts","name":"TopicsRESTControllerLib.getTopicPosts","line":82,"end_line":90,"hash":"8ad5f9b1749968c3fbfea95683bb388a5d99eda0b8fe7a4dce3447d6d47e6dba"},{"id":"func/TopicsRESTControllerLib.getTopicFollowState","name":"TopicsRESTControllerLib.getTopicFollowState","line":110,"end_line":118,"hash":"6d72fecc2bf46276cd00d39cc1c19ed6647beed1f2f3ba187a2c085ed4308611"},{"id":"func/TopicsRESTControllerLib.getTopicFollowers","name":"TopicsRESTControllerLib.getTopicFollowers","line":136,"end_line":143,"hash":"2bcd22520d962c008a3255f5cf6cf536fdeb738d036d3c6b6d61d5d5cf040615"}]}
 // mutate4javascript-manifest-end

@@ -64,7 +64,10 @@ test('TopicFeedPage.getPost finds any loaded post', async () => {
       return posts
     },
     async (posts) => {
-      const memoDb = { async getTopicPosts () { return { posts, pagination: { total: posts.length } } } }
+      const memoDb = {
+        async getTopicPosts () { return { posts, pagination: { total: posts.length } } },
+        async getTopicFollowers () { return [] }
+      }
       const page = new TopicFeedPage({ memoDb, room: 'bitcoin' })
       await page.load()
 

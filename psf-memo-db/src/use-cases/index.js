@@ -11,6 +11,8 @@ import ListFollowing from './list-following.js'
 import ListFollowers from './list-followers.js'
 import ListTopics from './list-topics.js'
 import ListTopicPosts from './list-topic-posts.js'
+import TopicFollowState from './topic-follow-state.js'
+import ListTopicFollowers from './list-topic-followers.js'
 
 class UseCases {
   constructor (localConfig = {}) {
@@ -31,6 +33,8 @@ class UseCases {
     this.listFollowers = null
     this.listTopics = null
     this.listTopicPosts = null
+    this.topicFollowState = null
+    this.listTopicFollowers = null
   }
 
   async start () {
@@ -70,6 +74,14 @@ class UseCases {
       adapters: this.adapters
     })
 
+    this.topicFollowState = new TopicFollowState({
+      adapters: this.adapters
+    })
+
+    this.listTopicFollowers = new ListTopicFollowers({
+      adapters: this.adapters
+    })
+
     console.log('Use cases initialized.')
 
     return true
@@ -77,3 +89,7 @@ class UseCases {
 }
 
 export default UseCases
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T20:07:25.668Z","module_hash":"4056d0f29e6828f95ab07f34186b3cef9d93f244c3d6914aa52463abdc224f32","functions":[{"id":"func/UseCases.constructor","name":"UseCases.constructor","line":18,"end_line":38,"hash":"bf14b8bc15f8a9ad966bb4d2a2de92072be3ec695af1aef5604495f5cf681e34"},{"id":"func/UseCases.start","name":"UseCases.start","line":40,"end_line":88,"hash":"f6fbf584c0e6786294a352fdae4e7a01fef1d24d31ca5202a33f5ed5e1772020"}]}
+// mutate4javascript-manifest-end

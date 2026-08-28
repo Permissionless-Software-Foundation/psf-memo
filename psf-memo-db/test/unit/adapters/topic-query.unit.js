@@ -2,6 +2,41 @@ import { assert } from 'chai'
 import sinon from 'sinon'
 import TopicQuery from '../../../src/adapters/topic-query.js'
 
+function makeRoomsDb (records = {}) {
+  const store = new Map(Object.entries(records))
+  return {
+    async get (key) {
+      if (!store.has(key)) {
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      }
+      return store.get(key)
+    },
+    iterator (opts = {}) {
+      const entries = Array.from(store.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+      const { gte, lte } = opts
+      const filtered = entries.filter(([key]) => {
+        if (gte && key < gte) return false
+        if (lte && key > lte) return false
+        return true
+      })
+      let i = 0
+      return {
+        [Symbol.asyncIterator] () {
+          return this
+        },
+        async next () {
+          if (i >= filtered.length) return { value: undefined, done: true }
+          const entry = filtered[i++]
+          return { value: entry, done: false }
+        },
+        async close () {}
+      }
+    }
+  }
+}
+
 describe('#TopicQuery', () => {
   let uut
   let sandbox
@@ -11,7 +46,8 @@ describe('#TopicQuery', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     roomsDb = {
-      iterator: sandbox.stub()
+      iterator: sandbox.stub(),
+      get: sandbox.stub()
     }
     postsDb = {
       get: sandbox.stub()
@@ -192,6 +228,105 @@ describe('#TopicQuery', () => {
 
       assert.deepEqual(result.txids, ['post-a', 'post-b'])
       assert.equal(result.total, 2)
+    })
+  })
+
+  describe('#isFollowingRoom', () => {
+    it('should return false when no follow record exists', async () => {
+      const err = new Error('not found')
+      err.notFound = true
+      roomsDb.get.withArgs('bitcoin:addr-x').rejects(err)
+
+      const result = await uut.isFollowingRoom('addr-x', 'bitcoin')
+      assert.equal(result, false)
+    })
+
+    it('should return true for an active follow record', async () => {
+      roomsDb.get.withArgs('bitcoin:addr-a').resolves({ room: 'bitcoin', addr: 'addr-a', type: 'follow', unfollow: false })
+
+      const result = await uut.isFollowingRoom('addr-a', 'bitcoin')
+      assert.equal(result, true)
+    })
+
+    it('should return false for an unfollow record', async () => {
+      roomsDb.get.withArgs('bitcoin:addr-c').resolves({ room: 'bitcoin', addr: 'addr-c', type: 'follow', unfollow: true })
+
+      const result = await uut.isFollowingRoom('addr-c', 'bitcoin')
+      assert.equal(result, false)
+    })
+
+    it('should return false for a non-follow record', async () => {
+      roomsDb.get.withArgs('bitcoin:addr-a').resolves({ room: 'bitcoin', txid: 'post-1', type: 'post' })
+
+      const result = await uut.isFollowingRoom('addr-a', 'bitcoin')
+      assert.equal(result, false)
+    })
+
+    it('should rethrow non-not-found errors', async () => {
+      roomsDb.get.withArgs('bitcoin:addr-a').rejects(new Error('db down'))
+
+      try {
+        await uut.isFollowingRoom('addr-a', 'bitcoin')
+        assert.fail('Expected error')
+      } catch (err) {
+        assert.include(err.message, 'db down')
+      }
+    })
+  })
+
+  describe('#listRoomFollowers', () => {
+    it('should return active followers for a room', async () => {
+      const query = new TopicQuery({
+        roomsDb: makeRoomsDb({
+          'bitcoin:addr-a': { room: 'bitcoin', addr: 'addr-a', type: 'follow', unfollow: false },
+          'bitcoin:addr-b': { room: 'bitcoin', addr: 'addr-b', type: 'follow', unfollow: false },
+          'bitcoin:addr-c': { room: 'bitcoin', addr: 'addr-c', type: 'follow', unfollow: true },
+          'cash:addr-a': { room: 'cash', addr: 'addr-a', type: 'follow', unfollow: false }
+        }),
+        postsDb
+      })
+
+      const result = await query.listRoomFollowers('bitcoin')
+      assert.deepEqual(result, ['addr-a', 'addr-b'])
+    })
+
+    it('should fall back to the key address when the value has no addr', async () => {
+      const query = new TopicQuery({
+        roomsDb: makeRoomsDb({
+          'bitcoin:addr-a': { room: 'bitcoin', type: 'follow', unfollow: false }
+        }),
+        postsDb
+      })
+
+      const result = await query.listRoomFollowers('bitcoin')
+      assert.deepEqual(result, ['addr-a'])
+    })
+
+    it('should return an empty array for a room with no followers', async () => {
+      const query = new TopicQuery({
+        roomsDb: makeRoomsDb({}),
+        postsDb
+      })
+
+      const result = await query.listRoomFollowers('lone')
+      assert.deepEqual(result, [])
+    })
+  })
+
+  describe('#followAddrFromValue', () => {
+    it('should return the addr from the value when present', () => {
+      const result = uut.followAddrFromValue({ addr: 'addr-a' }, 'bitcoin:addr-a')
+      assert.equal(result, 'addr-a')
+    })
+
+    it('should fall back to the last key segment when the value has no addr', () => {
+      const result = uut.followAddrFromValue({ room: 'bitcoin', type: 'follow' }, 'bitcoin:addr-a')
+      assert.equal(result, 'addr-a')
+    })
+
+    it('should return null when the key has no address segment', () => {
+      const result = uut.followAddrFromValue({ room: 'lone', type: 'follow' }, 'lone')
+      assert.equal(result, null)
     })
   })
 })

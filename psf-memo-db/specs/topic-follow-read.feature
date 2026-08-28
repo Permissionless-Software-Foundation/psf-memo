@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-28T20:09:23.829689449Z","feature_name":"Topic Follow Read","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/topic-follow-read.feature","background_hash":"bf41600ace5aaae19b01881936ae5ec595b53abbb9829b5f7927f43a830ded38","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topic Follow Read - 1, Topic Follow Read - 2
 #
 # The indexer stores topic follows in the rooms store keyed `${room}:${addr}`

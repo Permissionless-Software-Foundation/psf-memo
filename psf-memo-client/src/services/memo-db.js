@@ -56,6 +56,33 @@ class MemoDb {
     return this.getPage(`/topics/${encodeURIComponent(room)}/posts`, 'getTopicPosts', opts)
   }
 
+  async getTopicFollowState (room, addr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/topics/${encodeURIComponent(room)}/follow/state`,
+        {
+          params: { addr }
+        }
+      )
+      return result.data.following === true
+    } catch (err) {
+      console.error('Error in getTopicFollowState()')
+      throw err
+    }
+  }
+
+  async getTopicFollowers (room) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/topics/${encodeURIComponent(room)}/followers`
+      )
+      return result.data.followers || []
+    } catch (err) {
+      console.error('Error in getTopicFollowers()')
+      throw err
+    }
+  }
+
   // GET a paginated 'recent' listing endpoint.
   async getRecent (path, name, params) {
     try {
@@ -121,5 +148,5 @@ class MemoDb {
 export default MemoDb
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T15:36:17.287Z","module_hash":"77d15bc46bc63e2ffbd5fa7387b08a74db8e967482626f4f52211ceb60bd0633","functions":[{"id":"func/MemoDb.constructor","name":"MemoDb.constructor","line":9,"end_line":11,"hash":"188825ae5983840d4e1a4df182966ef012297c336ea3b763c87ea1c384654279"},{"id":"func/MemoDb.getRecentProfiles","name":"MemoDb.getRecentProfiles","line":13,"end_line":15,"hash":"cb819c72881b70f719f964c607f64be70b40377297c738897eee495bcf6dff4d"},{"id":"func/MemoDb.getRecentPosts","name":"MemoDb.getRecentPosts","line":17,"end_line":19,"hash":"7c0fd29c2fdc67a27a05a190e2e4294a698a1fe5223d8017ca82c4f890c2d094"},{"id":"func/MemoDb.getProfile","name":"MemoDb.getProfile","line":21,"end_line":23,"hash":"6a250c7205799b40dbe97b8f17ddaee6eace8cb435b0561d9ff8f5eac93d2b20"},{"id":"func/MemoDb.getProfilePic","name":"MemoDb.getProfilePic","line":25,"end_line":27,"hash":"d61dd5aebce32ef28b69ad56f2f7108d6b5f333a4d94cd83f05f01a09fa8f1d7"},{"id":"func/MemoDb.getName","name":"MemoDb.getName","line":29,"end_line":31,"hash":"3f841735b93180c6aeeb14a563bb6d4eb0ca5d395fb960267c8896b06c1e85f3"},{"id":"func/MemoDb.getFollowState","name":"MemoDb.getFollowState","line":33,"end_line":49,"hash":"d62eb85c742b40f2d319230c6ef59e21738063d31bccf1f37ebdc52c20bac994"},{"id":"func/MemoDb.getTopics","name":"MemoDb.getTopics","line":51,"end_line":53,"hash":"8d392b8a4b1bef405a9872c2564c51d9343df7b1c628d016258ee1c165f713ef"},{"id":"func/MemoDb.getTopicPosts","name":"MemoDb.getTopicPosts","line":55,"end_line":57,"hash":"4cc1e13334b5b4a2b72942cbc5f3cce8493254628f7d51da33d7be9c60ef9ff7"},{"id":"func/MemoDb.getRecent","name":"MemoDb.getRecent","line":60,"end_line":71,"hash":"1565fd17dced45fbf1b6d6fd6b8003521129bbd88046ff52a4eb61c17862530d"},{"id":"func/MemoDb.getPage","name":"MemoDb.getPage","line":74,"end_line":85,"hash":"986ec43d7699d642b25a9f4627aa5420cc685a247c3caa4671797778bc84e3b5"},{"id":"func/MemoDb.getLevelResource","name":"MemoDb.getLevelResource","line":88,"end_line":101,"hash":"c2fb7338918b1e69aa8a14f65ae687532c843f0641f04074947731691001e4ea"},{"id":"func/MemoDb.getPostsByAddr","name":"MemoDb.getPostsByAddr","line":103,"end_line":105,"hash":"45bbfef12cd8e35da1d71299153b2e54304664d5e3191c497f105ba17b134431"},{"id":"func/MemoDb.getPostThread","name":"MemoDb.getPostThread","line":107,"end_line":118,"hash":"ed5ef157b457f8d984ff6a9488a4dccf7a37b0ae65adb40005df90508426661f"}]}
+// {"version":1,"tested_at":"2026-08-28T18:23:08.799Z","module_hash":"c55696ecbf8f9c776dc025b308cefadf604950952002bc3a2f4a021f9c73085b","functions":[{"id":"func/MemoDb.constructor","name":"MemoDb.constructor","line":9,"end_line":11,"hash":"188825ae5983840d4e1a4df182966ef012297c336ea3b763c87ea1c384654279"},{"id":"func/MemoDb.getRecentProfiles","name":"MemoDb.getRecentProfiles","line":13,"end_line":15,"hash":"cb819c72881b70f719f964c607f64be70b40377297c738897eee495bcf6dff4d"},{"id":"func/MemoDb.getRecentPosts","name":"MemoDb.getRecentPosts","line":17,"end_line":19,"hash":"7c0fd29c2fdc67a27a05a190e2e4294a698a1fe5223d8017ca82c4f890c2d094"},{"id":"func/MemoDb.getProfile","name":"MemoDb.getProfile","line":21,"end_line":23,"hash":"6a250c7205799b40dbe97b8f17ddaee6eace8cb435b0561d9ff8f5eac93d2b20"},{"id":"func/MemoDb.getProfilePic","name":"MemoDb.getProfilePic","line":25,"end_line":27,"hash":"d61dd5aebce32ef28b69ad56f2f7108d6b5f333a4d94cd83f05f01a09fa8f1d7"},{"id":"func/MemoDb.getName","name":"MemoDb.getName","line":29,"end_line":31,"hash":"3f841735b93180c6aeeb14a563bb6d4eb0ca5d395fb960267c8896b06c1e85f3"},{"id":"func/MemoDb.getFollowState","name":"MemoDb.getFollowState","line":33,"end_line":49,"hash":"d62eb85c742b40f2d319230c6ef59e21738063d31bccf1f37ebdc52c20bac994"},{"id":"func/MemoDb.getTopics","name":"MemoDb.getTopics","line":51,"end_line":53,"hash":"8d392b8a4b1bef405a9872c2564c51d9343df7b1c628d016258ee1c165f713ef"},{"id":"func/MemoDb.getTopicPosts","name":"MemoDb.getTopicPosts","line":55,"end_line":57,"hash":"4cc1e13334b5b4a2b72942cbc5f3cce8493254628f7d51da33d7be9c60ef9ff7"},{"id":"func/MemoDb.getTopicFollowState","name":"MemoDb.getTopicFollowState","line":59,"end_line":72,"hash":"4f056870b5dee08dfffd7484f9d94cf1721297ffa4ea629dcc4208a8217b4d24"},{"id":"func/MemoDb.getTopicFollowers","name":"MemoDb.getTopicFollowers","line":74,"end_line":84,"hash":"65c9eff7e2afb949cc46b64f2091eed006d9b6800ca5aee6c7e8793ae13e3e94"},{"id":"func/MemoDb.getRecent","name":"MemoDb.getRecent","line":87,"end_line":98,"hash":"1565fd17dced45fbf1b6d6fd6b8003521129bbd88046ff52a4eb61c17862530d"},{"id":"func/MemoDb.getPage","name":"MemoDb.getPage","line":101,"end_line":112,"hash":"986ec43d7699d642b25a9f4627aa5420cc685a247c3caa4671797778bc84e3b5"},{"id":"func/MemoDb.getLevelResource","name":"MemoDb.getLevelResource","line":115,"end_line":128,"hash":"c2fb7338918b1e69aa8a14f65ae687532c843f0641f04074947731691001e4ea"},{"id":"func/MemoDb.getPostsByAddr","name":"MemoDb.getPostsByAddr","line":130,"end_line":132,"hash":"45bbfef12cd8e35da1d71299153b2e54304664d5e3191c497f105ba17b134431"},{"id":"func/MemoDb.getPostThread","name":"MemoDb.getPostThread","line":134,"end_line":145,"hash":"ed5ef157b457f8d984ff6a9488a4dccf7a37b0ae65adb40005df90508426661f"}]}
 // mutate4javascript-manifest-end

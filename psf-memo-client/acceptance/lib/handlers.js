@@ -38,6 +38,9 @@ const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
+const MemoTopicFollow = require('../../src/services/memo-topic-follow')
+const MemoTopicPost = require('../../src/services/memo-topic-post')
+const TopicPostPage = require('../../src/services/topic-post-page')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -47,6 +50,9 @@ const MEMO_SET_AVATAR_URL_PREFIX = MemoSetAvatarUrl.MEMO_SET_AVATAR_URL_PREFIX
 const MEMO_LIKE_PREFIX = MemoLike.MEMO_LIKE_PREFIX
 const MEMO_FOLLOW_PREFIX = MemoFollow.MEMO_FOLLOW_PREFIX
 const MEMO_UNFOLLOW_PREFIX = MemoFollow.MEMO_UNFOLLOW_PREFIX
+const MEMO_TOPIC_MESSAGE_PREFIX = MemoTopicPost.MEMO_TOPIC_MESSAGE_PREFIX
+const MEMO_TOPIC_FOLLOW_PREFIX = MemoTopicFollow.MEMO_TOPIC_FOLLOW_PREFIX
+const MEMO_TOPIC_UNFOLLOW_PREFIX = MemoTopicFollow.MEMO_TOPIC_UNFOLLOW_PREFIX
 
 // Default author address used by Gherkin steps that refer to "the author address".
 const AUTHOR_ADDRESS = 'bitcoincash:qz7v6ztvzu2f2xd2ww8pnx9vwk0g4ncvfvavktg0jc'
@@ -98,11 +104,13 @@ function makeProfiles () {
   const bios = {}
   const avatarUrls = {}
   const following = {}
+  const topicFollowing = {}
   return {
     names,
     bios,
     avatarUrls,
     following,
+    topicFollowing,
     setName: (addr, name) => { names[addr] = name },
     getName: (addr) => names[addr] || null,
     setBio: (addr, bio) => { bios[addr] = bio },
@@ -113,7 +121,12 @@ function makeProfiles () {
       if (!following[selfAddr]) following[selfAddr] = {}
       following[selfAddr][targetAddr] = isFollowing
     },
-    getFollowState: (selfAddr, targetAddr) => following[selfAddr]?.[targetAddr] || false
+    getFollowState: (selfAddr, targetAddr) => following[selfAddr]?.[targetAddr] || false,
+    setTopicFollowState: (selfAddr, room, isFollowing) => {
+      if (!topicFollowing[selfAddr]) topicFollowing[selfAddr] = {}
+      topicFollowing[selfAddr][room] = isFollowing
+    },
+    getTopicFollowState: (selfAddr, room) => topicFollowing[selfAddr]?.[room] || false
   }
 }
 
@@ -136,6 +149,7 @@ function makeMemoDb () {
   const topics = []
   const topicPosts = {}
   const topicCounts = new Map()
+  const topicFollow = new Map()
 
   return {
     posts,
@@ -170,6 +184,20 @@ function makeMemoDb () {
     },
     setFollowState (followerAddr, followeeAddr, following) {
       followState[`${followerAddr}:${followeeAddr}`] = following
+    },
+    setTopicFollowState (addr, room, following) {
+      if (!topicFollow.has(room)) topicFollow.set(room, new Map())
+      topicFollow.get(room).set(addr, following)
+    },
+    async getTopicFollowState (room, addr) {
+      return topicFollow.get(room)?.get(addr) || false
+    },
+    async getTopicFollowers (room) {
+      const addrs = []
+      for (const [addr, following] of (topicFollow.get(room) || new Map()).entries()) {
+        if (following) addrs.push(addr)
+      }
+      return addrs
     },
     async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
       const page = posts.slice(offset, offset + limit)
@@ -212,6 +240,7 @@ function createWorld () {
   const memoReply = new MemoReply({ wallet, thread })
   const memoLike = new MemoLike({ wallet, feed })
   const memoFollow = new MemoFollow({ wallet, profiles })
+  const memoTopicFollow = new MemoTopicFollow({ wallet, profiles })
   const memoDb = makeMemoDb()
 
   const world = {
@@ -222,6 +251,7 @@ function createWorld () {
     memoReply,
     memoLike,
     memoFollow,
+    memoTopicFollow,
     memoDb,
     currentPath: null,
     menuOpen: false,
@@ -324,6 +354,13 @@ function findDisplayedPost (txid, world) {
   if (fromFeed) return fromFeed
 
   return null
+}
+
+// True when the currently displayed page is a topic feed (used to dispatch the
+// shared "Follow/Unfollow button" steps between the profile page and the topic
+// feed page).
+function isTopicFeedActive (world) {
+  return Boolean(world.currentPath && String(world.currentPath).startsWith('/topics/'))
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -1340,14 +1377,22 @@ const handlers = [
     name: 'click Follow button',
     pattern: /^I click the Follow button$/,
     async run (m, example, world) {
-      await world.profilePage.follow()
+      if (isTopicFeedActive(world)) {
+        await world.topicFeedPage.follow()
+      } else {
+        await world.profilePage.follow()
+      }
     }
   },
   {
     name: 'click Unfollow button',
     pattern: /^I click the Unfollow button$/,
     async run (m, example, world) {
-      await world.profilePage.unfollow()
+      if (isTopicFeedActive(world)) {
+        await world.topicFeedPage.unfollow()
+      } else {
+        await world.profilePage.unfollow()
+      }
     }
   },
   {
@@ -1471,12 +1516,23 @@ const handlers = [
   },
   {
     name: 'open topic feed',
-    pattern: /^I open the topic feed for "?(<topic>|[^"]+)"?$/,
+    pattern: /^I open the topic feed for (?:the topic )?"?(<topic>|[^"]+)"?$/,
     async run (m, example, world) {
       const room = resolveParam(m[1], example)
-      world.topicFeedPage = new TopicFeedPage({ memoDb: world.memoDb, room })
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.topicFeedPage = new TopicFeedPage({
+        memoDb: world.memoDb,
+        room,
+        myAddr,
+        memoTopicFollow: world.memoTopicFollow
+      })
       await world.topicFeedPage.load()
       world.currentPath = TopicFeedPage.topicFeedPath(room)
+
+      // Set up the topic post composer for this room so topic messages can be
+      // composed and broadcast, reflecting new posts onto the shared feed.
+      const memoTopicPost = new MemoTopicPost({ wallet: world.wallet, room, feed: world.feed })
+      world.topicPostPage = new TopicPostPage({ memoTopicPost })
     }
   },
   {
@@ -1501,6 +1557,147 @@ const handlers = [
       const posts = world.topicFeedPage.posts
       if (!Array.isArray(posts) || posts.length !== 0) {
         throw new Error(`Expected topic feed to be empty, but found ${Array.isArray(posts) ? posts.length : 'non-array'} posts.`)
+      }
+    }
+  },
+  {
+    name: 'API reports I do not follow topic',
+    pattern: /^the psf-memo-db API reports that I do not follow the topic (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.setTopicFollowState(myAddr, room, false)
+    }
+  },
+  {
+    name: 'API reports I follow topic',
+    pattern: /^the psf-memo-db API reports that I follow the topic (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.setTopicFollowState(myAddr, room, true)
+    }
+  },
+  {
+    name: 'topic feed page shows Follow button',
+    pattern: /^the topic feed page shows a Follow button$/,
+    run (m, example, world) {
+      if (!world.topicFeedPage) throw new Error('No topic feed page is loaded.')
+      if (!world.topicFeedPage.canFollow()) throw new Error('Topic feed cannot show a Follow button.')
+      if (world.topicFeedPage.isFollowing()) throw new Error('Topic feed shows Unfollow, but Follow was expected.')
+    }
+  },
+  {
+    name: 'topic feed page shows Unfollow button',
+    pattern: /^the topic feed page shows an Unfollow button$/,
+    run (m, example, world) {
+      if (!world.topicFeedPage) throw new Error('No topic feed page is loaded.')
+      if (!world.topicFeedPage.canFollow()) throw new Error('Topic feed cannot show an Unfollow button.')
+      if (!world.topicFeedPage.isFollowing()) throw new Error('Topic feed shows Follow, but Unfollow was expected.')
+    }
+  },
+  {
+    name: 'broadcasts topic-follow prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo topic-follow prefix for the topic (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_TOPIC_FOLLOW_PREFIX) {
+        throw new Error(`Expected Memo topic-follow prefix ${MEMO_TOPIC_FOLLOW_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg !== room) {
+        throw new Error(`Broadcast topic-follow payload did not match topic ${room}.`)
+      }
+    }
+  },
+  {
+    name: 'broadcasts topic-unfollow prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo topic-unfollow prefix for the topic (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_TOPIC_UNFOLLOW_PREFIX) {
+        throw new Error(`Expected Memo topic-unfollow prefix ${MEMO_TOPIC_UNFOLLOW_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg !== room) {
+        throw new Error(`Broadcast topic-unfollow payload did not match topic ${room}.`)
+      }
+    }
+  },
+  {
+    name: 'compose topic message',
+    pattern: /^I compose a topic message with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}"`)
+      world.topicPostPage.setInput(example[param])
+    }
+  },
+  {
+    name: 'submit topic message',
+    pattern: /^I submit the topic message$/,
+    async run (m, example, world) {
+      await world.topicPostPage.submit()
+    }
+  },
+  {
+    name: 'broadcasts topic-message prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo topic-message prefix for the topic (<topic>)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_TOPIC_MESSAGE_PREFIX) {
+        throw new Error(`Expected Memo topic-message prefix ${MEMO_TOPIC_MESSAGE_PREFIX}, got "${last.prefix}".`)
+      }
+      const expectedPayload = room + world.topicPostPage.input
+      if (last.msg !== expectedPayload) {
+        throw new Error(`Broadcast topic-message payload did not match ${room} + input.`)
+      }
+    }
+  },
+  {
+    name: 'topic feed shows new post from my address',
+    pattern: /^the topic feed shows a new post from my address with the text "(.+)"$/,
+    run (m, example, world) {
+      const expectedText = resolveParam(m[1], example)
+      const myAddress = world.wallet.walletInfo.cashAddress
+      const found = world.feed.posts.find((p) => p.text === expectedText && p.address === myAddress)
+      if (!found) throw new Error(`Topic feed does not show the new post with text "${expectedText}".`)
+    }
+  },
+  {
+    name: 'topic post composer shows validation error',
+    pattern: /^the topic post composer shows a validation error$/,
+    run (m, example, world) {
+      if (world.topicPostPage.submitError !== 'topic_post_validation') {
+        throw new Error(`Expected topic_post_validation, got ${world.topicPostPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'topic post composer shows length error',
+    pattern: /^the topic post composer shows a length error$/,
+    run (m, example, world) {
+      if (world.topicPostPage.submitError !== 'topic_post_length') {
+        throw new Error(`Expected topic_post_length, got ${world.topicPostPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'topic post composer remaining byte count',
+    pattern: /^the topic post composer shows a remaining byte count of (<count>)$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      if (Number.isNaN(expected)) throw new Error(`Invalid expected count for "${m[1]}".`)
+      const actual = world.topicPostPage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
       }
     }
   }
