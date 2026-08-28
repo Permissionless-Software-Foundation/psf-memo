@@ -134,6 +134,64 @@ test('follow state storage is independent per self address', () => {
   assert.equal(profiles.getFollowState(otherSelfAddr, targetAddr), false)
 })
 
+test('setTopicFollowState stores and getTopicFollowState retrieves topic follow state', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const room = 'bitcoin'
+
+  profiles.setTopicFollowState(selfAddr, room, true)
+
+  assert.equal(profiles.getTopicFollowState(selfAddr, room), true)
+})
+
+test('getTopicFollowState returns false for an unknown topic relationship', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+
+  assert.equal(profiles.getTopicFollowState(selfAddr, 'bitcoin'), false)
+})
+
+test('setTopicFollowState with no self address does nothing', () => {
+  const profiles = new Profiles()
+
+  profiles.setTopicFollowState('', 'bitcoin', true)
+
+  assert.equal(profiles.getTopicFollowState('', 'bitcoin'), false)
+})
+
+test('setTopicFollowState with no room does nothing', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+
+  profiles.setTopicFollowState(selfAddr, '', true)
+
+  assert.equal(profiles.getTopicFollowState(selfAddr, ''), false)
+})
+
+test('topic follow state storage is independent per self address', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const otherSelfAddr = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+
+  profiles.setTopicFollowState(selfAddr, 'bitcoin', true)
+  profiles.setTopicFollowState(otherSelfAddr, 'bitcoin', false)
+
+  assert.equal(profiles.getTopicFollowState(selfAddr, 'bitcoin'), true)
+  assert.equal(profiles.getTopicFollowState(otherSelfAddr, 'bitcoin'), false)
+})
+
+test('topic follow state storage is independent of address follow state', () => {
+  const profiles = new Profiles()
+  const selfAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const targetAddr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+
+  profiles.setFollowState(selfAddr, targetAddr, true)
+  profiles.setTopicFollowState(selfAddr, 'bitcoin', true)
+
+  assert.equal(profiles.getFollowState(selfAddr, targetAddr), true)
+  assert.equal(profiles.getTopicFollowState(selfAddr, 'bitcoin'), true)
+})
+
 test('avatar URL storage is independent of name and bio storage', () => {
   const profiles = new Profiles()
   const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'

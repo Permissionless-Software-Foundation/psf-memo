@@ -20,6 +20,8 @@ import ListFollowing from '../../src/use-cases/list-following.js'
 import ListFollowers from '../../src/use-cases/list-followers.js'
 import ListTopics from '../../src/use-cases/list-topics.js'
 import ListTopicPosts from '../../src/use-cases/list-topic-posts.js'
+import TopicFollowState from '../../src/use-cases/topic-follow-state.js'
+import ListTopicFollowers from '../../src/use-cases/list-topic-followers.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -96,6 +98,8 @@ async function createWorld () {
   const listFollowers = new ListFollowers({ adapters })
   const listTopics = new ListTopics({ adapters })
   const listTopicPosts = new ListTopicPosts({ adapters })
+  const topicFollowState = new TopicFollowState({ adapters })
+  const listTopicFollowers = new ListTopicFollowers({ adapters })
 
   let lastResponse = null
 
@@ -109,6 +113,8 @@ async function createWorld () {
     listFollowers,
     listTopics,
     listTopicPosts,
+    topicFollowState,
+    listTopicFollowers,
     postHeightsIteratorCounter,
     addrPostHeightsIteratorCounter,
     postChildrenIteratorCounter,
@@ -150,6 +156,11 @@ async function loadFixture (world, name) {
 
   if (name === 'topics-with-posts') {
     await loadTopicsWithPosts(world)
+    return
+  }
+
+  if (name === 'topic-follows') {
+    await loadTopicFollows(world)
     return
   }
 
@@ -361,6 +372,19 @@ async function loadTopicsWithPosts (world) {
 
   for (const [txid, post] of Object.entries(posts)) {
     await world.adapters.level.postsDb.put(txid, post)
+  }
+}
+
+async function loadTopicFollows (world) {
+  const entries = [
+    { key: 'bitcoin:addr-a', room: 'bitcoin', addr: 'addr-a', type: 'follow', unfollow: false },
+    { key: 'bitcoin:addr-b', room: 'bitcoin', addr: 'addr-b', type: 'follow', unfollow: false },
+    { key: 'bitcoin:addr-c', room: 'bitcoin', addr: 'addr-c', type: 'follow', unfollow: true },
+    { key: 'cash:addr-a', room: 'cash', addr: 'addr-a', type: 'follow', unfollow: false }
+  ]
+
+  for (const entry of entries) {
+    await world.adapters.level.roomsDb.put(entry.key, entry)
   }
 }
 
@@ -778,6 +802,64 @@ const handlers = [
       const posts = world.getLastResponse().posts
       if (!Array.isArray(posts) || posts.length !== 0) {
         throw new Error(`Expected no posts, got ${Array.isArray(posts) ? posts.length : 'non-array'}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with rooms store',
+    pattern: /^a psf-memo-db instance with a rooms store$/,
+    async run () {
+      // World is already created with the rooms store.
+    }
+  },
+  {
+    name: 'load fixture into rooms store',
+    pattern: /^the fixture "(.+)" is loaded into the rooms store$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'request topic follow state',
+    pattern: /^the client requests the topic follow state for room (<[A-Za-z0-9_]+>) and address (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const resp = await world.topicFollowState.execute({ room, addr })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'topic follow state reports following',
+    pattern: /^the topic follow state reports following (<following>)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example) === 'true'
+      const actual = world.getLastResponse().following
+      if (actual !== expected) {
+        throw new Error(`Expected following ${expected}, got ${actual}`)
+      }
+    }
+  },
+  {
+    name: 'request topic followers list',
+    pattern: /^the client requests the topic followers list for room (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const resp = await world.listTopicFollowers.execute({ room })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'topic followers list contains addresses',
+    pattern: /^the topic followers list contains the addresses (<expected>)$/,
+    run (m, example, world) {
+      const raw = resolveParam(m[1], example).trim()
+      const expected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
+      const actual = world.getLastResponse().followers
+      const expectedSet = new Set(expected)
+      const actualSet = new Set(actual)
+      if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
+        throw new Error(`Expected topic followers ${expected.join(',')}, got ${actual.join(',')}`)
       }
     }
   }
