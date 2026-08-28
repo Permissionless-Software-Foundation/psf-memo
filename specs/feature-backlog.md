@@ -157,8 +157,8 @@ follows in `roomsDb`; the DB and client need query/render support.
 
 | # | Feature | Memo action | Components | Status |
 |---|---------|-------------|------------|--------|
-| 2.1 | Topic list / discovery | read | D, C | 🔴 missing |
-| 2.2 | Topic feed page | read | D, C | 🔴 missing |
+| 2.1 | Topic list / discovery | read | D, C | ✅ |
+| 2.2 | Topic feed page | read | D, C | ✅ |
 | 2.3 | Post a topic message | `0x6d0c` | C, I, D | 🟡 partial (I/D store; no C UI) |
 | 2.4 | Follow a topic | `0x6d0d` | C, I, D | 🟡 partial |
 | 2.5 | Unfollow a topic | `0x6d0e` | C, I, D | 🟡 partial |
@@ -213,29 +213,22 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Follow / Unfollow user** (P1.5 / P1.6):
-- `psf-memo-client`: add a Follow button on the profile page that broadcasts the
-  `0x6d06` Follow action (and an Unfollow button broadcasting `0x6d07`).
-- `psf-memo-db`: expose follow state and following/followers lists.
-- The indexer already stores follows in `followsDb`; the missing pieces are the
-  client write path and the DB read side.
+**Post a topic message / Follow a topic / Unfollow a topic** (P2.3 / P2.4 / P2.5):
+- `psf-memo-client`: add a topic post composer and topic follow/unfollow buttons
+  on the topic feed page that broadcast `0x6d0c` / `0x6d0d` / `0x6d0e`.
+- `psf-memo-db`: expose topic follow state and a topic's followers list.
+- The indexer already stores topic messages and follows in `roomsDb`; the
+  missing pieces are the client write path and the DB read side for follows.
 
-### cashaddr conversion (use bch-js, not a new dependency)
+### Topic payloads (UTF-8, no cashaddr conversion)
 
-The follow/unfollow OP_RETURN payload is the followee's **20-byte hash160**
-(P2PKH). The `followsDb` store keys followees by that hash160. Convert between
-cash addresses and hash160 with **bch-js** `Address` tools, which are already
-available and preferred over adding a separate cashaddr library:
+Unlike follow/unfollow user, topic actions carry plain UTF-8 text (the topic
+name and, for `0x6d0c`, the message). No bch-js cashaddr conversion is needed
+for topics. The `0x6d0c` topic message payload is `topic_name + message` with a
+combined limit of 214 bytes; `0x6d0d` / `0x6d0e` carry only the topic name.
 
-- Client: `bchjs.Address.toHash160(followeeCashAddress)` returns the hash160
-  hex for the `0x6d06` / `0x6d07` payload. bch-js is embedded in
-  `minimal-slp-wallet`, so no new client dependency is needed.
-- DB read side: `bchjs.Address.toHash160(followeeCashAddress)` for the follow
-  state lookup, and `bchjs.Address.hash160ToCash(followeePkHash)` to return
-  cash addresses in the following/followers lists. Add `@psf/bch-js` to
-  `psf-memo-db` rather than a separate cashaddr package.
-
-This is the next smallest end-to-end win after the set-avatar-url write path closed.
+This is the next smallest end-to-end win after the topic list/feed read side
+closed.
 
 ---
 

@@ -167,17 +167,18 @@ Goal: reach feature parity with [memo.cash](https://memo.cash).
 | Tier | Features | Status |
 |------|----------|--------|
 | **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
-| **P1** | Like counts (read side) ✅; client display ✅; Set profile text ✅; Set profile picture ✅; Follow/Unfollow | next |
-| **P2** | Topics (list, feed, post, follow/unfollow) | later |
+| **P1** | Like counts (read side) ✅; client display ✅; Set profile text ✅; Set profile picture ✅; Follow/Unfollow ✅ | ✅ shipped |
+| **P2** | Topics (list ✅, feed ✅, post/follow/unfollow) | next |
 | **P3** | Polls (create, add option, vote) | later |
 | **P4** | Mute / unmute user | later |
 | **P5** | Send money memo action, MIP-0009 token exchange | later |
 | **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
 
-**Suggested next spec:** P1.5/P1.6 — add Follow/Unfollow buttons on the profile
-page that broadcast `0x6d06`/`0x6d07`, plus the DB read side (follow state,
-following/followers lists). The indexer already stores follows in `followsDb`;
-the missing pieces are the client write path and the DB read side.
+**Suggested next spec:** P2.3/P2.4/P2.5 — add a topic post composer and topic
+follow/unfollow buttons on the topic feed page that broadcast `0x6d0c`/
+`0x6d0d`/`0x6d0e`, plus the DB read side (topic follow state, topic followers).
+The indexer already stores topic messages and follows in `roomsDb`; the missing
+pieces are the client write path and the DB read side for follows.
 
 ---
 
@@ -361,5 +362,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `7e19503` (follow/unfollow user merged to `master`; client unit 93, property 14, acceptance all-features, lint, and build passing; DB unit 109, acceptance all-features, lint passing).
-Next action: **spec P2.1/P2.2** — Topics (list / discovery / feed).
+Current `master` HEAD: `f12e5b3` (topic list/discovery + topic feed merged to `master`; client build, unit 108, lint passing; DB unit 161, lint passing; indexer unit 46, lint passing).
+Next action: **spec P2.3/P2.4/P2.5** — Topics (post a topic message / follow a topic / unfollow a topic).
