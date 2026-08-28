@@ -8,10 +8,32 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
 
-function makeMemoDb (posts, pagination) {
+const MY_ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+
+function makeMemoDb (posts, pagination, { following = false, followers = [] } = {}) {
   return {
     async getTopicPosts (room, { limit, offset }) {
       return { posts, pagination }
+    },
+    async getTopicFollowState (room, addr) {
+      return following
+    },
+    async getTopicFollowers (room) {
+      return followers
+    }
+  }
+}
+
+function makeMemoTopicFollow () {
+  return {
+    broadcasts: [],
+    async follow (room) {
+      this.broadcasts.push({ action: 'follow', room })
+      return 'aa'.repeat(32)
+    },
+    async unfollow (room) {
+      this.broadcasts.push({ action: 'unfollow', room })
+      return 'bb'.repeat(32)
     }
   }
 }
@@ -34,6 +56,12 @@ test('load forwards limit and offset to the memo db client', async () => {
     async getTopicPosts (room, params) {
       calls.push({ room, params })
       return { posts: [], pagination: {} }
+    },
+    async getTopicFollowState () {
+      return false
+    },
+    async getTopicFollowers () {
+      return []
     }
   }
   const page = new TopicFeedPage({ memoDb, room: 'bitcoin' })
@@ -49,6 +77,12 @@ test('load defaults limit and offset', async () => {
     async getTopicPosts (room, params) {
       calls.push(params)
       return { posts: [], pagination: {} }
+    },
+    async getTopicFollowState () {
+      return false
+    },
+    async getTopicFollowers () {
+      return []
     }
   }
   const page = new TopicFeedPage({ memoDb, room: 'bitcoin' })
@@ -100,6 +134,86 @@ test('getPost returns null for an unknown txid', async () => {
   await page.load()
 
   assert.equal(page.getPost('c'.repeat(64)), null)
+})
+
+test('load fetches follow state when myAddr is provided', async () => {
+  const page = new TopicFeedPage({
+    memoDb: makeMemoDb([], {}, { following: true }),
+    room: 'bitcoin',
+    myAddr: MY_ADDRESS
+  })
+
+  const result = await page.load()
+
+  assert.equal(result.followState, true)
+  assert.equal(page.isFollowing(), true)
+})
+
+test('load returns following=false when no myAddr is provided', async () => {
+  const page = new TopicFeedPage({ memoDb: makeMemoDb([], {}), room: 'bitcoin' })
+
+  const result = await page.load()
+
+  assert.equal(result.followState, false)
+})
+
+test('load fetches followers list', async () => {
+  const followers = ['bitcoincash:a', 'bitcoincash:b']
+  const page = new TopicFeedPage({
+    memoDb: makeMemoDb([], {}, { followers }),
+    room: 'bitcoin'
+  })
+
+  const result = await page.load()
+
+  assert.deepEqual(result.followers, followers)
+})
+
+test('follow broadcasts and updates local state', async () => {
+  const memoTopicFollow = makeMemoTopicFollow()
+  const page = new TopicFeedPage({
+    memoDb: makeMemoDb([], {}),
+    room: 'bitcoin',
+    myAddr: MY_ADDRESS,
+    memoTopicFollow
+  })
+
+  const result = await page.follow()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.isFollowing(), true)
+  assert.deepEqual(memoTopicFollow.broadcasts, [{ action: 'follow', room: 'bitcoin' }])
+  assert.ok(page.followers.includes(MY_ADDRESS))
+})
+
+test('unfollow broadcasts and updates local state', async () => {
+  const memoTopicFollow = makeMemoTopicFollow()
+  const page = new TopicFeedPage({
+    memoDb: makeMemoDb([], {}),
+    room: 'bitcoin',
+    myAddr: MY_ADDRESS,
+    memoTopicFollow
+  })
+
+  const result = await page.unfollow()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.isFollowing(), false)
+  assert.deepEqual(memoTopicFollow.broadcasts, [{ action: 'unfollow', room: 'bitcoin' }])
+  assert.ok(!page.followers.includes(MY_ADDRESS))
+})
+
+test('follow requires a memo topic follow handler', async () => {
+  const page = new TopicFeedPage({
+    memoDb: makeMemoDb([], {}),
+    room: 'bitcoin',
+    myAddr: MY_ADDRESS
+  })
+
+  await assert.rejects(
+    () => page.follow(),
+    /requires a memo topic follow handler/
+  )
 })
 
 test('exposes the topic feed path for a room', () => {

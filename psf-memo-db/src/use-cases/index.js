@@ -11,6 +11,8 @@ import ListFollowing from './list-following.js'
 import ListFollowers from './list-followers.js'
 import ListTopics from './list-topics.js'
 import ListTopicPosts from './list-topic-posts.js'
+import TopicFollowState from './topic-follow-state.js'
+import ListTopicFollowers from './list-topic-followers.js'
 
 class UseCases {
   constructor (localConfig = {}) {
@@ -31,6 +33,8 @@ class UseCases {
     this.listFollowers = null
     this.listTopics = null
     this.listTopicPosts = null
+    this.topicFollowState = null
+    this.listTopicFollowers = null
   }
 
   async start () {
@@ -67,6 +71,14 @@ class UseCases {
     })
 
     this.listTopicPosts = new ListTopicPosts({
+      adapters: this.adapters
+    })
+
+    this.topicFollowState = new TopicFollowState({
+      adapters: this.adapters
+    })
+
+    this.listTopicFollowers = new ListTopicFollowers({
       adapters: this.adapters
     })
 

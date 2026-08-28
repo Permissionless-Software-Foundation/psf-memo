@@ -10,8 +10,12 @@ class TopicFeedPage {
   constructor (deps = {}) {
     this.memoDb = deps.memoDb || null
     this.room = deps.room || null
+    this.myAddr = deps.myAddr || null
+    this.memoTopicFollow = deps.memoTopicFollow || null
     this.posts = []
     this.pagination = null
+    this.followState = false
+    this.followers = []
   }
 
   async load ({ limit = 100, offset = 0 } = {}) {
@@ -25,8 +29,53 @@ class TopicFeedPage {
     const data = await this.memoDb.getTopicPosts(this.room, { limit, offset })
     this.posts = data.posts || []
     this.pagination = data.pagination || null
+    this.followState = await this._loadFollowState()
+    this.followers = await this._loadFollowers()
 
-    return { posts: this.posts, pagination: this.pagination }
+    return { posts: this.posts, pagination: this.pagination, followState: this.followState, followers: this.followers }
+  }
+
+  async _loadFollowState () {
+    if (this.myAddr) {
+      return this.memoDb.getTopicFollowState(this.room, this.myAddr)
+    }
+    return false
+  }
+
+  async _loadFollowers () {
+    return this.memoDb.getTopicFollowers(this.room)
+  }
+
+  canFollow () {
+    return Boolean(this.myAddr)
+  }
+
+  isFollowing () {
+    return this.followState === true
+  }
+
+  async follow () {
+    return this._setFollowState('follow', true)
+  }
+
+  async unfollow () {
+    return this._setFollowState('unfollow', false)
+  }
+
+  async _setFollowState (method, nextState) {
+    if (!this.memoTopicFollow) {
+      throw new Error('Topic feed page requires a memo topic follow handler.')
+    }
+    await this.memoTopicFollow[method](this.room)
+    this.followState = nextState
+    if (nextState) {
+      if (!this.followers.includes(this.myAddr)) {
+        this.followers = [...this.followers, this.myAddr]
+      }
+    } else {
+      this.followers = this.followers.filter((addr) => addr !== this.myAddr)
+    }
+    return { ok: true }
   }
 
   getPost (txid) {

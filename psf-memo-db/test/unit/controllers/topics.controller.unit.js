@@ -24,6 +24,19 @@ describe('#TopicsRESTController', () => {
             posts: [{ txid: 'post-300', blockHeight: 300 }],
             pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
           })
+        },
+        topicFollowState: {
+          execute: sandbox.stub().resolves({
+            room: 'bitcoin',
+            addr: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d',
+            following: true
+          })
+        },
+        listTopicFollowers: {
+          execute: sandbox.stub().resolves({
+            room: 'bitcoin',
+            followers: ['bitcoincash:a', 'bitcoincash:b']
+          })
         }
       }
     })
@@ -57,6 +70,38 @@ describe('#TopicsRESTController', () => {
     })
     assert.equal(ctx.body.posts.length, 1)
     assert.equal(ctx.body.posts[0].txid, 'post-300')
+  })
+
+  it('should return topic follow state from use case', async () => {
+    const ctx = {
+      params: { room: 'bitcoin' },
+      query: { addr: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d' },
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getTopicFollowState(ctx)
+
+    assert.equal(uut.useCases.topicFollowState.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.topicFollowState.execute.firstCall.args[0], {
+      room: 'bitcoin',
+      addr: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+    })
+    assert.equal(ctx.body.following, true)
+  })
+
+  it('should return topic followers from use case', async () => {
+    const ctx = {
+      params: { room: 'bitcoin' },
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getTopicFollowers(ctx)
+
+    assert.equal(uut.useCases.listTopicFollowers.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.listTopicFollowers.execute.firstCall.args[0], {
+      room: 'bitcoin'
+    })
+    assert.deepEqual(ctx.body.followers, ['bitcoincash:a', 'bitcoincash:b'])
   })
 
   it('should throw a 500 when the use case fails without a status', async () => {

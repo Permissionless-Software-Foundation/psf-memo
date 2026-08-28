@@ -24,8 +24,11 @@ class TopicQuery {
 
     this.listTopics = this.listTopics.bind(this)
     this.getTopicPostTxids = this.getTopicPostTxids.bind(this)
+    this.isFollowingRoom = this.isFollowingRoom.bind(this)
+    this.listRoomFollowers = this.listRoomFollowers.bind(this)
     this.roomFromKey = this.roomFromKey.bind(this)
     this.txidFromKey = this.txidFromKey.bind(this)
+    this.followAddrFromValue = this.followAddrFromValue.bind(this)
   }
 
   roomFromKey (key, value) {
@@ -74,6 +77,38 @@ class TopicQuery {
     const txids = entries.slice(offset, offset + limit).map((entry) => entry.txid)
 
     return { txids, total }
+  }
+
+  // Return true when addr has an active follow record for room.
+  async isFollowingRoom (addr, room) {
+    const key = `${room}:${addr}`
+    try {
+      const record = await this.roomsDb.get(key)
+      return record?.type === 'follow' && record?.unfollow !== true
+    } catch (err) {
+      if (err.notFound) return false
+      throw err
+    }
+  }
+
+  // Return the cash addresses that currently follow the room.
+  async listRoomFollowers (room) {
+    const start = `${room}:`
+    const end = `${room}:\uffff`
+    const followers = []
+    for await (const [key, value] of this.roomsDb.iterator({ gte: start, lte: end })) {
+      if (value?.type !== 'follow') continue
+      if (value?.unfollow === true) continue
+      const addr = this.followAddrFromValue(value, key)
+      if (addr) followers.push(addr)
+    }
+    return followers
+  }
+
+  followAddrFromValue (value, key) {
+    if (value && typeof value.addr === 'string') return value.addr
+    const parts = String(key).split(':')
+    return parts.length > 1 ? parts[parts.length - 1] : null
   }
 }
 

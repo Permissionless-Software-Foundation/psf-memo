@@ -17,6 +17,8 @@ class TopicsRESTControllerLib {
 
     this.getTopics = this.getTopics.bind(this)
     this.getTopicPosts = this.getTopicPosts.bind(this)
+    this.getTopicFollowState = this.getTopicFollowState.bind(this)
+    this.getTopicFollowers = this.getTopicFollowers.bind(this)
     this.handleError = this.handleError.bind(this)
   }
 
@@ -82,6 +84,59 @@ class TopicsRESTControllerLib {
       const { room } = ctx.params
       const { limit, offset } = ctx.query
       ctx.body = await this.useCases.listTopicPosts.execute({ room, limit, offset })
+    } catch (err) {
+      this.handleError(ctx, err)
+    }
+  }
+
+  /**
+   * @api {get} /topics/:room/follow/state Check topic follow state
+   * @apiPermission public
+   * @apiName GetTopicFollowState
+   * @apiGroup REST Topics
+   *
+   * @apiDescription Returns whether an address follows a topic.
+   *
+   * @apiParam {String} room Topic name
+   * @apiQuery {String} addr Cash address to check
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/topics/bitcoin/follow/state?addr=bitcoincash:q..."
+   *
+   * @apiSuccess {String} room Topic name
+   * @apiSuccess {String} addr Checked cash address
+   * @apiSuccess {Boolean} following True when an active topic follow exists
+   */
+  async getTopicFollowState (ctx) {
+    try {
+      const { room } = ctx.params
+      const { addr } = ctx.query
+      ctx.body = await this.useCases.topicFollowState.execute({ room, addr })
+    } catch (err) {
+      this.handleError(ctx, err)
+    }
+  }
+
+  /**
+   * @api {get} /topics/:room/followers List topic followers
+   * @apiPermission public
+   * @apiName GetTopicFollowers
+   * @apiGroup REST Topics
+   *
+   * @apiDescription Returns the addresses that currently follow a topic.
+   *
+   * @apiParam {String} room Topic name
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/topics/bitcoin/followers"
+   *
+   * @apiSuccess {String} room Topic name
+   * @apiSuccess {String[]} followers Array of follower cash addresses
+   */
+  async getTopicFollowers (ctx) {
+    try {
+      const { room } = ctx.params
+      ctx.body = await this.useCases.listTopicFollowers.execute({ room })
     } catch (err) {
       this.handleError(ctx, err)
     }

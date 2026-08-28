@@ -15,6 +15,7 @@ class Profiles {
     this.bios = new Map()
     this.avatarUrls = new Map()
     this.following = new Map()
+    this.topicFollowing = new Map()
   }
 
   setName (addr, name) {
@@ -59,6 +60,20 @@ class Profiles {
   getFollowState (selfAddr, targetAddr) {
     if (!selfAddr || !targetAddr) return false
     return this.following.get(selfAddr)?.get(targetAddr) || false
+  }
+
+  // Track whether the current wallet follows a given topic.
+  setTopicFollowState (selfAddr, room, isFollowing) {
+    if (!selfAddr || !room) return
+    if (!this.topicFollowing.has(selfAddr)) {
+      this.topicFollowing.set(selfAddr, new Map())
+    }
+    this.topicFollowing.get(selfAddr).set(room, isFollowing)
+  }
+
+  getTopicFollowState (selfAddr, room) {
+    if (!selfAddr || !room) return false
+    return this.topicFollowing.get(selfAddr)?.get(room) || false
   }
 }
 

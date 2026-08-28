@@ -56,6 +56,33 @@ class MemoDb {
     return this.getPage(`/topics/${encodeURIComponent(room)}/posts`, 'getTopicPosts', opts)
   }
 
+  async getTopicFollowState (room, addr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/topics/${encodeURIComponent(room)}/follow/state`,
+        {
+          params: { addr }
+        }
+      )
+      return result.data.following === true
+    } catch (err) {
+      console.error('Error in getTopicFollowState()')
+      throw err
+    }
+  }
+
+  async getTopicFollowers (room) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/topics/${encodeURIComponent(room)}/followers`
+      )
+      return result.data.followers || []
+    } catch (err) {
+      console.error('Error in getTopicFollowers()')
+      throw err
+    }
+  }
+
   // GET a paginated 'recent' listing endpoint.
   async getRecent (path, name, params) {
     try {

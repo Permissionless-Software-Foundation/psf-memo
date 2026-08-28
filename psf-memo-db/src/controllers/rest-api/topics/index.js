@@ -26,6 +26,8 @@ class TopicsRouter {
   attach (app) {
     this.router.get('/', this.topicsRESTController.getTopics)
     this.router.get('/:room/posts', this.topicsRESTController.getTopicPosts)
+    this.router.get('/:room/follow/state', this.topicsRESTController.getTopicFollowState)
+    this.router.get('/:room/followers', this.topicsRESTController.getTopicFollowers)
     app.use(this.router.routes())
     app.use(this.router.allowedMethods())
   }
