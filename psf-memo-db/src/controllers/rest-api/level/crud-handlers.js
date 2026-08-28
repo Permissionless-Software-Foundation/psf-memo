@@ -48,5 +48,8 @@ export const ENTITY_CONFIG = [
   { route: 'follow', dbProp: 'followsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'followData' },
   { route: 'room', dbProp: 'roomsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'roomData' },
   { route: 'processerror', dbProp: 'processErrorsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'errorData' },
-  { route: 'ptx', dbProp: 'ptxsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'ptxData' }
+  { route: 'ptx', dbProp: 'ptxsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'ptxData' },
+  { route: 'poll', dbProp: 'pollsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'pollData' },
+  { route: 'polloption', dbProp: 'pollOptionsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'optionData' },
+  { route: 'pollvote', dbProp: 'pollVotesDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'voteData' }
 ]

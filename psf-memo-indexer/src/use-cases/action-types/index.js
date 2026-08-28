@@ -7,6 +7,9 @@ import { handleFollow } from './follow.js'
 import { handleSetProfilePic } from './set-profile-pic.js'
 import { handleTopicMessage } from './topic-message.js'
 import { handleTopicFollow } from './topic-follow.js'
+import { handleCreatePoll } from './poll-create.js'
+import { handleAddPollOption } from './poll-option.js'
+import { handlePollVote } from './poll-vote.js'
 
 export const ACTION_HANDLERS = {
   setName: handleSetName,
@@ -19,7 +22,10 @@ export const ACTION_HANDLERS = {
   setProfilePic: handleSetProfilePic,
   topicMessage: handleTopicMessage,
   topicFollow: handleTopicFollow,
-  topicUnfollow: handleTopicFollow
+  topicUnfollow: handleTopicFollow,
+  createPoll: handleCreatePoll,
+  addPollOption: handleAddPollOption,
+  pollVote: handlePollVote
 }
 
 export async function dispatchMemoAction (ctx) {

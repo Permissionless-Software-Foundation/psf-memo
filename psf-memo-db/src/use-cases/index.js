@@ -13,6 +13,9 @@ import ListTopics from './list-topics.js'
 import ListTopicPosts from './list-topic-posts.js'
 import TopicFollowState from './topic-follow-state.js'
 import ListTopicFollowers from './list-topic-followers.js'
+import GetPoll from './get-poll.js'
+import GetPollOptions from './get-poll-options.js'
+import GetPollVotes from './get-poll-votes.js'
 
 class UseCases {
   constructor (localConfig = {}) {
@@ -35,6 +38,9 @@ class UseCases {
     this.listTopicPosts = null
     this.topicFollowState = null
     this.listTopicFollowers = null
+    this.getPoll = null
+    this.getPollOptions = null
+    this.getPollVotes = null
   }
 
   async start () {
@@ -79,6 +85,18 @@ class UseCases {
     })
 
     this.listTopicFollowers = new ListTopicFollowers({
+      adapters: this.adapters
+    })
+
+    this.getPoll = new GetPoll({
+      adapters: this.adapters
+    })
+
+    this.getPollOptions = new GetPollOptions({
+      adapters: this.adapters
+    })
+
+    this.getPollVotes = new GetPollVotes({
       adapters: this.adapters
     })
 

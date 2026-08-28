@@ -22,6 +22,9 @@ import ListTopics from '../../src/use-cases/list-topics.js'
 import ListTopicPosts from '../../src/use-cases/list-topic-posts.js'
 import TopicFollowState from '../../src/use-cases/topic-follow-state.js'
 import ListTopicFollowers from '../../src/use-cases/list-topic-followers.js'
+import GetPoll from '../../src/use-cases/get-poll.js'
+import GetPollOptions from '../../src/use-cases/get-poll-options.js'
+import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -100,6 +103,9 @@ async function createWorld () {
   const listTopicPosts = new ListTopicPosts({ adapters })
   const topicFollowState = new TopicFollowState({ adapters })
   const listTopicFollowers = new ListTopicFollowers({ adapters })
+  const getPoll = new GetPoll({ adapters })
+  const getPollOptions = new GetPollOptions({ adapters })
+  const getPollVotes = new GetPollVotes({ adapters })
 
   let lastResponse = null
 
@@ -115,6 +121,9 @@ async function createWorld () {
     listTopicPosts,
     topicFollowState,
     listTopicFollowers,
+    getPoll,
+    getPollOptions,
+    getPollVotes,
     postHeightsIteratorCounter,
     addrPostHeightsIteratorCounter,
     postChildrenIteratorCounter,
@@ -161,6 +170,11 @@ async function loadFixture (world, name) {
 
   if (name === 'topic-follows') {
     await loadTopicFollows(world)
+    return
+  }
+
+  if (name === 'poll-with-options-and-vote') {
+    await loadPollWithOptionsAndVote(world)
     return
   }
 
@@ -386,6 +400,43 @@ async function loadTopicFollows (world) {
   for (const entry of entries) {
     await world.adapters.level.roomsDb.put(entry.key, entry)
   }
+}
+
+async function loadPollWithOptionsAndVote (world) {
+  const pollTxid = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+  await world.adapters.level.pollsDb.put(pollTxid, {
+    addr: 'bitcoincash:qaddr-a',
+    pollType: 1,
+    optionCount: 2,
+    question: 'which is better?',
+    seen: 1,
+    blockHeight: 600100
+  })
+
+  await world.adapters.level.pollOptionsDb.put('option-yes', {
+    addr: 'bitcoincash:qaddr-a',
+    pollTxid,
+    option: 'yes',
+    seen: 2,
+    blockHeight: 600101
+  })
+
+  await world.adapters.level.pollOptionsDb.put('option-no', {
+    addr: 'bitcoincash:qaddr-b',
+    pollTxid,
+    option: 'no',
+    seen: 3,
+    blockHeight: 600102
+  })
+
+  await world.adapters.level.pollVotesDb.put('vote-yes', {
+    addr: 'bitcoincash:qaddr-a',
+    pollTxid,
+    comment: 'yes',
+    seen: 4,
+    blockHeight: 600103
+  })
 }
 
 const handlers = [
@@ -860,6 +911,149 @@ const handlers = [
       const actualSet = new Set(actual)
       if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
         throw new Error(`Expected topic followers ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with polls store',
+    pattern: /^a psf-memo-db instance with a polls store and pollOptions and pollVotes stores$/,
+    async run () {
+      // World is already created with all poll stores.
+    }
+  },
+  {
+    name: 'load fixture into polls stores',
+    pattern: /^the fixture "(.+)" is loaded into the polls store and pollOptions and pollVotes stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'serve poll',
+    pattern: /^the psf-memo-db API serves a poll with the txid (.+) with the question "(.+)"$/,
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const question = m[2]
+      await world.adapters.level.pollsDb.put(txid, {
+        addr: 'bitcoincash:qaddr-a',
+        pollType: 1,
+        optionCount: 2,
+        question,
+        seen: 1,
+        blockHeight: 600100
+      })
+    }
+  },
+  {
+    name: 'serve poll option',
+    pattern: /^the psf-memo-db API serves the option "(.+)" for the poll (.+)$/,
+    async run (m, example, world) {
+      const option = m[1]
+      const pollTxid = resolveParam(m[2], example)
+      const optionTxid = `option-${option}-${pollTxid.slice(0, 8)}`
+      await world.adapters.level.pollOptionsDb.put(optionTxid, {
+        addr: 'bitcoincash:qaddr-a',
+        pollTxid,
+        option,
+        seen: Date.now(),
+        blockHeight: 600101
+      })
+    }
+  },
+  {
+    name: 'serve poll vote',
+    pattern: /^the psf-memo-db API serves a vote with the comment "(.+)" for the poll (.+)$/,
+    async run (m, example, world) {
+      const comment = m[1]
+      const pollTxid = resolveParam(m[2], example)
+      const voteTxid = `vote-${comment}-${pollTxid.slice(0, 8)}`
+      await world.adapters.level.pollVotesDb.put(voteTxid, {
+        addr: 'bitcoincash:qaddr-a',
+        pollTxid,
+        comment,
+        seen: Date.now(),
+        blockHeight: 600102
+      })
+    }
+  },
+  {
+    name: 'request poll',
+    pattern: /^I request the poll with txid (.+)$/,
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const resp = await world.getPoll.execute({ txid })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'request poll options',
+    pattern: /^I request the options for the poll with txid (.+)$/,
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const resp = await world.getPollOptions.execute({ txid })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'request poll votes',
+    pattern: /^I request the votes for the poll with txid (.+)$/,
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const resp = await world.getPollVotes.execute({ txid })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'response shows poll question',
+    pattern: /^the response shows the question "(.+)"$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      const actual = world.getLastResponse().question
+      if (actual !== expected) {
+        throw new Error(`Expected question "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
+    name: 'response shows options',
+    pattern: /^the response shows the options "(.+)" and "(.+)"$/,
+    run (m, example, world) {
+      const expected1 = resolveParam(m[1], example)
+      const expected2 = resolveParam(m[2], example)
+      const response = world.getLastResponse()
+      const options = response.options || []
+      const texts = options.map((o) => o.option)
+      if (!texts.includes(expected1) || !texts.includes(expected2)) {
+        throw new Error(`Expected options "${expected1}" and "${expected2}", got ${JSON.stringify(texts)}.`)
+      }
+    }
+  },
+  {
+    name: 'response shows vote count',
+    pattern: /^the response shows (.+) vote$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const response = world.getLastResponse()
+      const actual = response.votes ? response.votes.length : 0
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} vote(s), got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'response shows vote count with comment',
+    pattern: /^the response shows (.+) vote with the comment "(.+)"$/,
+    run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const expectedComment = resolveParam(m[2], example)
+      const response = world.getLastResponse()
+      const votes = response.votes || []
+      const matching = votes.filter((v) => v.comment === expectedComment)
+      if (votes.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} vote(s), got ${votes.length}.`)
+      }
+      if (matching.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} vote(s) with comment "${expectedComment}".`)
       }
     }
   }

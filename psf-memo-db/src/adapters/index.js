@@ -8,6 +8,7 @@ import ProfileQuery from './profile-query.js'
 import PostQuery from './post-query.js'
 import FollowQuery from './follow-query.js'
 import TopicQuery from './topic-query.js'
+import PollQuery from './poll-query.js'
 
 class Adapters {
   constructor () {
@@ -39,6 +40,11 @@ class Adapters {
     this.topicQuery = new TopicQuery({
       roomsDb: level.roomsDb,
       postsDb: level.postsDb
+    })
+    this.pollQuery = new PollQuery({
+      pollsDb: level.pollsDb,
+      pollOptionsDb: level.pollOptionsDb,
+      pollVotesDb: level.pollVotesDb
     })
     return true
   }

@@ -41,6 +41,12 @@ const TopicFeedPage = require('../../src/services/topic-feed-page')
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
+const MemoPollCreate = require('../../src/services/memo-poll-create')
+const PollCreatePage = require('../../src/services/poll-create-page')
+const MemoPollOption = require('../../src/services/memo-poll-option')
+const PollOptionPage = require('../../src/services/poll-option-page')
+const MemoPollVote = require('../../src/services/memo-poll-vote')
+const PollVotePage = require('../../src/services/poll-vote-page')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -53,6 +59,9 @@ const MEMO_UNFOLLOW_PREFIX = MemoFollow.MEMO_UNFOLLOW_PREFIX
 const MEMO_TOPIC_MESSAGE_PREFIX = MemoTopicPost.MEMO_TOPIC_MESSAGE_PREFIX
 const MEMO_TOPIC_FOLLOW_PREFIX = MemoTopicFollow.MEMO_TOPIC_FOLLOW_PREFIX
 const MEMO_TOPIC_UNFOLLOW_PREFIX = MemoTopicFollow.MEMO_TOPIC_UNFOLLOW_PREFIX
+const MEMO_CREATE_POLL_PREFIX = MemoPollCreate.MEMO_CREATE_POLL_PREFIX
+const MEMO_ADD_POLL_OPTION_PREFIX = MemoPollOption.MEMO_ADD_POLL_OPTION_PREFIX
+const MEMO_POLL_VOTE_PREFIX = MemoPollVote.MEMO_POLL_VOTE_PREFIX
 
 // Default author address used by Gherkin steps that refer to "the author address".
 const AUTHOR_ADDRESS = 'bitcoincash:qz7v6ztvzu2f2xd2ww8pnx9vwk0g4ncvfvavktg0jc'
@@ -95,6 +104,24 @@ function makeFeed () {
   return {
     posts,
     addPost: (post) => posts.push(post)
+  }
+}
+
+// A fake poll store recording polls, options, and votes.
+function makePolls () {
+  const polls = []
+  const options = []
+  const votes = []
+  return {
+    polls,
+    options,
+    votes,
+    addPoll: (poll) => polls.push(poll),
+    addOption: (option) => options.push(option),
+    addVote: (vote) => votes.push(vote),
+    getPoll: (txid) => polls.find((p) => p.txid === txid) || null,
+    getOptions: (txid) => options.filter((o) => o.pollTxid === txid),
+    getVotes: (txid) => votes.filter((v) => v.pollTxid === txid)
   }
 }
 
@@ -241,6 +268,8 @@ function createWorld () {
   const memoLike = new MemoLike({ wallet, feed })
   const memoFollow = new MemoFollow({ wallet, profiles })
   const memoTopicFollow = new MemoTopicFollow({ wallet, profiles })
+  const polls = makePolls()
+  const memoPollCreate = new MemoPollCreate({ wallet, polls })
   const memoDb = makeMemoDb()
 
   const world = {
@@ -252,6 +281,8 @@ function createWorld () {
     memoLike,
     memoFollow,
     memoTopicFollow,
+    polls,
+    memoPollCreate,
     memoDb,
     currentPath: null,
     menuOpen: false,
@@ -310,6 +341,12 @@ function createWorld () {
   world.accountPage = new AccountPage({
     wallet,
     profiles,
+    navigate: (path) => { world.currentPath = path }
+  })
+
+  // The Poll Create Page controller wraps the memo poll create behavior.
+  world.pollCreatePage = new PollCreatePage({
+    memoPollCreate,
     navigate: (path) => { world.currentPath = path }
   })
 
@@ -1700,8 +1737,251 @@ const handlers = [
         throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
       }
     }
+  },
+  {
+    name: 'poll with txid exists',
+    pattern: /^a poll with the txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      world.polls.addPoll({ txid, question: 'existing poll', optionCount: 2 })
+      world.currentPollTxid = txid
+    }
+  },
+  {
+    name: 'compose poll',
+    pattern: /^I compose a poll with the question "<([A-Za-z0-9_]+)>" and (.+) options$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}".`)
+      world.pollCreatePage.setInput(example[param])
+      world.pollCreatePage.setOptionCount(resolveParam(m[2], example))
+    }
+  },
+  {
+    name: 'submit poll',
+    pattern: /^I submit the poll$/,
+    async run (m, example, world) {
+      await world.pollCreatePage.submit()
+    }
+  },
+  {
+    name: 'broadcasts create-poll prefix for question',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo create-poll prefix for the question "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}".`)
+      const expected = example[param]
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_CREATE_POLL_PREFIX) {
+        throw new Error(`Expected Memo create-poll prefix ${MEMO_CREATE_POLL_PREFIX}, got "${last.prefix}".`)
+      }
+      const { question } = decodeCreatePollPayload(last.msg)
+      if (question !== expected) {
+        throw new Error(`Broadcast question "${question}" did not match "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'broadcasts create-poll prefix carrying option count',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo create-poll prefix carrying (.+) options$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_CREATE_POLL_PREFIX) {
+        throw new Error(`Expected Memo create-poll prefix ${MEMO_CREATE_POLL_PREFIX}, got "${last.prefix}".`)
+      }
+      const { optionCount } = decodeCreatePollPayload(last.msg)
+      if (optionCount !== expected) {
+        throw new Error(`Expected option count ${expected}, got ${optionCount}.`)
+      }
+    }
+  },
+  {
+    name: 'poll composer shows validation/length error',
+    pattern: /^the poll composer shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'poll_create_validation' : 'poll_create_length'
+      if (world.pollCreatePage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.pollCreatePage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'poll composer remaining byte count',
+    pattern: /^the poll composer shows a remaining byte count of <([A-Za-z0-9_]+)>$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = parseInt(example[param], 10)
+      if (Number.isNaN(expected)) throw new Error(`Invalid expected count for "${param}".`)
+      const actual = world.pollCreatePage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'open poll',
+    pattern: /^I open the poll with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      world.currentPollTxid = txid
+      const memoPollOption = new MemoPollOption({ wallet: world.wallet, pollTxid: txid, polls: world.polls })
+      world.pollOptionPage = new PollOptionPage({ memoPollOption })
+      const memoPollVote = new MemoPollVote({ wallet: world.wallet, pollTxid: txid, polls: world.polls })
+      world.pollVotePage = new PollVotePage({ memoPollVote })
+    }
+  },
+  {
+    name: 'compose option',
+    pattern: /^I compose an option with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}".`)
+      world.pollOptionPage.setInput(example[param])
+    }
+  },
+  {
+    name: 'submit option',
+    pattern: /^I submit the option$/,
+    async run (m, example, world) {
+      await world.pollOptionPage.submit()
+    }
+  },
+  {
+    name: 'broadcasts add-poll-option prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo add-poll-option prefix for the poll (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_ADD_POLL_OPTION_PREFIX) {
+        throw new Error(`Expected Memo add-poll-option prefix ${MEMO_ADD_POLL_OPTION_PREFIX}, got "${last.prefix}".`)
+      }
+      const { pollTxid } = decodePollTxidPayload(last.msg)
+      if (pollTxid !== txid) {
+        throw new Error(`Broadcast poll txid ${pollTxid} did not match ${txid}.`)
+      }
+    }
+  },
+  {
+    name: 'poll shows new option',
+    pattern: /^the poll shows the new option with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}".`)
+      const expected = example[param]
+      const txid = world.currentPollTxid
+      const found = world.polls.getOptions(txid).find((o) => o.option === expected && o.address === world.wallet.walletInfo.cashAddress)
+      if (!found) {
+        throw new Error(`Poll does not show the new option "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'add-option composer shows validation/length error',
+    pattern: /^the add-option composer shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'poll_option_validation' : 'poll_option_length'
+      if (world.pollOptionPage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.pollOptionPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'add-option composer remaining byte count',
+    pattern: /^the add-option composer shows a remaining byte count of <([A-Za-z0-9_]+)>$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = parseInt(example[param], 10)
+      if (Number.isNaN(expected)) throw new Error(`Invalid expected count for "${param}".`)
+      const actual = world.pollOptionPage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'vote with comment',
+    pattern: /^I vote with the comment "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}".`)
+      world.pollVotePage.setInput(example[param])
+    }
+  },
+  {
+    name: 'submit vote',
+    pattern: /^I submit the vote$/,
+    async run (m, example, world) {
+      await world.pollVotePage.submit()
+    }
+  },
+  {
+    name: 'broadcasts poll-vote prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo poll-vote prefix for the poll (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_POLL_VOTE_PREFIX) {
+        throw new Error(`Expected Memo poll-vote prefix ${MEMO_POLL_VOTE_PREFIX}, got "${last.prefix}".`)
+      }
+      const { pollTxid } = decodePollTxidPayload(last.msg)
+      if (pollTxid !== txid) {
+        throw new Error(`Broadcast poll txid ${pollTxid} did not match ${txid}.`)
+      }
+    }
+  },
+  {
+    name: 'poll shows my vote',
+    pattern: /^the poll shows my vote with the comment "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}".`)
+      const expected = example[param]
+      const txid = world.currentPollTxid
+      const found = world.polls.getVotes(txid).find((v) => v.comment === expected && v.address === world.wallet.walletInfo.cashAddress)
+      if (!found) {
+        throw new Error(`Poll does not show my vote with comment "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'vote composer shows validation/length error',
+    pattern: /^the vote composer shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'poll_vote_validation' : 'poll_vote_length'
+      if (world.pollVotePage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.pollVotePage.submitError}.`)
+      }
+    }
   }
 ]
+
+// Decode a raw create-poll payload into poll_type, option_count, and question.
+function decodeCreatePollPayload (raw) {
+  const buf = Buffer.from(raw)
+  const pollType = buf[0]
+  const optionCount = buf[1]
+  const question = buf.slice(2).toString('utf8')
+  return { pollType, optionCount, question }
+}
+
+// Decode a raw add-poll-option or poll-vote payload into poll txid (hex).
+function decodePollTxidPayload (raw) {
+  const buf = Buffer.from(raw)
+  const pollTxid = Buffer.from(buf.slice(0, 32)).reverse().toString('hex')
+  return { pollTxid }
+}
 
 // Route a single step to its handler. Throws on unsupported step text. Throws on unsupported step text.
 async function handleStep (step, example, world) {

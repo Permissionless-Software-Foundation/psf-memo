@@ -8,6 +8,7 @@ import ProfileRouter from './profile/index.js'
 import PostsRouter from './posts/index.js'
 import FollowRouter from './follow/index.js'
 import TopicsRouter from './topics/index.js'
+import PollsRouter from './polls/index.js'
 
 class RESTControllers {
   constructor (localConfig = {}) {
@@ -39,6 +40,9 @@ class RESTControllers {
 
     const topicsRouter = new TopicsRouter(dependencies)
     topicsRouter.attach(app)
+
+    const pollsRouter = new PollsRouter(dependencies)
+    pollsRouter.attach(app)
   }
 }
 

@@ -24,7 +24,10 @@ const DB_NAMES = [
   'follows',
   'rooms',
   'processErrors',
-  'ptxs'
+  'ptxs',
+  'polls',
+  'pollOptions',
+  'pollVotes'
 ]
 
 class LevelDb {
