@@ -19,6 +19,12 @@ describe('#BackupDb', () => {
 
   afterEach(() => sandbox.restore())
 
+  describe('constructor', () => {
+    it('should throw when adapters are missing', () => {
+      assert.throws(() => new BackupDb(), /Adapters required/)
+    })
+  })
+
   describe('#maybeBackupDb', () => {
     it('should request a backup at an epoch boundary', async () => {
       const result = await uut.maybeBackupDb(1000, 1000)
