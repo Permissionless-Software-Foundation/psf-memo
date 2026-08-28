@@ -72,6 +72,16 @@ describe('#ListTopicPosts', () => {
     }
   })
 
+  it('should reject a non-string room', async () => {
+    try {
+      await uut.execute({ room: 123 })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.equal(err.status, 400)
+      assert.include(err.message, 'room is required')
+    }
+  })
+
   it('should return topic posts sorted by block height descending', async () => {
     const result = await uut.execute({ room: 'bitcoin', limit: 10, offset: 0 })
 

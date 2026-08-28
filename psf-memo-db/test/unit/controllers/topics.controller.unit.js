@@ -67,6 +67,7 @@ describe('#TopicsRESTController', () => {
 
     assert.equal(ctx.throw.callCount, 1)
     assert.equal(ctx.throw.firstCall.args[0], 500)
+    assert.equal(ctx.throw.firstCall.args[1], 'boom')
   })
 
   it('should preserve the status when the use case throws a statused error', async () => {
@@ -84,5 +85,6 @@ describe('#TopicsRESTController', () => {
 
     assert.equal(ctx.throw.callCount, 1)
     assert.equal(ctx.throw.firstCall.args[0], 400)
+    assert.equal(ctx.throw.firstCall.args[1], 'room is required')
   })
 })

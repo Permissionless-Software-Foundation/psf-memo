@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-28T15:47:38.414053749Z","feature_name":"Topic Read","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/topic-read.feature","background_hash":"922fd45b8606f723073833f0aaca0e6d92b03a263a6b54c60490843e0ac41cc0","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Topic Read - 1 GET /topics lists distinct topics with their post counts","scenario_hash":"a425a0cbf18c7e7fcb7d01c3571556d4c184b013ad7990e724d95d8d100eebb9","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-08-28T15:39:33.364455310Z"},{"index":1,"name":"Topic Read - 2 GET /topics/:room/posts returns the posts for a topic sorted by block height descending","scenario_hash":"cffb702052b0df29aa87510e0c45dd01b83c4607e7ce915bc0e660d601f79cce","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-08-28T15:39:33.364455310Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topic Read - 1, Topic Read - 2, Topic Read - 3, Topic Read - 4
 #
 # The indexer stores topic activity in the rooms store. Topic messages are

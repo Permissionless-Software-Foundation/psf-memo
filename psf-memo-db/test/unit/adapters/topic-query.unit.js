@@ -164,5 +164,34 @@ describe('#TopicQuery', () => {
       assert.deepEqual(result.txids, [])
       assert.equal(result.total, 0)
     })
+
+    it('should fall back to the key txid when the value has no string txid', async () => {
+      async function * mockRooms () {
+        yield ['bitcoin:post-300', { room: 'bitcoin', type: 'post', blockHeight: 300 }]
+      }
+      roomsDb.iterator
+        .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
+        .returns(mockRooms())
+
+      const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 0 })
+
+      assert.deepEqual(result.txids, ['post-300'])
+      assert.equal(result.total, 1)
+    })
+
+    it('should treat a post without a block height as height 0', async () => {
+      async function * mockRooms () {
+        yield ['bitcoin:post-a', { room: 'bitcoin', txid: 'post-a', type: 'post', blockHeight: 0 }]
+        yield ['bitcoin:post-b', { room: 'bitcoin', txid: 'post-b', type: 'post' }]
+      }
+      roomsDb.iterator
+        .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
+        .returns(mockRooms())
+
+      const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 0 })
+
+      assert.deepEqual(result.txids, ['post-a', 'post-b'])
+      assert.equal(result.total, 2)
+    })
   })
 })

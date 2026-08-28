@@ -43,6 +43,30 @@ test('load forwards limit and offset to the memo db client', async () => {
   assert.deepEqual(calls, [{ room: 'bitcoin', params: { limit: 10, offset: 20 } }])
 })
 
+test('load defaults limit and offset', async () => {
+  const calls = []
+  const memoDb = {
+    async getTopicPosts (room, params) {
+      calls.push(params)
+      return { posts: [], pagination: {} }
+    }
+  }
+  const page = new TopicFeedPage({ memoDb, room: 'bitcoin' })
+
+  await page.load()
+
+  assert.deepEqual(calls, [{ limit: 100, offset: 0 }])
+})
+
+test('stores the pagination returned by the memo db client', async () => {
+  const pagination = { limit: 100, offset: 0, total: 2, hasMore: false }
+  const page = new TopicFeedPage({ memoDb: makeMemoDb([], pagination), room: 'bitcoin' })
+
+  await page.load()
+
+  assert.deepEqual(page.pagination, pagination)
+})
+
 test('load throws when no memo db client is provided', async () => {
   const page = new TopicFeedPage({ room: 'bitcoin' })
 

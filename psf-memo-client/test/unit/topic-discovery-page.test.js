@@ -37,6 +37,13 @@ test('load throws when no memo db client is provided', async () => {
   )
 })
 
+test('stores the provided navigate function', () => {
+  const navigate = () => {}
+  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb([]), navigate })
+
+  assert.equal(page.navigate, navigate)
+})
+
 test('getTopic returns the matching topic', async () => {
   const topics = [
     { room: 'bitcoin', postCount: 2 },

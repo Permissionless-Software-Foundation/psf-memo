@@ -89,3 +89,7 @@ class TopicsRESTControllerLib {
 }
 
 export default TopicsRESTControllerLib
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T15:26:54.488Z","module_hash":"64ac0a8aa7c2e0b575a89161ceb19c59e6618448eaf767ef5bbccc3ce174afaa","functions":[{"id":"func/TopicsRESTControllerLib.constructor","name":"TopicsRESTControllerLib.constructor","line":8,"end_line":21,"hash":"63d2092a2bd7946dd11bdf0c4ff102e31c47a0ed6ad56a0652f26e1760d525f9"},{"id":"func/TopicsRESTControllerLib.handleError","name":"TopicsRESTControllerLib.handleError","line":23,"end_line":30,"hash":"b9ba0c7b9752ac2fda3cf058a983a8b6708715e2e4dc882903ab5ef369956e03"},{"id":"func/TopicsRESTControllerLib.getTopics","name":"TopicsRESTControllerLib.getTopics","line":47,"end_line":53,"hash":"b89a696bcd1d601ef86754974dbf181baf2ece7d592674ba4fd87887725d6fa8"},{"id":"func/TopicsRESTControllerLib.getTopicPosts","name":"TopicsRESTControllerLib.getTopicPosts","line":80,"end_line":88,"hash":"8ad5f9b1749968c3fbfea95683bb388a5d99eda0b8fe7a4dce3447d6d47e6dba"}]}
+// mutate4javascript-manifest-end
