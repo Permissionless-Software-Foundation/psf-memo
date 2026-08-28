@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — research refresh 2026-08-27.
 **Owner**: specifier.
-**Last updated**: 2026-08-27
+**Last updated**: 2026-08-28
 
 ---
 
@@ -240,3 +240,11 @@ closed.
 - Mutations/specs are Gherkin feature files under per-component `specs/` in
   the format defined by github.com/unclebob/Acceptance-Pipeline-Specification.
 - Root `specs/` contains this backlog and cross-component architecture notes.
+
+## Completed fixes (not roadmap features)
+
+- **ZMQ-mode DB backups** (2026-08-28, task `zmq-db-backups`): the block
+  indexer only created zip backups during IBD; the ZMQ live loop never called
+  `backupDb()`. Fixed by centralizing the `height % epoch === 0` decision in a
+  `BackupDb.maybeBackupDb` use case called from both the IBD and ZMQ paths.
+  Spec: `psf-memo-indexer/specs/zmq-mode-db-backups.feature`.

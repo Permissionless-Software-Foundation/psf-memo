@@ -325,6 +325,12 @@ that a single user-facing feature may require specs in more than one component.
     minimal-slp-wallet embedded bch-js) and `bchjs.Address.hash160ToCash()`
     (DB read side). Prefer bch-js over installing a separate cashaddr library.
     See `specs/feature-backlog.md` "Suggested next spec" for the follow feature.
+16. **ZMQ-mode DB backups (fixed 2026-08-28):** the block indexer only created
+    zip backups inside the IBD loop; the ZMQ live loop never called `backupDb()`.
+    Fix: a `BackupDb.maybeBackupDb` use case (`src/use-cases/backup-db.js`)
+    centralizes the `height % epoch === 0` decision and is called from both the
+    IBD and ZMQ paths in `psf-memo-block-indexer.js`. Spec:
+    `psf-memo-indexer/specs/zmq-mode-db-backups.feature`.
 
 ---
 
@@ -362,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `f12e5b3` (topic list/discovery + topic feed merged to `master`; client build, unit 108, lint passing; DB unit 161, lint passing; indexer unit 46, lint passing).
+Current `master` HEAD: `883f014` (ZMQ-mode DB backups fix merged to `master`; indexer unit 54, property 4, acceptance 3 files, lint passing).
 Next action: **spec P2.3/P2.4/P2.5** — Topics (post a topic message / follow a topic / unfollow a topic).
