@@ -10,6 +10,7 @@ import FollowQuery from './follow-query.js'
 import MuteQuery from './mute-query.js'
 import TopicQuery from './topic-query.js'
 import PollQuery from './poll-query.js'
+import SearchQuery from './search-query.js'
 
 class Adapters {
   constructor () {
@@ -49,6 +50,12 @@ class Adapters {
       pollsDb: level.pollsDb,
       pollOptionsDb: level.pollOptionsDb,
       pollVotesDb: level.pollVotesDb
+    })
+    this.searchQuery = new SearchQuery({
+      postsDb: level.postsDb,
+      postParentsDb: level.postParentsDb,
+      namesDb: level.namesDb,
+      profilesDb: level.profilesDb
     })
     return true
   }

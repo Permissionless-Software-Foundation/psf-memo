@@ -39,6 +39,7 @@ const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
+const SearchPage = require('../../src/services/search-page')
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
@@ -178,9 +179,12 @@ function makeThread () {
 }
 
 // A fake psf-memo-db API backing the read-only feed, profile, thread,
-// and topic pages used to verify read-side behavior.
+// topic, and search pages used to verify read-side behavior.
 function makeMemoDb () {
   const posts = []
+  const profiles = []
+  const searchPosts = []
+  const searchProfiles = []
   const threads = {}
   const followState = {}
   const muteState = {}
@@ -191,6 +195,9 @@ function makeMemoDb () {
 
   return {
     posts,
+    profiles,
+    searchPosts,
+    searchProfiles,
     threads,
     followState,
     topics,
@@ -198,6 +205,12 @@ function makeMemoDb () {
     topicCounts,
     addPost (post) {
       posts.push(post)
+    },
+    addSearchPost (post) {
+      searchPosts.push(post)
+    },
+    addSearchProfile (profile) {
+      searchProfiles.push(profile)
     },
     addTopic (room, postCount) {
       topicCounts.set(room, postCount)
@@ -239,6 +252,25 @@ function makeMemoDb () {
         if (following) addrs.push(addr)
       }
       return addrs
+    },
+    async search (q) {
+      const normalized = String(q).trim().toLowerCase()
+      if (normalized.length === 0) {
+        return { posts: [], profiles: [], pagination: { total: 0, hasMore: false } }
+      }
+      const matchedPosts = searchPosts.filter((p) =>
+        typeof p.text === 'string' && p.text.toLowerCase().includes(normalized)
+      )
+      const matchedProfiles = searchProfiles.filter((p) =>
+        (typeof p.name === 'string' && p.name.toLowerCase().includes(normalized)) ||
+        (typeof p.text === 'string' && p.text.toLowerCase().includes(normalized))
+      )
+      const total = matchedPosts.length + matchedProfiles.length
+      return {
+        posts: matchedPosts,
+        profiles: matchedProfiles,
+        pagination: { total, hasMore: false }
+      }
     },
     async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
       const page = posts.slice(offset, offset + limit)
@@ -313,6 +345,10 @@ function createWorld () {
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
   world.topicDiscoveryPage = new TopicDiscoveryPage({
+    memoDb,
+    navigate: (path) => { world.currentPath = path }
+  })
+  world.searchPage = new SearchPage({
     memoDb,
     navigate: (path) => { world.currentPath = path }
   })
@@ -2086,6 +2122,86 @@ const handlers = [
       const expectedCode = kind === 'validation' ? 'poll_vote_validation' : 'poll_vote_length'
       if (world.pollVotePage.submitError !== expectedCode) {
         throw new Error(`Expected ${expectedCode}, got ${world.pollVotePage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'API has search post',
+    pattern: /^the psf-memo-db API has a post with the text "(.+)"$/,
+    run (m, example, world) {
+      const text = resolveParam(m[1], example)
+      const txid = require('crypto').createHash('sha256').update(text).digest('hex')
+      world.memoDb.addSearchPost({
+        txid,
+        addr: `addr-${txid.slice(0, 8)}`,
+        text,
+        blockHeight: 100
+      })
+    }
+  },
+  {
+    name: 'API has search profile',
+    pattern: /^the psf-memo-db API has a profile named "(.+)" with the bio "(.+)"$/,
+    run (m, example, world) {
+      const name = resolveParam(m[1], example)
+      const text = resolveParam(m[2], example)
+      const addr = `addr-${require('crypto').createHash('sha256').update(name).digest('hex').slice(0, 8)}`
+      world.memoDb.addSearchProfile({ addr, name, text, blockHeight: 100 })
+    }
+  },
+  {
+    name: 'open search page',
+    pattern: /^I open the Search page$/,
+    async run (m, example, world) {
+      world.currentPath = SearchPage.SEARCH_PATH
+    }
+  },
+  {
+    name: 'submit search',
+    pattern: /^I submit a search for (.+)$/,
+    async run (m, example, world) {
+      const query = resolveParam(m[1], example)
+      world.searchPage.setQuery(query)
+      await world.searchPage.submit()
+    }
+  },
+  {
+    name: 'search results include post text',
+    pattern: /^the search results include a post with the text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      const found = world.searchPage.posts.find((p) => p.text === expected)
+      if (!found) {
+        throw new Error(`Search results do not include a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'search results include profile name',
+    pattern: /^the search results include a profile named (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      const found = world.searchPage.profiles.find((p) => p.name === expected)
+      if (!found) {
+        throw new Error(`Search results do not include a profile named "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'search results include no posts',
+    pattern: /^the search results include no posts$/,
+    run (m, example, world) {
+      if (world.searchPage.posts.length !== 0) {
+        throw new Error(`Expected no posts in search results, got ${world.searchPage.posts.length}.`)
+      }
+    }
+  },
+  {
+    name: 'search results include no profiles',
+    pattern: /^the search results include no profiles$/,
+    run (m, example, world) {
+      if (world.searchPage.profiles.length !== 0) {
+        throw new Error(`Expected no profiles in search results, got ${world.searchPage.profiles.length}.`)
       }
     }
   }

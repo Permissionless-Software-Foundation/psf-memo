@@ -33,6 +33,7 @@ import SetAvatarUrl from './set-avatar-url'
 import Account from './account'
 import Topics from './topics'
 import TopicFeed from './topic-feed'
+import Search from './search'
 
 function AppBody (props) {
   // Dependency injection through props
@@ -52,6 +53,7 @@ function AppBody (props) {
         <Route path='/posts/new' element={<NewPost appData={appData} />} />
         <Route path='/topics' element={<Topics />} />
         <Route path='/topics/:room' element={<TopicFeed appData={appData} />} />
+        <Route path='/search' element={<Search />} />
         <Route path='/memo/set-name' element={<SetName appData={appData} />} />
         <Route path='/memo/set-bio' element={<SetBio appData={appData} />} />
         <Route path='/memo/set-avatar-url' element={<SetAvatarUrl appData={appData} />} />
