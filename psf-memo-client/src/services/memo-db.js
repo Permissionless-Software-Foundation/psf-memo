@@ -58,6 +58,19 @@ class MemoDb {
     return this._getList(`/topics/${encodeURIComponent(room)}/followers`, 'getTopicFollowers', 'followers')
   }
 
+  async search (q, { limit = 100, offset = 0 } = {}) {
+    try {
+      const result = await this.axios.get(`${config.backend}/search`, {
+        params: { q, limit, offset }
+      })
+
+      return result.data
+    } catch (err) {
+      console.error('Error in search()')
+      throw err
+    }
+  }
+
   // GET a boolean state endpoint and coerce the named field to a boolean.
   async _getState (path, name, params, field) {
     try {

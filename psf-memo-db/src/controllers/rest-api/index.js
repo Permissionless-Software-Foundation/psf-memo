@@ -10,6 +10,7 @@ import FollowRouter from './follow/index.js'
 import MuteRouter from './mute/index.js'
 import TopicsRouter from './topics/index.js'
 import PollsRouter from './polls/index.js'
+import SearchRouter from './search/index.js'
 
 class RESTControllers {
   constructor (localConfig = {}) {
@@ -47,6 +48,9 @@ class RESTControllers {
 
     const pollsRouter = new PollsRouter(dependencies)
     pollsRouter.attach(app)
+
+    const searchRouter = new SearchRouter(dependencies)
+    searchRouter.attach(app)
   }
 }
 

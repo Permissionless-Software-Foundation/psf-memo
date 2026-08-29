@@ -18,6 +18,7 @@ import ListTopicFollowers from './list-topic-followers.js'
 import GetPoll from './get-poll.js'
 import GetPollOptions from './get-poll-options.js'
 import GetPollVotes from './get-poll-votes.js'
+import SearchAll from './search-all.js'
 
 class UseCases {
   constructor (localConfig = {}) {
@@ -45,6 +46,7 @@ class UseCases {
     this.getPoll = null
     this.getPollOptions = null
     this.getPollVotes = null
+    this.searchAll = null
   }
 
   async start () {
@@ -109,6 +111,10 @@ class UseCases {
     })
 
     this.getPollVotes = new GetPollVotes({
+      adapters: this.adapters
+    })
+
+    this.searchAll = new SearchAll({
       adapters: this.adapters
     })
 
