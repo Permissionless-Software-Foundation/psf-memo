@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `ac46807` (task `mute-user` — P4.1/P4.2 mute/unmute user — merged from the pipeline and verified: client build/test/lint, DB test/lint, and indexer test/lint all pass).
-Next action: **spec P5.1** — Send money with memo (`0x6d24`).
+Current `master` HEAD: `6d94372` (task `following-feed` — P6.6 Following Feed — spec'd and handed off to the coder. Search `20328ea`/`96956f3` was already verified.).
+Next action: **await the coder → refactorer → architect pipeline for task `following-feed`**, then merge the architect branch into `master` and verify the affected components (client build/test/lint, DB test/lint). Send money (P5.1) was skipped by user decision (no clear use case). Future candidates after following-feed lands: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.3 Notifications, P6.5 Tags/hashtags.

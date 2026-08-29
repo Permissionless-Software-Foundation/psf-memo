@@ -22,6 +22,12 @@ describe('#PostsRESTController', () => {
             posts: [{ txid: 'tx2', addr: 'addr-a', blockHeight: 600100 }],
             pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
           })
+        },
+        listFollowingFeed: {
+          execute: sandbox.stub().resolves({
+            posts: [{ txid: 'tx3', addr: 'addr-b', blockHeight: 600200 }],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
+          })
         }
       }
     })
@@ -59,5 +65,74 @@ describe('#PostsRESTController', () => {
     })
     assert.equal(ctx.body.posts.length, 1)
     assert.equal(ctx.body.posts[0].txid, 'tx2')
+  })
+
+  it('should return following feed from use case', async () => {
+    const ctx = {
+      params: { addr: 'addr-b' },
+      query: { limit: '25', offset: '0' },
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getFollowingFeed(ctx)
+
+    assert.equal(uut.useCases.listFollowingFeed.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.listFollowingFeed.execute.firstCall.args[0], {
+      addr: 'addr-b',
+      limit: '25',
+      offset: '0'
+    })
+    assert.equal(ctx.body.posts.length, 1)
+    assert.equal(ctx.body.posts[0].txid, 'tx3')
+  })
+
+  it('should map a use-case error with a status to that status', async () => {
+    uut.useCases.listFollowingFeed.execute = sandbox.stub().rejects(
+      Object.assign(new Error('boom'), { status: 400 })
+    )
+    const ctx = {
+      params: { addr: 'addr-b' },
+      query: {},
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getFollowingFeed(ctx)
+
+    assert.equal(ctx.body, null)
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 400)
+    assert.include(ctx.throw.firstCall.args[1], 'boom')
+  })
+
+  it('should map an unknown use-case error to a 500', async () => {
+    uut.useCases.listFollowingFeed.execute = sandbox.stub().rejects(new Error('boom'))
+    const ctx = {
+      params: { addr: 'addr-b' },
+      query: {},
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getFollowingFeed(ctx)
+
+    assert.equal(ctx.body, null)
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 500)
+    assert.include(ctx.throw.firstCall.args[1], 'boom')
+  })
+
+  it('should return a post thread from use case', async () => {
+    const ctx = {
+      params: { txid: 'tx4' },
+      body: null,
+      throw: sandbox.stub()
+    }
+    uut.useCases.getPostThread = {
+      execute: sandbox.stub().resolves({ txid: 'tx4', text: 'thread' })
+    }
+    await uut.getPostThread(ctx)
+
+    assert.equal(uut.useCases.getPostThread.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.getPostThread.execute.firstCall.args[0], { txid: 'tx4' })
+    assert.equal(ctx.body.text, 'thread')
   })
 })

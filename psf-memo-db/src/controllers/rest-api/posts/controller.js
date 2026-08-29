@@ -17,8 +17,34 @@ class PostsRESTControllerLib {
 
     this.getRecentPosts = this.getRecentPosts.bind(this)
     this.getPostsByAddr = this.getPostsByAddr.bind(this)
+    this.getFollowingFeed = this.getFollowingFeed.bind(this)
     this.getPostThread = this.getPostThread.bind(this)
+    this.runUseCase = this.runUseCase.bind(this)
+    this.listPostsForAddr = this.listPostsForAddr.bind(this)
     this.handleError = this.handleError.bind(this)
+  }
+
+  /*
+    Run a use-case delegate against a Koa context, storing the resolved value
+    on ctx.body and routing any rejection through the shared handleError.
+  */
+  async runUseCase (ctx, fn) {
+    try {
+      ctx.body = await fn()
+    } catch (err) {
+      this.handleError(ctx, err)
+    }
+  }
+
+  /*
+    Shared handler body for the addr-scoped post listings (/by/:addr and
+    /following/:addr): read the address route param plus pagination query
+    params and delegate to the given use case.
+  */
+  async listPostsForAddr (ctx, useCase) {
+    const { addr } = ctx.params
+    const { limit, offset } = ctx.query
+    await this.runUseCase(ctx, () => useCase.execute({ addr, limit, offset }))
   }
 
   handleError (ctx, err) {
@@ -58,12 +84,8 @@ class PostsRESTControllerLib {
    * @apiSuccess {Boolean} pagination.hasMore True if more pages exist
    */
   async getRecentPosts (ctx) {
-    try {
-      const { limit, offset } = ctx.query
-      ctx.body = await this.useCases.listRecentPosts.execute({ limit, offset })
-    } catch (err) {
-      this.handleError(ctx, err)
-    }
+    const { limit, offset } = ctx.query
+    await this.runUseCase(ctx, () => this.useCases.listRecentPosts.execute({ limit, offset }))
   }
 
   /**
@@ -91,25 +113,43 @@ class PostsRESTControllerLib {
    * @apiSuccess {Object} pagination Pagination metadata
    */
   async getPostsByAddr (ctx) {
-    try {
-      const { addr } = ctx.params
-      const { limit, offset } = ctx.query
-      ctx.body = await this.useCases.listPostsByAddr.execute({ addr, limit, offset })
-    } catch (err) {
-      this.handleError(ctx, err)
-    }
+    await this.listPostsForAddr(ctx, this.useCases.listPostsByAddr)
+  }
+
+  /**
+   * @api {get} /posts/following/:addr List posts from followed profiles
+   * @apiPermission public
+   * @apiName GetFollowingFeed
+   * @apiGroup REST Posts
+   *
+   * @apiDescription Returns top-level posts from profiles the viewer follows (replies and the viewer's own posts excluded), sorted by block height (newest first).
+   *
+   * @apiParam {String} addr Viewer cash address
+   * @apiQuery {Number} [limit=100] Page size (max 100)
+   * @apiQuery {Number} [offset=0] Number of posts to skip after sorting
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/posts/following/bitcoincash:q...?limit=50&offset=0"
+   *
+   * @apiSuccess {Object[]} posts Array of post objects
+   * @apiSuccess {String} posts.txid Post transaction id
+   * @apiSuccess {String} posts.addr Author cash address
+   * @apiSuccess {String} posts.text Post text
+   * @apiSuccess {Number} posts.seen Unix epoch milliseconds
+   * @apiSuccess {Number} posts.blockHeight Block height when indexed
+   * @apiSuccess {Number} posts.replyCount Number of replies to this post
+   * @apiSuccess {Number} posts.likeCount Number of likes for this post
+   * @apiSuccess {Object} pagination Pagination metadata
+   */
+  async getFollowingFeed (ctx) {
+    await this.listPostsForAddr(ctx, this.useCases.listFollowingFeed)
   }
 
   async getPostThread (ctx) {
-    try {
-      const { txid } = ctx.params
-
-      ctx.body = await this.useCases.getPostThread.execute({
-        txid
-      })
-    } catch (err) {
-      this.handleError(ctx, err)
-    }
+    const { txid } = ctx.params
+    await this.runUseCase(ctx, () => this.useCases.getPostThread.execute({
+      txid
+    }))
   }
 }
 

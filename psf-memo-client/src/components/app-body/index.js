@@ -34,6 +34,7 @@ import Account from './account'
 import Topics from './topics'
 import TopicFeed from './topic-feed'
 import Search from './search'
+import FollowingFeed from './following-feed'
 
 function AppBody (props) {
   // Dependency injection through props
@@ -54,6 +55,7 @@ function AppBody (props) {
         <Route path='/topics' element={<Topics />} />
         <Route path='/topics/:room' element={<TopicFeed appData={appData} />} />
         <Route path='/search' element={<Search />} />
+        <Route path='/posts/following' element={<FollowingFeed appData={appData} />} />
         <Route path='/memo/set-name' element={<SetName appData={appData} />} />
         <Route path='/memo/set-bio' element={<SetBio appData={appData} />} />
         <Route path='/memo/set-avatar-url' element={<SetAvatarUrl appData={appData} />} />
