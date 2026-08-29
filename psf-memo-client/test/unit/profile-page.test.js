@@ -12,13 +12,16 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const ProfilePage = require('../../src/services/profile-page')
 
-function makeMemoDb (postsByAddr, followState = {}) {
+function makeMemoDb (postsByAddr, followState = {}, muteState = {}) {
   return {
     async getPostsByAddr (addr, { limit, offset }) {
       return { posts: postsByAddr[addr] || [], pagination: { total: (postsByAddr[addr] || []).length } }
     },
     async getFollowState (followerAddr, followeeAddr) {
       return followState[`${followerAddr}:${followeeAddr}`] || false
+    },
+    async getMuteState (muterAddr, muteeAddr) {
+      return muteState[`${muterAddr}:${muteeAddr}`] || false
     }
   }
 }

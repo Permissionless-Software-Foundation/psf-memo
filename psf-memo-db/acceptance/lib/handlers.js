@@ -22,6 +22,8 @@ import ListTopics from '../../src/use-cases/list-topics.js'
 import ListTopicPosts from '../../src/use-cases/list-topic-posts.js'
 import TopicFollowState from '../../src/use-cases/topic-follow-state.js'
 import ListTopicFollowers from '../../src/use-cases/list-topic-followers.js'
+import MuteState from '../../src/use-cases/mute-state.js'
+import ListMuted from '../../src/use-cases/list-muted.js'
 import GetPoll from '../../src/use-cases/get-poll.js'
 import GetPollOptions from '../../src/use-cases/get-poll-options.js'
 import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
@@ -103,6 +105,8 @@ async function createWorld () {
   const listTopicPosts = new ListTopicPosts({ adapters })
   const topicFollowState = new TopicFollowState({ adapters })
   const listTopicFollowers = new ListTopicFollowers({ adapters })
+  const muteState = new MuteState({ adapters })
+  const listMuted = new ListMuted({ adapters })
   const getPoll = new GetPoll({ adapters })
   const getPollOptions = new GetPollOptions({ adapters })
   const getPollVotes = new GetPollVotes({ adapters })
@@ -121,6 +125,8 @@ async function createWorld () {
     listTopicPosts,
     topicFollowState,
     listTopicFollowers,
+    muteState,
+    listMuted,
     getPoll,
     getPollOptions,
     getPollVotes,
@@ -160,6 +166,11 @@ async function loadFixture (world, name) {
 
   if (name === 'follows') {
     await loadFollows(world)
+    return
+  }
+
+  if (name === 'mutes') {
+    await loadMutes(world)
     return
   }
 
@@ -437,6 +448,28 @@ async function loadPollWithOptionsAndVote (world) {
     seen: 4,
     blockHeight: 600103
   })
+}
+
+async function loadMutes (world) {
+  const muter1 = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const muter2 = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+  const muteeHash = 'cb481232299cd5743151ac4b2d63ae198e7bb0a9'
+
+  const records = [
+    { key: `${muter1}:${muteeHash}`, muterAddr: muter1, muteePkHash: muteeHash, unmute: false },
+    { key: `${muter2}:${muteeHash}`, muterAddr: muter2, muteePkHash: muteeHash, unmute: false }
+  ]
+
+  for (const record of records) {
+    await world.adapters.level.mutesDb.put(record.key, {
+      muterAddr: record.muterAddr,
+      muteePkHash: record.muteePkHash,
+      unmute: record.unmute,
+      txid: `mute-${record.muterAddr.slice(-8)}-${record.muteePkHash.slice(-8)}`,
+      seen: Date.now(),
+      blockHeight: 600000
+    })
+  }
 }
 
 const handlers = [
@@ -1056,7 +1089,67 @@ const handlers = [
         throw new Error(`Expected ${expectedCount} vote(s) with comment "${expectedComment}".`)
       }
     }
+  },
+
+  {
+    name: 'db instance with mutes store',
+    pattern: /^a psf-memo-db instance with a mutes store$/,
+    async run () {
+      // World is already created with the mutes store.
+    }
+  },
+  {
+    name: 'load fixture into mutes store',
+    pattern: /^the fixture "(.+)" is loaded into the mutes store$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'request mute state',
+    pattern: /^the client requests the mute state for muter (<[A-Za-z0-9_]+>) and mutee (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const muter = resolveParam(m[1], example)
+      const mutee = resolveParam(m[2], example)
+      const resp = await world.muteState.execute({ muterAddr: muter, muteeAddr: mutee })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'mute state reports muted',
+    pattern: /^the mute state reports muted (<muted>)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example) === 'true'
+      const actual = world.getLastResponse().muted
+      if (actual !== expected) {
+        throw new Error(`Expected muted ${expected}, got ${actual}`)
+      }
+    }
+  },
+  {
+    name: 'request muted list',
+    pattern: /^the client requests the muted list for (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const muter = resolveParam(m[1], example)
+      const resp = await world.listMuted.execute({ muterAddr: muter })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'muted list contains addresses',
+    pattern: /^the muted list contains the addresses (<[A-Za-z0-9_]+>)$/,
+    run (m, example, world) {
+      const raw = resolveParam(m[1], example).trim()
+      const expected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
+      const actual = world.getLastResponse().muted
+      const expectedSet = new Set(expected)
+      const actualSet = new Set(actual)
+      if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
+        throw new Error(`Expected muted ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
   }
+
 ]
 
 function findPostInThread (node, txid) {

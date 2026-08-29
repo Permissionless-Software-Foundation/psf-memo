@@ -7,6 +7,7 @@ import HealthRouter from './health/index.js'
 import ProfileRouter from './profile/index.js'
 import PostsRouter from './posts/index.js'
 import FollowRouter from './follow/index.js'
+import MuteRouter from './mute/index.js'
 import TopicsRouter from './topics/index.js'
 import PollsRouter from './polls/index.js'
 
@@ -37,6 +38,9 @@ class RESTControllers {
 
     const followRouter = new FollowRouter(dependencies)
     followRouter.attach(app)
+
+    const muteRouter = new MuteRouter(dependencies)
+    muteRouter.attach(app)
 
     const topicsRouter = new TopicsRouter(dependencies)
     topicsRouter.attach(app)

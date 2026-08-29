@@ -19,9 +19,11 @@ class ProfilePage {
     this.addr = deps.addr || null
     this.myAddr = deps.myAddr || null
     this.memoFollow = deps.memoFollow || null
+    this.memoMute = deps.memoMute || null
     this.posts = []
     this.pagination = null
     this.followState = null
+    this.muteState = null
   }
 
   async load ({ limit = 100, offset = 0 } = {}) {
@@ -31,11 +33,13 @@ class ProfilePage {
     this.posts = data.posts || []
     this.pagination = data.pagination || null
     this.followState = await this._loadFollowState()
+    this.muteState = await this._loadMuteState()
 
     return {
       posts: this.posts,
       pagination: this.pagination,
       followState: this.followState,
+      muteState: this.muteState,
       isOwnProfile: this.isOwnProfile()
     }
   }
@@ -55,6 +59,15 @@ class ProfilePage {
   async _loadFollowState () {
     if (this.myAddr && !this.isOwnProfile()) {
       return this.memoDb.getFollowState(this.myAddr, this.addr)
+    }
+    return false
+  }
+
+  // Fetch the viewer's mute state for the target address, or false when
+  // there is no viewer or the profile is the viewer's own.
+  async _loadMuteState () {
+    if (this.myAddr && !this.isOwnProfile()) {
+      return this.memoDb.getMuteState(this.myAddr, this.addr)
     }
     return false
   }
@@ -86,6 +99,32 @@ class ProfilePage {
     }
     await this.memoFollow[method](this.addr)
     this.followState = nextState
+    return { ok: true }
+  }
+
+  canMute () {
+    return Boolean(this.myAddr) && !this.isOwnProfile()
+  }
+
+  isMuting () {
+    return this.muteState === true
+  }
+
+  async mute () {
+    return this._setMuteState('mute', true)
+  }
+
+  async unmute () {
+    return this._setMuteState('unmute', false)
+  }
+
+  // Delegate mute/unmute to the injected handler and reflect the new state.
+  async _setMuteState (method, nextState) {
+    if (!this.memoMute) {
+      throw new Error('Profile page requires a memo mute handler.')
+    }
+    await this.memoMute[method](this.addr)
+    this.muteState = nextState
     return { ok: true }
   }
 

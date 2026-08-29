@@ -22,6 +22,7 @@ const DB_NAMES = [
   'profiles',
   'profilePics',
   'follows',
+  'mutes',
   'rooms',
   'processErrors',
   'ptxs',

@@ -7,6 +7,7 @@ import DbBackup from './db-backup.js'
 import ProfileQuery from './profile-query.js'
 import PostQuery from './post-query.js'
 import FollowQuery from './follow-query.js'
+import MuteQuery from './mute-query.js'
 import TopicQuery from './topic-query.js'
 import PollQuery from './poll-query.js'
 
@@ -36,6 +37,9 @@ class Adapters {
     })
     this.followQuery = new FollowQuery({
       followsDb: level.followsDb
+    })
+    this.muteQuery = new MuteQuery({
+      mutesDb: level.mutesDb
     })
     this.topicQuery = new TopicQuery({
       roomsDb: level.roomsDb,

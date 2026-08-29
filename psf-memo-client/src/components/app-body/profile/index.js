@@ -9,6 +9,7 @@ import Jdenticon from '@chris.troutner/react-jdenticon'
 
 import MemoDb from '../../../services/memo-db'
 import MemoFollow from '../../../services/memo-follow'
+import MemoMute from '../../../services/memo-mute'
 import ProfilePage from '../../../services/profile-page'
 import PostReplyCount from '../../post-reply-count'
 import LikeButton from '../../post-feed/like-button'
@@ -96,6 +97,28 @@ function Profile (props) {
     setBusy(false)
   }
 
+  const handleMute = async () => {
+    if (!profilePage || busy) return
+    setBusy(true)
+    try {
+      await profilePage.mute()
+    } catch (err) {
+      setError(err.message || 'Failed to mute')
+    }
+    setBusy(false)
+  }
+
+  const handleUnmute = async () => {
+    if (!profilePage || busy) return
+    setBusy(true)
+    try {
+      await profilePage.unmute()
+    } catch (err) {
+      setError(err.message || 'Failed to unmute')
+    }
+    setBusy(false)
+  }
+
   useEffect(() => {
     const loadProfile = async () => {
       setLoading(true)
@@ -107,7 +130,10 @@ function Profile (props) {
         const memoFollow = myAddr
           ? new MemoFollow({ wallet: appData.wallet, profiles: appData.profiles })
           : null
-        const page = new ProfilePage({ memoDb, addr, myAddr, memoFollow })
+        const memoMute = myAddr
+          ? new MemoMute({ wallet: appData.wallet, profiles: appData.profiles })
+          : null
+        const page = new ProfilePage({ memoDb, addr, myAddr, memoFollow, memoMute })
 
         const [profile, profilePic, pageData] = await Promise.all([
           memoDb.getProfile(addr),
@@ -120,7 +146,7 @@ function Profile (props) {
         setPosts(pageData.posts || [])
         setPagination(pageData.pagination || null)
         setProfilePage(page)
-        setProfiles({}) // Future: load profile names for the post list.
+        setProfiles({})
       } catch (err) {
         setError(err.message || 'Failed to load profile')
       }
@@ -138,6 +164,8 @@ function Profile (props) {
 
   const showFollowButton = profilePage && profilePage.canFollow() && !profilePage.isFollowing()
   const showUnfollowButton = profilePage && profilePage.canFollow() && profilePage.isFollowing()
+  const showMuteButton = profilePage && profilePage.canMute() && !profilePage.isMuting()
+  const showUnmuteButton = profilePage && profilePage.canMute() && profilePage.isMuting()
 
   return (
     <Container fluid className='profile-page mt-4'>
@@ -187,6 +215,28 @@ function Profile (props) {
                 data-testid='unfollow-button'
               >
                 Unfollow
+              </Button>
+            )}
+            {showMuteButton && (
+              <Button
+                className='mt-3 ms-2'
+                variant='secondary'
+                onClick={handleMute}
+                disabled={busy}
+                data-testid='mute-button'
+              >
+                Mute
+              </Button>
+            )}
+            {showUnmuteButton && (
+              <Button
+                className='mt-3 ms-2'
+                variant='outline-secondary'
+                onClick={handleUnmute}
+                disabled={busy}
+                data-testid='unmute-button'
+              >
+                Unmute
               </Button>
             )}
           </Col>

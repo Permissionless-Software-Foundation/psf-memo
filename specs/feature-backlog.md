@@ -181,8 +181,8 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 | # | Feature | Memo action | Components | Status |
 |---|---------|-------------|------------|--------|
-| 4.1 | Mute a user | `0x6d16` | C, D | 🔴 missing |
-| 4.2 | Unmute a user | `0x6d17` | C, D | 🔴 missing |
+| 4.1 | Mute a user | `0x6d16` | C, D, I | ✅ shipped (task `mute-user`) |
+| 4.2 | Unmute a user | `0x6d17` | C, D, I | ✅ shipped (task `mute-user`) |
 
 ---
 

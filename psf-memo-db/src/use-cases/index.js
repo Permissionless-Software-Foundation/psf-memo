@@ -9,6 +9,8 @@ import GetPostThread from './get-post-thread.js'
 import FollowState from './follow-state.js'
 import ListFollowing from './list-following.js'
 import ListFollowers from './list-followers.js'
+import MuteState from './mute-state.js'
+import ListMuted from './list-muted.js'
 import ListTopics from './list-topics.js'
 import ListTopicPosts from './list-topic-posts.js'
 import TopicFollowState from './topic-follow-state.js'
@@ -34,6 +36,8 @@ class UseCases {
     this.followState = null
     this.listFollowing = null
     this.listFollowers = null
+    this.muteState = null
+    this.listMuted = null
     this.listTopics = null
     this.listTopicPosts = null
     this.topicFollowState = null
@@ -69,6 +73,14 @@ class UseCases {
     })
 
     this.listFollowers = new ListFollowers({
+      adapters: this.adapters
+    })
+
+    this.muteState = new MuteState({
+      adapters: this.adapters
+    })
+
+    this.listMuted = new ListMuted({
       adapters: this.adapters
     })
 

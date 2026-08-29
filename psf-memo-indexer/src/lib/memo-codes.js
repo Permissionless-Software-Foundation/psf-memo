@@ -18,6 +18,8 @@ export const CODE_TOPIC_UNFOLLOW = 0x0e
 export const CODE_CREATE_POLL = 0x10
 export const CODE_ADD_POLL_OPTION = 0x13
 export const CODE_POLL_VOTE = 0x14
+export const CODE_MUTE = 0x16
+export const CODE_UNMUTE = 0x17
 
 export const PREFIX_SET_NAME = Buffer.from([CODE_PREFIX, CODE_SET_NAME])
 export const PREFIX_POST = Buffer.from([CODE_PREFIX, CODE_POST])
@@ -33,6 +35,8 @@ export const PREFIX_TOPIC_UNFOLLOW = Buffer.from([CODE_PREFIX, CODE_TOPIC_UNFOLL
 export const PREFIX_CREATE_POLL = Buffer.from([CODE_PREFIX, CODE_CREATE_POLL])
 export const PREFIX_ADD_POLL_OPTION = Buffer.from([CODE_PREFIX, CODE_ADD_POLL_OPTION])
 export const PREFIX_POLL_VOTE = Buffer.from([CODE_PREFIX, CODE_POLL_VOTE])
+export const PREFIX_MUTE = Buffer.from([CODE_PREFIX, CODE_MUTE])
+export const PREFIX_UNMUTE = Buffer.from([CODE_PREFIX, CODE_UNMUTE])
 
 export const MAX_POST_SIZE = 65000
 export const MAX_REPLY_SIZE = 65000
@@ -53,7 +57,9 @@ export const ACTION_NAMES = {
   [`${CODE_PREFIX}-${CODE_TOPIC_UNFOLLOW}`]: 'topicUnfollow',
   [`${CODE_PREFIX}-${CODE_CREATE_POLL}`]: 'createPoll',
   [`${CODE_PREFIX}-${CODE_ADD_POLL_OPTION}`]: 'addPollOption',
-  [`${CODE_PREFIX}-${CODE_POLL_VOTE}`]: 'pollVote'
+  [`${CODE_PREFIX}-${CODE_POLL_VOTE}`]: 'pollVote',
+  [`${CODE_PREFIX}-${CODE_MUTE}`]: 'mute',
+  [`${CODE_PREFIX}-${CODE_UNMUTE}`]: 'unmute'
 }
 
 export function isMemoPrefix (buf) {

@@ -10,6 +10,7 @@ import { handleTopicFollow } from './topic-follow.js'
 import { handleCreatePoll } from './poll-create.js'
 import { handleAddPollOption } from './poll-option.js'
 import { handlePollVote } from './poll-vote.js'
+import { handleMute } from './mute.js'
 
 export const ACTION_HANDLERS = {
   setName: handleSetName,
@@ -25,7 +26,9 @@ export const ACTION_HANDLERS = {
   topicUnfollow: handleTopicFollow,
   createPoll: handleCreatePoll,
   addPollOption: handleAddPollOption,
-  pollVote: handlePollVote
+  pollVote: handlePollVote,
+  mute: handleMute,
+  unmute: handleMute
 }
 
 export async function dispatchMemoAction (ctx) {

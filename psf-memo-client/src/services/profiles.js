@@ -16,6 +16,7 @@ class Profiles {
     this.avatarUrls = new Map()
     this.following = new Map()
     this.topicFollowing = new Map()
+    this.muting = new Map()
   }
 
   setName (addr, name) {
@@ -64,6 +65,15 @@ class Profiles {
 
   getTopicFollowState (selfAddr, room) {
     return this._getMapState(this.topicFollowing, selfAddr, room)
+  }
+
+  // Track whether the current wallet mutes a given address.
+  setMuteState (selfAddr, targetAddr, isMuting) {
+    this._setMapState(this.muting, selfAddr, targetAddr, isMuting)
+  }
+
+  getMuteState (selfAddr, targetAddr) {
+    return this._getMapState(this.muting, selfAddr, targetAddr)
   }
 
   // Set a boolean value on a per-self-address nested map.

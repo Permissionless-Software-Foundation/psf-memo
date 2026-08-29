@@ -33,6 +33,7 @@ const AccountPage = require('../../src/services/account-page')
 const MemoLike = require('../../src/services/memo-like')
 const LikeTipPage = require('../../src/services/like-tip-page')
 const MemoFollow = require('../../src/services/memo-follow')
+const MemoMute = require('../../src/services/memo-mute')
 const RecentFeedPage = require('../../src/services/recent-feed-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
@@ -56,6 +57,8 @@ const MEMO_SET_AVATAR_URL_PREFIX = MemoSetAvatarUrl.MEMO_SET_AVATAR_URL_PREFIX
 const MEMO_LIKE_PREFIX = MemoLike.MEMO_LIKE_PREFIX
 const MEMO_FOLLOW_PREFIX = MemoFollow.MEMO_FOLLOW_PREFIX
 const MEMO_UNFOLLOW_PREFIX = MemoFollow.MEMO_UNFOLLOW_PREFIX
+const MEMO_MUTE_PREFIX = MemoMute.MEMO_MUTE_PREFIX
+const MEMO_UNMUTE_PREFIX = MemoMute.MEMO_UNMUTE_PREFIX
 const MEMO_TOPIC_MESSAGE_PREFIX = MemoTopicPost.MEMO_TOPIC_MESSAGE_PREFIX
 const MEMO_TOPIC_FOLLOW_PREFIX = MemoTopicFollow.MEMO_TOPIC_FOLLOW_PREFIX
 const MEMO_TOPIC_UNFOLLOW_PREFIX = MemoTopicFollow.MEMO_TOPIC_UNFOLLOW_PREFIX
@@ -132,12 +135,19 @@ function makeProfiles () {
   const avatarUrls = {}
   const following = {}
   const topicFollowing = {}
+  const muting = {}
   return {
     names,
     bios,
     avatarUrls,
     following,
     topicFollowing,
+    muting: {},
+    setMuteState: (selfAddr, targetAddr, isMuting) => {
+      if (!muting[selfAddr]) muting[selfAddr] = {}
+      muting[selfAddr][targetAddr] = isMuting
+    },
+    getMuteState: (selfAddr, targetAddr) => muting[selfAddr]?.[targetAddr] || false,
     setName: (addr, name) => { names[addr] = name },
     getName: (addr) => names[addr] || null,
     setBio: (addr, bio) => { bios[addr] = bio },
@@ -173,6 +183,7 @@ function makeMemoDb () {
   const posts = []
   const threads = {}
   const followState = {}
+  const muteState = {}
   const topics = []
   const topicPosts = {}
   const topicCounts = new Map()
@@ -212,6 +223,9 @@ function makeMemoDb () {
     setFollowState (followerAddr, followeeAddr, following) {
       followState[`${followerAddr}:${followeeAddr}`] = following
     },
+    setMuteState (muterAddr, muteeAddr, muted) {
+      muteState[`${muterAddr}:${muteeAddr}`] = muted
+    },
     setTopicFollowState (addr, room, following) {
       if (!topicFollow.has(room)) topicFollow.set(room, new Map())
       topicFollow.get(room).set(addr, following)
@@ -241,6 +255,9 @@ function makeMemoDb () {
     async getFollowState (followerAddr, followeeAddr) {
       return followState[`${followerAddr}:${followeeAddr}`] || false
     },
+    async getMuteState (muterAddr, muteeAddr) {
+      return muteState[`${muterAddr}:${muteeAddr}`] || false
+    },
     async getTopics () {
       const list = []
       for (const [room, postCount] of topicCounts.entries()) {
@@ -267,6 +284,7 @@ function createWorld () {
   const memoReply = new MemoReply({ wallet, thread })
   const memoLike = new MemoLike({ wallet, feed })
   const memoFollow = new MemoFollow({ wallet, profiles })
+  const memoMute = new MemoMute({ wallet, profiles })
   const memoTopicFollow = new MemoTopicFollow({ wallet, profiles })
   const polls = makePolls()
   const memoPollCreate = new MemoPollCreate({ wallet, polls })
@@ -280,6 +298,7 @@ function createWorld () {
     memoReply,
     memoLike,
     memoFollow,
+    memoMute,
     memoTopicFollow,
     polls,
     memoPollCreate,
@@ -1347,7 +1366,8 @@ const handlers = [
         memoDb: world.memoDb,
         addr,
         myAddr,
-        memoFollow: world.memoFollow
+        memoFollow: world.memoFollow,
+        memoMute: world.memoMute
       })
       await world.profilePage.load()
       world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
@@ -1362,7 +1382,8 @@ const handlers = [
         memoDb: world.memoDb,
         addr: myAddr,
         myAddr,
-        memoFollow: world.memoFollow
+        memoFollow: world.memoFollow,
+        memoMute: world.memoMute
       })
       await world.profilePage.load()
       world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(myAddr)}`
@@ -1467,6 +1488,109 @@ const handlers = [
       }
       if (last.msg.toString('hex') !== hash160) {
         throw new Error(`Broadcast unfollow hash160 did not match ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'API reports I mute address',
+    pattern: /^the psf-memo-db API reports that I mute the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.setMuteState(myAddr, addr, true)
+    }
+  },
+  {
+    name: 'profile page shows Mute button',
+    pattern: /^the profile page shows a Mute button$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.canMute()) {
+        throw new Error('Profile page cannot show a Mute button for this address.')
+      }
+      if (world.profilePage.isMuting()) {
+        throw new Error('Profile page shows Unmute, but Mute was expected.')
+      }
+    }
+  },
+  {
+    name: 'profile page shows Unmute button',
+    pattern: /^the profile page shows an Unmute button$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.canMute()) {
+        throw new Error('Profile page cannot show an Unmute button for this address.')
+      }
+      if (!world.profilePage.isMuting()) {
+        throw new Error('Profile page shows Mute, but Unmute was expected.')
+      }
+    }
+  },
+  {
+    name: 'profile page does not show Mute button',
+    pattern: /^the profile page does not show a Mute button$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (world.profilePage.canMute()) {
+        throw new Error('Profile page should not show a Mute button.')
+      }
+    }
+  },
+  {
+    name: 'click Mute button',
+    pattern: /^I click the Mute button$/,
+    async run (m, example, world) {
+      await world.profilePage.mute()
+    }
+  },
+  {
+    name: 'click Unmute button',
+    pattern: /^I click the Unmute button$/,
+    async run (m, example, world) {
+      await world.profilePage.unmute()
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo mute prefix for address',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo mute prefix for the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_MUTE_PREFIX) {
+        throw new Error(`Expected Memo mute prefix ${MEMO_MUTE_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg.toString('hex') !== hash160) {
+        throw new Error(`Broadcast mute hash160 did not match ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo unmute prefix for address',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo unmute prefix for the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_UNMUTE_PREFIX) {
+        throw new Error(`Expected Memo unmute prefix ${MEMO_UNMUTE_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg.toString('hex') !== hash160) {
+        throw new Error(`Broadcast unmute hash160 did not match ${addr}.`)
       }
     }
   },

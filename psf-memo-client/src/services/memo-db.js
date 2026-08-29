@@ -48,6 +48,36 @@ class MemoDb {
     }
   }
 
+  async getMuteState (muterAddr, muteeAddr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/mute/state`,
+        {
+          params: {
+            muter: muterAddr,
+            mutee: muteeAddr
+          }
+        }
+      )
+      return result.data.muted === true
+    } catch (err) {
+      console.error('Error in getMuteState()')
+      throw err
+    }
+  }
+
+  async getMuted (muterAddr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/mute/muted/${encodeURIComponent(muterAddr)}`
+      )
+      return result.data.muted || []
+    } catch (err) {
+      console.error('Error in getMuted()')
+      throw err
+    }
+  }
+
   async getTopics () {
     return this.getRecent('/topics', 'getTopics', {})
   }

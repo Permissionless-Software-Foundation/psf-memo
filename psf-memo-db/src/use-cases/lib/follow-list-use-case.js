@@ -12,11 +12,11 @@
 import { ListUseCase } from './use-case.js'
 
 export class FollowListUseCase extends ListUseCase {
-  constructor (localConfig, { useCaseName, adapterMethod, addrField, resultField }) {
-    super(localConfig, { useCaseName, adapterName: 'followQuery' })
+  constructor (localConfig, { useCaseName, adapterMethod, addrField, resultField, adapterName = 'followQuery' }) {
+    super(localConfig, { useCaseName, adapterName })
     this.addrField = addrField
     this.resultField = resultField
-    this._list = this.adapters.followQuery[adapterMethod].bind(this.adapters.followQuery)
+    this._list = this.adapters[adapterName][adapterMethod].bind(this.adapters[adapterName])
   }
 
   async execute (inObj = {}) {

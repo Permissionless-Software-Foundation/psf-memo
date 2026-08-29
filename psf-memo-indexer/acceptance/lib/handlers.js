@@ -13,6 +13,7 @@ import { handleLike } from '../../src/use-cases/action-types/like.js'
 import { handleCreatePoll } from '../../src/use-cases/action-types/poll-create.js'
 import { handleAddPollOption } from '../../src/use-cases/action-types/poll-option.js'
 import { handlePollVote } from '../../src/use-cases/action-types/poll-vote.js'
+import { handleMute } from '../../src/use-cases/action-types/mute.js'
 import BackupDb from '../../src/use-cases/backup-db.js'
 
 function makeInMemoryDb () {
@@ -83,6 +84,7 @@ async function createWorld () {
   const pollDb = makeInMemoryDb()
   const pollOptionDb = makeInMemoryDb()
   const pollVoteDb = makeInMemoryDb()
+  const muteDb = makeInMemoryDb()
 
   const adapters = {
     postDb: postsDb,
@@ -95,6 +97,7 @@ async function createWorld () {
     pollDb,
     pollOptionDb,
     pollVoteDb,
+    muteDb,
     processErrorDb: makeInMemoryDb(),
     dbCtrl: {
       backupDb: async (height, epoch) => {
@@ -117,6 +120,7 @@ async function createWorld () {
     pollsDb: pollDb,
     pollOptionsDb: pollOptionDb,
     pollVotesDb: pollVoteDb,
+    mutesDb: muteDb,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -575,8 +579,129 @@ const handlers = [
   }
 ]
 
+const muteHandlers = [
+  {
+    name: 'db instance that records mute records',
+    pattern: /^a psf-memo-db instance that records mute records$/,
+    async run () {
+      // World is already created with a mute store.
+    }
+  },
+  {
+    name: 'process a mute transaction',
+    pattern: /^the indexer processes a mute transaction for the address (.+) from (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const muterAddr = resolveParam(m[2], example)
+      const txid = deriveTxid(`mute-${addr || 'empty'}-${muterAddr}`)
+      const height = 600150
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = muterAddr
+
+      const prefix = Buffer.from('6d16', 'hex')
+      // Empty address means wrong-size payload path; use a 0-byte buffer.
+      const hashBuf = addr ? Buffer.from(crypto.createHash('sha256').update(addr).digest().slice(0, 20)) : Buffer.alloc(0)
+
+      await handleMute({
+        adapters: world.adapters,
+        txid,
+        signerAddr: muterAddr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'mute',
+          prefix,
+          pushDatas: [prefix, hashBuf]
+        }
+      })
+    }
+  },
+  {
+    name: 'process an unmute transaction',
+    pattern: /^the indexer processes an unmute transaction for the address (.+) from (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const muterAddr = resolveParam(m[2], example)
+      const txid = deriveTxid(`unmute-${addr}-${muterAddr}`)
+      const height = 600150
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = muterAddr
+
+      const prefix = Buffer.from('6d17', 'hex')
+      const hash160 = crypto.createHash('sha256').update(addr).digest().slice(0, 20).toString('hex')
+      const hashBuf = Buffer.from(hash160, 'hex')
+
+      await handleMute({
+        adapters: world.adapters,
+        txid,
+        signerAddr: muterAddr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'unmute',
+          prefix,
+          pushDatas: [prefix, hashBuf]
+        }
+      })
+    }
+  },
+  {
+    name: 'mute record stored',
+    pattern: /^the psf-memo-db stores a mute record for the address (.+) by (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const muterAddr = resolveParam(m[2], example)
+      const hash160 = crypto.createHash('sha256').update(addr).digest().slice(0, 20).toString('hex')
+      const key = `${muterAddr}:${hash160}`
+      const matching = world.mutesDb.entries().filter(([k]) => k === key)
+      if (matching.length === 0) {
+        throw new Error(`Expected a mute record for ${addr} by ${muterAddr}`)
+      }
+      if (matching[0][1].unmute !== false) {
+        throw new Error(`Expected a mute (not unmute) record for ${addr} by ${muterAddr}`)
+      }
+    }
+  },
+  {
+    name: 'unmute record stored',
+    pattern: /^the psf-memo-db stores an unmute record for the address (.+) by (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const muterAddr = resolveParam(m[2], example)
+      const hash160 = crypto.createHash('sha256').update(addr).digest().slice(0, 20).toString('hex')
+      const key = `${muterAddr}:${hash160}`
+      const matching = world.mutesDb.entries().filter(([k]) => k === key)
+      if (matching.length === 0) {
+        throw new Error(`Expected an unmute record for ${addr} by ${muterAddr}`)
+      }
+      if (matching[0][1].unmute !== true) {
+        throw new Error(`Expected an unmute record for ${addr} by ${muterAddr}`)
+      }
+    }
+  },
+  {
+    name: 'process error and no mute record for wrong-size address',
+    pattern: /^the indexer records a process error and stores no mute record$/,
+    run (m, example, world) {
+      const txid = world.lastTxid
+      const errors = world.adapters.processErrorDb.entries().filter(([key]) => key === txid)
+      if (errors.length === 0) {
+        throw new Error(`Expected a process error for txid ${txid}`)
+      }
+      const mutes = world.mutesDb.entries().filter(([key]) => key === txid)
+      if (mutes.length !== 0) {
+        throw new Error(`Expected no mute document for txid ${txid}, but one was stored`)
+      }
+    }
+  }
+]
+
 async function handleStep (step, example, world) {
-  for (const handler of handlers) {
+  for (const handler of handlers.concat(muteHandlers)) {
     const match = handler.pattern.exec(step.text)
     if (match) {
       await handler.run(match, example, world, step)
