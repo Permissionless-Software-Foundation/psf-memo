@@ -28,3 +28,7 @@ export async function handleMute (ctx) {
     blockHeight
   })
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-29T03:33:07.635Z","module_hash":"7bf93c17bf9870e22376fae9d8c7748f66d74851ccd64a0e9799a7a246a0d809","functions":[{"id":"func/handleMute","name":"handleMute","line":4,"end_line":30,"hash":"fa1dfbff1aa2f2d09fb6ff6eb2cf391ae281d038876ae1d3602a25dfa2946fa3"}]}
+// mutate4javascript-manifest-end

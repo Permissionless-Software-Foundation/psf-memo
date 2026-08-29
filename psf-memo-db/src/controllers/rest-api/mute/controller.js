@@ -77,3 +77,7 @@ class MuteRESTControllerLib {
 }
 
 export default MuteRESTControllerLib
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-29T03:32:28.766Z","module_hash":"d64a285141e5c61b633b087777d2649ee4d7597206e59bedc6dbdb797cefddae","functions":[{"id":"func/MuteRESTControllerLib.constructor","name":"MuteRESTControllerLib.constructor","line":8,"end_line":21,"hash":"05eda89865cbf8f59f0d9cafe012c2185eeff9082d90636e6f8675f9b2df8453"},{"id":"func/MuteRESTControllerLib.handleError","name":"MuteRESTControllerLib.handleError","line":23,"end_line":30,"hash":"a2129f52ffeeae961205b6fca5bf2f01e35494e724c5b72ee314013b343112c9"},{"id":"func/MuteRESTControllerLib.getMuteState","name":"MuteRESTControllerLib.getMuteState","line":47,"end_line":54,"hash":"3c140541ac30e5c8f029fc9b6b9c17ec09b096589e78f28b7565079fc50c639d"},{"id":"func/MuteRESTControllerLib.getMuted","name":"MuteRESTControllerLib.getMuted","line":69,"end_line":76,"hash":"aa4555e7b3ea3ec283273dd1ee53f8bf577fc591317cd211609c73f1863c4140"}]}
+// mutate4javascript-manifest-end

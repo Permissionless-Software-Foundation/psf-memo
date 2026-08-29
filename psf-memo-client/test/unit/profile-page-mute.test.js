@@ -33,6 +33,30 @@ function makeMemoMute (page) {
   }
 }
 
+test('constructor preserves an injected memo mute handler', () => {
+  const memoMute = { mute: async () => {}, unmute: async () => {} }
+  const page = new ProfilePage({ memoMute })
+
+  assert.equal(page.memoMute, memoMute)
+})
+
+test('load returns muteState false when viewing own profile', async () => {
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const memoDb = makeMemoDb({})
+  const page = new ProfilePage({ memoDb, addr, myAddr: addr })
+
+  const result = await page.load()
+
+  assert.equal(result.muteState, false)
+})
+
+test('canMute returns false when viewing own profile', () => {
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const page = new ProfilePage({ memoDb: {}, addr, myAddr: addr })
+
+  assert.equal(page.canMute(), false)
+})
+
 test('load fetches mute state when a viewer address is provided', async () => {
   const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'

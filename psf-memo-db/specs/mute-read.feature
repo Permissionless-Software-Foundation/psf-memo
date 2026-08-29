@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-29T03:43:35.749097546Z","feature_name":"Mute Read","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/mute-read.feature","background_hash":"a5f096996120c0f8eb55576184704c74a5e3487999edec263abee0d8fdd53348","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Mute Read - 2 GET /mute/muted lists the addresses a muter mutes","scenario_hash":"ad2bc8a39c2450f1391aa39d246f30989536f3d94b461302bd9528c029641362","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-08-29T03:43:35.749097546Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Mute Read - 1, Mute Read - 2
 #
 # The mutes store keys mutees by 20-byte hash160. Use bch-js

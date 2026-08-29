@@ -69,4 +69,44 @@ describe('#MuteState', () => {
       assert.match(err.message, /muteeAddr is required/)
     }
   })
+
+  it('should reject an empty-string muterAddr', async () => {
+    const useCase = new MuteState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ muterAddr: '', muteeAddr: 'bitcoincash:mutee' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /muterAddr is required/)
+    }
+  })
+
+  it('should reject a non-string muterAddr', async () => {
+    const useCase = new MuteState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ muterAddr: 123, muteeAddr: 'bitcoincash:mutee' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /muterAddr is required/)
+    }
+  })
+
+  it('should reject an empty-string muteeAddr', async () => {
+    const useCase = new MuteState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ muterAddr: 'bitcoincash:muter', muteeAddr: '' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /muteeAddr is required/)
+    }
+  })
+
+  it('should reject a non-string muteeAddr', async () => {
+    const useCase = new MuteState({ adapters: makeAdapters(false) })
+    try {
+      await useCase.execute({ muterAddr: 'bitcoincash:muter', muteeAddr: 456 })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.match(err.message, /muteeAddr is required/)
+    }
+  })
 })

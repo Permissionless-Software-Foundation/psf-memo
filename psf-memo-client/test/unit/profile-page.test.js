@@ -167,6 +167,13 @@ test('unfollow delegates to the memo follow handler and updates state', async ()
   assert.equal(page.isFollowing(), false)
 })
 
+test('constructor preserves an injected memo follow handler', () => {
+  const memoFollow = { follow: async () => {}, unfollow: async () => {} }
+  const page = new ProfilePage({ memoFollow })
+
+  assert.equal(page.memoFollow, memoFollow)
+})
+
 test('follow throws when no memo follow handler is injected', async () => {
   const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'

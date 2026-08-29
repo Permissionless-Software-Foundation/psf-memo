@@ -93,6 +93,15 @@ test('unmute reflects the new unmute state on the profile store', async () => {
   assert.equal(profiles.getMuteState(MY_ADDRESS, MUTEE_ADDRESS), false)
 })
 
+test('validate returns ok for a valid mutee address', () => {
+  const wallet = makeWallet()
+  const memoMute = new MemoMute({ wallet })
+
+  const result = memoMute.validate(MUTEE_ADDRESS)
+
+  assert.deepEqual(result, { ok: true })
+})
+
 test('mute rejects an empty address', async () => {
   const wallet = makeWallet()
   const memoMute = new MemoMute({ wallet })

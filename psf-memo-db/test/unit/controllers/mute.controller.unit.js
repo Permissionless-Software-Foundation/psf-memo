@@ -60,4 +60,32 @@ describe('#MuteRESTController', () => {
     assert.equal(ctx.throw.callCount, 1)
     assert.equal(ctx.throw.firstCall.args[0], 500)
   })
+
+  it('should rethrow a statused error with its message', async () => {
+    const err = new Error('bad request')
+    err.status = 400
+    const muteState = { execute: sandbox.stub().rejects(err) }
+    const uut = makeUut({ muteState })
+    const ctx = makeCtx({ muter: 'a', mutee: 'b' })
+
+    await uut.getMuteState(ctx)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 400)
+    assert.equal(ctx.throw.firstCall.args[1], 'bad request')
+  })
+
+  it('should rethrow a statused error without a message', async () => {
+    const err = new Error()
+    err.status = 404
+    const muteState = { execute: sandbox.stub().rejects(err) }
+    const uut = makeUut({ muteState })
+    const ctx = makeCtx({ muter: 'a', mutee: 'b' })
+
+    await uut.getMuteState(ctx)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 404)
+    assert.equal(ctx.throw.firstCall.args[1], err)
+  })
 })

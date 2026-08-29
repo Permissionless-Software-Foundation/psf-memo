@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-29T03:40:09.241155483Z","feature_name":"Mute Indexer","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/mute-indexer.feature","background_hash":"b019877abd54b08b22034bf036a8a6002e6e81638ca39a8620a5c66ec25439ae","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Mute Indexer - 1, Mute Indexer - 2, Mute Indexer - 3
 #
 # The indexer parses Memo mute actions and stores structured records:

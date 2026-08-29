@@ -75,6 +75,14 @@ describe('#MuteQuery', () => {
     assert.equal(result, false)
   })
 
+  it('_nextString returns the lexicographic exclusive upper bound of a prefix', () => {
+    const query = new MuteQuery({ mutesDb: makeMutesDb({}) })
+
+    // 'abc:' -> drop the trailing ':', increment the last char (':' -> ';').
+    assert.equal(query._nextString('abc:'), 'abc;')
+    assert.equal(query._nextString('a'), 'b')
+  })
+
   it('listMuted returns active mutees for a muter', async () => {
     const hash160 = 'cb481232299cd5743151ac4b2d63ae198e7bb0a9'
     const hash160Two = '44c44cfcb6e4e00386c7b0d14eaac6b7f47695e3'

@@ -121,5 +121,5 @@ class UseCases {
 export default UseCases
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T23:02:43.390Z","module_hash":"cf2bffa7de787c479a3849641f6f6ead863cea555a6c2db995179732bcf05466","functions":[{"id":"func/UseCases.constructor","name":"UseCases.constructor","line":21,"end_line":44,"hash":"3fb83ec6337d0634fa8b1e7431e0e94c2aa4be2d3cbc930841d294a08b465f98"},{"id":"func/UseCases.start","name":"UseCases.start","line":46,"end_line":106,"hash":"c876c85df5fd28146e8f6bce6aa7c48eed7ff3303cb3384cf0a9704926b837a3"}]}
+// {"version":1,"tested_at":"2026-08-29T03:34:22.727Z","module_hash":"bd1af3666615a359eb970d1576472fe7a792fbfd135972e81ba50f1441976e94","functions":[{"id":"func/UseCases.constructor","name":"UseCases.constructor","line":23,"end_line":48,"hash":"511ff53d6fe3084c42bc443e67183991e065fe6432d26291d8f44fcf3ee3fe94"},{"id":"func/UseCases.start","name":"UseCases.start","line":50,"end_line":118,"hash":"4a94f92a0c335ee536da858df44d13e81930b86df9e27ebff75d71753865e299"}]}
 // mutate4javascript-manifest-end
