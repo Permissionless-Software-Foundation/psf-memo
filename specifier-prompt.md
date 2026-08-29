@@ -169,7 +169,7 @@ Goal: reach feature parity with [memo.cash](https://memo.cash).
 | **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
 | **P1** | Like counts (read side) ✅; client display ✅; Set profile text ✅; Set profile picture ✅; Follow/Unfollow ✅ | ✅ shipped |
 | **P2** | Topics (list ✅, feed ✅, post/follow/unfollow) | next |
-| **P3** | Polls (create, add option, vote) | 🔄 specs written, handed off (task `poll-actions`) |
+| **P3** | Polls (create, add option, vote) | ✅ shipped (task `poll-actions`) |
 | **P4** | Mute / unmute user | later |
 | **P5** | Send money memo action, MIP-0009 token exchange | later |
 | **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `5d7ce7601b` (task `poll-actions` — P3 poll specs committed and handed off to the coder).
-Next action: **await the coder → refactorer → architect pipeline for `poll-actions`**, then merge the architect branch into `master` and verify the affected components (client, indexer, db).
+Current `master` HEAD: `6309c4a` (task `poll-actions` — P3 poll create/option/vote — merged from the pipeline and verified: client build/test/lint/acceptance, DB test/lint/acceptance, and indexer test/lint/acceptance all pass).
+Next action: **spec P4.1/P4.2** — Mute / unmute user (`0x6d16`/`0x6d17`).

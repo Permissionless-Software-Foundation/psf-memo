@@ -171,9 +171,9 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 | # | Feature | Memo action | Components | Status |
 |---|---------|-------------|------------|--------|
-| 3.1 | Create a poll | `0x6d10` | C, I, D | 🔄 specs written (task `poll-actions`) |
-| 3.2 | Add a poll option | `0x6d13` | C, I, D | 🔄 specs written (task `poll-actions`) |
-| 3.3 | Vote in a poll | `0x6d14` | C, I, D | 🔄 specs written (task `poll-actions`) |
+| 3.1 | Create a poll | `0x6d10` | C, I, D | ✅ shipped (task `poll-actions`) |
+| 3.2 | Add a poll option | `0x6d13` | C, I, D | ✅ shipped (task `poll-actions`) |
+| 3.3 | Vote in a poll | `0x6d14` | C, I, D | ✅ shipped (task `poll-actions`) |
 
 ---
 
@@ -213,23 +213,21 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Polls (P3.1 / P3.2 / P3.3)** — create a poll / add an option / vote:
-- `psf-memo-client`: a poll composer that broadcasts `0x6d10` (create poll),
-  an add-option composer that broadcasts `0x6d13`, and a vote composer that
-  broadcasts `0x6d14`.
-- `psf-memo-indexer`: new handlers that parse and store create-poll, add-option,
-  and vote transactions (no poll handler exists yet).
-- `psf-memo-db`: expose the read side — poll question/options/votes via
-  `/polls/:txid`, `/polls/:txid/options`, `/polls/:txid/votes`.
+**Mute / unmute user (P4.1 / P4.2)** — `0x6d16` / `0x6d17`:
+- `psf-memo-client`: mute/unmute buttons on the profile page that broadcast
+  `0x6d16` / `0x6d17`.
+- `psf-memo-db`: expose mute state and muted-user lists.
+- `psf-memo-indexer`: handlers that parse and store mute/unmute transactions
+  (no mute handler exists yet).
 
-### Poll payloads
+### Mute payloads
 
-- `0x6d10` create poll: `poll_type` (1 byte) + `option_count` (1 byte) + `question` (≤ 209 bytes).
-- `0x6d13` add option: `poll_txhash` (32 bytes) + `option` (≤ 184 bytes).
-- `0x6d14` vote: `poll_txhash` (32 bytes) + `comment` (≤ 184 bytes).
+- `0x6d16` mute: `address` (20 bytes, P2PKH hash160).
+- `0x6d17` unmute: `address` (20 bytes, P2PKH hash160).
 
-The poll txid is a 32-byte binary hash reversed to hex, like other Memo txid
-payloads. Specs are written (task `poll-actions`, handed off to the coder).
+Like follow/unfollow user, the payload is the target's 20-byte hash160; convert
+with bch-js `Address.toHash160()` (client) and `hash160ToCash()` (DB read
+side).
 
 ---
 
