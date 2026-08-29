@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — research refresh 2026-08-27.
 **Owner**: specifier.
-**Last updated**: 2026-08-28
+**Last updated**: 2026-08-29
 
 ---
 
@@ -213,21 +213,20 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Mute / unmute user (P4.1 / P4.2)** — `0x6d16` / `0x6d17`:
-- `psf-memo-client`: mute/unmute buttons on the profile page that broadcast
-  `0x6d16` / `0x6d17`.
-- `psf-memo-db`: expose mute state and muted-user lists.
-- `psf-memo-indexer`: handlers that parse and store mute/unmute transactions
-  (no mute handler exists yet).
+**Send money with memo (P5.1)** — `0x6d24`:
+- `psf-memo-client`: a "Send money" composer that broadcasts `0x6d24` with a
+  recipient address (20-byte hash160) plus an optional message (≤ 194 bytes).
+- `psf-memo-db`: expose the send-money read side (sent/received money memos).
+- `psf-memo-indexer`: a handler that parses and stores `0x6d24` transactions
+  (no send-money handler exists yet).
 
-### Mute payloads
+### Send-money payload
 
-- `0x6d16` mute: `address` (20 bytes, P2PKH hash160).
-- `0x6d17` unmute: `address` (20 bytes, P2PKH hash160).
+- `0x6d24` send money: `address` (20 bytes, P2PKH hash160) + `message`
+  (≤ 194 bytes).
 
-Like follow/unfollow user, the payload is the target's 20-byte hash160; convert
-with bch-js `Address.toHash160()` (client) and `hash160ToCash()` (DB read
-side).
+Like follow/unfollow user, the recipient is the 20-byte hash160; convert with
+bch-js `Address.toHash160()` (client) and `hash160ToCash()` (DB read side).
 
 ---
 

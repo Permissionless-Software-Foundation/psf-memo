@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `6309c4a` (task `poll-actions` — P3 poll create/option/vote — merged from the pipeline and verified: client build/test/lint/acceptance, DB test/lint/acceptance, and indexer test/lint/acceptance all pass).
-Next action: **spec P4.1/P4.2** — Mute / unmute user (`0x6d16`/`0x6d17`).
+Current `master` HEAD: `ac46807` (task `mute-user` — P4.1/P4.2 mute/unmute user — merged from the pipeline and verified: client build/test/lint, DB test/lint, and indexer test/lint all pass).
+Next action: **spec P5.1** — Send money with memo (`0x6d24`).
