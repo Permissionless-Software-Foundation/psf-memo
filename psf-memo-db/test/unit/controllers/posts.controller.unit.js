@@ -22,6 +22,12 @@ describe('#PostsRESTController', () => {
             posts: [{ txid: 'tx2', addr: 'addr-a', blockHeight: 600100 }],
             pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
           })
+        },
+        listFollowingFeed: {
+          execute: sandbox.stub().resolves({
+            posts: [{ txid: 'tx3', addr: 'addr-b', blockHeight: 600200 }],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
+          })
         }
       }
     })
@@ -59,5 +65,24 @@ describe('#PostsRESTController', () => {
     })
     assert.equal(ctx.body.posts.length, 1)
     assert.equal(ctx.body.posts[0].txid, 'tx2')
+  })
+
+  it('should return following feed from use case', async () => {
+    const ctx = {
+      params: { addr: 'addr-b' },
+      query: { limit: '25', offset: '0' },
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getFollowingFeed(ctx)
+
+    assert.equal(uut.useCases.listFollowingFeed.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.listFollowingFeed.execute.firstCall.args[0], {
+      addr: 'addr-b',
+      limit: '25',
+      offset: '0'
+    })
+    assert.equal(ctx.body.posts.length, 1)
+    assert.equal(ctx.body.posts[0].txid, 'tx3')
   })
 })

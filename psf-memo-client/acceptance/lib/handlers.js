@@ -35,6 +35,7 @@ const LikeTipPage = require('../../src/services/like-tip-page')
 const MemoFollow = require('../../src/services/memo-follow')
 const MemoMute = require('../../src/services/memo-mute')
 const RecentFeedPage = require('../../src/services/recent-feed-page')
+const FollowingFeedPage = require('../../src/services/following-feed-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
@@ -188,6 +189,7 @@ function makeMemoDb () {
   const threads = {}
   const followState = {}
   const muteState = {}
+  const replyTxids = new Set()
   const topics = []
   const topicPosts = {}
   const topicCounts = new Map()
@@ -205,6 +207,10 @@ function makeMemoDb () {
     topicCounts,
     addPost (post) {
       posts.push(post)
+    },
+    addReply (reply) {
+      replyTxids.add(reply.txid)
+      posts.push(reply)
     },
     addSearchPost (post) {
       searchPosts.push(post)
@@ -234,7 +240,7 @@ function makeMemoDb () {
       threads[txid] = thread
     },
     setFollowState (followerAddr, followeeAddr, following) {
-      followState[`${followerAddr}:${followeeAddr}`] = following
+      followState[`${followerAddr}|${followeeAddr}`] = following
     },
     setMuteState (muterAddr, muteeAddr, muted) {
       muteState[`${muterAddr}:${muteeAddr}`] = muted
@@ -285,7 +291,7 @@ function makeMemoDb () {
       return threads[txid] || { post: null }
     },
     async getFollowState (followerAddr, followeeAddr) {
-      return followState[`${followerAddr}:${followeeAddr}`] || false
+      return followState[`${followerAddr}|${followeeAddr}`] || false
     },
     async getMuteState (muterAddr, muteeAddr) {
       return muteState[`${muterAddr}:${muteeAddr}`] || false
@@ -300,6 +306,19 @@ function makeMemoDb () {
     },
     async getTopicPosts (room, { limit = 100, offset = 0 } = {}) {
       const all = topicPosts[room] || []
+      const page = all.slice(offset, offset + limit)
+      return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
+    },
+    async getFollowingFeed (addr, { limit = 100, offset = 0 } = {}) {
+      const followees = new Set()
+      for (const [key, following] of Object.entries(followState)) {
+        if (!following) continue
+        const [follower, followee] = key.split('|')
+        if (follower === addr) followees.add(followee)
+      }
+      const all = posts
+        .filter((p) => followees.has(p.addr) && p.addr !== addr && !replyTxids.has(p.txid))
+        .sort((a, b) => (b.blockHeight ?? 0) - (a.blockHeight ?? 0))
       const page = all.slice(offset, offset + limit)
       return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
     }
@@ -342,6 +361,7 @@ function createWorld () {
 
   // Read-only page controllers backed by the fake psf-memo-db API.
   world.recentFeedPage = new RecentFeedPage({ memoDb })
+  world.followingFeedPage = new FollowingFeedPage({ memoDb, wallet })
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
   world.topicDiscoveryPage = new TopicDiscoveryPage({
@@ -432,6 +452,15 @@ function resolveParam (value, example) {
     return example[param]
   }
   return String(value).trim()
+}
+
+// Resolve a step value that may be a quoted literal or a <parameter> placeholder.
+function resolveText (value, example) {
+  const trimmed = String(value).trim()
+  if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return trimmed.slice(1, -1)
+  }
+  return resolveParam(value, example)
 }
 
 // Look up a post that has been loaded onto one of the read-only pages.
@@ -2202,6 +2231,165 @@ const handlers = [
     run (m, example, world) {
       if (world.searchPage.profiles.length !== 0) {
         throw new Error(`Expected no profiles in search results, got ${world.searchPage.profiles.length}.`)
+      }
+    }
+  },
+  {
+    name: 'wallet follows address',
+    pattern: /^my wallet follows the address (.+)$/,
+    run (m, example, world) {
+      const followee = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.setFollowState(myAddr, followee, true)
+    }
+  },
+  {
+    name: 'API serves post with txid address text and block height',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by the address (.+) with text (.+) at block height (\d+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const text = resolveText(m[3], example)
+      const blockHeight = parseInt(m[4], 10)
+      world.memoDb.addPost({ txid, addr, text, blockHeight })
+    }
+  },
+  {
+    name: 'API serves post with txid address and text',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by the address (.+) with text (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const text = resolveText(m[3], example)
+      world.memoDb.addPost({ txid, addr, text, blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves post with txid my address and text',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by my wallet address with text (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      const text = resolveText(m[2], example)
+      world.memoDb.addPost({ txid, addr: myAddr, text, blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves reply with txid parent and text',
+    pattern: /^the psf-memo-db API serves a reply with txid (.+) to the post with txid (.+) with text (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const parentTxid = resolveParam(m[2], example)
+      const text = resolveText(m[3], example)
+      world.memoDb.addReply({ txid, parentTxid, text, addr: 'bitcoincash:reply-author', blockHeight: 100 })
+    }
+  },
+  {
+    name: 'follow no one',
+    pattern: /^I follow no one$/,
+    run (m, example, world) {
+      const myAddr = world.wallet.walletInfo.cashAddress
+      for (const key of Object.keys(world.memoDb.followState)) {
+        if (key.startsWith(`${myAddr}|`)) {
+          world.memoDb.followState[key] = false
+        }
+      }
+    }
+  },
+  {
+    name: 'open following feed',
+    pattern: /^I open the Following feed$/,
+    async run (m, example, world) {
+      await world.followingFeedPage.load()
+      world.currentPath = FollowingFeedPage.FOLLOWING_FEED_PATH
+    }
+  },
+  {
+    name: 'open following feed with page size',
+    pattern: /^I open the Following feed with page size (\d+)$/,
+    async run (m, example, world) {
+      const limit = parseInt(m[1], 10)
+      await world.followingFeedPage.load({ limit })
+      world.currentPath = FollowingFeedPage.FOLLOWING_FEED_PATH
+    }
+  },
+  {
+    name: 'feed shows post with text',
+    pattern: /^the feed shows the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.followingFeedPage.posts.find((p) => p.text === expected)
+      if (!found) {
+        throw new Error(`Following feed does not show a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'feed does not show post with text',
+    pattern: /^the feed does not show the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.followingFeedPage.posts.find((p) => p.text === expected)
+      if (found) {
+        throw new Error(`Following feed unexpectedly shows a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'feed shows post txid before txid',
+    pattern: /^the feed shows the post with txid (.+) before the post with txid (.+)$/,
+    run (m, example, world) {
+      const firstTxid = resolveParam(m[1], example)
+      const secondTxid = resolveParam(m[2], example)
+      const posts = world.followingFeedPage.posts
+      const firstIndex = posts.findIndex((p) => p.txid === firstTxid)
+      const secondIndex = posts.findIndex((p) => p.txid === secondTxid)
+      if (firstIndex === -1) {
+        throw new Error(`Following feed does not show post ${firstTxid}.`)
+      }
+      if (secondIndex === -1) {
+        throw new Error(`Following feed does not show post ${secondTxid}.`)
+      }
+      if (firstIndex >= secondIndex) {
+        throw new Error(`Expected post ${firstTxid} before ${secondTxid}, but found at indices ${firstIndex}, ${secondIndex}.`)
+      }
+    }
+  },
+  {
+    name: 'feed shows N posts',
+    pattern: /^the feed shows (\d+) posts$/,
+    run (m, example, world) {
+      const expected = parseInt(m[1], 10)
+      const actual = world.followingFeedPage.posts.length
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} posts in following feed, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'feed can load more posts',
+    pattern: /^the feed can load more posts$/,
+    run (m, example, world) {
+      if (!world.followingFeedPage.canLoadMore()) {
+        throw new Error('Expected following feed to have more posts, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'feed shows no posts',
+    pattern: /^the feed shows no posts$/,
+    run (m, example, world) {
+      if (world.followingFeedPage.posts.length !== 0) {
+        throw new Error(`Expected no posts in following feed, got ${world.followingFeedPage.posts.length}.`)
+      }
+    }
+  },
+  {
+    name: 'feed shows not following anyone message',
+    pattern: /^the feed shows a message that I am not following anyone$/,
+    run (m, example, world) {
+      if (!world.followingFeedPage.emptyBecauseNoFollows) {
+        throw new Error('Expected following feed to show the not-following-anyone message.')
       }
     }
   }

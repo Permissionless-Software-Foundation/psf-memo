@@ -153,6 +153,10 @@ class MemoDb {
       throw err
     }
   }
+
+  async getFollowingFeed (addr, opts = {}) {
+    return this.getPage(`/posts/following/${encodeURIComponent(addr)}`, 'getFollowingFeed', opts)
+  }
 }
 
 export default MemoDb
