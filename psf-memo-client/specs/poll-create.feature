@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-29T00:37:49.079587425Z","feature_name":"Poll Create","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/poll-create.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Poll Create - 2 an empty question is rejected","scenario_hash":"5a79d6ea8c9094ac2604abc469208209595bed749d9ca791a61084a8095ae5cd","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-29T00:37:04.929072464Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Poll Create - 1, Poll Create - 2, Poll Create - 3, Poll Create - 4
 #
 # The poll composer broadcasts a Memo create-poll action (0x6d10). The

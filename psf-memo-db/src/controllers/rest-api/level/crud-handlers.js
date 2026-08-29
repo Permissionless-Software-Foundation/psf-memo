@@ -48,5 +48,12 @@ export const ENTITY_CONFIG = [
   { route: 'follow', dbProp: 'followsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'followData' },
   { route: 'room', dbProp: 'roomsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'roomData' },
   { route: 'processerror', dbProp: 'processErrorsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'errorData' },
-  { route: 'ptx', dbProp: 'ptxsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'ptxData' }
+  { route: 'ptx', dbProp: 'ptxsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'ptxData' },
+  { route: 'poll', dbProp: 'pollsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'pollData' },
+  { route: 'polloption', dbProp: 'pollOptionsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'optionData' },
+  { route: 'pollvote', dbProp: 'pollVotesDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'voteData' }
 ]
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T23:03:44.574Z","module_hash":"af3658a3d322d18b162ddedfbdf71a121b304b9e813c86a2bc7db7ad441c2f05","functions":[{"id":"func/makeCrudHandlers","name":"makeCrudHandlers","line":5,"end_line":35,"hash":"133b135aa115c058291b6df4a0b6b15152dde83c3163890e0eab0c3b018f8d4d"}]}
+// mutate4javascript-manifest-end

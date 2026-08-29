@@ -10,6 +10,9 @@ import crypto from 'node:crypto'
 import { handlePost } from '../../src/use-cases/action-types/post.js'
 import { handleReply } from '../../src/use-cases/action-types/reply.js'
 import { handleLike } from '../../src/use-cases/action-types/like.js'
+import { handleCreatePoll } from '../../src/use-cases/action-types/poll-create.js'
+import { handleAddPollOption } from '../../src/use-cases/action-types/poll-option.js'
+import { handlePollVote } from '../../src/use-cases/action-types/poll-vote.js'
 import BackupDb from '../../src/use-cases/backup-db.js'
 
 function makeInMemoryDb () {
@@ -77,6 +80,9 @@ async function createWorld () {
   const likesDb = makeInMemoryDb()
   const postLikesDb = makeInMemoryDb()
   const backupRequestsDb = makeInMemoryDb()
+  const pollDb = makeInMemoryDb()
+  const pollOptionDb = makeInMemoryDb()
+  const pollVoteDb = makeInMemoryDb()
 
   const adapters = {
     postDb: postsDb,
@@ -86,6 +92,9 @@ async function createWorld () {
     postChildDb: postChildrenDb,
     likeDb: likesDb,
     postLikeDb: postLikesDb,
+    pollDb,
+    pollOptionDb,
+    pollVoteDb,
     processErrorDb: makeInMemoryDb(),
     dbCtrl: {
       backupDb: async (height, epoch) => {
@@ -105,6 +114,9 @@ async function createWorld () {
     likesDb,
     postLikesDb,
     backupRequestsDb,
+    pollsDb: pollDb,
+    pollOptionsDb: pollOptionDb,
+    pollVotesDb: pollVoteDb,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -234,6 +246,197 @@ const handlers = [
           pushDatas: [prefix, postHash]
         }
       })
+    }
+  },
+  {
+    name: 'db instance that records poll records',
+    pattern: /^a psf-memo-db instance that records poll records$/,
+    async run () {
+      // World is already created with poll stores.
+    }
+  },
+  {
+    name: 'process a create-poll transaction',
+    pattern: /^the indexer processes a create-poll transaction with the question "(.+)" and (.+) options$/,
+    async run (m, example, world) {
+      const txid = deriveTxid(`poll-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      const question = resolveParam(m[1], example)
+      const optionCount = parseInt(resolveParam(m[2], example), 10)
+      const height = 600100
+      const addr = 'bitcoincash:qaddr-a'
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d10', 'hex')
+      const pollTypeBuf = Buffer.from([1])
+      const optionCountBuf = Buffer.from([optionCount])
+      const questionBuf = Buffer.from(question, 'utf8')
+
+      await handleCreatePoll({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'createPoll',
+          prefix,
+          pushDatas: [prefix, pollTypeBuf, optionCountBuf, questionBuf]
+        }
+      })
+    }
+  },
+  {
+    name: 'process an add-option transaction',
+    pattern: /^the indexer processes an add-option transaction for the poll (.+) with the option "(.+)"$/,
+    async run (m, example, world) {
+      const txid = deriveTxid(`option-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      const pollTxid = resolveTxid(m[1], example, world)
+      const option = resolveParam(m[2], example)
+      const height = 600101
+      const addr = 'bitcoincash:qaddr-a'
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d13', 'hex')
+      const pollHash = Buffer.from(pollTxid, 'hex').reverse()
+      const optionBuf = Buffer.from(option, 'utf8')
+
+      await handleAddPollOption({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'addPollOption',
+          prefix,
+          pushDatas: [prefix, pollHash, optionBuf]
+        }
+      })
+    }
+  },
+  {
+    name: 'process a vote transaction',
+    pattern: /^the indexer processes a vote transaction for the poll (.+) with the comment "(.+)"$/,
+    async run (m, example, world) {
+      const txid = deriveTxid(`vote-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      const pollTxid = resolveTxid(m[1], example, world)
+      const comment = resolveParam(m[2], example)
+      const height = 600102
+      const addr = 'bitcoincash:qaddr-a'
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d14', 'hex')
+      const pollHash = Buffer.from(pollTxid, 'hex').reverse()
+      const commentBuf = Buffer.from(comment, 'utf8')
+
+      await handlePollVote({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'pollVote',
+          prefix,
+          pushDatas: [prefix, pollHash, commentBuf]
+        }
+      })
+    }
+  },
+  {
+    name: 'polls store contains poll document',
+    pattern: /^the psf-memo-db stores a poll with the question "(.+)" and (.+) options$/,
+    run (m, example, world) {
+      const expectedQuestion = resolveParam(m[1], example)
+      const expectedOptionCount = parseInt(resolveParam(m[2], example), 10)
+      const matching = world.pollsDb.entries().filter(([key, value]) => {
+        return value?.question === expectedQuestion && value?.optionCount === expectedOptionCount
+      })
+      if (matching.length === 0) {
+        throw new Error(`Expected a poll document with question "${expectedQuestion}" and ${expectedOptionCount} options.`)
+      }
+    }
+  },
+  {
+    name: 'poll options store contains option document',
+    pattern: /^the psf-memo-db stores the option "(.+)" for the poll (.+)$/,
+    run (m, example, world) {
+      const expectedOption = resolveParam(m[1], example)
+      const pollTxid = resolveTxid(m[2], example, world)
+      const matching = world.pollOptionsDb.entries().filter(([key, value]) => {
+        return value?.pollTxid === pollTxid && value?.option === expectedOption
+      })
+      if (matching.length === 0) {
+        throw new Error(`Expected an option document "${expectedOption}" for poll ${pollTxid}.`)
+      }
+    }
+  },
+  {
+    name: 'poll votes store contains vote document',
+    pattern: /^the psf-memo-db stores the vote "(.+)" for the poll (.+)$/,
+    run (m, example, world) {
+      const expectedComment = resolveParam(m[1], example)
+      const pollTxid = resolveTxid(m[2], example, world)
+      const matching = world.pollVotesDb.entries().filter(([key, value]) => {
+        return value?.pollTxid === pollTxid && value?.comment === expectedComment
+      })
+      if (matching.length === 0) {
+        throw new Error(`Expected a vote document "${expectedComment}" for poll ${pollTxid}.`)
+      }
+    }
+  },
+  {
+    name: 'process error recorded and no poll stored',
+    pattern: /^the indexer records a process error and stores no poll$/,
+    run (m, example, world) {
+      const txid = world.lastTxid
+      const errors = world.adapters.processErrorDb.entries().filter(([key]) => key === txid)
+      if (errors.length === 0) {
+        throw new Error(`Expected a process error for txid ${txid}.`)
+      }
+      const polls = world.pollsDb.entries().filter(([key]) => key === txid)
+      if (polls.length !== 0) {
+        throw new Error(`Expected no poll document for txid ${txid}, but one was stored.`)
+      }
+    }
+  },
+  {
+    name: 'process error recorded and no option stored',
+    pattern: /^the indexer records a process error and stores no option$/,
+    run (m, example, world) {
+      const txid = world.lastTxid
+      const errors = world.adapters.processErrorDb.entries().filter(([key]) => key === txid)
+      if (errors.length === 0) {
+        throw new Error(`Expected a process error for txid ${txid}.`)
+      }
+      const options = world.pollOptionsDb.entries().filter(([key]) => key === txid)
+      if (options.length !== 0) {
+        throw new Error(`Expected no option document for txid ${txid}, but one was stored.`)
+      }
+    }
+  },
+  {
+    name: 'process error recorded and no vote stored',
+    pattern: /^the indexer records a process error and stores no vote$/,
+    run (m, example, world) {
+      const txid = world.lastTxid
+      const errors = world.adapters.processErrorDb.entries().filter(([key]) => key === txid)
+      if (errors.length === 0) {
+        throw new Error(`Expected a process error for txid ${txid}.`)
+      }
+      const votes = world.pollVotesDb.entries().filter(([key]) => key === txid)
+      if (votes.length !== 0) {
+        throw new Error(`Expected no vote document for txid ${txid}, but one was stored.`)
+      }
     }
   },
   {
