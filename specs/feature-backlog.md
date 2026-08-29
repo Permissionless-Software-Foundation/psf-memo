@@ -205,7 +205,7 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 | 6.1 | Repost a memo | C, I, D | `0x6d0b` is marked *planned* in the protocol |
 | 6.2 | Ranked feed | C, D | memo.cash "ranked" post ordering |
 | 6.3 | Notifications | C, D | replies / likes / follows to my posts |
-| 6.4 | Search | C, D | posts / profiles / topics — spec drafted (task `search`), in pipeline |
+| 6.4 | Search | C, D | posts / profiles / topics — ✅ shipped (task `search`) |
 | 6.5 | Tags / hashtags | C, D | link + filter by tag |
 | 6.6 | Following feed | C, D | feed filtered to followed users |
 
@@ -213,15 +213,9 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Search (P6.4)** — spec drafted (task `search`), in pipeline:
-- `psf-memo-db`: new `GET /search?q=&limit=&offset=` returning
-  `{ posts, profiles, pagination }`. A `SearchQuery` adapter scans `postsDb`
-  (top-level posts only, replies excluded via `postParentsDb`), `namesDb`
-  (profile name), and `profilesDb` (profile bio) with case-insensitive
-  substring matching; a `SearchAll` use case; a `/search` router + controller.
-- `psf-memo-client`: a `/search` page with a search box; `MemoDb.search(q)`;
-  a `SearchPage` service; render matching posts like the feed and matching
-  profiles like recent-profiles.
+**Search (P6.4)** — ✅ shipped (task `search`), merged from the pipeline and verified (client build/test/lint, DB test/lint):
+- `psf-memo-db`: `GET /search?q=&limit=&offset=` returning `{ posts, profiles, pagination }`. A `SearchQuery` adapter scans `postsDb` (top-level posts only, replies excluded via `postParentsDb`), `namesDb` (profile name), and `profilesDb` (profile bio) with case-insensitive substring matching; a `SearchAll` use case; a `/search` router + controller.
+- `psf-memo-client`: a `/search` page with a search box; `MemoDb.search(q)`; a `SearchPage` service; render matching posts like the feed and matching profiles like recent-profiles.
 - Empty queries and no-match queries both return an empty result set (no error).
 - Spec: `psf-memo-client/specs/search.feature`.
 

@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `d11365c057` (task `search` — P6.4 Search — spec committed and handed off to coder).
-Next action: **wait for the coder → refactorer → architect pipeline to complete task `search`**, then merge the architect branch into `master` and verify the affected components (client + DB). Send money (P5.1) was skipped by user decision (no clear use case).
+Current `master` HEAD: `20328ea` (task `search` — P6.4 Search — merged from the pipeline and verified: client build/test/lint and DB test/lint all pass).
+Next action: **pick the next feature** from the backlog. Send money (P5.1) was skipped by user decision (no clear use case). Remaining candidates: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.3 Notifications, P6.5 Tags/hashtags, P6.6 Following feed.
