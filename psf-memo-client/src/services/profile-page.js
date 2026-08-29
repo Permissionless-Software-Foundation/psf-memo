@@ -32,8 +32,8 @@ class ProfilePage {
     const data = await this.memoDb.getPostsByAddr(this.addr, { limit, offset })
     this.posts = data.posts || []
     this.pagination = data.pagination || null
-    this.followState = await this._loadFollowState()
-    this.muteState = await this._loadMuteState()
+    this.followState = await this._loadState('getFollowState')
+    this.muteState = await this._loadState('getMuteState')
 
     return {
       posts: this.posts,
@@ -54,20 +54,11 @@ class ProfilePage {
     }
   }
 
-  // Fetch the viewer's follow state for the target address, or false when
-  // there is no viewer or the profile is the viewer's own.
-  async _loadFollowState () {
+  // Fetch a viewer state for the target address, or false when there is no
+  // viewer or the profile is the viewer's own.
+  async _loadState (method) {
     if (this.myAddr && !this.isOwnProfile()) {
-      return this.memoDb.getFollowState(this.myAddr, this.addr)
-    }
-    return false
-  }
-
-  // Fetch the viewer's mute state for the target address, or false when
-  // there is no viewer or the profile is the viewer's own.
-  async _loadMuteState () {
-    if (this.myAddr && !this.isOwnProfile()) {
-      return this.memoDb.getMuteState(this.myAddr, this.addr)
+      return this.memoDb[method](this.myAddr, this.addr)
     }
     return false
   }
@@ -94,12 +85,7 @@ class ProfilePage {
 
   // Delegate follow/unfollow to the injected handler and reflect the new state.
   async _setFollowState (method, nextState) {
-    if (!this.memoFollow) {
-      throw new Error('Profile page requires a memo follow handler.')
-    }
-    await this.memoFollow[method](this.addr)
-    this.followState = nextState
-    return { ok: true }
+    return this._setState(this.memoFollow, 'follow', 'followState', method, nextState)
   }
 
   canMute () {
@@ -120,11 +106,17 @@ class ProfilePage {
 
   // Delegate mute/unmute to the injected handler and reflect the new state.
   async _setMuteState (method, nextState) {
-    if (!this.memoMute) {
-      throw new Error('Profile page requires a memo mute handler.')
+    return this._setState(this.memoMute, 'mute', 'muteState', method, nextState)
+  }
+
+  // Delegate a follow/mute action to the injected handler and reflect the new
+  // state on the matching field.
+  async _setState (handler, label, stateField, method, nextState) {
+    if (!handler) {
+      throw new Error(`Profile page requires a memo ${label} handler.`)
     }
-    await this.memoMute[method](this.addr)
-    this.muteState = nextState
+    await handler[method](this.addr)
+    this[stateField] = nextState
     return { ok: true }
   }
 

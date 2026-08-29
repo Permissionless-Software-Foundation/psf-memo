@@ -75,49 +75,21 @@ function Profile (props) {
     setThreadTxid(null)
   }
 
-  const handleFollow = async () => {
+  const runAction = async (method, failMsg) => {
     if (!profilePage || busy) return
     setBusy(true)
     try {
-      await profilePage.follow()
+      await profilePage[method]()
     } catch (err) {
-      setError(err.message || 'Failed to follow')
+      setError(err.message || failMsg)
     }
     setBusy(false)
   }
 
-  const handleUnfollow = async () => {
-    if (!profilePage || busy) return
-    setBusy(true)
-    try {
-      await profilePage.unfollow()
-    } catch (err) {
-      setError(err.message || 'Failed to unfollow')
-    }
-    setBusy(false)
-  }
-
-  const handleMute = async () => {
-    if (!profilePage || busy) return
-    setBusy(true)
-    try {
-      await profilePage.mute()
-    } catch (err) {
-      setError(err.message || 'Failed to mute')
-    }
-    setBusy(false)
-  }
-
-  const handleUnmute = async () => {
-    if (!profilePage || busy) return
-    setBusy(true)
-    try {
-      await profilePage.unmute()
-    } catch (err) {
-      setError(err.message || 'Failed to unmute')
-    }
-    setBusy(false)
-  }
+  const handleFollow = () => runAction('follow', 'Failed to follow')
+  const handleUnfollow = () => runAction('unfollow', 'Failed to unfollow')
+  const handleMute = () => runAction('mute', 'Failed to mute')
+  const handleUnmute = () => runAction('unmute', 'Failed to unmute')
 
   useEffect(() => {
     const loadProfile = async () => {

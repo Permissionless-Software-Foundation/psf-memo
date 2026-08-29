@@ -31,51 +31,15 @@ class MemoDb {
   }
 
   async getFollowState (followerAddr, followeeAddr) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/follow/state`,
-        {
-          params: {
-            follower: followerAddr,
-            followee: followeeAddr
-          }
-        }
-      )
-      return result.data.following === true
-    } catch (err) {
-      console.error('Error in getFollowState()')
-      throw err
-    }
+    return this._getState('/follow/state', 'getFollowState', { follower: followerAddr, followee: followeeAddr }, 'following')
   }
 
   async getMuteState (muterAddr, muteeAddr) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/mute/state`,
-        {
-          params: {
-            muter: muterAddr,
-            mutee: muteeAddr
-          }
-        }
-      )
-      return result.data.muted === true
-    } catch (err) {
-      console.error('Error in getMuteState()')
-      throw err
-    }
+    return this._getState('/mute/state', 'getMuteState', { muter: muterAddr, mutee: muteeAddr }, 'muted')
   }
 
   async getMuted (muterAddr) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/mute/muted/${encodeURIComponent(muterAddr)}`
-      )
-      return result.data.muted || []
-    } catch (err) {
-      console.error('Error in getMuted()')
-      throw err
-    }
+    return this._getList(`/mute/muted/${encodeURIComponent(muterAddr)}`, 'getMuted', 'muted')
   }
 
   async getTopics () {
@@ -87,28 +51,31 @@ class MemoDb {
   }
 
   async getTopicFollowState (room, addr) {
+    return this._getState(`/topics/${encodeURIComponent(room)}/follow/state`, 'getTopicFollowState', { addr }, 'following')
+  }
+
+  async getTopicFollowers (room) {
+    return this._getList(`/topics/${encodeURIComponent(room)}/followers`, 'getTopicFollowers', 'followers')
+  }
+
+  // GET a boolean state endpoint and coerce the named field to a boolean.
+  async _getState (path, name, params, field) {
     try {
-      const result = await this.axios.get(
-        `${config.backend}/topics/${encodeURIComponent(room)}/follow/state`,
-        {
-          params: { addr }
-        }
-      )
-      return result.data.following === true
+      const result = await this.axios.get(`${config.backend}${path}`, { params })
+      return result.data[field] === true
     } catch (err) {
-      console.error('Error in getTopicFollowState()')
+      console.error(`Error in ${name}()`)
       throw err
     }
   }
 
-  async getTopicFollowers (room) {
+  // GET a list endpoint and return the named array field, defaulting to [].
+  async _getList (path, name, field) {
     try {
-      const result = await this.axios.get(
-        `${config.backend}/topics/${encodeURIComponent(room)}/followers`
-      )
-      return result.data.followers || []
+      const result = await this.axios.get(`${config.backend}${path}`)
+      return result.data[field] || []
     } catch (err) {
-      console.error('Error in getTopicFollowers()')
+      console.error(`Error in ${name}()`)
       throw err
     }
   }
