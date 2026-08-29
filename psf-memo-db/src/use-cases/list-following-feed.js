@@ -6,20 +6,14 @@
 */
 
 import { parseLimit, parseOffset, assemblePostPage } from './lib/pagination.js'
+import { ListUseCase } from './lib/use-case.js'
 
-class ListFollowingFeed {
+class ListFollowingFeed extends ListUseCase {
   constructor (localConfig = {}) {
-    this.adapters = localConfig.adapters
-    if (!this.adapters) {
-      throw new Error('Adapters required when instantiating ListFollowingFeed use case.')
-    }
-    if (!this.adapters.postQuery) {
-      throw new Error('postQuery adapter required for ListFollowingFeed use case.')
-    }
+    super(localConfig, { useCaseName: 'ListFollowingFeed', adapterName: 'postQuery' })
     if (!this.adapters.followQuery) {
       throw new Error('followQuery adapter required for ListFollowingFeed use case.')
     }
-    this.execute = this.execute.bind(this)
   }
 
   parseAddr (addr) {
