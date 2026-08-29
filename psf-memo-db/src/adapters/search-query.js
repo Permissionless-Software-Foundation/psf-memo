@@ -7,9 +7,8 @@
   - profilesDb:     address -> { text, ... } used for profile-bio search
 */
 
-function normalizeQuery (query) {
-  return String(query ?? '').trim().toLowerCase()
-}
+import { normalizeQuery } from '../lib/search.js'
+import { loadReplyTxids } from './lib/load-reply-txids.js'
 
 class SearchQuery {
   constructor (localConfig = {}) {
@@ -36,27 +35,15 @@ class SearchQuery {
     this.profileMatches = this.profileMatches.bind(this)
   }
 
-  async loadReplyTxids () {
-    const replyTxids = new Set()
-
-    for await (const [childTxid] of this.postParentsDb.iterator()) {
-      replyTxids.add(childTxid)
-    }
-
-    return replyTxids
-  }
-
   async searchPosts (query) {
     const normalized = normalizeQuery(query)
     if (normalized.length === 0) return []
 
-    const replyTxids = await this.loadReplyTxids()
+    const replyTxids = await loadReplyTxids(this.postParentsDb)
     const matches = []
 
     for await (const [txid, post] of this.postsDb.iterator()) {
-      if (replyTxids.has(txid)) continue
-      if (!post || typeof post.text !== 'string') continue
-      if (post.text.toLowerCase().includes(normalized)) {
+      if (this.isMatchingPost(txid, post, replyTxids, normalized)) {
         matches.push({
           txid,
           addr: post.addr,
@@ -70,32 +57,42 @@ class SearchQuery {
     return matches
   }
 
+  isMatchingPost (txid, post, replyTxids, normalized) {
+    if (replyTxids.has(txid)) return false
+    if (!post || typeof post.text !== 'string') return false
+    return post.text.toLowerCase().includes(normalized)
+  }
+
   async searchProfiles (query) {
     const normalized = normalizeQuery(query)
     if (normalized.length === 0) return []
 
-    const names = new Map()
-    for await (const [addr, nameData] of this.namesDb.iterator()) {
-      if (!nameData) continue
-      names.set(addr, {
-        name: nameData.name,
-        txid: nameData.txid,
-        seen: nameData.seen,
-        blockHeight: nameData.blockHeight ?? 0
-      })
-    }
+    const names = await this.loadProfileRecords(this.namesDb, 'name')
+    const profiles = await this.loadProfileRecords(this.profilesDb, 'text')
+    const matches = this.matchByName(names, profiles, normalized)
+    this.matchByText(names, profiles, normalized, matches)
+    return Array.from(matches.values())
+  }
 
-    const profiles = new Map()
-    for await (const [addr, profile] of this.profilesDb.iterator()) {
-      if (!profile) continue
-      profiles.set(addr, {
-        text: profile.text,
-        txid: profile.txid,
-        seen: profile.seen,
-        blockHeight: profile.blockHeight ?? 0
-      })
-    }
+  async loadProfileRecords (db, field) {
+    return this.loadRecords(db, (record) => ({
+      [field]: record[field],
+      txid: record.txid,
+      seen: record.seen,
+      blockHeight: record.blockHeight ?? 0
+    }))
+  }
 
+  async loadRecords (db, mapper) {
+    const records = new Map()
+    for await (const [addr, record] of db.iterator()) {
+      if (!record) continue
+      records.set(addr, mapper(record))
+    }
+    return records
+  }
+
+  matchByName (names, profiles, normalized) {
     const matches = new Map()
     for (const [addr, nameRecord] of names.entries()) {
       if (typeof nameRecord.name === 'string' && nameRecord.name.toLowerCase().includes(normalized)) {
@@ -103,17 +100,19 @@ class SearchQuery {
         matches.set(addr, this.profileMatches(addr, nameRecord, profileRecord))
       }
     }
+    return matches
+  }
 
+  matchByText (names, profiles, normalized, matches) {
     for (const [addr, profileRecord] of profiles.entries()) {
-      if (typeof profileRecord.text === 'string' && profileRecord.text.toLowerCase().includes(normalized)) {
-        if (!matches.has(addr)) {
-          const nameRecord = names.get(addr) || {}
-          matches.set(addr, this.profileMatches(addr, nameRecord, profileRecord))
-        }
+      if (this.textMatches(profileRecord, normalized) && !matches.has(addr)) {
+        matches.set(addr, this.profileMatches(addr, names.get(addr) || {}, profileRecord))
       }
     }
+  }
 
-    return Array.from(matches.values())
+  textMatches (profileRecord, normalized) {
+    return typeof profileRecord.text === 'string' && profileRecord.text.toLowerCase().includes(normalized)
   }
 
   profileMatches (addr, nameRecord, profileRecord) {

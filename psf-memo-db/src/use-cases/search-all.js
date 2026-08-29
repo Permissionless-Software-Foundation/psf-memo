@@ -8,17 +8,7 @@
 
 import { parseLimit, parseOffset } from './lib/pagination.js'
 import { ListUseCase } from './lib/use-case.js'
-
-function normalizeQuery (query) {
-  return String(query ?? '').trim().toLowerCase()
-}
-
-function sortByHeightDesc (a, b) {
-  if (b.blockHeight !== a.blockHeight) {
-    return b.blockHeight - a.blockHeight
-  }
-  return (b.seen || 0) - (a.seen || 0)
-}
+import { normalizeQuery, sortByHeightDesc } from '../lib/search.js'
 
 class SearchAll extends ListUseCase {
   constructor (localConfig = {}) {

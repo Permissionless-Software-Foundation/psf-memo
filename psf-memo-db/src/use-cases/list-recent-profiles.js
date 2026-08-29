@@ -4,19 +4,11 @@
 
 import { parseLimit, parseOffset } from './lib/pagination.js'
 import { ListUseCase } from './lib/use-case.js'
+import { sortByHeightDesc } from '../lib/search.js'
 
 class ListRecentProfiles extends ListUseCase {
   constructor (localConfig = {}) {
     super(localConfig, { useCaseName: 'ListRecentProfiles', adapterName: 'profileQuery' })
-  }
-
-  sortProfiles (profiles) {
-    return profiles.sort((a, b) => {
-      if (b.blockHeight !== a.blockHeight) {
-        return b.blockHeight - a.blockHeight
-      }
-      return (b.seen || 0) - (a.seen || 0)
-    })
   }
 
   async execute (inObj = {}) {
@@ -24,7 +16,7 @@ class ListRecentProfiles extends ListUseCase {
     const offset = parseOffset(inObj.offset)
 
     const allProfiles = await this.adapters.profileQuery.scanProfilesWithBlockHeight()
-    const sorted = this.sortProfiles(allProfiles)
+    const sorted = allProfiles.sort(sortByHeightDesc)
     const total = sorted.length
     const profiles = sorted.slice(offset, offset + limit)
 
@@ -43,5 +35,5 @@ class ListRecentProfiles extends ListUseCase {
 export default ListRecentProfiles
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-26T18:15:31.955Z","module_hash":"0a41c7c2086270d2f29266eb20b2313d2ab8782fc8a32ad6dd0b27d737a41b13","functions":[{"id":"func/ListRecentProfiles.constructor","name":"ListRecentProfiles.constructor","line":9,"end_line":11,"hash":"a2c7dd0696ac463cbc142fa7ccce4a3cadf8e246a872261733d199dbd4c153d1"},{"id":"func/ListRecentProfiles.sortProfiles","name":"ListRecentProfiles.sortProfiles","line":13,"end_line":20,"hash":"8dbe8da4b9a5c52230b5f865a6d0b5a5817a266277a72b09b93b2b0f76414d9e"},{"id":"func/ListRecentProfiles.execute","name":"ListRecentProfiles.execute","line":22,"end_line":40,"hash":"d14afac95c39e7a311d9e3a1243b6a326de38906b5ad312f014ce6b6d5459de1"}]}
+// {"version":1,"tested_at":"2026-08-29T14:25:23.929Z","module_hash":"4eee5bdcc428b107755e33bd6b2b6dd6477a01aa9feece327ba144ec4825442f","functions":[{"id":"func/ListRecentProfiles.constructor","name":"ListRecentProfiles.constructor","line":10,"end_line":12,"hash":"a2c7dd0696ac463cbc142fa7ccce4a3cadf8e246a872261733d199dbd4c153d1"},{"id":"func/ListRecentProfiles.execute","name":"ListRecentProfiles.execute","line":14,"end_line":32,"hash":"f9fc78d274ac88aad570a32a45d20364974dde79538b414823241610cf2339dc"}]}
 // mutate4javascript-manifest-end

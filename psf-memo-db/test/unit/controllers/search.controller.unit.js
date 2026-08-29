@@ -49,4 +49,27 @@ describe('#SearchRESTController', () => {
       offset: undefined
     })
   })
+
+  it('should rethrow a status error from the use case', async () => {
+    const err = new Error('bad request')
+    err.status = 400
+    uut.useCases.searchAll.execute.rejects(err)
+
+    const ctx = { query: { q: 'hello' }, body: null, throw: sandbox.stub() }
+    await uut.search(ctx)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 400)
+    assert.equal(ctx.throw.firstCall.args[1], 'bad request')
+  })
+
+  it('should throw a 500 for an unexpected error', async () => {
+    uut.useCases.searchAll.execute.rejects(new Error('boom'))
+
+    const ctx = { query: { q: 'hello' }, body: null, throw: sandbox.stub() }
+    await uut.search(ctx)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 500)
+  })
 })
