@@ -23,6 +23,23 @@ describe('GetPoll', () => {
     }
   })
 
+  it('should throw 400 when txid is an empty string', async () => {
+    const useCase = new GetPoll({
+      adapters: {
+        pollQuery: {
+          async getPoll () { return null }
+        }
+      }
+    })
+
+    try {
+      await useCase.execute({ txid: '' })
+      assert.fail('expected error')
+    } catch (err) {
+      assert.equal(err.status, 400)
+    }
+  })
+
   it('should throw 404 when poll does not exist', async () => {
     const useCase = new GetPoll({
       adapters: {

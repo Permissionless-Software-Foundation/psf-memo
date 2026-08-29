@@ -57,3 +57,10 @@ test('remainingCount counts down from the comment limit', () => {
   page.setInput('yes')
   assert.equal(page.remainingCount(), MemoPollVote.MAX_COMMENT_BYTES - 3)
 })
+
+test('starts with the in-flight flag cleared', () => {
+  const memoPollVote = new MemoPollVote({ pollTxid: POLL_TXID })
+  const page = new PollVotePage({ memoPollVote })
+
+  assert.equal(page.voting, false)
+})

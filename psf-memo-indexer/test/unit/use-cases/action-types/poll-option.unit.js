@@ -40,7 +40,7 @@ describe('handleAddPollOption', () => {
     const adapters = makeAdapters()
     const prefix = Buffer.from('6d13', 'hex')
 
-    await handleAddPollOption({
+    const result = await handleAddPollOption({
       adapters,
       txid: 'txid-1',
       signerAddr: 'bitcoincash:qaddr-a',
@@ -53,6 +53,7 @@ describe('handleAddPollOption', () => {
       }
     })
 
+    assert.isTrue(result)
     const option = await adapters.pollOptionDb.get('txid-1')
     assert.equal(option.option, 'yes')
     assert.equal(option.pollTxid, POLL_TXID)
@@ -62,7 +63,7 @@ describe('handleAddPollOption', () => {
     const adapters = makeAdapters()
     const prefix = Buffer.from('6d13', 'hex')
 
-    await handleAddPollOption({
+    const result = await handleAddPollOption({
       adapters,
       txid: 'txid-1',
       signerAddr: 'bitcoincash:qaddr-a',
@@ -75,6 +76,7 @@ describe('handleAddPollOption', () => {
       }
     })
 
+    assert.isFalse(result)
     try {
       await adapters.pollOptionDb.get('txid-1')
       assert.fail('expected option to not be stored')
@@ -89,7 +91,7 @@ describe('handleAddPollOption', () => {
     const adapters = makeAdapters()
     const prefix = Buffer.from('6d13', 'hex')
 
-    await handleAddPollOption({
+    const result = await handleAddPollOption({
       adapters,
       txid: 'txid-1',
       signerAddr: 'bitcoincash:qaddr-a',
@@ -102,6 +104,29 @@ describe('handleAddPollOption', () => {
       }
     })
 
+    assert.isFalse(result)
+    const errors = adapters.processErrorDb.entries()
+    assert.isAbove(errors.length, 0)
+  })
+
+  it('should reject a wrong push data count', async () => {
+    const adapters = makeAdapters()
+    const prefix = Buffer.from('6d13', 'hex')
+
+    const result = await handleAddPollOption({
+      adapters,
+      txid: 'txid-1',
+      signerAddr: 'bitcoincash:qaddr-a',
+      seen: 1,
+      blockHeight: 100,
+      decoded: {
+        action: 'addPollOption',
+        prefix,
+        pushDatas: [prefix, Buffer.from('yes', 'utf8')]
+      }
+    })
+
+    assert.isFalse(result)
     const errors = adapters.processErrorDb.entries()
     assert.isAbove(errors.length, 0)
   })

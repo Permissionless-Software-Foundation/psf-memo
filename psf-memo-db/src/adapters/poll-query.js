@@ -73,3 +73,7 @@ class PollQuery {
 }
 
 export default PollQuery
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T22:47:05.014Z","module_hash":"b7e55eb605d5943b533f61016cc9445be11991e805f81a5db64c5898a14caf44","functions":[{"id":"func/PollQuery.constructor","name":"PollQuery.constructor","line":20,"end_line":38,"hash":"32deeef8172fe11e250c70a4f34778045962dfcb62e9ac262288e904e6e3aa62"},{"id":"func/PollQuery.getPoll","name":"PollQuery.getPoll","line":40,"end_line":52,"hash":"80e44cb0a948458726dcc1da0f06ddbd20118981e3d00de14791f480202b941e"},{"id":"func/PollQuery.getPollOptions","name":"PollQuery.getPollOptions","line":54,"end_line":56,"hash":"f391dd3bc4e82a41d3fc0e0c7d6a2ae2f85225ee37b0c07816e20d8ad0250db1"},{"id":"func/PollQuery.getPollVotes","name":"PollQuery.getPollVotes","line":58,"end_line":60,"hash":"c18ab12a96c161e3f516fb8c7b631227e953a67cae8943962b0431526eddf2a9"},{"id":"func/PollQuery._collectByPollTxid","name":"PollQuery._collectByPollTxid","line":64,"end_line":72,"hash":"62be14afb630b72ddbd4c7d554f3e89d8aeffbf22ff7cc06509de13d5c94e4c0"}]}
+// mutate4javascript-manifest-end

@@ -63,3 +63,10 @@ test('remainingCount counts down from the question limit', () => {
   page.setInput('é')
   assert.equal(page.remainingCount(), MemoPollCreate.MAX_QUESTION_BYTES - 2)
 })
+
+test('starts with the in-flight flag cleared', () => {
+  const memoPollCreate = new MemoPollCreate({})
+  const page = new PollCreatePage({ memoPollCreate })
+
+  assert.equal(page.creating, false)
+})

@@ -28,3 +28,7 @@ class PollOptionPage extends PollActionPage {
 PollOptionPage.MAX_OPTION_BYTES = MemoPollOption.MAX_OPTION_BYTES
 
 module.exports = PollOptionPage
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T22:42:16.020Z","module_hash":"a48cec069109b655b4ab5749c6dd7da46dbf5962a88da04e6b96db94df68fa4a","functions":[]}
+// mutate4javascript-manifest-end

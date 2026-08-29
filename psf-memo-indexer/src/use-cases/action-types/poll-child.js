@@ -58,3 +58,7 @@ export async function storePollChildRecord ({
 
   return true
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T23:32:27.654Z","module_hash":"20bba06dde1c1b346b14d0ad321452309c266524993e59db802294075e2c9338","functions":[{"id":"func/storePollChildRecord","name":"storePollChildRecord","line":23,"end_line":60,"hash":"b703abce31773d096540029d909d6f04d50b6b5f846184a5cff3099452e279ff"}]}
+// mutate4javascript-manifest-end

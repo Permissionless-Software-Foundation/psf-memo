@@ -92,3 +92,7 @@ export async function handleCreatePoll (ctx) {
 }
 
 export { normalizePollCreateDatas }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T23:33:08.576Z","module_hash":"a81b3c5b31a18d2f9af2063deb06c66c7dbc3198e401969dceb096228c7da095","functions":[{"id":"func/createIfMissing","name":"createIfMissing","line":4,"end_line":10,"hash":"d59cefaf87075a2bc41538961b609387e35393d4fbf02ecfc0633026bbfdca42"},{"id":"func/normalizePollCreateDatas","name":"normalizePollCreateDatas","line":17,"end_line":33,"hash":"6684a343c21f34d45ae584c50d95b18b4258d8b5a37f2eba84fff4270028ade1"},{"id":"func/buildCreatePollPayload","name":"buildCreatePollPayload","line":39,"end_line":58,"hash":"5ab749a5515defd5900429d8273781deee98bde27f45824c27982f0f872ae6e8"},{"id":"func/handleCreatePoll","name":"handleCreatePoll","line":60,"end_line":92,"hash":"2de305b58270638fd3cd9f46e1f2bd6decaba4c731b05ce640512e0885173f0c"}]}
+// mutate4javascript-manifest-end

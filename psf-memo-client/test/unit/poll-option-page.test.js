@@ -57,3 +57,10 @@ test('remainingCount counts down from the option limit', () => {
   page.setInput('yes')
   assert.equal(page.remainingCount(), MemoPollOption.MAX_OPTION_BYTES - 3)
 })
+
+test('starts with the in-flight flag cleared', () => {
+  const memoPollOption = new MemoPollOption({ pollTxid: POLL_TXID })
+  const page = new PollOptionPage({ memoPollOption })
+
+  assert.equal(page.adding, false)
+})

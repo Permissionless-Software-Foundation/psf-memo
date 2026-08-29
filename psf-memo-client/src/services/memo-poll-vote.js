@@ -15,7 +15,6 @@
 */
 
 const MemoTxidAction = require('./memo-txid-action')
-const { byteLength } = require('./utf8')
 const { buildTxidTextPayload } = require('./hex')
 
 const MEMO_POLL_VOTE_PREFIX = '6d14'
@@ -28,29 +27,15 @@ class MemoPollVote extends MemoTxidAction {
     lengthMessage: `Poll vote comment is too long. Maximum is ${MAX_COMMENT_BYTES} bytes.`,
     emptyMessage: 'Poll vote comment must not be empty.',
     lengthCode: 'poll_vote_length',
-    validationCode: 'poll_vote_validation'
-  }
-
-  // A poll vote comment is over-length when its UTF-8 byte count exceeds the limit.
-  isTooLong (comment) {
-    return byteLength(comment) > MAX_COMMENT_BYTES
+    validationCode: 'poll_vote_validation',
+    reflectMethod: 'addVote',
+    valueField: 'comment',
+    maxBytes: MAX_COMMENT_BYTES
   }
 
   // Compose and broadcast a Memo poll-vote action.
   vote (comment) {
     return this.broadcastTxid(comment, buildTxidTextPayload)
-  }
-
-  // Record the new vote on the injected poll store when one is present.
-  reflect (txid, comment) {
-    if (this.polls && typeof this.polls.addVote === 'function') {
-      this.polls.addVote({
-        txid,
-        pollTxid: this.pollTxid,
-        address: this.wallet.walletInfo.cashAddress,
-        comment
-      })
-    }
   }
 }
 
@@ -58,3 +43,7 @@ MemoPollVote.MEMO_POLL_VOTE_PREFIX = MEMO_POLL_VOTE_PREFIX
 MemoPollVote.MAX_COMMENT_BYTES = MAX_COMMENT_BYTES
 
 module.exports = MemoPollVote
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T23:38:23.086Z","module_hash":"c60989293dede6eeaf8edd168d00745e7299620b80874f87680337cc2f4d36fc","functions":[{"id":"func/MemoPollVote.vote","name":"MemoPollVote.vote","line":37,"end_line":39,"hash":"c6c194dfaf6c92f5cafcf86772bd295d038536ea20079931e4144eb5141c7101"}]}
+// mutate4javascript-manifest-end

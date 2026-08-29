@@ -64,3 +64,7 @@ PollCreatePage.MAX_QUESTION_BYTES = MemoPollCreate.MAX_QUESTION_BYTES
 PollCreatePage.RECENT_FEED_PATH = RECENT_FEED_PATH
 
 module.exports = PollCreatePage
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T22:46:38.952Z","module_hash":"f4505b989b5fa6868f584fb729256221b7f4c8f68dbfdd21b9e1a60fc93dea49","functions":[{"id":"func/PollCreatePage.constructor","name":"PollCreatePage.constructor","line":22,"end_line":29,"hash":"7fea9e1104d00994f47b87163f114da456ef3a93d3bee4516ac9516f6f5e0dc5"},{"id":"func/PollCreatePage.setOptionCount","name":"PollCreatePage.setOptionCount","line":32,"end_line":35,"hash":"942e0826112c964545b8e198a935fec15f4664d4933e1aec0537ea3f9b03593d"},{"id":"func/PollCreatePage.remainingCount","name":"PollCreatePage.remainingCount","line":38,"end_line":43,"hash":"ce0f4da879dcc66b216f905fcc1a0141c4432f8b46ab29728de7d1c00fd22f0c"},{"id":"func/PollCreatePage._questionBytes","name":"PollCreatePage._questionBytes","line":45,"end_line":47,"hash":"37e13e5bdc13c74698809f523cd1ac5ad126efea55a747ac21ef1367e0b2834e"},{"id":"func/PollCreatePage._setBusy","name":"PollCreatePage._setBusy","line":50,"end_line":52,"hash":"bccf9e30325028d65bddeb286090bc025b5a051a77286d7b8ea1ea21a827b498"},{"id":"func/PollCreatePage._perform","name":"PollCreatePage._perform","line":55,"end_line":60,"hash":"7667bebef3299e042042c8849930966de75acffa5900082d4dccd73e01f7e4fb"}]}
+// mutate4javascript-manifest-end

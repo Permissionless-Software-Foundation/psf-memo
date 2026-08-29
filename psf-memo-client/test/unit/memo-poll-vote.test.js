@@ -90,6 +90,16 @@ test('vote rejects a comment that exceeds the byte limit', async () => {
   assert.equal(wallet.broadcasts.length, 0)
 })
 
+test('vote accepts a comment at the byte limit', async () => {
+  const wallet = makeWallet()
+  const memoPollVote = new MemoPollVote({ wallet, pollTxid: POLL_TXID })
+  const comment = 'a'.repeat(MemoPollVote.MAX_COMMENT_BYTES)
+
+  await memoPollVote.vote(comment)
+
+  assert.equal(wallet.broadcasts.length, 1)
+})
+
 test('vote requires a wallet', async () => {
   const memoPollVote = new MemoPollVote({ pollTxid: POLL_TXID })
 

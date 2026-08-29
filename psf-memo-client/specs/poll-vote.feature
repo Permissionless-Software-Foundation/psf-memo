@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-29T00:37:55.277305747Z","feature_name":"Poll Vote","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/poll-vote.feature","background_hash":"9d8ea293796e711d8de8ea019377a9ade22ab7cb963aeef565a8d1a5ee447119","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Poll Vote - 2 an empty comment is rejected","scenario_hash":"31d59bfcd52104756d65afbc7a76928752bdd662fc414a889e94a3b24d8be577","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-29T00:37:55.277305747Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Poll Vote - 1, Poll Vote - 2, Poll Vote - 3
 #
 # The vote composer broadcasts a Memo poll-vote action (0x6d14). The payload

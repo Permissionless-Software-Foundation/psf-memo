@@ -53,3 +53,7 @@ class PollActionPage extends PageController {
 }
 
 module.exports = PollActionPage
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T22:46:20.654Z","module_hash":"424696b48899d06ade5386ec5be3588c6b1ea1a30fe8ce9ed43a3636ff446d68","functions":[{"id":"func/PollActionPage.constructor","name":"PollActionPage.constructor","line":27,"end_line":33,"hash":"4b6202ed9803158cf5b646f3e48635ad318c50adb503b13a7e6d8c01b1e95fea"},{"id":"func/PollActionPage.remainingCount","name":"PollActionPage.remainingCount","line":36,"end_line":38,"hash":"99ebb2601bf4ecfc6d9fcfe03a4ffcb3ec2dc7174a12ee668ce35e44083df96d"},{"id":"func/PollActionPage._setBusy","name":"PollActionPage._setBusy","line":41,"end_line":43,"hash":"b25ece6baf7159cdfbb0ddcd435617965f884d0541108f9e2d677a1e65cba970"},{"id":"func/PollActionPage._perform","name":"PollActionPage._perform","line":46,"end_line":52,"hash":"b16fe867f293e1aa356a38484a912d112e90157cb7d74966facf6b59861c1495"}]}
+// mutate4javascript-manifest-end

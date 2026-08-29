@@ -28,3 +28,7 @@ class PollVotePage extends PollActionPage {
 PollVotePage.MAX_COMMENT_BYTES = MemoPollVote.MAX_COMMENT_BYTES
 
 module.exports = PollVotePage
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T22:42:28.145Z","module_hash":"bd9a88cc558b549e49f8f0b8d9e7eb3352b33a906d345d41a13724ba3782bfe7","functions":[]}
+// mutate4javascript-manifest-end

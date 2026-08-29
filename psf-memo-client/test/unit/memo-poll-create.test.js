@@ -48,6 +48,38 @@ test('create broadcasts with the create-poll prefix and payload', async () => {
   const decoded = decodePayload(wallet.broadcasts[0].msg)
   assert.equal(decoded.question, 'which is better?')
   assert.equal(decoded.optionCount, 2)
+  assert.equal(decoded.pollType, 1)
+})
+
+test('create accepts an option count of one', async () => {
+  const wallet = makeWallet()
+  const memoPollCreate = new MemoPollCreate({ wallet })
+
+  await memoPollCreate.create('one option?', 1)
+
+  assert.equal(wallet.broadcasts.length, 1)
+})
+
+test('create rejects an option count of zero', async () => {
+  const wallet = makeWallet()
+  const memoPollCreate = new MemoPollCreate({ wallet })
+
+  await assert.rejects(
+    () => memoPollCreate.create('zero options?', 0),
+    { code: 'poll_create_validation', message: /positive number/ }
+  )
+  assert.equal(wallet.broadcasts.length, 0)
+})
+
+test('create rejects a non-numeric option count', async () => {
+  const wallet = makeWallet()
+  const memoPollCreate = new MemoPollCreate({ wallet })
+
+  await assert.rejects(
+    () => memoPollCreate.create('weird count?', 'abc'),
+    { code: 'poll_create_validation', message: /positive number/ }
+  )
+  assert.equal(wallet.broadcasts.length, 0)
 })
 
 test('create reflects the new poll on the injected poll store', async () => {

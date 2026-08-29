@@ -15,7 +15,6 @@
 */
 
 const MemoTxidAction = require('./memo-txid-action')
-const { byteLength } = require('./utf8')
 const { buildTxidTextPayload } = require('./hex')
 
 const MEMO_ADD_POLL_OPTION_PREFIX = '6d13'
@@ -28,29 +27,15 @@ class MemoPollOption extends MemoTxidAction {
     lengthMessage: `Poll option is too long. Maximum is ${MAX_OPTION_BYTES} bytes.`,
     emptyMessage: 'Poll option must not be empty.',
     lengthCode: 'poll_option_length',
-    validationCode: 'poll_option_validation'
-  }
-
-  // A poll option is over-length when its UTF-8 byte count exceeds the limit.
-  isTooLong (option) {
-    return byteLength(option) > MAX_OPTION_BYTES
+    validationCode: 'poll_option_validation',
+    reflectMethod: 'addOption',
+    valueField: 'option',
+    maxBytes: MAX_OPTION_BYTES
   }
 
   // Compose and broadcast a Memo add-poll-option action.
   add (option) {
     return this.broadcastTxid(option, buildTxidTextPayload)
-  }
-
-  // Record the new option on the injected poll store when one is present.
-  reflect (txid, option) {
-    if (this.polls && typeof this.polls.addOption === 'function') {
-      this.polls.addOption({
-        txid,
-        pollTxid: this.pollTxid,
-        address: this.wallet.walletInfo.cashAddress,
-        option
-      })
-    }
   }
 }
 
@@ -58,3 +43,7 @@ MemoPollOption.MEMO_ADD_POLL_OPTION_PREFIX = MEMO_ADD_POLL_OPTION_PREFIX
 MemoPollOption.MAX_OPTION_BYTES = MAX_OPTION_BYTES
 
 module.exports = MemoPollOption
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T23:38:02.285Z","module_hash":"f8432d9ccb0073f5cce9f96415fdfb033876f498a7d80aadaca1ed96d89d4ce3","functions":[{"id":"func/MemoPollOption.add","name":"MemoPollOption.add","line":37,"end_line":39,"hash":"e0343ddce138d48e3fec2c5c0169e9d99f374835cc95d381383a254297d7f1dc"}]}
+// mutate4javascript-manifest-end

@@ -90,6 +90,16 @@ test('add rejects an option that exceeds the byte limit', async () => {
   assert.equal(wallet.broadcasts.length, 0)
 })
 
+test('add accepts an option at the byte limit', async () => {
+  const wallet = makeWallet()
+  const memoPollOption = new MemoPollOption({ wallet, pollTxid: POLL_TXID })
+  const option = 'a'.repeat(MemoPollOption.MAX_OPTION_BYTES)
+
+  await memoPollOption.add(option)
+
+  assert.equal(wallet.broadcasts.length, 1)
+})
+
 test('add requires a wallet', async () => {
   const memoPollOption = new MemoPollOption({ pollTxid: POLL_TXID })
 

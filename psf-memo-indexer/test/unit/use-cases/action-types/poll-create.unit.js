@@ -155,4 +155,48 @@ describe('normalizePollCreateDatas', () => {
     assert.isTrue(result.ok)
     assert.equal(result.question, 'hello')
   })
+
+  it('should reject a null push data list', () => {
+    const result = normalizePollCreateDatas(null)
+    assert.isFalse(result.ok)
+  })
+
+  it('should report a zero push count for an empty list', () => {
+    const result = normalizePollCreateDatas([])
+    assert.isFalse(result.ok)
+    assert.match(result.error, /count 0/)
+  })
+
+  it('should report the actual push count for a short list', () => {
+    const result = normalizePollCreateDatas([Buffer.from('6d10', 'hex')])
+    assert.isFalse(result.ok)
+    assert.match(result.error, /count 1/)
+  })
+
+  it('should accept a combined push of exactly two bytes', () => {
+    const result = normalizePollCreateDatas([
+      Buffer.from('6d10', 'hex'),
+      Buffer.from([1, 2])
+    ])
+    assert.isTrue(result.ok)
+    assert.equal(result.pollType, 1)
+    assert.equal(result.optionCount, 2)
+  })
+
+  it('should reject a combined push that is too short', () => {
+    const result = normalizePollCreateDatas([
+      Buffer.from('6d10', 'hex'),
+      Buffer.from([1])
+    ])
+    assert.isFalse(result.ok)
+  })
+
+  it('should reject a three-push payload', () => {
+    const result = normalizePollCreateDatas([
+      Buffer.from('6d10', 'hex'),
+      Buffer.from([1]),
+      Buffer.from([2])
+    ])
+    assert.isFalse(result.ok)
+  })
 })

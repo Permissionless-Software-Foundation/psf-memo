@@ -64,3 +64,7 @@ export function getActionFromPrefix (prefixBuf) {
   if (!isMemoPrefix(prefixBuf)) return null
   return ACTION_NAMES[`${prefixBuf[0]}-${prefixBuf[1]}`] || null
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-28T23:34:16.405Z","module_hash":"d2cadfbbec174eedf255ae25df8891bd27f5a337b390df97064fe80f9c1ee712","functions":[{"id":"func/isMemoPrefix","name":"isMemoPrefix","line":59,"end_line":61,"hash":"38aab4da302e269a0b2206cb93704a17ae8f42f49d3c969ef525243ce9a42792"},{"id":"func/getActionFromPrefix","name":"getActionFromPrefix","line":63,"end_line":66,"hash":"31ff61d788f5043d043f07abe79e9242ec1d31180b2737e81af95e7c97fdc71c"}]}
+// mutate4javascript-manifest-end
