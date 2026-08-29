@@ -207,11 +207,16 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 | 6.3 | Notifications | C, D | replies / likes / follows to my posts |
 | 6.4 | Search | C, D | posts / profiles / topics — ✅ shipped (task `search`) |
 | 6.5 | Tags / hashtags | C, D | link + filter by tag |
-| 6.6 | Following feed | C, D | feed filtered to followed users |
+| 6.6 | Following feed | C, D | feed filtered to followed users — 🔜 in pipeline (task `following-feed`) |
 
 ---
 
 ## Suggested next spec
+
+**Following feed (P6.6)** — 🔜 spec'd and handed off to the coder (task `following-feed`, commit `6d94372`). Following Feed is a read-only aggregation: the viewer sees top-level posts (replies excluded) authored only by profiles they follow, newest first, never their own posts. 
+- `psf-memo-db`: new `GET /posts/following/:addr?limit=&offset=` returning `{ posts, pagination }`, joining the follows index (`FollowQuery.listFollowing`) with the posts index. Empty following or no posts → empty result set.
+- `psf-memo-client`: a "Following" nav page at `/posts/following` that reads the viewer's wallet address, calls the new endpoint (a `MemoDb.getFollowingFeed`), and renders posts like the recent feed; shows "you aren't following anyone" when following nobody.
+- Spec: `psf-memo-client/specs/following-feed.feature`.
 
 **Search (P6.4)** — ✅ shipped (task `search`), merged from the pipeline and verified (client build/test/lint, DB test/lint):
 - `psf-memo-db`: `GET /search?q=&limit=&offset=` returning `{ posts, profiles, pagination }`. A `SearchQuery` adapter scans `postsDb` (top-level posts only, replies excluded via `postParentsDb`), `namesDb` (profile name), and `profilesDb` (profile bio) with case-insensitive substring matching; a `SearchAll` use case; a `/search` router + controller.
