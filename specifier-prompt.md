@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `ac46807` (task `mute-user` — P4.1/P4.2 mute/unmute user — merged from the pipeline and verified: client build/test/lint, DB test/lint, and indexer test/lint all pass).
-Next action: **spec P5.1** — Send money with memo (`0x6d24`).
+Current `master` HEAD: `d11365c057` (task `search` — P6.4 Search — spec committed and handed off to coder).
+Next action: **wait for the coder → refactorer → architect pipeline to complete task `search`**, then merge the architect branch into `master` and verify the affected components (client + DB). Send money (P5.1) was skipped by user decision (no clear use case).
