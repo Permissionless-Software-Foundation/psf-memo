@@ -270,6 +270,110 @@ describe('#PostQuery', () => {
     })
   })
 
+  describe('#scanFollowingFeedTxidsAndCount', () => {
+    const viewerAddr = 'bitcoincash:viewer'
+    const followeeA = 'bitcoincash:followee-a'
+    const followeeB = 'bitcoincash:followee-b'
+
+    it('should return posts only from followed addresses excluding the viewer', async () => {
+      async function * mockHeights () {
+        yield ['000000600300:post-a', { txid: 'post-a' }]
+        yield ['000000600250:post-viewer', { txid: 'post-viewer' }]
+        yield ['000000600200:post-b', { txid: 'post-b' }]
+        yield ['000000600100:post-other', { txid: 'post-other' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => {
+        const map = {
+          'post-a': { addr: followeeA, text: 'a' },
+          'post-viewer': { addr: viewerAddr, text: 'mine' },
+          'post-b': { addr: followeeB, text: 'b' },
+          'post-other': { addr: 'bitcoincash:other', text: 'other' }
+        }
+        return map[txid]
+      })
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA, followeeB],
+        { limit: 10, offset: 0 }
+      )
+
+      assert.deepEqual(result.txids, ['post-a', 'post-b'])
+      assert.equal(result.total, 2)
+    })
+
+    it('should exclude replies from the following feed', async () => {
+      async function * mockParents () {
+        yield ['reply-a', { parentTxid: 'post-a', childTxid: 'reply-a' }]
+      }
+      async function * mockHeights () {
+        yield ['000000600300:reply-a', { txid: 'reply-a' }]
+        yield ['000000600200:post-a', { txid: 'post-a' }]
+      }
+      postParentsDb.iterator.returns(mockParents())
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => {
+        return { addr: followeeA, text: txid }
+      })
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA],
+        { limit: 10, offset: 0 }
+      )
+
+      assert.deepEqual(result.txids, ['post-a'])
+      assert.equal(result.total, 1)
+    })
+
+    it('should apply limit and offset', async () => {
+      async function * mockHeights () {
+        yield ['000000600400:post-a', { txid: 'post-a' }]
+        yield ['000000600300:post-b', { txid: 'post-b' }]
+        yield ['000000600200:post-c', { txid: 'post-c' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => {
+        return { addr: followeeA, text: txid }
+      })
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA],
+        { limit: 1, offset: 1 }
+      )
+
+      assert.deepEqual(result.txids, ['post-b'])
+      assert.equal(result.total, 3)
+    })
+
+    it('should skip missing posts', async () => {
+      async function * mockHeights () {
+        yield ['000000600200:post-a', { txid: 'post-a' }]
+        yield ['000000600100:missing', { txid: 'missing' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => {
+        if (txid === 'missing') {
+          const err = new Error('not found')
+          err.notFound = true
+          throw err
+        }
+        return { addr: followeeA, text: txid }
+      })
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA],
+        { limit: 10, offset: 0 }
+      )
+
+      assert.deepEqual(result.txids, ['post-a'])
+      assert.equal(result.total, 1)
+    })
+  })
+
   describe('#isReply', () => {
     it('should return true when the txid has a parent post', async () => {
       postParentsDb.get.withArgs('reply-1').resolves({ parentTxid: 'parent-1' })

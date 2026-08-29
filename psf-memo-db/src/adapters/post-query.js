@@ -56,6 +56,7 @@ class PostQuery {
     this.topLevelPostTxids = this.topLevelPostTxids.bind(this)
     this.loadReplyTxids = this.loadReplyTxids.bind(this)
     this.isReply = this.isReply.bind(this)
+    this.scanFollowingFeedTxidsAndCount = this.scanFollowingFeedTxidsAndCount.bind(this)
   }
 
   static padHeight (height) {
@@ -305,6 +306,39 @@ class PostQuery {
     }
 
     return count
+  }
+
+  // Iterate the global postHeights index newest first, returning only top-level
+  // posts (replies excluded) authored by addresses the viewer follows, excluding
+  // the viewer's own posts. Returns both the page txids and total matching count.
+  async scanFollowingFeedTxidsAndCount (viewerAddr, followingAddrs, { limit, offset }) {
+    const followeeSet = new Set(followingAddrs.filter((addr) => addr !== viewerAddr))
+    const replyTxids = await this.loadReplyTxids()
+    const txids = []
+    let skipped = 0
+    let total = 0
+
+    for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
+      const txid = this.txidFromPostHeight(key, value)
+      if (replyTxids.has(txid)) continue
+
+      const post = await this.getPostOrNull(txid)
+      if (!post) continue
+      if (!followeeSet.has(post.addr)) continue
+
+      total++
+
+      if (skipped < offset) {
+        skipped++
+        continue
+      }
+
+      if (txids.length < limit) {
+        txids.push(txid)
+      }
+    }
+
+    return { txids, total }
   }
 }
 

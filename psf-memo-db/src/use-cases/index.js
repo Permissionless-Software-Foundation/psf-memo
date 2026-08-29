@@ -5,6 +5,7 @@
 import ListRecentProfiles from './list-recent-profiles.js'
 import ListRecentPosts from './list-recent-posts.js'
 import ListPostsByAddr from './list-posts-by-addr.js'
+import ListFollowingFeed from './list-following-feed.js'
 import GetPostThread from './get-post-thread.js'
 import FollowState from './follow-state.js'
 import ListFollowing from './list-following.js'
@@ -33,6 +34,7 @@ class UseCases {
     this.listRecentProfiles = null
     this.listRecentPosts = null
     this.listPostsByAddr = null
+    this.listFollowingFeed = null
     this.getPostThread = null
     this.followState = null
     this.listFollowing = null
@@ -59,6 +61,10 @@ class UseCases {
     })
 
     this.listPostsByAddr = new ListPostsByAddr({
+      adapters: this.adapters
+    })
+
+    this.listFollowingFeed = new ListFollowingFeed({
       adapters: this.adapters
     })
 
