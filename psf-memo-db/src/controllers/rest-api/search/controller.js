@@ -60,3 +60,7 @@ class SearchRESTControllerLib {
 }
 
 export default SearchRESTControllerLib
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-29T15:29:31.872Z","module_hash":"754b83cf1a4999e989084ba332d88924472370a14df989910d85bcea04deb001","functions":[{"id":"func/SearchRESTControllerLib.constructor","name":"SearchRESTControllerLib.constructor","line":8,"end_line":20,"hash":"75f8c48a39c4449f5b8c8a455d1bc6cdcd762fb035018f75b5e808f093c70c7b"},{"id":"func/SearchRESTControllerLib.handleError","name":"SearchRESTControllerLib.handleError","line":22,"end_line":29,"hash":"d8a071b5d797e24bacd19f63ca74b8eda35dc8d1f4bed97b9e5d37af7bee6831"},{"id":"func/SearchRESTControllerLib.search","name":"SearchRESTControllerLib.search","line":52,"end_line":59,"hash":"814f10f06f8406a61e59aa3678794414a41e8ddecd9693f5c3fa92242349722e"}]}
+// mutate4javascript-manifest-end

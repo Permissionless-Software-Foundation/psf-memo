@@ -71,5 +71,6 @@ describe('#SearchRESTController', () => {
 
     assert.equal(ctx.throw.callCount, 1)
     assert.equal(ctx.throw.firstCall.args[0], 500)
+    assert.equal(ctx.throw.firstCall.args[1], 'boom')
   })
 })

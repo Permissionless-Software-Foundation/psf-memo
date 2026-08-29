@@ -102,4 +102,34 @@ describe('#SearchAll', () => {
     assert.equal(searchQuery.searchPosts.firstCall.args[0], 'hello')
     assert.equal(searchQuery.searchProfiles.firstCall.args[0], 'hello')
   })
+
+  it('should search for a single-character query', async () => {
+    searchQuery.searchPosts.resolves([
+      { txid: 'tx1', addr: 'addr1', text: 'hello', seen: 100, blockHeight: 600100 }
+    ])
+    searchQuery.searchProfiles.resolves([])
+
+    const result = await uut.execute({ q: 'h' })
+
+    assert.equal(result.posts.length, 1)
+    assert.equal(searchQuery.searchPosts.firstCall.args[0], 'h')
+  })
+
+  it('should report hasMore false when the page reaches the end', async () => {
+    searchQuery.searchPosts.resolves([
+      { txid: 'tx1', addr: 'addr1', text: 'a', seen: 100, blockHeight: 600100 },
+      { txid: 'tx2', addr: 'addr2', text: 'b', seen: 200, blockHeight: 600200 }
+    ])
+    searchQuery.searchProfiles.resolves([
+      { addr: 'addr1', name: 'Alice', text: 'bio', seen: 100, blockHeight: 600100 },
+      { addr: 'addr2', name: 'Bob', text: 'bio', seen: 200, blockHeight: 600200 }
+    ])
+
+    const result = await uut.execute({ q: 'test', limit: 4, offset: 0 })
+
+    assert.equal(result.posts.length, 2)
+    assert.equal(result.profiles.length, 2)
+    assert.equal(result.pagination.total, 4)
+    assert.equal(result.pagination.hasMore, false)
+  })
 })

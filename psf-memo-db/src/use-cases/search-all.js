@@ -67,3 +67,7 @@ class SearchAll extends ListUseCase {
 }
 
 export default SearchAll
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-29T15:24:14.116Z","module_hash":"c6145beec460f82393ed11ff0d01b72696f557e0e40c2b991ca15e45334cf150","functions":[{"id":"func/SearchAll.constructor","name":"SearchAll.constructor","line":14,"end_line":16,"hash":"adc0dcca1ed5263c0f1e13e8a19657e332982ca6e4f2093080a6a970901ed4d3"},{"id":"func/SearchAll.execute","name":"SearchAll.execute","line":18,"end_line":53,"hash":"ade6f878cca2e20b6e8500cbc6f5650de797767520b31c0d1c29c43762e4ad53"},{"id":"func/SearchAll.emptyResult","name":"SearchAll.emptyResult","line":55,"end_line":66,"hash":"518a3c1be0814ec39ef86770db6f462dfb52bbb622e72b913cb9313cf3b7cc33"}]}
+// mutate4javascript-manifest-end

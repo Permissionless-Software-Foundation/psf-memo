@@ -81,3 +81,50 @@ test('setQuery stores the trimmed query', () => {
 
   assert.equal(page.query, 'hello')
 })
+
+test('constructor preserves an injected navigate handler', () => {
+  const navigate = () => 'x'
+  const page = new SearchPage({ memoDb: { async search () { return {} } }, navigate })
+
+  assert.equal(page.navigate, navigate)
+})
+
+test('getPost returns the matching post', async () => {
+  const posts = [{ txid: 'a'.repeat(64), text: 'hello world' }]
+  const page = new SearchPage({ memoDb: makeMemoDb(posts, [], {}) })
+
+  page.setQuery('hello')
+  await page.submit()
+
+  assert.equal(page.getPost('a'.repeat(64)).text, 'hello world')
+})
+
+test('getPost returns null when no post matches', async () => {
+  const posts = [{ txid: 'a'.repeat(64), text: 'hello world' }]
+  const page = new SearchPage({ memoDb: makeMemoDb(posts, [], {}) })
+
+  page.setQuery('hello')
+  await page.submit()
+
+  assert.equal(page.getPost('b'.repeat(64)), null)
+})
+
+test('getProfile returns the matching profile', async () => {
+  const profiles = [{ addr: 'addr1', name: 'Alice Trout' }]
+  const page = new SearchPage({ memoDb: makeMemoDb([], profiles, {}) })
+
+  page.setQuery('alice')
+  await page.submit()
+
+  assert.equal(page.getProfile('addr1').name, 'Alice Trout')
+})
+
+test('getProfile returns null when no profile matches', async () => {
+  const profiles = [{ addr: 'addr1', name: 'Alice Trout' }]
+  const page = new SearchPage({ memoDb: makeMemoDb([], profiles, {}) })
+
+  page.setQuery('alice')
+  await page.submit()
+
+  assert.equal(page.getProfile('addr2'), null)
+})

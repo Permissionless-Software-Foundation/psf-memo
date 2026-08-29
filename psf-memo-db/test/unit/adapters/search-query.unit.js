@@ -146,4 +146,87 @@ describe('#SearchQuery', () => {
 
     assert.equal(result.length, 0)
   })
+
+  it('should return a match for a single-character query', async () => {
+    postsDb.iterator = () => makeIterator([
+      ['tx1', { addr: 'addr1', text: 'hello world', seen: 100, blockHeight: 600100 }]
+    ])()
+    postParentsDb.iterator = () => makeIterator([])()
+
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb })
+    const result = await uut.searchPosts('h')
+
+    assert.equal(result.length, 1)
+    assert.equal(result[0].txid, 'tx1')
+  })
+
+  it('should skip a null post without throwing', async () => {
+    postsDb.iterator = () => makeIterator([
+      ['tx1', null],
+      ['tx2', { addr: 'addr2', text: 'hello world', seen: 100, blockHeight: 600100 }]
+    ])()
+    postParentsDb.iterator = () => makeIterator([])()
+
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb })
+    const result = await uut.searchPosts('hello')
+
+    assert.equal(result.length, 1)
+    assert.equal(result[0].txid, 'tx2')
+  })
+
+  it('should exclude posts that do not match the query', async () => {
+    postsDb.iterator = () => makeIterator([
+      ['tx1', { addr: 'addr1', text: 'hello world', seen: 100, blockHeight: 600100 }]
+    ])()
+    postParentsDb.iterator = () => makeIterator([])()
+
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb })
+    const result = await uut.searchPosts('zzz')
+
+    assert.equal(result.length, 0)
+  })
+
+  it('should default blockHeight to 0 for a profile record without one', async () => {
+    namesDb.iterator = () => makeIterator([])()
+    profilesDb.iterator = () => makeIterator([
+      ['addr1', { text: 'bitcoin cash', txid: 'tx1', seen: 100 }]
+    ])()
+
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb })
+    const result = await uut.searchProfiles('bitcoin')
+
+    assert.equal(result.length, 1)
+    assert.equal(result[0].blockHeight, 0)
+  })
+
+  it('should default blockHeight and seen to 0 when profile records lack them', async () => {
+    namesDb.iterator = () => makeIterator([
+      ['addr1', { name: 'Alice', txid: 'tx1' }]
+    ])()
+    profilesDb.iterator = () => makeIterator([
+      ['addr1', { text: 'bitcoin cash' }]
+    ])()
+
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb })
+    const result = await uut.searchProfiles('bitcoin')
+
+    assert.equal(result.length, 1)
+    assert.equal(result[0].blockHeight, 0)
+    assert.equal(result[0].seen, 0)
+  })
+
+  it('should fall back to the profile txid when the name record has none', async () => {
+    namesDb.iterator = () => makeIterator([
+      ['addr1', { name: 'Alice' }]
+    ])()
+    profilesDb.iterator = () => makeIterator([
+      ['addr1', { text: 'bitcoin cash', txid: 'tx2', seen: 100, blockHeight: 600100 }]
+    ])()
+
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb })
+    const result = await uut.searchProfiles('bitcoin')
+
+    assert.equal(result.length, 1)
+    assert.equal(result[0].txid, 'tx2')
+  })
 })
