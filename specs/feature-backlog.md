@@ -205,7 +205,7 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 | 6.1 | Repost a memo | C, I, D | `0x6d0b` is marked *planned* in the protocol |
 | 6.2 | Ranked feed | C, D | memo.cash "ranked" post ordering |
 | 6.3 | Notifications | C, D | replies / likes / follows to my posts |
-| 6.4 | Search | C, D | posts / profiles / topics |
+| 6.4 | Search | C, D | posts / profiles / topics — spec drafted (task `search`), in pipeline |
 | 6.5 | Tags / hashtags | C, D | link + filter by tag |
 | 6.6 | Following feed | C, D | feed filtered to followed users |
 
@@ -213,20 +213,22 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Send money with memo (P5.1)** — `0x6d24`:
-- `psf-memo-client`: a "Send money" composer that broadcasts `0x6d24` with a
-  recipient address (20-byte hash160) plus an optional message (≤ 194 bytes).
-- `psf-memo-db`: expose the send-money read side (sent/received money memos).
-- `psf-memo-indexer`: a handler that parses and stores `0x6d24` transactions
-  (no send-money handler exists yet).
+**Search (P6.4)** — spec drafted (task `search`), in pipeline:
+- `psf-memo-db`: new `GET /search?q=&limit=&offset=` returning
+  `{ posts, profiles, pagination }`. A `SearchQuery` adapter scans `postsDb`
+  (top-level posts only, replies excluded via `postParentsDb`), `namesDb`
+  (profile name), and `profilesDb` (profile bio) with case-insensitive
+  substring matching; a `SearchAll` use case; a `/search` router + controller.
+- `psf-memo-client`: a `/search` page with a search box; `MemoDb.search(q)`;
+  a `SearchPage` service; render matching posts like the feed and matching
+  profiles like recent-profiles.
+- Empty queries and no-match queries both return an empty result set (no error).
+- Spec: `psf-memo-client/specs/search.feature`.
 
-### Send-money payload
+### Deferred / skipped
 
-- `0x6d24` send money: `address` (20 bytes, P2PKH hash160) + `message`
-  (≤ 194 bytes).
-
-Like follow/unfollow user, the recipient is the 20-byte hash160; convert with
-bch-js `Address.toHash160()` (client) and `hash160ToCash()` (DB read side).
+- **Send money with memo (P5.1)** — `0x6d24` — skipped by user decision
+  (no clear use case yet).
 
 ---
 
