@@ -43,6 +43,15 @@ export function parseOffset (offset) {
   return parsed
 }
 
+// Validate a required string field (e.g. an address or room) shared by the
+// addr- and room-scoped list use cases.
+export function parseRequiredString (value, fieldName) {
+  if (!value || typeof value !== 'string') {
+    throw httpError(`${fieldName} is required`, 400)
+  }
+  return value
+}
+
 export function attachReplyCounts (posts, replyCounts) {
   return posts.map((post) => ({
     ...post,
@@ -72,5 +81,5 @@ export function assemblePostPage ({ posts, replyCounts, likeCounts, total, limit
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-27T03:32:37.566Z","module_hash":"e13c6a9aac8093c65559ec81bc44239611f47270c9199a8b4dd8fc67b36a0e5f","functions":[{"id":"func/isEmpty","name":"isEmpty","line":13,"end_line":15,"hash":"209ecce14d6de3b7500065dd3091a7f2c006d1b08305078720ddd2ab250bc501"},{"id":"func/httpError","name":"httpError","line":17,"end_line":21,"hash":"270f69e0007e397fbd6beac1f2fd7d3a1156f9ba1cdf2d230e4e867c8b221aeb"},{"id":"func/parseLimit","name":"parseLimit","line":23,"end_line":34,"hash":"20c64d382dedbd2b65e68d66a35ccba8ecfc78dc32534a697e3865f05021eaf2"},{"id":"func/parseOffset","name":"parseOffset","line":36,"end_line":44,"hash":"55b13c976e2d53e6b69658555d97f4e63d425b5cb6b7b47b57081bd18ef16845"},{"id":"func/attachReplyCounts","name":"attachReplyCounts","line":46,"end_line":51,"hash":"99b9e818ac032752eb76fc9fcdcba0dcd1d94bee830921131a18fd01a4848f76"},{"id":"func/attachLikeCounts","name":"attachLikeCounts","line":53,"end_line":58,"hash":"eebdaa4235d209f5ab3cfb7c242bb76b29c0365676107eee7f681ecb1c188ea8"},{"id":"func/assemblePostPage","name":"assemblePostPage","line":60,"end_line":72,"hash":"496cbbf9f16d3b36ffbe486a62462cbb939f02b9f1610e4a577d2e5ff167c51f"}]}
+// {"version":1,"tested_at":"2026-09-02T19:03:14.637Z","module_hash":"31610c64eb700d95f93b85fd90d35ef9c34ec4ad386478534134db76cd227171","functions":[{"id":"func/isEmpty","name":"isEmpty","line":13,"end_line":15,"hash":"209ecce14d6de3b7500065dd3091a7f2c006d1b08305078720ddd2ab250bc501"},{"id":"func/httpError","name":"httpError","line":17,"end_line":21,"hash":"270f69e0007e397fbd6beac1f2fd7d3a1156f9ba1cdf2d230e4e867c8b221aeb"},{"id":"func/parseLimit","name":"parseLimit","line":23,"end_line":34,"hash":"20c64d382dedbd2b65e68d66a35ccba8ecfc78dc32534a697e3865f05021eaf2"},{"id":"func/parseOffset","name":"parseOffset","line":36,"end_line":44,"hash":"55b13c976e2d53e6b69658555d97f4e63d425b5cb6b7b47b57081bd18ef16845"},{"id":"func/parseRequiredString","name":"parseRequiredString","line":48,"end_line":53,"hash":"0073c76aefb8129d225c86da88824381da8e9f6c956b5d2fa01485b65c83ea47"},{"id":"func/attachReplyCounts","name":"attachReplyCounts","line":55,"end_line":60,"hash":"99b9e818ac032752eb76fc9fcdcba0dcd1d94bee830921131a18fd01a4848f76"},{"id":"func/attachLikeCounts","name":"attachLikeCounts","line":62,"end_line":67,"hash":"eebdaa4235d209f5ab3cfb7c242bb76b29c0365676107eee7f681ecb1c188ea8"},{"id":"func/assemblePostPage","name":"assemblePostPage","line":69,"end_line":81,"hash":"496cbbf9f16d3b36ffbe486a62462cbb939f02b9f1610e4a577d2e5ff167c51f"}]}
 // mutate4javascript-manifest-end

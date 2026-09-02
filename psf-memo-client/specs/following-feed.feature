@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-02T19:13:00.507312989Z","feature_name":"Following Feed","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/following-feed.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Following Feed - 1, Following Feed - 2, Following Feed - 3, Following Feed - 4, Following Feed - 5, Following Feed - 6, Following Feed - 7
 #
 # The Following feed shows top-level posts (replies excluded) authored only by

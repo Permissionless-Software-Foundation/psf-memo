@@ -5,7 +5,7 @@
   viewer's own posts are excluded. Results are paginated with limit/offset.
 */
 
-import { parseLimit, parseOffset, assemblePostPage } from './lib/pagination.js'
+import { parseLimit, parseOffset, parseRequiredString, assemblePostPage } from './lib/pagination.js'
 import { ListUseCase } from './lib/use-case.js'
 
 class ListFollowingFeed extends ListUseCase {
@@ -16,17 +16,8 @@ class ListFollowingFeed extends ListUseCase {
     }
   }
 
-  parseAddr (addr) {
-    if (!addr || typeof addr !== 'string') {
-      const err = new Error('addr is required')
-      err.status = 400
-      throw err
-    }
-    return addr
-  }
-
   async execute (inObj = {}) {
-    const addr = this.parseAddr(inObj.addr)
+    const addr = parseRequiredString(inObj.addr, 'addr')
     const limit = parseLimit(inObj.limit)
     const offset = parseOffset(inObj.offset)
 
@@ -47,3 +38,7 @@ class ListFollowingFeed extends ListUseCase {
 }
 
 export default ListFollowingFeed
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-02T19:02:18.559Z","module_hash":"df53fbf714d93da7638df954aba33dd2605b4ce42a8f09fe0ea11d32c3f65eb6","functions":[{"id":"func/ListFollowingFeed.constructor","name":"ListFollowingFeed.constructor","line":12,"end_line":17,"hash":"b62fd6f9f182ccdd9797918d8d662d1c753d24c019a0401a0011c76296112a6d"},{"id":"func/ListFollowingFeed.execute","name":"ListFollowingFeed.execute","line":19,"end_line":37,"hash":"c32d42cb050f69164bab44febe375ba73acfa2c8b39659c7e84c4bbc4146c17e"}]}
+// mutate4javascript-manifest-end
