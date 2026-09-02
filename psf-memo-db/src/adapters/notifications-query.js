@@ -52,6 +52,7 @@ class NotificationsQuery {
     this._collectFollowNotifications = this._collectFollowNotifications.bind(this)
     this._collectLikeNotifications = this._collectLikeNotifications.bind(this)
     this._collectReplyNotifications = this._collectReplyNotifications.bind(this)
+    this._replyNotificationChild = this._replyNotificationChild.bind(this)
     this._sortNotifications = this._sortNotifications.bind(this)
   }
 
@@ -120,11 +121,8 @@ class NotificationsQuery {
       const childTxid = child?.childTxid
       if (!parentTxid || !childTxid) continue
 
-      const parent = await this._getPostOrNull(parentTxid)
-      if (!parent || parent.addr !== addr) continue
-
-      const childPost = await this._getPostOrNull(childTxid)
-      if (!childPost || childPost.addr === addr) continue
+      const childPost = await this._replyNotificationChild(child, addr)
+      if (!childPost) continue
 
       notifications.push({
         type: 'reply',
@@ -138,6 +136,21 @@ class NotificationsQuery {
     }
 
     return notifications
+  }
+
+  // Return the child post when a child record is a valid reply notification
+  // for addr: it links a parent authored by addr to a child authored by someone
+  // else. Returns null when the parent is missing or not authored by addr, or
+  // the child is missing or authored by addr. Callers must have already
+  // verified the record carries parentTxid and childTxid.
+  async _replyNotificationChild (child, addr) {
+    const parent = await this._getPostOrNull(child.parentTxid)
+    if (!parent || parent.addr !== addr) return null
+
+    const childPost = await this._getPostOrNull(child.childTxid)
+    if (!childPost || childPost.addr === addr) return null
+
+    return childPost
   }
 
   _sortNotifications (notifications) {
@@ -162,3 +175,7 @@ class NotificationsQuery {
 }
 
 export default NotificationsQuery
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-02T20:02:58.120Z","module_hash":"1a298fb4ce5a783162b6e34e8840073f97e0f74c1dc29c675e4d8954ea6c7ae6","functions":[{"id":"func/NotificationsQuery.constructor","name":"NotificationsQuery.constructor","line":12,"end_line":57,"hash":"962099cdc7a50291b0998e09081f53d6d1ee88cdabda016b9318476ce6129507"},{"id":"func/NotificationsQuery._getPostOrNull","name":"NotificationsQuery._getPostOrNull","line":59,"end_line":66,"hash":"5457ca98de35d7ad6569365f4061c56fdb1495db9d2429f267c5c9fee3f2bb00"},{"id":"func/NotificationsQuery._collectFollowNotifications","name":"NotificationsQuery._collectFollowNotifications","line":69,"end_line":90,"hash":"702150793e1b80639ff125864d0841f8037a83701b1773e5e41451cc087d2995"},{"id":"func/NotificationsQuery._collectLikeNotifications","name":"NotificationsQuery._collectLikeNotifications","line":93,"end_line":113,"hash":"1ec11eb62288a1353a74dfd21f8e01635aca72764b01afe033b57c06b713d5d0"},{"id":"func/NotificationsQuery._collectReplyNotifications","name":"NotificationsQuery._collectReplyNotifications","line":116,"end_line":139,"hash":"ab0acd3f37231a52065caee1728913abaa8c9d154d1a7068f743588521a94d4b"},{"id":"func/NotificationsQuery._replyNotificationChild","name":"NotificationsQuery._replyNotificationChild","line":146,"end_line":154,"hash":"b45fbb877dc7fabd01da40362fe5ab92e2729d4f86cf2a27ac129a5f37bb0e5e"},{"id":"func/NotificationsQuery._sortNotifications","name":"NotificationsQuery._sortNotifications","line":156,"end_line":161,"hash":"61b4ae0b6d450e172db3e59240a3c2ccd5fdf0e6ea1e31023df7bb3d52fdbd5c"},{"id":"func/NotificationsQuery.listNotifications","name":"NotificationsQuery.listNotifications","line":164,"end_line":174,"hash":"02d410897747d5e7a7c7ab1df393dfef13e61569ea53442922786ffd7f172554"}]}
+// mutate4javascript-manifest-end
