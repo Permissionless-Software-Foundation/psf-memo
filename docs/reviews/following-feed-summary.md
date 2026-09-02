@@ -9,6 +9,25 @@
   - `6d1bd14` Implement Following feed (coder)
   - `d606ee6` Refactor following feed: reduce CRAP/DRY, add property coverage (refactorer)
 
+## Follow-up refactorer handoff (`merge_and_process refactorer b85878a5d5`)
+- Merged `swarmforge-refactorer` — commit `b85878a` "Refactor following-feed scan: extract
+  isFolloweePost to cut CRAP".
+- **Architectural review (confirmed good):** `isFolloweePost` is a private helper within
+  `PostQuery` that extracts the reply/viewer/membership predicate from
+  `scanFollowingFeedTxidsAndCount`. It adds no new dependencies, preserves information hiding
+  (the LevelDB model stays encapsulated), and keeps the dependency direction inward. Behavior is
+  unchanged.
+- **CRAP reduction confirmed:** `scanFollowingFeedTxidsAndCount` CC 7→5 (CRAP 7.0→5.0);
+  `isFolloweePost` CC 3, both 100% covered.
+- **Mutation:** `post-query.js` 0 killed / 0 survived / 0 uncovered (manifest refreshed by the
+  approved tool).
+- **DRY:** no new production duplication; only pre-existing test-helper duplicates.
+- **Soft Gherkin mutation:** `following-feed.feature` 12 executed, 0 killed, 12 survived — all
+  genuine equivalents (single-char case mutations of example values), unchanged from the prior
+  review.
+- **Suites:** DB unit 281 passing, property 37 passing, acceptance 9 files passing, lint clean;
+  client acceptance 19 files passing.
+
 ## Architectural findings and fixes
 - **UI/Core separation (confirmed good):** Client `FollowingFeedPage` is a thin, testable
   controller wrapping the `MemoDb` HTTP client; the React `FollowingFeed` component stays a pure
