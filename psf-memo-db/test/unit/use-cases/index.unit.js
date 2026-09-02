@@ -21,6 +21,7 @@ describe('#UseCases', () => {
       },
       topicQuery: {},
       searchQuery: {},
+      notificationsQuery: {},
       pollQuery: {}
     }
   }
@@ -55,6 +56,7 @@ describe('#UseCases', () => {
       assert.isNotNull(uut.getPollOptions)
       assert.isNotNull(uut.getPollVotes)
       assert.isNotNull(uut.searchAll)
+      assert.isNotNull(uut.listNotifications)
     })
   })
 })

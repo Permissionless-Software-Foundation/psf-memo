@@ -18,6 +18,7 @@ class PostsRESTControllerLib {
     this.getRecentPosts = this.getRecentPosts.bind(this)
     this.getPostsByAddr = this.getPostsByAddr.bind(this)
     this.getFollowingFeed = this.getFollowingFeed.bind(this)
+    this.getNotifications = this.getNotifications.bind(this)
     this.getPostThread = this.getPostThread.bind(this)
     this.runUseCase = this.runUseCase.bind(this)
     this.listPostsForAddr = this.listPostsForAddr.bind(this)
@@ -143,6 +144,34 @@ class PostsRESTControllerLib {
    */
   async getFollowingFeed (ctx) {
     await this.listPostsForAddr(ctx, this.useCases.listFollowingFeed)
+  }
+
+  /**
+   * @api {get} /posts/notifications/:addr List notifications for an address
+   * @apiPermission public
+   * @apiName GetNotifications
+   * @apiGroup REST Posts
+   *
+   * @apiDescription Returns replies to the viewer's posts, likes on the viewer's posts, and new follows of the viewer, sorted by block height (newest first).
+   *
+   * @apiParam {String} addr Viewer cash address
+   * @apiQuery {Number} [limit=100] Page size (max 100)
+   * @apiQuery {Number} [offset=0] Number of notifications to skip after sorting
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/posts/notifications/bitcoincash:q...?limit=50&offset=0"
+   *
+   * @apiSuccess {Object[]} notifications Array of notification objects
+   * @apiSuccess {String} notifications.type One of reply, like, follow
+   * @apiSuccess {String} notifications.txid Action transaction id
+   * @apiSuccess {String} notifications.addr Actor cash address
+   * @apiSuccess {String} [notifications.postTxid] Liked/replied post txid
+   * @apiSuccess {String} [notifications.text] Reply text
+   * @apiSuccess {Number} notifications.blockHeight Block height when indexed
+   * @apiSuccess {Object} pagination Pagination metadata
+   */
+  async getNotifications (ctx) {
+    await this.listPostsForAddr(ctx, this.useCases.listNotifications)
   }
 
   async getPostThread (ctx) {

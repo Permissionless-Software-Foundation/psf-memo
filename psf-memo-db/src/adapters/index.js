@@ -11,6 +11,7 @@ import MuteQuery from './mute-query.js'
 import TopicQuery from './topic-query.js'
 import PollQuery from './poll-query.js'
 import SearchQuery from './search-query.js'
+import NotificationsQuery from './notifications-query.js'
 
 class Adapters {
   constructor () {
@@ -56,6 +57,14 @@ class Adapters {
       postParentsDb: level.postParentsDb,
       namesDb: level.namesDb,
       profilesDb: level.profilesDb
+    })
+    this.notificationsQuery = new NotificationsQuery({
+      postsDb: level.postsDb,
+      postParentsDb: level.postParentsDb,
+      postChildrenDb: level.postChildrenDb,
+      likesDb: level.likesDb,
+      postLikesDb: level.postLikesDb,
+      followsDb: level.followsDb
     })
     return true
   }
