@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `62d6297` (task `following-feed` — P6.6 Following Feed — merged from the pipeline and verified: client build/test/lint and DB test/lint all pass).
-Next action: **pick the next feature** from the backlog. Send money (P5.1) was skipped by user decision (no clear use case). Remaining candidates: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.3 Notifications, P6.5 Tags/hashtags.
+Current `master` HEAD: `4422372` (merge of the architect's second-pass hardening of the Following feed — P6.6 — verified: client build/test/lint and DB test/lint all pass).
+Next action: **P6.3 Notifications** — the Gherkin spec is drafted at `psf-memo-client/specs/notifications.feature` (8 scenarios, parsed clean, DRY-checked) and is awaiting user approval before handoff to the coder. After approval, commit it (`By specifier.`), invent the stable task name `notifications`, and send the `git_handoff` to the coder. Send money (P5.1) was skipped by user decision (no clear use case). Remaining candidates after notifications: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.5 Tags/hashtags.

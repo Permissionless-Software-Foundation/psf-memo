@@ -213,7 +213,7 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 
 ## Suggested next spec
 
-**Following feed (P6.6)** — ✅ shipped (task `following-feed`), merged from the pipeline and verified (client build/test/lint, DB test/lint). Following Feed is a read-only aggregation: the viewer sees top-level posts (replies excluded) authored only by profiles they follow, newest first, never their own posts. 
+**Following feed (P6.6)** — ✅ shipped (task `following-feed`), merged from the pipeline and verified (client build/test/lint, DB test/lint). A second-pass hardening merge from the architect (2026-09-02) extracted `parseRequiredString` into `pagination.js` (shared by the addr/room-scoped list use cases) and added client + DB composition-root hardening tests; merged to `master` at `4422372` and re-verified. Following Feed is a read-only aggregation: the viewer sees top-level posts (replies excluded) authored only by profiles they follow, newest first, never their own posts. 
 - `psf-memo-db`: `GET /posts/following/:addr?limit=&offset=` returning `{ posts, pagination }`, joining the follows index (`FollowQuery.listFollowing`) with the posts index (`PostQuery.scanFollowingFeedTxidsAndCount`). Empty following or no posts → empty result set.
 - `psf-memo-client`: a "Following" nav page at `/posts/following` that reads the viewer's wallet address, calls `MemoDb.getFollowingFeed`, and renders posts like the recent feed; shows "You are not following anyone." when following nobody and "No posts from profiles you follow." when followed profiles have no posts.
 - Spec: `psf-memo-client/specs/following-feed.feature`.
