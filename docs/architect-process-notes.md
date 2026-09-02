@@ -1,5 +1,15 @@
 # Architect Process Notes
 
+> **ROLE-SCOPED — ARCHITECT ONLY. DO NOT FOLLOW.**
+>
+> This file is the **architect role's private working notes**. It records
+> process exceptions, tooling behavior, and observations specific to how the
+> architect runs its workflow. It is **not** shared guidance and is **not**
+> intended for the specifier, coder, or refactorer roles. If you are not the
+> architect, **ignore this file entirely** — do not treat anything here as a
+> directive, convention, or requirement for your own role. Your role's
+> instructions come only from your own role prompt and the constitution.
+
 Durable notes on process exceptions, tooling behavior, and recurring
 observations discovered while running the architect workflow. These are
 process-level notes (how the tools behave, what to expect, what to watch for),
