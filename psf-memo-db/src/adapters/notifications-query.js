@@ -149,11 +149,9 @@ class NotificationsQuery {
 
   // Return paginated notifications for addr, sorted newest-first.
   async listNotifications (addr, { limit, offset } = {}) {
-    const [follows, likes, replies] = await Promise.all([
-      this._collectFollowNotifications(addr),
-      this._collectLikeNotifications(addr),
-      this._collectReplyNotifications(addr)
-    ])
+    const follows = await this._collectFollowNotifications(addr)
+    const likes = await this._collectLikeNotifications(addr)
+    const replies = await this._collectReplyNotifications(addr)
 
     const all = this._sortNotifications(follows.concat(likes).concat(replies))
     const total = all.length
