@@ -143,3 +143,23 @@ test('canLoadMore reflects pagination.hasMore', async () => {
 test('exposes the following feed path', () => {
   assert.equal(FollowingFeedPage.FOLLOWING_FEED_PATH, '/posts/following')
 })
+
+test('constructor starts with emptyBecauseNoFollows false', () => {
+  const page = new FollowingFeedPage({
+    memoDb: makeMemoDb([], {}),
+    wallet: makeWallet()
+  })
+
+  assert.equal(page.emptyBecauseNoFollows, false)
+})
+
+test('canLoadMore is false when pagination is absent', async () => {
+  const page = new FollowingFeedPage({
+    memoDb: makeMemoDb([], null),
+    wallet: makeWallet()
+  })
+
+  await page.load()
+
+  assert.equal(page.canLoadMore(), false)
+})
