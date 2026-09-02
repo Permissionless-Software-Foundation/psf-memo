@@ -204,7 +204,7 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 |---|---------|------------|-------|
 | 6.1 | Repost a memo | C, I, D | `0x6d0b` is marked *planned* in the protocol |
 | 6.2 | Ranked feed | C, D | memo.cash "ranked" post ordering |
-| 6.3 | Notifications | C, D | replies / likes / follows to my posts |
+| 6.3 | Notifications | C, D | replies / likes / follows to my posts — 🔜 in pipeline (task `notifications`) |
 | 6.4 | Search | C, D | posts / profiles / topics — ✅ shipped (task `search`) |
 | 6.5 | Tags / hashtags | C, D | link + filter by tag |
 | 6.6 | Following feed | C, D | feed filtered to followed users — ✅ shipped (task `following-feed`) |
