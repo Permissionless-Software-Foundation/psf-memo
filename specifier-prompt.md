@@ -147,7 +147,16 @@ needed.
 ## 5. Goal & feature backlog
 
 The full backlog lives at `specs/feature-backlog.md` and is refreshed below.
-Goal: reach feature parity with [memo.cash](https://memo.cash).
+
+### Current direction (2026-09-03)
+
+Core functionality is implemented and shipped. All previously listed roadmap
+features (P0–P6) have been removed from the backlog. For the foreseeable future
+the focus is **front-end improvements** to `psf-memo-client` (the React SPA):
+UI/UX polish, accessibility, performance, responsiveness, state handling, error
+surfacing, and other client-side improvements. A single user-facing feature may
+still touch more than one component; call out all affected components in the
+task description and in the handoff.
 
 ### Research (2026-08-27)
 
@@ -161,24 +170,6 @@ Goal: reach feature parity with [memo.cash](https://memo.cash).
   exist for advanced actions (`like`, `setProfile`, `setProfilePic`,
   `follow`/`unfollow`, `topicMessage`, `topicFollow`/`topicUnfollow`). The main
   gaps are client UI and high-level REST read APIs.
-
-### Prioritized roadmap
-
-| Tier | Features | Status |
-|------|----------|--------|
-| **P0** | Post, Set name, Reply, Efficient pagination | ✅ shipped |
-| **P1** | Like counts (read side) ✅; client display ✅; Set profile text ✅; Set profile picture ✅; Follow/Unfollow ✅ | ✅ shipped |
-| **P2** | Topics (list ✅, feed ✅, post/follow/unfollow) | next |
-| **P3** | Polls (create, add option, vote) | ✅ shipped (task `poll-actions`) |
-| **P4** | Mute / unmute user | later |
-| **P5** | Send money memo action, MIP-0009 token exchange | later |
-| **P6** | Repost, ranked feed, notifications, search, tags, following feed | later |
-
-**Suggested next spec:** P2.3/P2.4/P2.5 — add a topic post composer and topic
-follow/unfollow buttons on the topic feed page that broadcast `0x6d0c`/
-`0x6d0d`/`0x6d0e`, plus the DB read side (topic follow state, topic followers).
-The indexer already stores topic messages and follows in `roomsDb`; the missing
-pieces are the client write path and the DB read side for follows.
 
 ---
 
@@ -368,5 +359,6 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `4422372` (merge of the architect's second-pass hardening of the Following feed — P6.6 — verified: client build/test/lint and DB test/lint all pass).
-Next action: **P6.3 Notifications** — the Gherkin spec is drafted at `psf-memo-client/specs/notifications.feature` (8 scenarios, parsed clean, DRY-checked) and is awaiting user approval before handoff to the coder. After approval, commit it (`By specifier.`), invent the stable task name `notifications`, and send the `git_handoff` to the coder. Send money (P5.1) was skipped by user decision (no clear use case). Remaining candidates after notifications: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.5 Tags/hashtags.
+Current `master` HEAD: `d3903fa` (backlog cleared of all previously listed
+features; direction set to front-end improvements to `psf-memo-client`).
+Next action: **ask the user for the next front-end improvement to spec**.
