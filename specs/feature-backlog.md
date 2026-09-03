@@ -204,7 +204,7 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 |---|---------|------------|-------|
 | 6.1 | Repost a memo | C, I, D | `0x6d0b` is marked *planned* in the protocol |
 | 6.2 | Ranked feed | C, D | memo.cash "ranked" post ordering |
-| 6.3 | Notifications | C, D | replies / likes / follows to my posts — 🔜 in pipeline (task `notifications`) |
+| 6.3 | Notifications | C, D | replies / likes / follows to my posts — ✅ shipped (task `notifications`) |
 | 6.4 | Search | C, D | posts / profiles / topics — ✅ shipped (task `search`) |
 | 6.5 | Tags / hashtags | C, D | link + filter by tag |
 | 6.6 | Following feed | C, D | feed filtered to followed users — ✅ shipped (task `following-feed`) |
@@ -212,6 +212,8 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 ---
 
 ## Suggested next spec
+
+**Notifications (P6.3)** — ✅ shipped (task `notifications`), merged from the pipeline and verified (client build/test/lint, DB test/lint). A read-only notifications page: the client shows a Notifications nav entry and page that lists replies, likes, and follows directed at the viewer's posts/profile, newest first; `psf-memo-db` exposes `GET /posts/notifications/:addr` via a `ListNotifications` use case and `NotificationsQuery` adapter that aggregates replies/likes/follows from the existing indexes. Spec: `psf-memo-client/specs/notifications.feature`.
 
 **Following feed (P6.6)** — ✅ shipped (task `following-feed`), merged from the pipeline and verified (client build/test/lint, DB test/lint). A second-pass hardening merge from the architect (2026-09-02) extracted `parseRequiredString` into `pagination.js` (shared by the addr/room-scoped list use cases) and added client + DB composition-root hardening tests; merged to `master` at `4422372` and re-verified. Following Feed is a read-only aggregation: the viewer sees top-level posts (replies excluded) authored only by profiles they follow, newest first, never their own posts. 
 - `psf-memo-db`: `GET /posts/following/:addr?limit=&offset=` returning `{ posts, pagination }`, joining the follows index (`FollowQuery.listFollowing`) with the posts index (`PostQuery.scanFollowingFeedTxidsAndCount`). Empty following or no posts → empty result set.

@@ -368,5 +368,5 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `297abf6` (task `notifications` — P6.3 Notifications — spec approved by the user and handed off to the coder; awaiting the coder → refactorer → architect pipeline, then merge the architect branch into `master` and verify the affected components (client build/test/lint, DB test/lint).).
-Next action: **await the pipeline for task `notifications`**, then merge the architect branch into `master` and verify. Send money (P5.1) was skipped by user decision (no clear use case). Remaining candidates after notifications lands: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.5 Tags/hashtags.
+Current `master` HEAD: `45a2fc2` (task `notifications` — P6.3 Notifications — merged from the architect branch into `master` and verified: client build/test/lint (239 tests pass), DB test/lint. Backlog and briefing updated.).
+Next action: **ask the user for the next feature**. Remaining candidates: P5.2–5.5 (MIP-0009 token exchange), P6.1 Repost, P6.2 Ranked feed, P6.5 Tags/hashtags. Send money (P5.1) was skipped by user decision (no clear use case).
