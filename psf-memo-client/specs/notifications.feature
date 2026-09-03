@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-03T21:04:30.335054496Z","feature_name":"Notifications","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/notifications.feature","background_hash":"c5c3892bcd36c5f382543d0ba9a025c70256f54ae5bcdb1391d0e3826d36aa88","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Notifications - 1, Notifications - 2, Notifications - 3, Notifications - 4, Notifications - 5, Notifications - 6, Notifications - 7, Notifications - 8
 #
 # Notifications is a read-only feature: the psf-memo-db API aggregates replies
