@@ -57,6 +57,13 @@ re-process or re-verify.
 ## Startup smoke test (fast, ~seconds)
 ```bash
 psf-memo-client/node_modules/.bin/mutate4javascript 2>&1 | head -1   # usage
-psf-memo-client/node_modules/.bin/dry4javascript 2>&1 | head -1      # runs
+psf-memo-client/node_modules/.bin/dry4javascript --help 2>&1 | head -1  # usage (NOT bare)
 cd tmp/aps-spec && bb gherkin-parser --help                          # usage
 ```
+
+**IMPORTANT — never run bare `dry4javascript` as a smoke check.** With no
+arguments it runs the **full test suite** (~1m50s) before reporting, so it is
+not a fast readiness probe. Use `dry4javascript --help` (fast, ~0.6s) to
+confirm the binary is present and runnable. The same applies to
+`architect-startup.sh`, which must check `dry4javascript --help` rather than
+bare `dry4javascript`.
