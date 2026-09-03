@@ -65,3 +65,68 @@ REST controller) and `psf-memo-client` (notifications page service).
 
 - `git_handoff` to coder and refactorer (`priority: 00`) with the review commit
   for follow-up review.
+
+---
+
+# Notifications (property tests) — Architectural Review Summary
+
+**Task:** notifications (property-test follow-up)
+**Commit reviewed:** `2704c2059d` (refactorer) — "Add notifications-query property
+  tests for ordering and pagination", merged as `cf09636a`
+**By:** architect
+
+## Scope
+
+Reviewed the refactorer's addition of a property-test suite for the `NotificationsQuery`
+aggregation adapter in `psf-memo-db/test/property/notifications-query.property.test.js`.
+This is a purely additive, test-only change: no production source was modified.
+
+## Architectural findings
+
+- **No changes required.** The addition is well-placed in `test/property/` alongside
+the eleven existing property suites, and correctly reuses the shared `harness.js`
+(seeded PRNG + `forAll` generator driver).
+- **Reference-oracle design is sound.** `buildExpected` is an explicit, documented
+  independent oracle that mirrors the adapter aggregation and sort. I traced it line
+  by line against `notifications-query.js` and confirmed every filter matches:
+  follow unfollow-skip + `followeePkHash` match + self-exclusion, the like
+  missing-target-post exclusion, and the reply parent-authored-by-viewer /
+  child-authored-by-someone-else predicate (via `_replyNotificationChild`). The
+  `blockHeight`/`seen` descending sort and `slice(offset, offset+limit)` pagination
+  match exactly.
+- **Invariants covered.** The suite pins newest-first ordering with the `seen`
+  tie-break, global ordering, pagination conservation, and exact `total`, over 500
+  random samples. The generator also exercises the `?? 0` defaulting paths (follows
+  with omitted `blockHeight`/`seen`) and the dangling-like exclusion path, which are
+  otherwise difficult to reach.
+- **Test/property separation respected.** Property tests live in `test/property/`,
+  run via the dedicated `npm run property`, and do not participate in unit coverage,
+  mutation, CRAP, or Gherkin mutation, per engineering rules. Dependency direction is
+  test → core (no core→test coupling). The small comparator duplication between the
+  production `_sortNotifications` and the test oracle is deliberate (an independent
+  cross-check), not a DRY candidate.
+
+## Verification results
+
+- **Property tests** (separate command, `npm run property`): **39 passing**, including
+  the 2 new notifications-query properties.
+- **Language mutation** (`mutate4javascript`, differential, `--max-workers 8`):
+  `Killed 0, Survived 0, Uncovered 0` on `notifications-query.js` — source is
+  unchanged, manifest preserved, no regression.
+- **DRY (`dry4javascript`):** `No duplicate candidates found`.
+- **Soft Gherkin acceptance mutation** (`notifications.feature --level soft`):
+  **Total 16, Killed 0, Survived 16, Errors 0.** All 16 are single-character
+  case mutations of example values (txids/addresses) used consistently on both the
+  setup and assertion sides of their scenario — intrinsic equivalents, not chased
+  (unchanged from the prior read-only review).
+- **Cyclomatic complexity (CRAP):** all notifications-query functions well under the
+  8.0 threshold (max 6.0), unchanged.
+
+## Suite status
+
+- `psf-memo-db`: unit **315 passing**, **lint clean**, property **39 passing**.
+
+## Handoffs sent
+
+- `git_handoff` to coder and refactorer (`priority: 00`) with the merge/review commit
+  for follow-up review.
