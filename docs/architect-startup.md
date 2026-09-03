@@ -48,6 +48,18 @@ Parse survivors with a small python one-liner over `d['results']` (filter
   `--workers 8` and `--status-interval` so progress is visible.
 - Run verification sequentially (never concurrent with acceptance generation).
 
+## Keep build dirs clean (mutation speed)
+`mutate4javascript` copies the whole project (including `tmp/`) into each worker.
+Stale `tmp/acceptance` (LevelDB dirs) and `target/mutation-workers` can bloat to
+~1.5G and ~14G, making the worker copy alone many GB and mutation runs appear to
+hang. `architect-startup.sh` now flags any of these over 100MB as `[FAIL]`.
+Clean them before any mutation run:
+```bash
+rm -rf psf-memo-db/tmp/acceptance psf-memo-db/target/mutation-workers \
+       psf-memo-client/tmp/acceptance psf-memo-client/target/mutation-workers
+```
+This cut a notifications-query mutation run from 20+ minutes to ~2 minutes.
+
 ## Refactorer forwards your own review commit back
 After you send a `priority: 00` review commit to coder+refactorer, the refactorer
 merges and forwards that SAME commit back to you. It is a no-op ("Already up to

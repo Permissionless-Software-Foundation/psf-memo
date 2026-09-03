@@ -73,6 +73,27 @@ for c in psf-memo-client psf-memo-db psf-memo-indexer; do
     && ok "$c runner-worker" || bad "$c runner-worker"
 done
 
+echo "== Bloated build dirs (slow mutation copies) =="
+# tmp/acceptance and target/mutation-workers are gitignored build artifacts
+# that mutate4javascript copies into every worker. If they grow large, the
+# worker copy alone can be many GB and mutation runs appear to hang. Flag any
+# dir over the threshold so it can be cleaned before a mutation run.
+BLOAT_KB=102400  # 100 MB
+for d in psf-memo-client/tmp/acceptance psf-memo-client/target/mutation-workers \
+         psf-memo-db/tmp/acceptance psf-memo-db/target/mutation-workers \
+         psf-memo-indexer/tmp/acceptance psf-memo-indexer/target/mutation-workers; do
+  if [ -d "$d" ]; then
+    size_kb=$(du -sk "$d" 2>/dev/null | awk '{print $1}')
+    if [ -n "$size_kb" ] && [ "$size_kb" -gt "$BLOAT_KB" ]; then
+      bad "$d is ${size_kb}KB (clean with: rm -rf $d)"
+    else
+      ok "$d clean"
+    fi
+  else
+    ok "$d absent"
+  fi
+done
+
 echo
 echo "Result: $pass ok, $fail fail"
 [ "$fail" -eq 0 ]
