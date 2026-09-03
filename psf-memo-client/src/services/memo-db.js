@@ -157,6 +157,10 @@ class MemoDb {
   async getFollowingFeed (addr, opts = {}) {
     return this.getPage(`/posts/following/${encodeURIComponent(addr)}`, 'getFollowingFeed', opts)
   }
+
+  async getNotifications (addr, opts = {}) {
+    return this.getPage(`/posts/notifications/${encodeURIComponent(addr)}`, 'getNotifications', opts)
+  }
 }
 
 export default MemoDb

@@ -28,6 +28,12 @@ describe('#PostsRESTController', () => {
             posts: [{ txid: 'tx3', addr: 'addr-b', blockHeight: 600200 }],
             pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
           })
+        },
+        listNotifications: {
+          execute: sandbox.stub().resolves({
+            notifications: [{ type: 'like', txid: 'tx5', addr: 'addr-c', blockHeight: 600300 }],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
+          })
         }
       }
     })
@@ -118,6 +124,25 @@ describe('#PostsRESTController', () => {
     assert.equal(ctx.throw.callCount, 1)
     assert.equal(ctx.throw.firstCall.args[0], 500)
     assert.include(ctx.throw.firstCall.args[1], 'boom')
+  })
+
+  it('should return notifications from use case', async () => {
+    const ctx = {
+      params: { addr: 'addr-c' },
+      query: { limit: '25', offset: '0' },
+      body: null,
+      throw: sandbox.stub()
+    }
+    await uut.getNotifications(ctx)
+
+    assert.equal(uut.useCases.listNotifications.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.listNotifications.execute.firstCall.args[0], {
+      addr: 'addr-c',
+      limit: '25',
+      offset: '0'
+    })
+    assert.equal(ctx.body.notifications.length, 1)
+    assert.equal(ctx.body.notifications[0].type, 'like')
   })
 
   it('should return a post thread from use case', async () => {

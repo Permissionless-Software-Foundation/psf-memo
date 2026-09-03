@@ -41,6 +41,7 @@ const ThreadPage = require('../../src/services/thread-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
 const SearchPage = require('../../src/services/search-page')
+const NotificationsPage = require('../../src/services/notifications-page')
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
@@ -190,6 +191,9 @@ function makeMemoDb () {
   const followState = {}
   const muteState = {}
   const replyTxids = new Set()
+  const replies = []
+  const likes = []
+  const followers = new Map()
   const topics = []
   const topicPosts = {}
   const topicCounts = new Map()
@@ -210,13 +214,44 @@ function makeMemoDb () {
     },
     addReply (reply) {
       replyTxids.add(reply.txid)
-      posts.push(reply)
+      replies.push({
+        txid: reply.txid,
+        parentTxid: reply.parentTxid,
+        text: reply.text,
+        addr: reply.addr || 'bitcoincash:reply-author',
+        blockHeight: reply.blockHeight ?? 100
+      })
+      posts.push({
+        txid: reply.txid,
+        addr: reply.addr || 'bitcoincash:reply-author',
+        text: reply.text,
+        blockHeight: reply.blockHeight ?? 100,
+        seen: reply.seen ?? 0
+      })
     },
     addSearchPost (post) {
       searchPosts.push(post)
     },
     addSearchProfile (profile) {
       searchProfiles.push(profile)
+    },
+    addLike (like) {
+      likes.push({
+        txid: like.txid,
+        postTxid: like.postTxid,
+        addr: like.addr,
+        blockHeight: like.blockHeight ?? 100
+      })
+    },
+    addFollower (followerAddr, followeeAddr, opts = {}) {
+      const list = followers.get(followeeAddr) || []
+      list.push({
+        followerAddr,
+        followeeAddr,
+        txid: opts.txid || require('crypto').createHash('sha256').update(`${followerAddr}:${followeeAddr}`).digest('hex'),
+        blockHeight: opts.blockHeight ?? 100
+      })
+      followers.set(followeeAddr, list)
     },
     addTopic (room, postCount) {
       topicCounts.set(room, postCount)
@@ -309,6 +344,52 @@ function makeMemoDb () {
       const page = all.slice(offset, offset + limit)
       return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
     },
+    async getNotifications (addr, { limit = 100, offset = 0 } = {}) {
+      const notifications = []
+
+      for (const reply of replies) {
+        const parent = posts.find((p) => p.txid === reply.parentTxid)
+        if (!parent || parent.addr !== addr) continue
+        if (reply.addr === addr) continue
+        notifications.push({
+          type: 'reply',
+          txid: reply.txid,
+          addr: reply.addr,
+          postTxid: reply.parentTxid,
+          text: reply.text,
+          blockHeight: reply.blockHeight ?? parent.blockHeight ?? 0
+        })
+      }
+
+      for (const like of likes) {
+        const post = posts.find((p) => p.txid === like.postTxid)
+        if (!post || post.addr !== addr) continue
+        if (like.addr === addr) continue
+        notifications.push({
+          type: 'like',
+          txid: like.txid,
+          addr: like.addr,
+          postTxid: like.postTxid,
+          blockHeight: like.blockHeight ?? post.blockHeight ?? 0
+        })
+      }
+
+      for (const follow of (followers.get(addr) || [])) {
+        if (follow.followerAddr === addr) continue
+        notifications.push({
+          type: 'follow',
+          txid: follow.txid,
+          addr: follow.followerAddr,
+          blockHeight: follow.blockHeight ?? 0
+        })
+      }
+
+      notifications.sort((a, b) => (b.blockHeight ?? 0) - (a.blockHeight ?? 0))
+
+      const total = notifications.length
+      const page = notifications.slice(offset, offset + limit)
+      return { notifications: page, pagination: { total, limit, offset, hasMore: offset + page.length < total } }
+    },
     async getFollowingFeed (addr, { limit = 100, offset = 0 } = {}) {
       const followees = new Set()
       for (const [key, following] of Object.entries(followState)) {
@@ -362,6 +443,7 @@ function createWorld () {
   // Read-only page controllers backed by the fake psf-memo-db API.
   world.recentFeedPage = new RecentFeedPage({ memoDb })
   world.followingFeedPage = new FollowingFeedPage({ memoDb, wallet })
+  world.notificationsPage = new NotificationsPage({ memoDb, wallet })
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
   world.topicDiscoveryPage = new TopicDiscoveryPage({
@@ -2276,7 +2358,7 @@ const handlers = [
   },
   {
     name: 'API serves reply with txid parent and text',
-    pattern: /^the psf-memo-db API serves a reply with txid (.+) to the post with txid (.+) with text (.+)$/,
+    pattern: /^the psf-memo-db API serves a reply with txid ([0-9a-fA-F]{64}) to the post with txid ([0-9a-fA-F]{64}) with text (.+)$/,
     run (m, example, world) {
       const txid = resolveParam(m[1], example)
       const parentTxid = resolveParam(m[2], example)
@@ -2390,6 +2472,159 @@ const handlers = [
     run (m, example, world) {
       if (!world.followingFeedPage.emptyBecauseNoFollows) {
         throw new Error('Expected following feed to show the not-following-anyone message.')
+      }
+    }
+  },
+  {
+    name: 'API serves reply to my post by address with text',
+    pattern: /^the psf-memo-db API serves a reply with txid (.+) to the post with txid (.+) by the address (.+) with text (.+?)(?: at block height (\d+))?$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const parentTxid = resolveParam(m[2], example)
+      const addr = resolveParam(m[3], example)
+      const text = resolveText(m[4], example)
+      const blockHeight = m[5] ? parseInt(m[5], 10) : 100
+      world.memoDb.addReply({ txid, parentTxid, text, addr, blockHeight })
+    }
+  },
+  {
+    name: 'API serves reply to my post by me with text',
+    pattern: /^the psf-memo-db API serves a reply with txid (.+) to the post with txid (.+) by my wallet address with text (.+?)(?: at block height (\d+))?$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const parentTxid = resolveParam(m[2], example)
+      const text = resolveText(m[3], example)
+      const blockHeight = m[4] ? parseInt(m[4], 10) : 100
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.addReply({ txid, parentTxid, text, addr: myAddr, blockHeight })
+    }
+  },
+  {
+    name: 'API serves like on my post by address',
+    pattern: /^the psf-memo-db API serves a like with txid (.+) on the post with txid (.+) by the address (.+?)(?: at block height (\d+))?$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const postTxid = resolveParam(m[2], example)
+      const addr = resolveParam(m[3], example)
+      const blockHeight = m[4] ? parseInt(m[4], 10) : 100
+      world.memoDb.addLike({ txid, postTxid, addr, blockHeight })
+    }
+  },
+  {
+    name: 'API records address follows me',
+    pattern: /^the psf-memo-db API records that the address (.+) follows my wallet address$/,
+    run (m, example, world) {
+      const followerAddr = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.addFollower(followerAddr, myAddr)
+    }
+  },
+  {
+    name: 'open notifications page',
+    pattern: /^I open the Notifications page$/,
+    async run (m, example, world) {
+      await world.notificationsPage.load()
+      world.currentPath = NotificationsPage.NOTIFICATIONS_PATH
+    }
+  },
+  {
+    name: 'open notifications page with page size',
+    pattern: /^I open the Notifications page with page size (\d+)$/,
+    async run (m, example, world) {
+      const limit = parseInt(m[1], 10)
+      await world.notificationsPage.load({ limit })
+      world.currentPath = NotificationsPage.NOTIFICATIONS_PATH
+    }
+  },
+  {
+    name: 'notifications include reply notification',
+    pattern: /^the notifications include a reply notification from the address (.+) with text (.+)$/,
+    run (m, example, world) {
+      const expectedAddr = resolveParam(m[1], example)
+      const expectedText = resolveText(m[2], example)
+      const found = world.notificationsPage.notifications.find((n) =>
+        n.type === 'reply' && n.addr === expectedAddr && n.text === expectedText
+      )
+      if (!found) {
+        throw new Error(`Notifications do not include a reply from ${expectedAddr} with text "${expectedText}".`)
+      }
+    }
+  },
+  {
+    name: 'notifications include like notification',
+    pattern: /^the notifications include a like notification from the address (.+)$/,
+    run (m, example, world) {
+      const expectedAddr = resolveParam(m[1], example)
+      const found = world.notificationsPage.notifications.find((n) =>
+        n.type === 'like' && n.addr === expectedAddr
+      )
+      if (!found) {
+        throw new Error(`Notifications do not include a like from ${expectedAddr}.`)
+      }
+    }
+  },
+  {
+    name: 'notifications include follow notification',
+    pattern: /^the notifications include a follow notification from the address (.+)$/,
+    run (m, example, world) {
+      const expectedAddr = resolveParam(m[1], example)
+      const found = world.notificationsPage.notifications.find((n) =>
+        n.type === 'follow' && n.addr === expectedAddr
+      )
+      if (!found) {
+        throw new Error(`Notifications do not include a follow from ${expectedAddr}.`)
+      }
+    }
+  },
+  {
+    name: 'notifications show like before reply',
+    pattern: /^the notifications show the like notification before the reply notification$/,
+    run (m, example, world) {
+      const notifications = world.notificationsPage.notifications
+      const likeIndex = notifications.findIndex((n) => n.type === 'like')
+      const replyIndex = notifications.findIndex((n) => n.type === 'reply')
+      if (likeIndex === -1) throw new Error('Notifications do not include a like notification.')
+      if (replyIndex === -1) throw new Error('Notifications do not include a reply notification.')
+      if (likeIndex >= replyIndex) {
+        throw new Error('Expected like notification to appear before reply notification.')
+      }
+    }
+  },
+  {
+    name: 'notifications show N notifications',
+    pattern: /^the notifications show (\d+) notification$/,
+    run (m, example, world) {
+      const expected = parseInt(m[1], 10)
+      const actual = world.notificationsPage.notifications.length
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} notifications, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'notifications can load more',
+    pattern: /^the notifications can load more$/,
+    run (m, example, world) {
+      if (!world.notificationsPage.canLoadMore()) {
+        throw new Error('Expected notifications to have more pages, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'notifications include no notifications',
+    pattern: /^the notifications include no notifications$/,
+    run (m, example, world) {
+      if (world.notificationsPage.notifications.length !== 0) {
+        throw new Error(`Expected no notifications, got ${world.notificationsPage.notifications.length}.`)
+      }
+    }
+  },
+  {
+    name: 'notifications show no notifications message',
+    pattern: /^the notifications show a message that I have no notifications$/,
+    run (m, example, world) {
+      if (!world.notificationsPage.empty) {
+        throw new Error('Expected notifications page to show the no-notifications message.')
       }
     }
   }

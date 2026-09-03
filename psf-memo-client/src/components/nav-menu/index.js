@@ -95,6 +95,14 @@ function NavMenu (props) {
             </NavLink>
 
             <NavLink
+              className={currentPath === '/notifications' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/notifications'
+              onClick={handleClickEvent}
+            >
+              Notifications
+            </NavLink>
+
+            <NavLink
               className={currentPath === '/posts/new' ? 'nav-link-active' : 'nav-link-inactive'}
               to='/posts/new'
               onClick={handleClickEvent}
