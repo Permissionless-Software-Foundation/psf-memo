@@ -1,8 +1,8 @@
-# psf-memo — Prioritized Feature Backlog
+# psf-memo — Feature Backlog
 
-**Status**: DRAFT — research refresh 2026-08-27.
+**Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-08-29
+**Last updated**: 2026-09-03
 
 ---
 
@@ -16,6 +16,21 @@ that is broadcast from the client to the chain and later indexed by
 
 ---
 
+## Current direction
+
+Core functionality is implemented and shipped. For the foreseeable future the
+focus is **front-end improvements** to `psf-memo-client` (the React SPA).
+
+- All previously listed roadmap features (P0–P6) have been removed from this
+  backlog.
+- New work should target the client: UI/UX polish, accessibility, performance,
+  responsiveness, state handling, error surfacing, and any other front-end
+  improvements.
+- A single user-facing feature may still touch more than one component; call
+  out all affected components in the task description and in the handoff.
+
+---
+
 ## Research notes
 
 - **Protocol reference**: `https://memo.sv/protocol` (Wayback Machine snapshot
@@ -24,19 +39,8 @@ that is broadcast from the client to the chain and later indexed by
   `memo.cash` implementation.
 - **memo.cash access**: the live site is behind Cloudflare. Direct `curl` and
   headless Firefox login attempts from this environment were blocked, so the
-  roadmap is derived from the protocol spec plus an audit of the existing
+  roadmap was derived from the protocol spec plus an audit of the existing
   mono-repo code.
-- **Implementation audit** (2026-08-27):
-  - Indexer already has handlers for: `setName`, `post`, `reply`, `like`,
-    `setProfile`, `follow`/`unfollow`, `setProfilePic`, `topicMessage`,
-    `topicFollow`/`topicUnfollow`.
-  - `psf-memo-db` already has LevelDB stores for all of those actions and raw
-    `/level/*` CRUD routes.
-  - Client already supports: posting, replying, setting name, and the like/tip
-    broadcast UI.
-  - **Main gaps**: client UI for setting profile text/picture and
-    follow/unfollow; high-level read APIs for like counts, follow state, topic
-    feeds, polls, and mutes.
 
 ---
 
@@ -100,139 +104,6 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ---
 
-## Tier P0 — Already shipped to `master`
-
-| # | Feature | Memo action | Components | Status |
-|---|---------|-------------|------------|--------|
-| 0.1 | Post a Memo | `0x6d02` | C, I, D | ✅ |
-| 0.2 | Set display name | `0x6d01` | C, I, D | ✅ |
-| 0.3 | Reply to a Memo | `0x6d03` | C, I, D | ✅ |
-| 0.4 | Efficient post pagination | read | D, I | ✅ |
-
----
-
-## Tier P1 — Core social verbs (close the read loop)
-
-These features already have indexer storage and (for like/tip) client
-broadcast. The remaining work is exposing the read side in `psf-memo-db` and
-adding/editing the client UI.
-
-| # | Feature | Memo action | Components | Status | Next work |
-|---|---------|-------------|------------|--------|-----------|
-| 1.1 | Like / tip a Memo — read side | `0x6d04` | D | ✅ | `likeCount` returned on `/posts/*` and `/posts/:txid/thread` |
-| 1.2 | Like / tip a Memo — client display | `0x6d04` | C | ✅ | Feed/Profile/Thread read `likeCount` from API instead of defaulting to 0 |
-| 1.3 | Set profile text (bio) | `0x6d05` | C | ✅ | C: "Set Bio" UI on Account page broadcasts `0x6d05` (217-byte limit) |
-| 1.4 | Set profile picture | `0x6d0a` | C, I, D | ✅ | C: "Set Avatar URL" UI broadcasts `0x6d0a` (217-byte limit); I/D already read |
-| 1.5 | Follow a user | `0x6d06` | C, I, D | ✅ | C: follow button on profile; D: follow state + following/followers lists |
-| 1.6 | Unfollow a user | `0x6d07` | C, I, D | ✅ | C: unfollow button; D: follow state |
-
-### Priority order within P1
-
-1. **Like / tip a Memo — read side** ✅ DONE.
-2. **Like / tip a Memo — client display** ✅ DONE. The feed, profile, and
-   thread views now read `likeCount` from the API (profile shows a read-only
-   like button).
-3. **Set profile text** ✅ DONE. Account page "Set Bio" UI broadcasts `0x6d05` with a 217-byte limit and byte counter (task `set-bio`).
-4. **Set profile picture** ✅ DONE. Account page "Set Avatar URL" UI broadcasts `0x6d0a` with a 217-byte limit and byte counter (task `set-avatar-url`).
-5. **Follow / Unfollow user** ✅ DONE. Profile page Follow/Unfollow button broadcasts `0x6d06`/`0x6d07`; DB exposes follow state and following/followers lists (task `follow-user`).
-
-### Like / tip details
-
-- The like action carries the liked post txid (32 bytes). A pure like has no
-  BCH output to the author; a tip adds a P2PKH output paying the author.
-- `psf-memo-indexer` stores each like in `likesDb` and records `tip` (sats)
-  when the like tx pays the author.
-- `psf-memo-db` aggregates `likesDb` into per-post `likeCount` in
-  `/posts/recent`, `/posts/by/:addr`, and `/posts/:txid/thread` responses.
-- The client already has `MemoLike`, `LikeTipPage`, `LikeButton`, and
-  `LikeTipModal`; the feed/profile/thread views now read `likeCount` from the
-  API (profile renders a read-only `LikeButton`).
-
----
-
-## Tier P2 — Topics
-
-Topics add a second feed axis. The indexer already stores topic messages and
-follows in `roomsDb`; the DB and client need query/render support.
-
-| # | Feature | Memo action | Components | Status |
-|---|---------|-------------|------------|--------|
-| 2.1 | Topic list / discovery | read | D, C | ✅ |
-| 2.2 | Topic feed page | read | D, C | ✅ |
-| 2.3 | Post a topic message | `0x6d0c` | C, I, D | ✅ shipped (task `topic-actions`) |
-| 2.4 | Follow a topic | `0x6d0d` | C, I, D | ✅ shipped (task `topic-actions`) |
-| 2.5 | Unfollow a topic | `0x6d0e` | C, I, D | ✅ shipped (task `topic-actions`) |
-
----
-
-## Tier P3 — Polls
-
-Polls require a new data model and rendering. The indexer has no handler yet.
-
-| # | Feature | Memo action | Components | Status |
-|---|---------|-------------|------------|--------|
-| 3.1 | Create a poll | `0x6d10` | C, I, D | ✅ shipped (task `poll-actions`) |
-| 3.2 | Add a poll option | `0x6d13` | C, I, D | ✅ shipped (task `poll-actions`) |
-| 3.3 | Vote in a poll | `0x6d14` | C, I, D | ✅ shipped (task `poll-actions`) |
-
----
-
-## Tier P4 — Moderation
-
-| # | Feature | Memo action | Components | Status |
-|---|---------|-------------|------------|--------|
-| 4.1 | Mute a user | `0x6d16` | C, D, I | ✅ shipped (task `mute-user`) |
-| 4.2 | Unmute a user | `0x6d17` | C, D, I | ✅ shipped (task `mute-user`) |
-
----
-
-## Tier P5 — Money & token exchange
-
-| # | Feature | Memo action | Components | Status |
-|---|---------|-------------|------------|--------|
-| 5.1 | Send money with memo | `0x6d24` | C | 🔴 missing |
-| 5.2 | Token sell offer | `0x6d30` (MIP-0009) | C, I, D | 🔴 missing |
-| 5.3 | Token buy offer | `0x6d31` (MIP-0009) | C, I, D | 🔴 missing |
-| 5.4 | Attach token sale signature | `0x6d32` (MIP-0009) | C, I, D | 🔴 missing |
-| 5.5 | Pin token post | `0x6d35` (MIP-0009) | C, I, D | 🔴 missing |
-
----
-
-## Tier P6 — Advanced social & discovery (later)
-
-| # | Feature | Components | Notes |
-|---|---------|------------|-------|
-| 6.1 | Repost a memo | C, I, D | `0x6d0b` is marked *planned* in the protocol |
-| 6.2 | Ranked feed | C, D | memo.cash "ranked" post ordering |
-| 6.3 | Notifications | C, D | replies / likes / follows to my posts — ✅ shipped (task `notifications`) |
-| 6.4 | Search | C, D | posts / profiles / topics — ✅ shipped (task `search`) |
-| 6.5 | Tags / hashtags | C, D | link + filter by tag |
-| 6.6 | Following feed | C, D | feed filtered to followed users — ✅ shipped (task `following-feed`) |
-
----
-
-## Suggested next spec
-
-**Notifications (P6.3)** — ✅ shipped (task `notifications`), merged from the pipeline and verified (client build/test/lint, DB test/lint). A read-only notifications page: the client shows a Notifications nav entry and page that lists replies, likes, and follows directed at the viewer's posts/profile, newest first; `psf-memo-db` exposes `GET /posts/notifications/:addr` via a `ListNotifications` use case and `NotificationsQuery` adapter that aggregates replies/likes/follows from the existing indexes. Spec: `psf-memo-client/specs/notifications.feature`.
-
-**Following feed (P6.6)** — ✅ shipped (task `following-feed`), merged from the pipeline and verified (client build/test/lint, DB test/lint). A second-pass hardening merge from the architect (2026-09-02) extracted `parseRequiredString` into `pagination.js` (shared by the addr/room-scoped list use cases) and added client + DB composition-root hardening tests; merged to `master` at `4422372` and re-verified. Following Feed is a read-only aggregation: the viewer sees top-level posts (replies excluded) authored only by profiles they follow, newest first, never their own posts. 
-- `psf-memo-db`: `GET /posts/following/:addr?limit=&offset=` returning `{ posts, pagination }`, joining the follows index (`FollowQuery.listFollowing`) with the posts index (`PostQuery.scanFollowingFeedTxidsAndCount`). Empty following or no posts → empty result set.
-- `psf-memo-client`: a "Following" nav page at `/posts/following` that reads the viewer's wallet address, calls `MemoDb.getFollowingFeed`, and renders posts like the recent feed; shows "You are not following anyone." when following nobody and "No posts from profiles you follow." when followed profiles have no posts.
-- Spec: `psf-memo-client/specs/following-feed.feature`.
-
-**Search (P6.4)** — ✅ shipped (task `search`), merged from the pipeline and verified (client build/test/lint, DB test/lint):
-- `psf-memo-db`: `GET /search?q=&limit=&offset=` returning `{ posts, profiles, pagination }`. A `SearchQuery` adapter scans `postsDb` (top-level posts only, replies excluded via `postParentsDb`), `namesDb` (profile name), and `profilesDb` (profile bio) with case-insensitive substring matching; a `SearchAll` use case; a `/search` router + controller.
-- `psf-memo-client`: a `/search` page with a search box; `MemoDb.search(q)`; a `SearchPage` service; render matching posts like the feed and matching profiles like recent-profiles.
-- Empty queries and no-match queries both return an empty result set (no error).
-- Spec: `psf-memo-client/specs/search.feature`.
-
-### Deferred / skipped
-
-- **Send money with memo (P5.1)** — `0x6d24` — skipped by user decision
-  (no clear use case yet).
-
----
-
 ## Notes for future cycles
 
 - Broadcast result (txid) is returned immediately; the action appears in the
@@ -241,11 +112,3 @@ Polls require a new data model and rendering. The indexer has no handler yet.
 - Mutations/specs are Gherkin feature files under per-component `specs/` in
   the format defined by github.com/unclebob/Acceptance-Pipeline-Specification.
 - Root `specs/` contains this backlog and cross-component architecture notes.
-
-## Completed fixes (not roadmap features)
-
-- **ZMQ-mode DB backups** (2026-08-28, task `zmq-db-backups`): the block
-  indexer only created zip backups during IBD; the ZMQ live loop never called
-  `backupDb()`. Fixed by centralizing the `height % epoch === 0` decision in a
-  `BackupDb.maybeBackupDb` use case called from both the IBD and ZMQ paths.
-  Spec: `psf-memo-indexer/specs/zmq-mode-db-backups.feature`.
