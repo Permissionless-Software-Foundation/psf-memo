@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Wrapper for the Babashka APS gherkin-parser task.
-# Delegates to the project-local APS checkout under .swarmforge/tools/aps.
+# Delegates to the project-local APS checkout under ./tmp/aps-spec.
 set -euo pipefail
 if [ "$#" -ne 2 ]; then
   echo "usage: gherkin-parser <feature-file> <json-output>" >&2
@@ -9,6 +9,6 @@ fi
 FEATURE_FILE="$(realpath -m "$1")"
 JSON_OUTPUT="$(realpath -m "$2")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APS_DIR="$(cd "$SCRIPT_DIR/../../.swarmforge/tools/aps" && pwd)"
+APS_DIR="$(cd "$SCRIPT_DIR/../../tmp/aps-spec" && pwd)"
 cd "$APS_DIR"
 exec bb gherkin-parser "$FEATURE_FILE" "$JSON_OUTPUT"
