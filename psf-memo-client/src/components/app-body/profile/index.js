@@ -11,6 +11,7 @@ import MemoDb from '../../../services/memo-db'
 import MemoFollow from '../../../services/memo-follow'
 import MemoMute from '../../../services/memo-mute'
 import ProfilePage from '../../../services/profile-page'
+import { getViewerAddress } from '../../../services/profile-wallet'
 import PostReplyCount from '../../post-reply-count'
 import LikeButton from '../../post-feed/like-button'
 import PostThreadModal from '../../post-thread-modal'
@@ -75,6 +76,10 @@ function Profile (props) {
     setThreadTxid(null)
   }
 
+  const wallet = appData?.wallet || null
+  const appProfiles = appData?.profiles || null
+  const myAddr = getViewerAddress(appData)
+
   const runAction = async (method, failMsg) => {
     if (!profilePage || busy) return
     setBusy(true)
@@ -98,12 +103,11 @@ function Profile (props) {
 
       try {
         const memoDb = new MemoDb()
-        const myAddr = appData?.wallet?.walletInfo?.cashAddress || null
-        const memoFollow = myAddr
-          ? new MemoFollow({ wallet: appData.wallet, profiles: appData.profiles })
+        const memoFollow = myAddr && wallet
+          ? new MemoFollow({ wallet, profiles: appProfiles })
           : null
-        const memoMute = myAddr
-          ? new MemoMute({ wallet: appData.wallet, profiles: appData.profiles })
+        const memoMute = myAddr && wallet
+          ? new MemoMute({ wallet, profiles: appProfiles })
           : null
         const page = new ProfilePage({ memoDb, addr, myAddr, memoFollow, memoMute })
 
@@ -132,7 +136,7 @@ function Profile (props) {
       setError('Missing profile address')
       setLoading(false)
     }
-  }, [addr, appData?.wallet, appData?.profiles])
+  }, [addr, myAddr, wallet, appProfiles])
 
   const showFollowButton = profilePage && profilePage.canFollow() && !profilePage.isFollowing()
   const showUnfollowButton = profilePage && profilePage.canFollow() && profilePage.isFollowing()
