@@ -37,5 +37,5 @@ class PostsRouter {
 export default PostsRouter
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-02T19:04:31.503Z","module_hash":"640e7871f89083654c3a3d442b91cd29bc5f9f483f43bc3f521e7c874932a696","functions":[{"id":"func/PostsRouter.constructor","name":"PostsRouter.constructor","line":9,"end_line":24,"hash":"552bd82e3f00dd57053a773a52a72c40e522cb146e146bf3335cc119504e963e"},{"id":"func/PostsRouter.attach","name":"PostsRouter.attach","line":26,"end_line":33,"hash":"452b2740b90a4f51ac1b4fdde8c305b6a5e6e93e806acd4e5d37d2e9b940bbf1"}]}
+// {"version":1,"tested_at":"2026-09-02T20:15:32.177Z","module_hash":"57e7ca39a57e35a97b547b683a77223d17d666ba6878f08a387e42d044a46f85","functions":[{"id":"func/PostsRouter.constructor","name":"PostsRouter.constructor","line":9,"end_line":24,"hash":"552bd82e3f00dd57053a773a52a72c40e522cb146e146bf3335cc119504e963e"},{"id":"func/PostsRouter.attach","name":"PostsRouter.attach","line":26,"end_line":34,"hash":"f6d97a26736967d4be3685c63cfcae0eab7001d27dca22ce5c71199e98209d36"}]}
 // mutate4javascript-manifest-end
