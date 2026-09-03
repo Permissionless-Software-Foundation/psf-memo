@@ -99,8 +99,6 @@ function Profile (props) {
       try {
         const memoDb = new MemoDb()
         const myAddr = appData?.wallet?.walletInfo?.cashAddress || null
-        console.log('[profile] loadProfile myAddr:', myAddr)
-        console.log('[profile] wallet present:', Boolean(appData?.wallet), 'walletInfo:', appData?.wallet?.walletInfo)
         const memoFollow = myAddr
           ? new MemoFollow({ wallet: appData.wallet, profiles: appData.profiles })
           : null
@@ -140,15 +138,6 @@ function Profile (props) {
   const showUnfollowButton = profilePage && profilePage.canFollow() && profilePage.isFollowing()
   const showMuteButton = profilePage && profilePage.canMute() && !profilePage.isMuting()
   const showUnmuteButton = profilePage && profilePage.canMute() && profilePage.isMuting()
-  console.log('[profile] render conditions:', {
-    profilePageLoaded: Boolean(profilePage),
-    myAddr: profilePage?.myAddr ?? null,
-    isOwnProfile: profilePage?.isOwnProfile() ?? null,
-    canFollow: profilePage?.canFollow() ?? null,
-    isFollowing: profilePage?.isFollowing() ?? null,
-    showFollowButton,
-    showUnfollowButton
-  })
 
   return (
     <Container fluid className='profile-page mt-4'>
