@@ -49,6 +49,19 @@ distinct from per-task verification results, which live in
   to keep the worker copies tiny. This cut a notifications-query mutation run
   from 20+ minutes to ~2 minutes.
 
+- **Which directories bloat and how to keep them clean.** The two directories
+  that grow without bound are `<component>/tmp/acceptance` (LevelDB dirs from
+  acceptance runs, up to ~1.5G) and `<component>/target/mutation-workers`
+  (per-run worker copies, up to ~14G). Both are gitignored build artifacts.
+  Clean them before any mutation run:
+  ```bash
+  rm -rf psf-memo-db/tmp/acceptance psf-memo-db/target/mutation-workers \
+         psf-memo-client/tmp/acceptance psf-memo-client/target/mutation-workers
+  ```
+  `architect-startup.sh` now checks these and reports them as `[FAIL]` when
+  they exceed a size threshold, so a bloated dir is caught before it slows a
+  mutation run.
+
 - **`memo-db.js` (client HTTP adapter) is excluded from mutation testing.** It
   uses ESM + a directory import (`../config`) that is only resolvable via
   react-scripts/webpack, so it cannot be loaded under plain `node --test`. Its
