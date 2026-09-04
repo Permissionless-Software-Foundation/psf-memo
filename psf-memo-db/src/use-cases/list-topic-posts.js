@@ -50,5 +50,5 @@ class ListTopicPosts {
 export default ListTopicPosts
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-02T19:02:55.018Z","module_hash":"fc9d576550fdf3097c37feae14a9c1d7a8d15e44fa7c705140d5c869bc2a4f02","functions":[{"id":"func/ListTopicPosts.constructor","name":"ListTopicPosts.constructor","line":9,"end_line":22,"hash":"cdc313ae9059c07ce5cd2440e49fc958b9d273ed5ab43b0a6b81fd4949ad9272"},{"id":"func/ListTopicPosts.execute","name":"ListTopicPosts.execute","line":24,"end_line":46,"hash":"61f3386dac6823688ea4d0a6dbf3edebc77b36d3171e8a2661274d8871dcc39a"}]}
+// {"version":1,"tested_at":"2026-09-04T20:26:06.562Z","module_hash":"1e97ba4ccda25785ad914736a0cf89f95508f119816d3617ee04c719575484be","functions":[{"id":"func/ListTopicPosts.constructor","name":"ListTopicPosts.constructor","line":9,"end_line":22,"hash":"cdc313ae9059c07ce5cd2440e49fc958b9d273ed5ab43b0a6b81fd4949ad9272"},{"id":"func/ListTopicPosts.execute","name":"ListTopicPosts.execute","line":24,"end_line":47,"hash":"ce1f62ccfadcca0a00355997da767073633278e0a232fd644cde70e0969ce238"}]}
 // mutate4javascript-manifest-end

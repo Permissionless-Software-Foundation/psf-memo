@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-04T20:29:46.340959103Z","feature_name":"Mute Feed Filtering","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/mute-feed-filtering.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Mute Feed Filtering - 1, Mute Feed Filtering - 2, Mute Feed Filtering - 3, Mute Feed Filtering - 4, Mute Feed Filtering - 5, Mute Feed Filtering - 6
 #
 # Muting a profile hides that profile's content from the viewer's feeds. The

@@ -28,6 +28,12 @@ class Adapters {
     this.profileQuery = new ProfileQuery({
       profilesDb: level.profilesDb
     })
+    // muteQuery must be constructed before postQuery: downstream adapters read
+    // this.muteQuery at construction time, so declaring postQuery first would
+    // pass an undefined muteQuery and silently disable recent-feed filtering.
+    this.muteQuery = new MuteQuery({
+      mutesDb: level.mutesDb
+    })
     this.postQuery = new PostQuery({
       postsDb: level.postsDb,
       postHeightsDb: level.postHeightsDb,
@@ -40,9 +46,6 @@ class Adapters {
     })
     this.followQuery = new FollowQuery({
       followsDb: level.followsDb
-    })
-    this.muteQuery = new MuteQuery({
-      mutesDb: level.mutesDb
     })
     this.topicQuery = new TopicQuery({
       roomsDb: level.roomsDb,
@@ -83,5 +86,5 @@ class Adapters {
 export default Adapters
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-29T03:34:22.589Z","module_hash":"7137b595886dd88a8e876e38126ab9abe106b5b0e1054092297f508fb757adc4","functions":[{"id":"func/Adapters.constructor","name":"Adapters.constructor","line":15,"end_line":19,"hash":"065fc13eb85e8f884084eb672e5bf38175fb8305e576484804398dd902133c40"},{"id":"func/Adapters.openDatabases","name":"Adapters.openDatabases","line":21,"end_line":54,"hash":"588b692236c37e0940c82f235d15be1a8640b4afa8bc2a0a06ada5026dd417f5"},{"id":"func/Adapters.start","name":"Adapters.start","line":56,"end_line":60,"hash":"f9e62a9199f0259f5c22913625e6e497548b3887cc24871bba475e73e52b3750"}]}
+// {"version":1,"tested_at":"2026-09-04T20:24:31.696Z","module_hash":"99e2c2c57d6bdf578234a9920a05afd2d8bce8d9d79b233b42cf89c15e4fa1b8","functions":[{"id":"func/Adapters.constructor","name":"Adapters.constructor","line":17,"end_line":21,"hash":"065fc13eb85e8f884084eb672e5bf38175fb8305e576484804398dd902133c40"},{"id":"func/Adapters.openDatabases","name":"Adapters.openDatabases","line":23,"end_line":77,"hash":"09ed690b76a13da1e9ba1ee17e5e7fe481f207d1ecc149492c884f0ee45f3b83"},{"id":"func/Adapters.start","name":"Adapters.start","line":79,"end_line":83,"hash":"f9e62a9199f0259f5c22913625e6e497548b3887cc24871bba475e73e52b3750"}]}
 // mutate4javascript-manifest-end

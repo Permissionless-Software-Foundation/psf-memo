@@ -235,6 +235,23 @@ describe('#NotificationsQuery', () => {
     assert.equal(n.addr, THEIR_ADDR)
   })
 
+  it('should fall back to the follow key first component when followerAddr is missing', async () => {
+    postChildrenDb.iterator.returns(makeIterator([]))
+    likesDb.iterator.returns(makeIterator([]))
+    // A follow record can omit followerAddr; the address must be derived from
+    // the first component of the `addr:<followeePkHash>` key.
+    followsDb.iterator.returns(makeIterator([
+      [`${THEIR_ADDR}:${MY_HASH160}`, { followeePkHash: MY_HASH160, unfollow: false, txid: 'c'.repeat(64), blockHeight: 150 }]
+    ]))
+
+    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 1)
+    const n = result.notifications[0]
+    assert.equal(n.type, 'follow')
+    assert.equal(n.addr, THEIR_ADDR)
+  })
+
   it('should exclude my own replies', async () => {
     const myPostTxid = 'a'.repeat(64)
     const replyTxid = 'b'.repeat(64)
