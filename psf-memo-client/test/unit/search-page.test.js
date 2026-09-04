@@ -128,3 +128,27 @@ test('getProfile returns null when no profile matches', async () => {
 
   assert.equal(page.getProfile('addr2'), null)
 })
+
+test('canLoadMore reflects pagination.hasMore', async () => {
+  const more = new SearchPage({ memoDb: makeMemoDb([], [], { hasMore: true }) })
+  more.setQuery('hello')
+  await more.submit()
+  assert.equal(more.canLoadMore(), true)
+
+  const done = new SearchPage({ memoDb: makeMemoDb([], [], { hasMore: false }) })
+  done.setQuery('hello')
+  await done.submit()
+  assert.equal(done.canLoadMore(), false)
+})
+
+test('canLoadMore returns false when pagination is null or missing hasMore', async () => {
+  const pageNull = new SearchPage({ memoDb: makeMemoDb([], [], null) })
+  pageNull.setQuery('hello')
+  await pageNull.submit()
+  assert.equal(pageNull.canLoadMore(), false)
+
+  const pageEmpty = new SearchPage({ memoDb: makeMemoDb([], [], { total: 0 }) })
+  pageEmpty.setQuery('hello')
+  await pageEmpty.submit()
+  assert.equal(pageEmpty.canLoadMore(), false)
+})

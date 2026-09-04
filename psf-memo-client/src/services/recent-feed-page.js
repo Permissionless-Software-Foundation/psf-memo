@@ -33,5 +33,5 @@ RecentFeedPage.RECENT_FEED_PATH = RECENT_FEED_PATH
 module.exports = RecentFeedPage
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-04T17:03:39.630Z","module_hash":"9c0c48d7b21d24fcf640bf461b9798b2377097687c433be64776495ab7166601","functions":[{"id":"func/RecentFeedPage.constructor","name":"RecentFeedPage.constructor","line":18,"end_line":24,"hash":"78adbb7be7ccdc136fb6bb9201a8447b0a484f525a7426f25f281b0ecd78c0ae"},{"id":"func/RecentFeedPage.getPost","name":"RecentFeedPage.getPost","line":26,"end_line":28,"hash":"1a6ae1a02b0f79b5b62a2b2324a5f1edbd743bec004fe73cfef7970bead56885"}]}
+// {"version":1,"tested_at":"2026-09-04T17:09:10.548Z","module_hash":"9c0c48d7b21d24fcf640bf461b9798b2377097687c433be64776495ab7166601","functions":[{"id":"func/RecentFeedPage.constructor","name":"RecentFeedPage.constructor","line":18,"end_line":24,"hash":"78adbb7be7ccdc136fb6bb9201a8447b0a484f525a7426f25f281b0ecd78c0ae"},{"id":"func/RecentFeedPage.getPost","name":"RecentFeedPage.getPost","line":26,"end_line":28,"hash":"1a6ae1a02b0f79b5b62a2b2324a5f1edbd743bec004fe73cfef7970bead56885"}]}
 // mutate4javascript-manifest-end
