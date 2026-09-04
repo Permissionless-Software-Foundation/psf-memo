@@ -22,6 +22,9 @@ import TopicQuery from '../../src/adapters/topic-query.js'
 
 const rng = seededRandom(20260828)
 
+// Pool of cash-like address labels used to assign post authorship in fixtures.
+const ADDRESSES = ['alice', 'bob', 'carol', 'dave', 'erin']
+
 // In-memory rooms store mirroring the LevelDB iterator contract (gte/lte
 // prefix bounds over the key string).
 function makeRoomsDb (entries) {
@@ -46,6 +49,25 @@ function makeQuery (entries) {
   })
 }
 
+// In-memory posts store exposing the LevelDB `get` contract used by the mute
+// post lookup. Returns the post record or throws a LEVEL_NOT_FOUND-style error.
+function makePostsDb (entries) {
+  const posts = new Map(
+    entries.filter((e) => e.value.type === 'post').map((e) => [e.value.txid, e.value])
+  )
+  return {
+    async get (txid) {
+      const post = posts.get(txid)
+      if (!post) {
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      }
+      return post
+    }
+  }
+}
+
 function fixtureGen () {
   return () => {
     const roomCount = intGen(rng, 0, 5)()
@@ -62,6 +84,7 @@ function fixtureGen () {
           value: {
             type: 'post',
             txid: txidGen(rng),
+            addr: ADDRESSES[intGen(rng, 0, ADDRESSES.length - 1)()],
             blockHeight: intGen(rng, 0, 9000000)(),
             room
           }
@@ -165,5 +188,50 @@ test('roomFromKey and txidFromKey round-trip a room:txid key', async () => {
       return true
     },
     { label: 'roomFromKey/txidFromKey round-trip' }
+  )
+})
+
+test('getTopicPostTxids excludes muted addresses and conserves total and pagination', async () => {
+  await forAll(
+    fixtureGen(),
+    async ({ entries, rooms, limit, offset }) => {
+      if (rooms.length === 0) return true
+      const room = rooms[0]
+
+      // Pick a deterministic muted subset of the address pool per sample.
+      const mutedAddrs = ADDRESSES.filter(() => rng() < 0.4)
+      const muteQuery = { listMuted: async () => mutedAddrs }
+      const query = new TopicQuery({
+        roomsDb: makeRoomsDb(entries),
+        postsDb: makePostsDb(entries),
+        muteQuery
+      })
+
+      const roomPosts = entries
+        .filter((e) => e.value.type === 'post' && e.value.room === room)
+        .filter((e) => !mutedAddrs.includes(e.value.addr))
+        .sort((a, b) => b.value.blockHeight - a.value.blockHeight)
+
+      const { txids, total } = await query.getTopicPostTxids(room, {
+        limit,
+        offset,
+        viewerAddr: 'viewer-addr'
+      })
+
+      // Conservation: total counts only non-muted posts in the room.
+      if (total !== roomPosts.length) return false
+
+      // Pagination slice matches the filtered, ordering-preserved list.
+      const expectedTxids = roomPosts.slice(offset, offset + limit).map((e) => e.value.txid)
+      if (JSON.stringify(txids) !== JSON.stringify(expectedTxids)) return false
+
+      // Exhaustiveness: no returned txid may be authored by a muted address.
+      for (const txid of txids) {
+        const post = roomPosts.find((e) => e.value.txid === txid)
+        if (!post || mutedAddrs.includes(post.value.addr)) return false
+      }
+      return true
+    },
+    { label: 'getTopicPostTxids mute filtering excludes and conserves' }
   )
 })

@@ -8,6 +8,7 @@
 
 import BCHJS from '@psf/bch-js'
 import { getPostOrNull } from './lib/get-post-or-null.js'
+import { loadMutedAddrs } from './lib/muted-posts.js'
 
 class NotificationsQuery {
   constructor (localConfig = {}) {
@@ -55,6 +56,8 @@ class NotificationsQuery {
     this._collectLikeNotifications = this._collectLikeNotifications.bind(this)
     this._collectReplyNotifications = this._collectReplyNotifications.bind(this)
     this._replyNotificationChild = this._replyNotificationChild.bind(this)
+    this._followNotificationAddr = this._followNotificationAddr.bind(this)
+    this._likeNotificationPost = this._likeNotificationPost.bind(this)
     this._sortNotifications = this._sortNotifications.bind(this)
   }
 
@@ -64,12 +67,8 @@ class NotificationsQuery {
     const notifications = []
 
     for await (const [key, record] of this.followsDb.iterator()) {
-      if (record.unfollow === true) continue
-      if (record.followeePkHash !== myHash160) continue
-
-      const followerAddr = record.followerAddr || key.split(':')[0]
-      if (followerAddr === addr) continue
-      if (mutedAddrs.has(followerAddr)) continue
+      const followerAddr = this._followNotificationAddr(key, record, addr, myHash160, mutedAddrs)
+      if (followerAddr === null) continue
 
       notifications.push({
         type: 'follow',
@@ -83,16 +82,25 @@ class NotificationsQuery {
     return notifications
   }
 
+  // Return the follower address when a follow record is a valid follow
+  // notification for addr, else null. Filters out unfollow records, follows of
+  // other addresses, self-follows, and follows from muted addresses.
+  _followNotificationAddr (key, record, addr, myHash160, mutedAddrs) {
+    if (record.unfollow === true) return null
+    if (record.followeePkHash !== myHash160) return null
+    const followerAddr = record.followerAddr || key.split(':')[0]
+    if (followerAddr === addr) return null
+    if (mutedAddrs.has(followerAddr)) return null
+    return followerAddr
+  }
+
   // Collect likes on posts authored by this address, excluding self-likes.
   async _collectLikeNotifications (addr, mutedAddrs) {
     const notifications = []
 
     for await (const [likeTxid, like] of this.likesDb.iterator()) {
-      if (!like || like.addr === addr) continue
-      if (mutedAddrs.has(like.addr)) continue
-
-      const post = await getPostOrNull(this.postsDb, like.postTxid)
-      if (!post || post.addr !== addr) continue
+      const post = await this._likeNotificationPost(like, addr, mutedAddrs)
+      if (!post) continue
 
       notifications.push({
         type: 'like',
@@ -105,6 +113,16 @@ class NotificationsQuery {
     }
 
     return notifications
+  }
+
+  // Return the liked post when a like is a valid like notification for addr,
+  // else null. Filters out missing likes, self-likes, likes from muted
+  // addresses, and likes on posts not authored by addr.
+  async _likeNotificationPost (like, addr, mutedAddrs) {
+    if (!like || like.addr === addr || mutedAddrs.has(like.addr)) return null
+    const post = await getPostOrNull(this.postsDb, like.postTxid)
+    if (!post || post.addr !== addr) return null
+    return post
   }
 
   // Collect replies to posts authored by this address, excluding own replies.
@@ -158,7 +176,7 @@ class NotificationsQuery {
 
   // Return paginated notifications for addr, sorted newest-first.
   async listNotifications (addr, { limit, offset } = {}) {
-    const mutedAddrs = await this._mutedAddrs(addr)
+    const mutedAddrs = await loadMutedAddrs(this.muteQuery, addr)
 
     const follows = await this._collectFollowNotifications(addr, mutedAddrs)
     const likes = await this._collectLikeNotifications(addr, mutedAddrs)
@@ -169,14 +187,6 @@ class NotificationsQuery {
     const page = all.slice(offset, offset + limit)
 
     return { notifications: page, total }
-  }
-
-  // Return a Set of addresses muted by addr, or an empty set when no mute
-  // query adapter is available.
-  async _mutedAddrs (addr) {
-    if (!this.muteQuery || !addr) return new Set()
-    const muted = await this.muteQuery.listMuted(addr)
-    return new Set(muted)
   }
 }
 

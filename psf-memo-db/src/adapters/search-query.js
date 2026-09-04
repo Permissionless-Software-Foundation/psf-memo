@@ -9,6 +9,7 @@
 
 import { normalizeQuery } from '../lib/search.js'
 import { loadReplyTxids } from './lib/load-reply-txids.js'
+import { loadMutedAddrs } from './lib/muted-posts.js'
 
 class SearchQuery {
   constructor (localConfig = {}) {
@@ -41,7 +42,7 @@ class SearchQuery {
     if (normalized.length === 0) return []
 
     const replyTxids = await loadReplyTxids(this.postParentsDb)
-    const mutedAddrs = await this._mutedAddrs(viewerAddr)
+    const mutedAddrs = await loadMutedAddrs(this.muteQuery, viewerAddr)
     const matches = []
 
     for await (const [txid, post] of this.postsDb.iterator()) {
@@ -135,14 +136,6 @@ class SearchQuery {
       seen,
       blockHeight
     }
-  }
-
-  // Return a Set of addresses muted by viewerAddr, or an empty set when no
-  // mute query adapter is available.
-  async _mutedAddrs (viewerAddr) {
-    if (!this.muteQuery || !viewerAddr) return new Set()
-    const muted = await this.muteQuery.listMuted(viewerAddr)
-    return new Set(muted)
   }
 }
 

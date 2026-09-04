@@ -10,6 +10,8 @@
     - getTopicPostTxids()    - paginated txids for a room sorted by block height
 */
 
+import { loadMutedAddrs, isMutedPost } from './lib/muted-posts.js'
+
 class TopicQuery {
   constructor (localConfig = {}) {
     const { roomsDb, postsDb, muteQuery } = localConfig
@@ -74,7 +76,7 @@ class TopicQuery {
   }
 
   async getTopicPostTxids (room, { limit, offset, viewerAddr = null }) {
-    const mutedAddrs = await this._mutedAddrs(viewerAddr)
+    const mutedAddrs = await loadMutedAddrs(this.muteQuery, viewerAddr)
     const start = `${room}:`
     const end = `${room}:\uffff`
     const entries = []
@@ -82,7 +84,7 @@ class TopicQuery {
     for await (const [key, value] of this.roomsDb.iterator({ gte: start, lte: end })) {
       if (value?.type !== 'post') continue
       const txid = (value && typeof value.txid === 'string') ? value.txid : this.txidFromKey(key)
-      if (await this._isMutedPost(txid, mutedAddrs)) continue
+      if (await isMutedPost((t) => this.postsDb.get(t).catch(() => null), txid, mutedAddrs)) continue
       const blockHeight = value?.blockHeight ?? 0
       entries.push({ txid, blockHeight })
     }
@@ -93,23 +95,6 @@ class TopicQuery {
     const txids = entries.slice(offset, offset + limit).map((entry) => entry.txid)
 
     return { txids, total }
-  }
-
-  // Return a Set of addresses muted by viewerAddr, or an empty set when no
-  // mute query adapter is available.
-  async _mutedAddrs (viewerAddr) {
-    if (!this.muteQuery || !viewerAddr) return new Set()
-    const muted = await this.muteQuery.listMuted(viewerAddr)
-    return new Set(muted)
-  }
-
-  // True when a post is authored by an address in mutedAddrs. Missing posts
-  // are treated as not muted.
-  async _isMutedPost (txid, mutedAddrs) {
-    if (mutedAddrs.size === 0) return false
-    const post = await this.postsDb.get(txid).catch(() => null)
-    if (!post) return false
-    return mutedAddrs.has(post.addr)
   }
 
   // Return true when addr has an active follow record for room.

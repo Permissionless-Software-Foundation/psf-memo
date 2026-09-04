@@ -8,6 +8,7 @@
 
 import { loadReplyTxids } from './lib/load-reply-txids.js'
 import { getPostOrNull as getPostOrNullShared } from './lib/get-post-or-null.js'
+import { loadMutedAddrs, isMutedPost } from './lib/muted-posts.js'
 
 const HEIGHT_PAD = 12
 
@@ -201,12 +202,12 @@ class PostQuery {
   }
 
   async scanRecentPostTxids ({ limit, offset, viewerAddr = null }) {
-    const mutedAddrs = await this._mutedAddrs(viewerAddr)
+    const mutedAddrs = await loadMutedAddrs(this.muteQuery, viewerAddr)
     const txids = []
     let skipped = 0
 
     for await (const txid of this.topLevelPostTxids({ reverse: true })) {
-      if (await this._isMutedPost(txid, mutedAddrs)) continue
+      if (await isMutedPost((t) => this.getPostOrNull(t), txid, mutedAddrs)) continue
 
       if (skipped < offset) {
         skipped++
@@ -279,14 +280,14 @@ class PostQuery {
   }
 
   async countTopLevelPosts (viewerAddr = null) {
-    const mutedAddrs = await this._mutedAddrs(viewerAddr)
+    const mutedAddrs = await loadMutedAddrs(this.muteQuery, viewerAddr)
     let count = 0
     const iterator = this.topLevelPostTxids()
 
     for (;;) {
       const { done, value: txid } = await iterator.next()
       if (done) break
-      if (await this._isMutedPost(txid, mutedAddrs)) continue
+      if (await isMutedPost((t) => this.getPostOrNull(t), txid, mutedAddrs)) continue
       count++
     }
 
@@ -348,23 +349,6 @@ class PostQuery {
     const post = await this.getPostOrNull(txid)
     if (!post) return false
     return followeeSet.has(post.addr)
-  }
-
-  // Return a Set of addresses muted by viewerAddr, or an empty set when no
-  // mute query adapter is available.
-  async _mutedAddrs (viewerAddr) {
-    if (!this.muteQuery || !viewerAddr) return new Set()
-    const muted = await this.muteQuery.listMuted(viewerAddr)
-    return new Set(muted)
-  }
-
-  // True when a post is authored by an address in mutedAddrs. Missing posts
-  // are treated as not muted.
-  async _isMutedPost (txid, mutedAddrs) {
-    if (mutedAddrs.size === 0) return false
-    const post = await this.getPostOrNull(txid)
-    if (!post) return false
-    return mutedAddrs.has(post.addr)
   }
 }
 
