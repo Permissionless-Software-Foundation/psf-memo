@@ -15,6 +15,7 @@ import {
   getDisplayName,
   truncateTxid
 } from './post-display'
+import PostContent from './post-content'
 import './post-feed.css'
 
 const appUtil = new AppUtil()
@@ -137,7 +138,7 @@ function PostFeedItem ({
 
           {' '}
 
-          {post.text}
+          <PostContent text={post.text} />
         </p>
       </div>
 

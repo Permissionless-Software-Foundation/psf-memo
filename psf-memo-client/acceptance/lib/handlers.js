@@ -51,6 +51,8 @@ const MemoPollOption = require('../../src/services/memo-poll-option')
 const PollOptionPage = require('../../src/services/poll-option-page')
 const MemoPollVote = require('../../src/services/memo-poll-vote')
 const PollVotePage = require('../../src/services/poll-vote-page')
+const { renderPostText } = require('./render-post')
+const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -1419,6 +1421,7 @@ const handlers = [
     async run (m, example, world) {
       await world.recentFeedPage.load()
       world.currentPath = RecentFeedPage.RECENT_FEED_PATH
+      world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
     }
   },
   {
@@ -2627,8 +2630,74 @@ const handlers = [
         throw new Error('Expected notifications page to show the no-notifications message.')
       }
     }
+  },
+  {
+    name: 'API serves post with address and text',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by the address (.+) with text (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const text = resolveText(m[3], example)
+      world.memoDb.addPost({ txid, addr, text, blockHeight: 100 })
+    }
+  },
+  {
+    name: 'feed shows embedded YouTube player',
+    pattern: /^the feed shows an embedded YouTube player for the video (.+)$/,
+    run (m, example, world) {
+      const videoId = resolveParam(m[1], example)
+      const rendered = getRenderedFeed(world)
+      const needle = `${YOUTUBE_EMBED_BASE_URL}/${videoId}`
+      const found = rendered.some((html) => html.includes(needle))
+      if (!found) {
+        throw new Error(`Feed does not show an embedded YouTube player for ${videoId}.`)
+      }
+    }
+  },
+  {
+    name: 'feed does not show raw URL',
+    pattern: /^the feed does not show the raw URL (.+)$/,
+    run (m, example, world) {
+      const url = resolveText(m[1], example)
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) => html.includes(url))
+      if (found) {
+        throw new Error(`Feed unexpectedly shows the raw URL ${url}.`)
+      }
+    }
+  },
+  {
+    name: 'feed shows text',
+    pattern: /^the feed shows the text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) => html.replace(/<[^\u003e]+>/g, '').includes(expected))
+      if (!found) {
+        throw new Error(`Feed does not show the text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'feed does not show embedded video player',
+    pattern: /^the feed does not show an embedded video player$/,
+    run (m, example, world) {
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) => html.includes('<iframe'))
+      if (found) {
+        throw new Error('Feed unexpectedly shows an embedded video player.')
+      }
+    }
   }
 ]
+
+// Return the cached rendered feed HTML, computing it on first use.
+function getRenderedFeed (world) {
+  if (!world.renderedFeed) {
+    world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
+  }
+  return world.renderedFeed
+}
 
 // Decode a raw create-poll payload into poll_type, option_count, and question.
 function decodeCreatePollPayload (raw) {
