@@ -128,6 +128,22 @@ test('canLoadMore reflects pagination.hasMore', async () => {
   assert.equal(pageDone.canLoadMore(), false)
 })
 
+test('canLoadMore returns false when pagination is null or missing hasMore', async () => {
+  const pageNull = new NotificationsPage({
+    memoDb: makeMemoDb([], null),
+    wallet: makeWallet()
+  })
+  await pageNull.load()
+  assert.equal(pageNull.canLoadMore(), false)
+
+  const pageEmpty = new NotificationsPage({
+    memoDb: makeMemoDb([], { total: 0 }),
+    wallet: makeWallet()
+  })
+  await pageEmpty.load()
+  assert.equal(pageEmpty.canLoadMore(), false)
+})
+
 test('getNotification returns a loaded notification by txid', async () => {
   const notifications = [{ type: 'follow', txid: 'a'.repeat(64), addr: 'bitcoincash:other' }]
   const page = new NotificationsPage({

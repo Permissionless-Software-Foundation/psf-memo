@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-04T17:42:23.821120012Z","feature_name":"Page Size","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/page-size.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Page Size - 1, Page Size - 2, Page Size - 3, Page Size - 4, Page Size - 5, Page Size - 6, Page Size - 7
 #
 # Every paginated page in the client requests 50 items per page instead of 100.
