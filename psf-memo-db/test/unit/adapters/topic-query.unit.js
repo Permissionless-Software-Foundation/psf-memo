@@ -108,23 +108,26 @@ describe('#TopicQuery', () => {
       const result = await uut.listTopics()
 
       assert.deepEqual(result, [
-        { room: 'bitcoin', postCount: 2 },
-        { room: 'cash', postCount: 1 },
-        { room: 'dev', postCount: 1 },
-        { room: 'lone', postCount: 0 }
+        { room: 'bitcoin', postCount: 2, lastHeight: 300 },
+        { room: 'cash', postCount: 1, lastHeight: 250 },
+        { room: 'dev', postCount: 1, lastHeight: 100 },
+        { room: 'lone', postCount: 0, lastHeight: 0 }
       ])
     })
 
-    it('should sort topics by room name', async () => {
+    it('should sort topics by most recent post descending', async () => {
       async function * mockRooms () {
         yield ['zoo:post-1', { room: 'zoo', txid: 'post-1', type: 'post', blockHeight: 1 }]
-        yield ['alpha:post-1', { room: 'alpha', txid: 'post-1', type: 'post', blockHeight: 1 }]
+        yield ['alpha:post-1', { room: 'alpha', txid: 'post-1', type: 'post', blockHeight: 2 }]
       }
       roomsDb.iterator.returns(mockRooms())
 
       const result = await uut.listTopics()
 
-      assert.deepEqual(result.map((t) => t.room), ['alpha', 'zoo'])
+      assert.deepEqual(result.map((t) => ({ room: t.room, lastHeight: t.lastHeight })), [
+        { room: 'alpha', lastHeight: 2 },
+        { room: 'zoo', lastHeight: 1 }
+      ])
     })
   })
 

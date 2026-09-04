@@ -42,21 +42,31 @@ class TopicQuery {
   }
 
   async listTopics () {
-    const counts = new Map()
+    const topics = new Map()
 
     for await (const [key, value] of this.roomsDb.iterator()) {
       const room = this.roomFromKey(key, value)
-      if (!counts.has(room)) {
-        counts.set(room, 0)
+      if (!topics.has(room)) {
+        topics.set(room, { postCount: 0, lastHeight: 0 })
       }
+      const topic = topics.get(room)
       if (value?.type === 'post') {
-        counts.set(room, counts.get(room) + 1)
+        topic.postCount++
+        const height = value?.blockHeight ?? 0
+        if (height > topic.lastHeight) {
+          topic.lastHeight = height
+        }
       }
     }
 
-    return Array.from(counts.entries())
-      .map(([room, postCount]) => ({ room, postCount }))
-      .sort((a, b) => a.room.localeCompare(b.room))
+    return Array.from(topics.entries())
+      .map(([room, { postCount, lastHeight }]) => ({ room, postCount, lastHeight }))
+      .sort((a, b) => {
+        if (b.lastHeight !== a.lastHeight) {
+          return b.lastHeight - a.lastHeight
+        }
+        return a.room.localeCompare(b.room)
+      })
   }
 
   async getTopicPostTxids (room, { limit, offset }) {
