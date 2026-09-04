@@ -71,7 +71,7 @@ test('load forwards limit and offset to the memo db client', async () => {
   assert.deepEqual(calls, [{ room: 'bitcoin', params: { limit: 10, offset: 20 } }])
 })
 
-test('load defaults limit and offset', async () => {
+test('load defaults limit and offset to 50 and 0', async () => {
   const calls = []
   const memoDb = {
     async getTopicPosts (room, params) {
@@ -89,7 +89,7 @@ test('load defaults limit and offset', async () => {
 
   await page.load()
 
-  assert.deepEqual(calls, [{ limit: 100, offset: 0 }])
+  assert.deepEqual(calls, [{ limit: 50, offset: 0 }])
 })
 
 test('stores the pagination returned by the memo db client', async () => {
@@ -225,4 +225,24 @@ test('follow requires a memo topic follow handler', async () => {
 
 test('exposes the topic feed path for a room', () => {
   assert.equal(TopicFeedPage.topicFeedPath('bitcoin'), '/topics/bitcoin')
+})
+
+test('canLoadMore reflects pagination.hasMore', async () => {
+  const more = new TopicFeedPage({ memoDb: makeMemoDb([], { hasMore: true }), room: 'bitcoin' })
+  await more.load()
+  assert.equal(more.canLoadMore(), true)
+
+  const done = new TopicFeedPage({ memoDb: makeMemoDb([], { hasMore: false }), room: 'bitcoin' })
+  await done.load()
+  assert.equal(done.canLoadMore(), false)
+})
+
+test('canLoadMore returns false when pagination is null or missing hasMore', async () => {
+  const pageNull = new TopicFeedPage({ memoDb: makeMemoDb([], null), room: 'bitcoin' })
+  await pageNull.load()
+  assert.equal(pageNull.canLoadMore(), false)
+
+  const pageEmpty = new TopicFeedPage({ memoDb: makeMemoDb([], { total: 0 }), room: 'bitcoin' })
+  await pageEmpty.load()
+  assert.equal(pageEmpty.canLoadMore(), false)
 })

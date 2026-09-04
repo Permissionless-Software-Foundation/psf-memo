@@ -17,7 +17,7 @@ import {
 import '../../../App.css'
 import '../../post-feed/post-feed.css'
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 50
 
 function RecentPosts (props) {
   const { appData } = props

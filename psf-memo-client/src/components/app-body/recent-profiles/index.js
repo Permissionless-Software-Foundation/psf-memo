@@ -4,14 +4,16 @@
 
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Table, Button } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
+import RecentProfilesPage from '../../../services/recent-profiles-page'
 import AppUtil, { truncateAddr, truncateTxid } from '../../../util'
 import '../../../App.css'
 
 const appUtil = new AppUtil()
+const PAGE_SIZE = 50
 
 function formatSeen (seen) {
   if (!seen) return ''
@@ -24,22 +26,39 @@ function RecentProfiles () {
   const [error, setError] = useState(null)
   const [profiles, setProfiles] = useState([])
   const [pagination, setPagination] = useState(null)
+  const [offset, setOffset] = useState(0)
 
   useEffect(() => {
     const loadProfiles = async () => {
       try {
+        setLoading(true)
+        setError(null)
         const memoDb = new MemoDb()
-        const data = await memoDb.getRecentProfiles({ limit: 100, offset: 0 })
+        const page = new RecentProfilesPage({ memoDb })
+        const data = await page.load({ limit: PAGE_SIZE, offset })
         setProfiles(data.profiles || [])
         setPagination(data.pagination || null)
       } catch (err) {
         setError(err.message || 'Failed to load recent profiles')
+        setProfiles([])
+        setPagination(null)
       }
       setLoading(false)
     }
 
     loadProfiles()
-  }, [])
+  }, [offset])
+
+  const canGoBack = offset > 0
+  const canGoNext = pagination?.hasMore ?? false
+
+  const handlePrevious = () => {
+    setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
+  }
+
+  const handleNext = () => {
+    setOffset((prev) => prev + PAGE_SIZE)
+  }
 
   return (
     <Container>
@@ -101,6 +120,26 @@ function RecentProfiles () {
                 ))}
               </tbody>
             </Table>
+          )}
+
+          {!loading && !error && (pagination || offset > 0) && (
+            <div className='recent-profiles-pagination'>
+              <Button
+                variant='outline-dark'
+                onClick={handlePrevious}
+                disabled={!canGoBack}
+              >
+                Previous
+              </Button>
+
+              <Button
+                variant='outline-dark'
+                onClick={handleNext}
+                disabled={!canGoNext}
+              >
+                Next
+              </Button>
+            </div>
           )}
         </Col>
       </Row>

@@ -75,7 +75,7 @@ test('load throws when no address is provided', async () => {
   )
 })
 
-test('load defaults limit to 100 and offset to 0', async () => {
+test('load defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const memoDb = {
@@ -91,7 +91,7 @@ test('load defaults limit to 100 and offset to 0', async () => {
 
   await page.load()
 
-  assert.deepEqual(calls, [{ a: addr, params: { limit: 100, offset: 0 } }])
+  assert.deepEqual(calls, [{ a: addr, params: { limit: 50, offset: 0 } }])
 })
 
 test('load sets pagination to null when the API returns none', async () => {
@@ -183,4 +183,54 @@ test('follow throws when no memo follow handler is injected', async () => {
     () => page.follow(),
     /requires a memo follow handler/
   )
+})
+
+test('canLoadMore reflects pagination.hasMore', async () => {
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const more = new ProfilePage({
+    memoDb: {
+      async getPostsByAddr () { return { posts: [], pagination: { hasMore: true } } },
+      async getFollowState () { return false },
+      async getMuteState () { return false }
+    },
+    addr
+  })
+  await more.load()
+  assert.equal(more.canLoadMore(), true)
+
+  const done = new ProfilePage({
+    memoDb: {
+      async getPostsByAddr () { return { posts: [], pagination: { hasMore: false } } },
+      async getFollowState () { return false },
+      async getMuteState () { return false }
+    },
+    addr
+  })
+  await done.load()
+  assert.equal(done.canLoadMore(), false)
+})
+
+test('canLoadMore returns false when pagination is null or missing hasMore', async () => {
+  const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const pageNull = new ProfilePage({
+    memoDb: {
+      async getPostsByAddr () { return { posts: [], pagination: null } },
+      async getFollowState () { return false },
+      async getMuteState () { return false }
+    },
+    addr
+  })
+  await pageNull.load()
+  assert.equal(pageNull.canLoadMore(), false)
+
+  const pageEmpty = new ProfilePage({
+    memoDb: {
+      async getPostsByAddr () { return { posts: [], pagination: { total: 0 } } },
+      async getFollowState () { return false },
+      async getMuteState () { return false }
+    },
+    addr
+  })
+  await pageEmpty.load()
+  assert.equal(pageEmpty.canLoadMore(), false)
 })

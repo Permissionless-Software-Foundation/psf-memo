@@ -12,7 +12,7 @@ import MemoDb from '../../../services/memo-db'
 import NotificationsPage from '../../../services/notifications-page'
 import '../../../App.css'
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 50
 
 function notificationText (n) {
   if (n.type === 'reply') {

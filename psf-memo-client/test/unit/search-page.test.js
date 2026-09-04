@@ -49,7 +49,7 @@ test('submit forwards query, limit and offset to the memo db client', async () =
   assert.deepEqual(calls, [{ q: 'alice', params: { limit: 10, offset: 20 } }])
 })
 
-test('submit defaults limit to 100 and offset to 0', async () => {
+test('submit defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const memoDb = {
     async search (q, params) {
@@ -62,7 +62,7 @@ test('submit defaults limit to 100 and offset to 0', async () => {
   page.setQuery('memo')
   await page.submit()
 
-  assert.deepEqual(calls, [{ q: 'memo', params: { limit: 100, offset: 0 } }])
+  assert.deepEqual(calls, [{ q: 'memo', params: { limit: 50, offset: 0 } }])
 })
 
 test('submit throws when no memo db client is provided', async () => {
@@ -127,4 +127,28 @@ test('getProfile returns null when no profile matches', async () => {
   await page.submit()
 
   assert.equal(page.getProfile('addr2'), null)
+})
+
+test('canLoadMore reflects pagination.hasMore', async () => {
+  const more = new SearchPage({ memoDb: makeMemoDb([], [], { hasMore: true }) })
+  more.setQuery('hello')
+  await more.submit()
+  assert.equal(more.canLoadMore(), true)
+
+  const done = new SearchPage({ memoDb: makeMemoDb([], [], { hasMore: false }) })
+  done.setQuery('hello')
+  await done.submit()
+  assert.equal(done.canLoadMore(), false)
+})
+
+test('canLoadMore returns false when pagination is null or missing hasMore', async () => {
+  const pageNull = new SearchPage({ memoDb: makeMemoDb([], [], null) })
+  pageNull.setQuery('hello')
+  await pageNull.submit()
+  assert.equal(pageNull.canLoadMore(), false)
+
+  const pageEmpty = new SearchPage({ memoDb: makeMemoDb([], [], { total: 0 }) })
+  pageEmpty.setQuery('hello')
+  await pageEmpty.submit()
+  assert.equal(pageEmpty.canLoadMore(), false)
 })

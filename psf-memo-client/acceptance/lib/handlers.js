@@ -42,6 +42,7 @@ const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
 const SearchPage = require('../../src/services/search-page')
 const NotificationsPage = require('../../src/services/notifications-page')
+const RecentProfilesPage = require('../../src/services/recent-profiles-page')
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
@@ -296,7 +297,7 @@ function makeMemoDb () {
       }
       return addrs
     },
-    async search (q) {
+    async search (q, { limit = 50, offset = 0 } = {}) {
       const normalized = String(q).trim().toLowerCase()
       if (normalized.length === 0) {
         return { posts: [], profiles: [], pagination: { total: 0, hasMore: false } }
@@ -308,18 +309,19 @@ function makeMemoDb () {
         (typeof p.name === 'string' && p.name.toLowerCase().includes(normalized)) ||
         (typeof p.text === 'string' && p.text.toLowerCase().includes(normalized))
       )
-      const total = matchedPosts.length + matchedProfiles.length
+      const total = matchedPosts.length
+      const page = matchedPosts.slice(offset, offset + limit)
       return {
-        posts: matchedPosts,
+        posts: page,
         profiles: matchedProfiles,
-        pagination: { total, hasMore: false }
+        pagination: { total, limit, offset, hasMore: offset + page.length < total }
       }
     },
-    async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
+    async getRecentPosts ({ limit = 50, offset = 0 } = {}) {
       const page = posts.slice(offset, offset + limit)
       return { posts: page, pagination: { total: posts.length, limit, offset, hasMore: offset + page.length < posts.length } }
     },
-    async getPostsByAddr (addr, { limit = 100, offset = 0 } = {}) {
+    async getPostsByAddr (addr, { limit = 50, offset = 0 } = {}) {
       const filtered = posts.filter((p) => p.addr === addr)
       const page = filtered.slice(offset, offset + limit)
       return { posts: page, pagination: { total: filtered.length, limit, offset, hasMore: offset + page.length < filtered.length } }
@@ -341,12 +343,12 @@ function makeMemoDb () {
       list.sort((a, b) => a.room.localeCompare(b.room))
       return { topics: list }
     },
-    async getTopicPosts (room, { limit = 100, offset = 0 } = {}) {
+    async getTopicPosts (room, { limit = 50, offset = 0 } = {}) {
       const all = topicPosts[room] || []
       const page = all.slice(offset, offset + limit)
       return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
     },
-    async getNotifications (addr, { limit = 100, offset = 0 } = {}) {
+    async getNotifications (addr, { limit = 50, offset = 0 } = {}) {
       const notifications = []
 
       for (const reply of replies) {
@@ -392,7 +394,11 @@ function makeMemoDb () {
       const page = notifications.slice(offset, offset + limit)
       return { notifications: page, pagination: { total, limit, offset, hasMore: offset + page.length < total } }
     },
-    async getFollowingFeed (addr, { limit = 100, offset = 0 } = {}) {
+    async getRecentProfiles ({ limit = 50, offset = 0 } = {}) {
+      const page = profiles.slice(offset, offset + limit)
+      return { profiles: page, pagination: { total: profiles.length, limit, offset, hasMore: offset + page.length < profiles.length } }
+    },
+    async getFollowingFeed (addr, { limit = 50, offset = 0 } = {}) {
       const followees = new Set()
       for (const [key, following] of Object.entries(followState)) {
         if (!following) continue
@@ -410,7 +416,7 @@ function makeMemoDb () {
 
 // Fresh world/state object for a single scenario execution.
 function createWorld () {
-  const wallet = makeWallet('')
+  const wallet = makeWallet('bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d')
   const feed = makeFeed()
   const profiles = makeProfiles()
   const memoPost = new MemoPost({ wallet, feed })
@@ -456,6 +462,7 @@ function createWorld () {
     memoDb,
     navigate: (path) => { world.currentPath = path }
   })
+  world.recentProfilesPage = new RecentProfilesPage({ memoDb })
 
   // The New Post Page controller wraps the memo post behavior. Its navigate
   // adapter updates the world's current path so navigation can be asserted.
@@ -2632,13 +2639,264 @@ const handlers = [
     }
   },
   {
-    name: 'API serves post with address and text',
-    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by the address (.+) with text (.+)$/,
+    name: 'API serves N recent posts',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) recent posts$/,
     run (m, example, world) {
-      const txid = resolveParam(m[1], example)
+      const count = parseInt(resolveParam(m[1], example), 10)
+      for (let i = 0; i < count; i++) {
+        world.memoDb.addPost({
+          txid: `recent-post-${i + 1}`.padEnd(64, '0'),
+          addr: `addr-${i + 1}`,
+          text: `Recent post ${i + 1}`,
+          blockHeight: 100 + i
+        })
+      }
+    }
+  },
+  {
+    name: 'API serves N posts by address',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) posts authored by the address (.+)$/,
+    run (m, example, world) {
+      const count = parseInt(resolveParam(m[1], example), 10)
       const addr = resolveParam(m[2], example)
-      const text = resolveText(m[3], example)
-      world.memoDb.addPost({ txid, addr, text, blockHeight: 100 })
+      for (let i = 0; i < count; i++) {
+        world.memoDb.addPost({
+          txid: `${addr}-post-${i + 1}`.padEnd(64, '0'),
+          addr,
+          text: `Post ${i + 1}`,
+          blockHeight: 100 + i
+        })
+      }
+    }
+  },
+  {
+    name: 'API serves N posts in topic',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) posts in the topic (.+)$/,
+    run (m, example, world) {
+      const count = parseInt(resolveParam(m[1], example), 10)
+      const room = resolveParam(m[2], example)
+      for (let i = 0; i < count; i++) {
+        world.memoDb.addTopicPost(room, {
+          txid: `${room}-post-${i + 1}`.padEnd(64, '0'),
+          addr: `addr-${i + 1}`,
+          text: `Topic post ${i + 1}`,
+          blockHeight: 100 + i
+        })
+      }
+    }
+  },
+  {
+    name: 'API serves N replies to post',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) replies to the post with txid (.+)$/,
+    run (m, example, world) {
+      const count = parseInt(resolveParam(m[1], example), 10)
+      const parentTxid = resolveParam(m[2], example)
+      for (let i = 0; i < count; i++) {
+        world.memoDb.addReply({
+          txid: `reply-${i + 1}`.padEnd(64, '0'),
+          parentTxid,
+          text: `Reply ${i + 1}`,
+          addr: 'bitcoincash:reply-author',
+          blockHeight: 100 + i
+        })
+      }
+    }
+  },
+  {
+    name: 'API serves N search posts',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) search posts matching (.+)$/,
+    run (m, example, world) {
+      const count = parseInt(resolveParam(m[1], example), 10)
+      const query = resolveParam(m[2], example)
+      for (let i = 0; i < count; i++) {
+        world.memoDb.addSearchPost({
+          txid: `search-post-${i + 1}`.padEnd(64, '0'),
+          addr: `addr-${i + 1}`,
+          text: `${query} search result ${i + 1}`,
+          blockHeight: 100 + i
+        })
+      }
+    }
+  },
+  {
+    name: 'API serves N profiles',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) profiles$/,
+    run (m, example, world) {
+      const count = parseInt(resolveParam(m[1], example), 10)
+      for (let i = 0; i < count; i++) {
+        world.memoDb.profiles.push({
+          addr: `profile-addr-${i + 1}`,
+          text: `Profile ${i + 1}`,
+          txid: `profile-txid-${i + 1}`.padEnd(64, '0'),
+          blockHeight: 100 + i,
+          seen: Date.now()
+        })
+      }
+    }
+  },
+  {
+    name: 'recent feed shows 50 posts',
+    pattern: /^the recent feed shows 50 posts$/,
+    run (m, example, world) {
+      const actual = world.recentFeedPage.posts.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 posts in recent feed, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'recent feed can load more posts',
+    pattern: /^the recent feed can load more posts$/,
+    run (m, example, world) {
+      if (!world.recentFeedPage.canLoadMore || !world.recentFeedPage.canLoadMore()) {
+        throw new Error('Expected recent feed to have more posts, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'following feed shows 50 posts',
+    pattern: /^the following feed shows 50 posts$/,
+    run (m, example, world) {
+      const actual = world.followingFeedPage.posts.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 posts in following feed, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'following feed can load more posts',
+    pattern: /^the following feed can load more posts$/,
+    run (m, example, world) {
+      if (!world.followingFeedPage.canLoadMore()) {
+        throw new Error('Expected following feed to have more posts, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'topic feed shows 50 posts',
+    pattern: /^the topic feed shows 50 posts$/,
+    run (m, example, world) {
+      const actual = world.topicFeedPage.posts.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 posts in topic feed, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'topic feed can load more posts',
+    pattern: /^the topic feed can load more posts$/,
+    run (m, example, world) {
+      if (!world.topicFeedPage.canLoadMore()) {
+        throw new Error('Expected topic feed to have more posts, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'notifications show 50 notifications',
+    pattern: /^the notifications show 50 notifications$/,
+    run (m, example, world) {
+      const actual = world.notificationsPage.notifications.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 notifications, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'search results show 50 posts',
+    pattern: /^the search results show 50 posts$/,
+    run (m, example, world) {
+      const actual = world.searchPage.posts.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 posts in search results, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'search results can load more posts',
+    pattern: /^the search results can load more posts$/,
+    run (m, example, world) {
+      if (!world.searchPage.canLoadMore || !world.searchPage.canLoadMore()) {
+        throw new Error('Expected search results to have more pages, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'profile page shows 50 posts',
+    pattern: /^the profile page shows 50 posts$/,
+    run (m, example, world) {
+      const actual = world.profilePage.posts.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 posts on profile page, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'profile page can load more posts',
+    pattern: /^the profile page can load more posts$/,
+    run (m, example, world) {
+      if (!world.profilePage.canLoadMore || !world.profilePage.canLoadMore()) {
+        throw new Error('Expected profile page to have more posts, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'recent profiles page shows 50 profiles',
+    pattern: /^the recent profiles page shows 50 profiles$/,
+    run (m, example, world) {
+      const actual = world.recentProfilesPage.profiles.length
+      if (actual !== 50) {
+        throw new Error(`Expected 50 profiles on recent profiles page, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'recent profiles page can load more profiles',
+    pattern: /^the recent profiles page can load more profiles$/,
+    run (m, example, world) {
+      if (!world.recentProfilesPage.canLoadMore()) {
+        throw new Error('Expected recent profiles page to have more profiles, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'open recent profiles page',
+    pattern: /^I open the recent profiles page$/,
+    async run (m, example, world) {
+      await world.recentProfilesPage.load()
+      world.currentPath = RecentProfilesPage.RECENT_PROFILES_PATH
+    }
+  },
+  {
+    name: 'open profile page for address',
+    pattern: /^I open the profile page for the address (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.profilePage = new ProfilePage({
+        memoDb: world.memoDb,
+        addr,
+        myAddr,
+        memoFollow: world.memoFollow,
+        memoMute: world.memoMute
+      })
+      await world.profilePage.load()
+      world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
+    }
+  },
+  {
+    name: 'open topic feed for topic',
+    pattern: /^I open the topic feed for (.+)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.topicFeedPage = new TopicFeedPage({
+        memoDb: world.memoDb,
+        room,
+        myAddr,
+        memoTopicFollow: world.memoTopicFollow
+      })
+      await world.topicFeedPage.load()
+      world.currentPath = TopicFeedPage.topicFeedPath(room)
     }
   },
   {

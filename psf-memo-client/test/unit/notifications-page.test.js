@@ -79,7 +79,7 @@ test('load forwards limit and offset to the memo db client', async () => {
   assert.deepEqual(calls, [{ addr: MY_ADDRESS, params: { limit: 10, offset: 20 } }])
 })
 
-test('load defaults limit to 100 and offset to 0', async () => {
+test('load defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const memoDb = {
     async getNotifications (addr, params) {
@@ -91,7 +91,7 @@ test('load defaults limit to 100 and offset to 0', async () => {
 
   await page.load()
 
-  assert.deepEqual(calls, [{ addr: MY_ADDRESS, params: { limit: 100, offset: 0 } }])
+  assert.deepEqual(calls, [{ addr: MY_ADDRESS, params: { limit: 50, offset: 0 } }])
 })
 
 test('load throws when no memo db client is provided', async () => {
@@ -126,6 +126,22 @@ test('canLoadMore reflects pagination.hasMore', async () => {
   })
   await pageDone.load()
   assert.equal(pageDone.canLoadMore(), false)
+})
+
+test('canLoadMore returns false when pagination is null or missing hasMore', async () => {
+  const pageNull = new NotificationsPage({
+    memoDb: makeMemoDb([], null),
+    wallet: makeWallet()
+  })
+  await pageNull.load()
+  assert.equal(pageNull.canLoadMore(), false)
+
+  const pageEmpty = new NotificationsPage({
+    memoDb: makeMemoDb([], { total: 0 }),
+    wallet: makeWallet()
+  })
+  await pageEmpty.load()
+  assert.equal(pageEmpty.canLoadMore(), false)
 })
 
 test('getNotification returns a loaded notification by txid', async () => {
