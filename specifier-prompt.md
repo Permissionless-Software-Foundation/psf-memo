@@ -352,6 +352,20 @@ that a single user-facing feature may require specs in more than one component.
     `memo-txid-action.js`, and now `memo-state-action.js`). To catch regressions,
     unit-test that broadcast succeeds with `global.Buffer` temporarily deleted.
     Fixed in the binary-payload-broadcast job (`984e691`).
+20. **Mute filtering is server-side and keyed by the viewer's address.** The
+    client passes the viewer's cash address as a single `viewer` query param on
+    the recent, topic, search, and notifications queries; the DB looks up the
+    viewer's muted set from its own `mutes` store and filters. We never pass the
+    list of muted profiles (that would not scale). Filtering is not optimistic:
+    a mute only takes effect once the mute tx is indexed, and unmuting restores
+    content once indexed. Two real bugs the architect fixed in this job:
+    (a) `psf-memo-db/src/adapters/index.js` constructed `PostQuery` before
+    `this.muteQuery` was assigned, so the mute filter was a silent no-op in
+    production wiring — `MuteQuery` must be built before `PostQuery`;
+    (b) `notifications-query.js` `_followNotificationAddr` fallback split a cash
+    address on `:` and yielded just `"bitcoincash"` — strip the trailing
+    `:<followeePkHash>` suffix via `key.slice(0, key.lastIndexOf(':'))` instead.
+    Spec: `psf-memo-client/specs/mute-feed-filtering.feature`.
 
 ---
 
@@ -389,10 +403,14 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `984e691` (merged architect's binary-payload-broadcast job —
-client follow/unfollow and mute/unmute broadcast the target's raw 20-byte
-hash160 as a browser-safe `Uint8Array` payload, no longer crashing with
-`Buffer is not defined`; follow/mute refactored onto a shared `MemoStateAction`
-base. Verified client build OK + 280 unit passing + lint clean + all 23
-acceptance suites pass, including the new `binary-payload-broadcast` suite).
-Next action: **ask the user for the next front-end improvement to spec**.
+Current `master` HEAD: `3992395` (merged architect's mute-feed-filtering job —
+muting a profile now hides its content from the viewer's recent feed, topic feed,
+search results, and notifications. Server-side filtering keyed by the viewer's
+address passed as a `viewer` query param; shared `loadMutedAddrs`/`isMutedPost`
+helper in `psf-memo-db/src/adapters/lib/muted-posts.js`. Verified DB 343 unit +
+40 property + 9 acceptance passing + lint clean; client build OK + 284 unit +
+24 acceptance passing + lint clean, including the new `mute-feed-filtering`
+suite).
+Next action: **spec the feed query performance work** (capped scan for the
+`total`/`hasMore` computation + per-page reply counting) — see
+`specs/feature-backlog.md` "Next up: feed query performance".

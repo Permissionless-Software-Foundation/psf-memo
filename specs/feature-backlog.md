@@ -31,6 +31,15 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Mute feed filtering (2026-09-04):** muting a profile now hides that profile's
+  content from the viewer's recent feed, topic feed, search results, and
+  notifications. The psf-memo-db API filters server-side given the viewer's
+  address (passed by the client as a `viewer` query param); filtering is not
+  optimistic — a mute takes effect once the mute tx is indexed, and unmuting
+  restores content once indexed. Shared `loadMutedAddrs`/`isMutedPost` helper in
+  `psf-memo-db/src/adapters/lib/muted-posts.js` deduplicates the per-adapter
+  lookup. Spec: `psf-memo-client/specs/mute-feed-filtering.feature`. Merged to
+  `master` at `3992395`.
 - **Binary hash160 broadcast payloads (2026-09-04):** client follow/unfollow
   and mute/unmute now broadcast the target's raw 20-byte hash160 as the
   OP_RETURN payload, built as a browser-safe `Uint8Array` from the `hexToBytes`
@@ -127,6 +136,26 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 | D | `psf-memo-db` | LevelDB store, REST route, query adapter, tests |
 
 ---
+
+## Next up: feed query performance
+
+`GET /posts/recent` (and the other paginated feeds) is slow at 1.3M posts because
+`list-recent-posts.js` does two full scans on every request:
+
+- `countTopLevelPosts()` iterates the ENTIRE `postHeights` index to compute the
+  `total`/`hasMore` pagination field.
+- `buildReplyCountMap()` scans ALL `postChildren` entries to build a global
+  reply-count map.
+
+Planned optimization (decision: **capped scan**, keep it simple):
+
+- Replace the global `buildReplyCountMap()` with per-page-txid reply counting
+  (like `countLikesForTxids` already does) — only count replies for the ~50
+  posts on the page.
+- Cap the `total` scan to the last N posts / last N blocks so `hasMore` still
+  works for the first pages without walking all 1.3M entries.
+
+Affected components: `psf-memo-db` (feed use cases + post-query adapter).
 
 ## Notes for future cycles
 
