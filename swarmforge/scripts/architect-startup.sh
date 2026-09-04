@@ -42,7 +42,8 @@ if grep -q "Missing source file argument" \
 else
   bad "mutate4javascript"
 fi
-if psf-memo-client/node_modules/.bin/dry4javascript >/dev/null 2>&1; then
+if grep -q "Usage: dry4javascript" \
+    <<< "$(psf-memo-client/node_modules/.bin/dry4javascript --help 2>&1)"; then
   ok "dry4javascript"
 else
   bad "dry4javascript"
