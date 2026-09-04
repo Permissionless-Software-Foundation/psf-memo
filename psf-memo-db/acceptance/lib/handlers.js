@@ -373,7 +373,7 @@ async function loadTopicsWithPosts (world) {
     { key: 'bitcoin:post-200', room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 },
     { key: 'bitcoin:addr-f', room: 'bitcoin', addr: 'addr-f', type: 'follow', unfollow: false },
     { key: 'cash:post-250', room: 'cash', txid: 'post-250', type: 'post', blockHeight: 250 },
-    { key: 'dev:post-100', room: 'dev', txid: 'post-100', type: 'post', blockHeight: 100 },
+    { key: 'dev:post-400', room: 'dev', txid: 'post-400', type: 'post', blockHeight: 400 },
     { key: 'lone:addr-f', room: 'lone', addr: 'addr-f', type: 'follow', unfollow: false }
   ]
 
@@ -381,7 +381,7 @@ async function loadTopicsWithPosts (world) {
     'post-300': { addr: 'addr-a', text: 'hello bitcoin', seen: 1, blockHeight: 300 },
     'post-200': { addr: 'addr-b', text: 'bitcoin again', seen: 2, blockHeight: 200 },
     'post-250': { addr: 'addr-a', text: 'cash rules', seen: 3, blockHeight: 250 },
-    'post-100': { addr: 'addr-c', text: 'dev stuff', seen: 4, blockHeight: 100 }
+    'post-400': { addr: 'addr-c', text: 'dev stuff', seen: 4, blockHeight: 400 }
   }
 
   for (const entry of roomEntries) {
@@ -865,6 +865,17 @@ const handlers = [
       }
       if (found.postCount !== expectedCount) {
         throw new Error(`Expected post count ${expectedCount} for ${topic}, got ${found.postCount}`)
+      }
+    }
+  },
+  {
+    name: 'response lists topics in order',
+    pattern: /^the response lists topics in order (<expected_order>)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example).split(',').map((s) => s.trim())
+      const actual = world.getLastResponse().topics.map((t) => t.room)
+      if (expected.join(',') !== actual.join(',')) {
+        throw new Error(`Expected topics ${expected.join(',')}, got ${actual.join(',')}`)
       }
     }
   },

@@ -7,7 +7,7 @@
 
     - listTopics conservation: the sum of postCounts equals the number of
       post entries in the rooms store, each room's count matches its own post
-      entries, and the topics are returned sorted by room name.
+      entries, and the topics are returned sorted by most recent post.
     - getTopicPostTxids ordering + pagination: posts are returned newest-first
       by block height, the total matches the room's post entries, and the
       offset/limit slice is exact.
@@ -86,7 +86,7 @@ function fixtureGen () {
   }
 }
 
-test('listTopics conserves post counts and returns rooms sorted by name', async () => {
+test('listTopics conserves post counts and returns rooms sorted by most recent post', async () => {
   await forAll(
     fixtureGen(),
     async ({ entries, rooms }) => {
@@ -97,8 +97,18 @@ test('listTopics conserves post counts and returns rooms sorted by name', async 
       const totalPosts = topics.reduce((sum, t) => sum + t.postCount, 0)
       if (totalPosts !== postEntries.length) return false
 
-      const expectedRooms = [...new Set(entries.map((e) => e.value.room))].sort((a, b) => a.localeCompare(b))
-      if (JSON.stringify(topics.map((t) => t.room)) !== JSON.stringify(expectedRooms)) return false
+      const expectedTopics = [...new Set(entries.map((e) => e.value.room))]
+        .map((room) => {
+          const heights = entries
+            .filter((e) => e.value.room === room && e.value.type === 'post')
+            .map((e) => e.value.blockHeight ?? 0)
+          return { room, lastHeight: heights.length ? Math.max(...heights) : 0 }
+        })
+        .sort((a, b) => {
+          if (b.lastHeight !== a.lastHeight) return b.lastHeight - a.lastHeight
+          return a.room.localeCompare(b.room)
+        })
+      if (JSON.stringify(topics.map((t) => t.room)) !== JSON.stringify(expectedTopics.map((t) => t.room))) return false
 
       for (const topic of topics) {
         const roomPosts = postEntries.filter((e) => e.value.room === topic.room).length

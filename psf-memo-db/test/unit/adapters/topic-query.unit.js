@@ -115,16 +115,40 @@ describe('#TopicQuery', () => {
       ])
     })
 
-    it('should sort topics by room name', async () => {
+    it('should sort topics by most recent post descending', async () => {
       async function * mockRooms () {
         yield ['zoo:post-1', { room: 'zoo', txid: 'post-1', type: 'post', blockHeight: 1 }]
-        yield ['alpha:post-1', { room: 'alpha', txid: 'post-1', type: 'post', blockHeight: 1 }]
+        yield ['alpha:post-1', { room: 'alpha', txid: 'post-1', type: 'post', blockHeight: 2 }]
       }
       roomsDb.iterator.returns(mockRooms())
 
       const result = await uut.listTopics()
 
       assert.deepEqual(result.map((t) => t.room), ['alpha', 'zoo'])
+    })
+
+    it('should treat a post at block height 0 as the least recent', async () => {
+      async function * mockRooms () {
+        yield ['a:post-1', { room: 'a', txid: 'post-1', type: 'post', blockHeight: 0 }]
+        yield ['b:post-1', { room: 'b', txid: 'post-1', type: 'post', blockHeight: 1 }]
+      }
+      roomsDb.iterator.returns(mockRooms())
+
+      const result = await uut.listTopics()
+
+      assert.deepEqual(result.map((t) => t.room), ['b', 'a'])
+    })
+
+    it('should treat a post with no block height as height 0', async () => {
+      async function * mockRooms () {
+        yield ['a:post-1', { room: 'a', txid: 'post-1', type: 'post' }]
+        yield ['b:post-1', { room: 'b', txid: 'post-1', type: 'post', blockHeight: 1 }]
+      }
+      roomsDb.iterator.returns(mockRooms())
+
+      const result = await uut.listTopics()
+
+      assert.deepEqual(result.map((t) => t.room), ['b', 'a'])
     })
   })
 
