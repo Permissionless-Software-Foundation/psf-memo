@@ -2,7 +2,7 @@
   REST API controller for /mute routes.
 */
 
-import wlogger from '../../../adapters/wlogger.js'
+import { handleControllerError } from '../lib/handle-error.js'
 
 class MuteRESTControllerLib {
   constructor (localConfig = {}) {
@@ -21,12 +21,7 @@ class MuteRESTControllerLib {
   }
 
   handleError (ctx, err) {
-    if (err.status) {
-      ctx.throw(err.status, err.message || err)
-    } else {
-      wlogger.error('Error in mute controller: ', err)
-      ctx.throw(500, err.message || 'Internal server error')
-    }
+    handleControllerError(ctx, err, 'mute')
   }
 
   /**

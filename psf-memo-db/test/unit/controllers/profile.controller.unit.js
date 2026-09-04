@@ -35,4 +35,23 @@ describe('#ProfileRESTController', () => {
     assert.equal(ctx.body.profiles.length, 1)
     assert.equal(ctx.body.pagination.total, 1)
   })
+
+  it('should throw the error status when err has a status', () => {
+    const ctx = { throw: sandbox.stub() }
+    const err = { status: 404, message: 'Not found' }
+    uut.handleError(ctx, err)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 404)
+    assert.equal(ctx.throw.firstCall.args[1], 'Not found')
+  })
+
+  it('should throw 500 when err has no status', () => {
+    const ctx = { throw: sandbox.stub() }
+    const err = new Error('boom')
+    uut.handleError(ctx, err)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 500)
+  })
 })

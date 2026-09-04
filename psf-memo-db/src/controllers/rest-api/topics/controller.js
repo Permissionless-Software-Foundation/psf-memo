@@ -2,7 +2,7 @@
   REST API controller for /topics routes.
 */
 
-import wlogger from '../../../adapters/wlogger.js'
+import { handleControllerError } from '../lib/handle-error.js'
 
 class TopicsRESTControllerLib {
   constructor (localConfig = {}) {
@@ -23,12 +23,7 @@ class TopicsRESTControllerLib {
   }
 
   handleError (ctx, err) {
-    if (err.status) {
-      ctx.throw(err.status, err.message || err)
-    } else {
-      wlogger.error('Error in topics controller: ', err)
-      ctx.throw(500, err.message || 'Internal server error')
-    }
+    handleControllerError(ctx, err, 'topics')
   }
 
   /**

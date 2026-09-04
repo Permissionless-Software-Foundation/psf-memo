@@ -2,7 +2,7 @@
   REST API controller for /search routes.
 */
 
-import wlogger from '../../../adapters/wlogger.js'
+import { handleControllerError } from '../lib/handle-error.js'
 
 class SearchRESTControllerLib {
   constructor (localConfig = {}) {
@@ -20,12 +20,7 @@ class SearchRESTControllerLib {
   }
 
   handleError (ctx, err) {
-    if (err.status) {
-      ctx.throw(err.status, err.message || err)
-    } else {
-      wlogger.error('Error in search controller: ', err)
-      ctx.throw(500, err.message || 'Internal server error')
-    }
+    handleControllerError(ctx, err, 'search')
   }
 
   /**

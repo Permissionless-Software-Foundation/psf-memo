@@ -2,7 +2,7 @@
   REST API controller for /polls routes.
 */
 
-import wlogger from '../../../adapters/wlogger.js'
+import { handleControllerError } from '../lib/handle-error.js'
 
 class PollsRESTControllerLib {
   constructor (localConfig = {}) {
@@ -22,12 +22,7 @@ class PollsRESTControllerLib {
   }
 
   handleError (ctx, err) {
-    if (err.status) {
-      ctx.throw(err.status, err.message || err)
-    } else {
-      wlogger.error('Error in polls controller: ', err)
-      ctx.throw(500, err.message || 'Internal server error')
-    }
+    handleControllerError(ctx, err, 'polls')
   }
 
   // Run a poll read use case for the txid in ctx.params and surface the result

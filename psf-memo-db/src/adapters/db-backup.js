@@ -6,6 +6,7 @@ import shell from 'shelljs'
 import fs from 'fs'
 import config from '../../config/index.js'
 import { DB_NAMES, dbDir } from './level-db.js'
+import { zipFileName, oldBackupHeight, oldBackupZipPath, backupFilePath } from './lib/db-backup-util.js'
 
 class DbBackup {
   constructor (levelDbs = {}) {
@@ -35,12 +36,12 @@ class DbBackup {
       await this.closeAll()
 
       this.shell.cd(dbDir)
-      this.shell.exec(`zip -r zips/memo-indexer-${height}.zip current`)
+      this.shell.exec(`zip -r zips/${zipFileName(height)} current`)
 
       const backupQty = this.config.backupQty
       if (backupQty && epoch) {
-        const oldHeight = height - (epoch * backupQty)
-        const rmStr = `zips/memo-indexer-${oldHeight}.zip`
+        const oldHeight = oldBackupHeight(height, epoch, backupQty)
+        const rmStr = oldBackupZipPath(oldHeight)
         if (this.shell.test('-f', rmStr)) {
           this.shell.rm(rmStr)
         }
@@ -56,8 +57,8 @@ class DbBackup {
 
   async unzipDb (height) {
     try {
-      const zipFile = `memo-indexer-${height}.zip`
-      const zipFilePath = `${dbDir}/zips/${zipFile}`
+      const zipFile = zipFileName(height)
+      const zipFilePath = backupFilePath(dbDir, height)
 
       if (!fs.existsSync(zipFilePath)) {
         console.error(`Backup file not found: ${zipFile}`)

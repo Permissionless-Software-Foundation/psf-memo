@@ -55,4 +55,23 @@ describe('#LevelRESTController', () => {
     assert.equal(ctx.body.success, true)
     assert.equal(ctx.body.key, '600000:abc')
   })
+
+  it('should throw the error status when err has a status', () => {
+    const ctx = { throw: sandbox.stub() }
+    const err = { status: 400, message: 'Bad request' }
+    uut.handleError(ctx, err)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 400)
+    assert.equal(ctx.throw.firstCall.args[1], 'Bad request')
+  })
+
+  it('should throw 422 when err has no status', () => {
+    const ctx = { throw: sandbox.stub() }
+    const err = new Error('boom')
+    uut.handleError(ctx, err)
+
+    assert.equal(ctx.throw.callCount, 1)
+    assert.equal(ctx.throw.firstCall.args[0], 422)
+  })
 })
