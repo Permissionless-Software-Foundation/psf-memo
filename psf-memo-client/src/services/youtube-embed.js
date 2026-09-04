@@ -10,37 +10,62 @@ const YOUTUBE_EMBED_BASE_URL = 'https://www.youtube.com/embed'
 // Strip trailing punctuation that is never part of a YouTube video id.
 const TRAILING_PUNCTUATION_RE = /[.,;:!?)\]]+$/
 
+// A YouTube video id is a non-empty run of URL-safe characters.
+function validVideoId (id) {
+  return Boolean(id) && /^[A-Za-z0-9_-]+$/.test(id)
+}
+
+// Parse and normalize a candidate URL, returning null for non-strings and
+// unparseable input.
+function parseCandidate (url) {
+  if (typeof url !== 'string') return null
+  const candidate = url.trim().replace(TRAILING_PUNCTUATION_RE, '')
+  try {
+    return new URL(candidate)
+  } catch {
+    return null
+  }
+}
+
+// Extract a video id from a parsed youtube.com/watch URL, or null.
+function videoIdFromWatchUrl (parsed) {
+  const id = parsed.searchParams.get('v')
+  return validVideoId(id) ? id : null
+}
+
+// Extract a video id from a parsed youtu.be short URL, or null.
+function videoIdFromShortUrl (parsed) {
+  const id = parsed.pathname.slice(1)
+  return validVideoId(id) ? id : null
+}
+
 /**
  * Extract a YouTube video id from a URL string, or return null if the URL is
  * not a recognisable, complete YouTube watch or short link.
  */
 function extractYouTubeVideoId (url) {
-  if (typeof url !== 'string') return null
-  const candidate = url.trim().replace(TRAILING_PUNCTUATION_RE, '')
-
-  let parsed
-  try {
-    parsed = new URL(candidate)
-  } catch {
-    return null
-  }
+  const parsed = parseCandidate(url)
+  if (!parsed) return null
 
   const host = parsed.hostname.replace(/^www\./, '')
 
   if (host === 'youtube.com' && parsed.pathname === '/watch') {
-    const id = parsed.searchParams.get('v')
-    if (id && /^[A-Za-z0-9_-]+$/.test(id)) return id
+    return videoIdFromWatchUrl(parsed)
   }
 
   if (host === 'youtu.be') {
-    const id = parsed.pathname.slice(1)
-    if (id && /^[A-Za-z0-9_-]+$/.test(id)) return id
+    return videoIdFromShortUrl(parsed)
   }
 
   return null
 }
 
 const URL_RE = /(https?:\/\/[^\s]+)/g
+
+// Push a non-empty text segment onto the segment list.
+function pushText (segments, text) {
+  if (text) segments.push({ type: 'text', text })
+}
 
 /**
  * Split a post's text into segments.  Each segment is either a plain text
@@ -58,8 +83,7 @@ function parsePostText (text) {
     const url = matchedUrl.replace(TRAILING_PUNCTUATION_RE, '')
     const trailing = matchedUrl.slice(url.length)
 
-    const leading = input.slice(lastIndex, match.index)
-    if (leading) segments.push({ type: 'text', text: leading })
+    pushText(segments, input.slice(lastIndex, match.index))
 
     const videoId = extractYouTubeVideoId(url)
     if (videoId) {
@@ -68,13 +92,12 @@ function parsePostText (text) {
       segments.push({ type: 'text', text: url })
     }
 
-    if (trailing) segments.push({ type: 'text', text: trailing })
+    pushText(segments, trailing)
 
     lastIndex = match.index + matchedUrl.length
   }
 
-  const trailing = input.slice(lastIndex)
-  if (trailing) segments.push({ type: 'text', text: trailing })
+  pushText(segments, input.slice(lastIndex))
 
   if (segments.length === 0) {
     segments.push({ type: 'text', text: input })
