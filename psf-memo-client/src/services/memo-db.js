@@ -14,8 +14,10 @@ class MemoDb {
     return this.getRecent('/profile/recent', 'getRecentProfiles', { limit, offset })
   }
 
-  async getRecentPosts ({ limit = 50, offset = 0 } = {}) {
-    return this.getRecent('/posts/recent', 'getRecentPosts', { limit, offset })
+  async getRecentPosts ({ limit = 50, offset = 0, viewer = null } = {}) {
+    const params = { limit, offset }
+    if (viewer) params.viewer = viewer
+    return this.getRecent('/posts/recent', 'getRecentPosts', params)
   }
 
   async getProfile (addr) {
@@ -46,8 +48,10 @@ class MemoDb {
     return this.getRecent('/topics', 'getTopics', {})
   }
 
-  async getTopicPosts (room, opts = {}) {
-    return this.getPage(`/topics/${encodeURIComponent(room)}/posts`, 'getTopicPosts', opts)
+  async getTopicPosts (room, { limit = 50, offset = 0, viewer = null } = {}) {
+    const params = { limit, offset }
+    if (viewer) params.viewer = viewer
+    return this.getPage(`/topics/${encodeURIComponent(room)}/posts`, 'getTopicPosts', params)
   }
 
   async getTopicFollowState (room, addr) {
@@ -58,10 +62,12 @@ class MemoDb {
     return this._getList(`/topics/${encodeURIComponent(room)}/followers`, 'getTopicFollowers', 'followers')
   }
 
-  async search (q, { limit = 50, offset = 0 } = {}) {
+  async search (q, { limit = 50, offset = 0, viewer = null } = {}) {
     try {
+      const params = { q, limit, offset }
+      if (viewer) params.viewer = viewer
       const result = await this.axios.get(`${config.backend}/search`, {
-        params: { q, limit, offset }
+        params
       })
 
       return result.data

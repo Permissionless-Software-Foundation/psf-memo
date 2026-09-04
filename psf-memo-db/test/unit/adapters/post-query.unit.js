@@ -606,4 +606,75 @@ describe('#PostQuery', () => {
       assert.equal(result.get('tx3'), 1)
     })
   })
+
+  describe('#mute filtering', () => {
+    it('should exclude posts from muted addresses in recent posts', async () => {
+      async function * mockHeights () {
+        yield ['000000600300:post-300-muted', { txid: 'post-300-muted' }]
+        yield ['000000600200:post-200', { txid: 'post-200' }]
+        yield ['000000600100:post-100-muted', { txid: 'post-100-muted' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => {
+        if (txid === 'post-300-muted') return { addr: 'muted-addr', text: 'x', seen: 1, blockHeight: 600300 }
+        if (txid === 'post-200') return { addr: 'other-addr', text: 'x', seen: 2, blockHeight: 600200 }
+        if (txid === 'post-100-muted') return { addr: 'muted-addr', text: 'x', seen: 3, blockHeight: 600100 }
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      })
+
+      const muteQuery = {
+        listMuted: sandbox.stub().resolves(['muted-addr'])
+      }
+      uut = new PostQuery({
+        postsDb,
+        postHeightsDb,
+        addrPostHeightsDb,
+        postParentsDb,
+        postChildrenDb,
+        likesDb,
+        postLikesDb,
+        muteQuery
+      })
+
+      const result = await uut.scanRecentPostTxids({ limit: 2, offset: 0, viewerAddr: 'viewer-addr' })
+
+      assert.deepEqual(result, ['post-200'])
+      assert.isTrue(muteQuery.listMuted.calledOnceWith('viewer-addr'))
+    })
+
+    it('should count top-level posts excluding muted addresses', async () => {
+      async function * mockHeights () {
+        yield ['000000600200:post-200-muted', { txid: 'post-200-muted' }]
+        yield ['000000600100:post-100', { txid: 'post-100' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: false }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => {
+        if (txid === 'post-200-muted') return { addr: 'muted-addr', text: 'x', seen: 1, blockHeight: 600200 }
+        if (txid === 'post-100') return { addr: 'other-addr', text: 'x', seen: 2, blockHeight: 600100 }
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      })
+
+      const muteQuery = {
+        listMuted: sandbox.stub().resolves(['muted-addr'])
+      }
+      uut = new PostQuery({
+        postsDb,
+        postHeightsDb,
+        addrPostHeightsDb,
+        postParentsDb,
+        postChildrenDb,
+        likesDb,
+        postLikesDb,
+        muteQuery
+      })
+
+      const result = await uut.countTopLevelPosts('viewer-addr')
+
+      assert.equal(result, 1)
+    })
+  })
 })

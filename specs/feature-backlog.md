@@ -31,6 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Binary hash160 broadcast payloads (2026-09-04):** client follow/unfollow
+  and mute/unmute now broadcast the target's raw 20-byte hash160 as the
+  OP_RETURN payload, built as a browser-safe `Uint8Array` from the `hexToBytes`
+  helper instead of Node's `Buffer` global (which crashed in a real browser
+  with `Buffer is not defined`). Follow/mute/unfollow/unmute were consolidated
+  onto a shared `MemoStateAction` base. Spec:
+  `psf-memo-client/specs/binary-payload-broadcast.feature`. Merged to `master`
+  at `984e691`.
 - **Page size 50 (2026-09-04):** every paginated page in the client now requests 50
   items per page instead of 100 to cut payload size and improve page load times.
   Covers the recent feed, following feed, topic feed, notifications, search,

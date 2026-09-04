@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-04T18:29:23.460506768Z","feature_name":"Binary Payload Broadcast","feature_path":"../../psf-memo-client/specs/binary-payload-broadcast.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Binary Payload Broadcast - 1, Binary Payload Broadcast - 2, Binary Payload Broadcast - 3, Binary Payload Broadcast - 4
 #
 # Follow/unfollow and mute/unmute broadcast an OP_RETURN whose payload is the

@@ -21,6 +21,26 @@ class RecentFeedPage extends PaginatedPage {
       loadMethod: 'getRecentPosts',
       errorMessage: 'Recent feed page requires a memo db client.'
     })
+    this.wallet = deps.wallet || null
+  }
+
+  getMyAddress () {
+    return this.wallet?.walletInfo?.cashAddress || null
+  }
+
+  async load ({ limit = 50, offset = 0 } = {}) {
+    if (!this.memoDb) {
+      throw new Error('Recent feed page requires a memo db client.')
+    }
+
+    const opts = { limit, offset }
+    const viewer = this.getMyAddress()
+    if (viewer) opts.viewer = viewer
+    const data = await this.memoDb.getRecentPosts(opts)
+    this.posts = data.posts || []
+    this.pagination = data.pagination || null
+
+    return { posts: this.posts, pagination: this.pagination }
   }
 
   getPost (txid) {

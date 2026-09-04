@@ -341,6 +341,17 @@ that a single user-facing feature may require specs in more than one component.
     following feed, topic feed, notifications, search, profile, recent profiles)
     use 50. The pure paginated controllers share a `PaginatedPage` base; profile,
     search, and recent-profiles gained Previous/Next controls in the same change.
+19. **Do not use Node's `Buffer` global in client service code (real bug found).**
+    `memo-follow.js` and `memo-mute.js` used `Buffer.from(hash160, 'hex')` and
+    passed a Node `Buffer` to `wallet.sendOpReturn`; in a real browser `Buffer`
+    is undefined, so clicking Follow/Mute threw `Buffer is not defined` *after*
+    `getUtxos()` succeeded but *before* the transaction was composed. Node-based
+    unit/acceptance tests masked it because `Buffer` is a global under Node and
+    the fake wallet just recorded the passed value. Build binary Memo payloads
+    as a `Uint8Array` from the `./hex` `hexToBytes` helper (see `memo-reply.js`,
+    `memo-txid-action.js`, and now `memo-state-action.js`). To catch regressions,
+    unit-test that broadcast succeeds with `global.Buffer` temporarily deleted.
+    Fixed in the binary-payload-broadcast job (`984e691`).
 
 ---
 
@@ -378,9 +389,10 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `cfe6711` (merged architect's page-size-50 job — every
-paginated page now requests 50 items instead of 100, pagination controls added
-to search/profile/recent-profiles, controllers refactored onto `PaginatedPage`;
-verified client build OK + 280 unit passing + 40 property passing + lint clean +
-all 22 acceptance suites pass incl. the new page-size suite).
+Current `master` HEAD: `984e691` (merged architect's binary-payload-broadcast job —
+client follow/unfollow and mute/unmute broadcast the target's raw 20-byte
+hash160 as a browser-safe `Uint8Array` payload, no longer crashing with
+`Buffer is not defined`; follow/mute refactored onto a shared `MemoStateAction`
+base. Verified client build OK + 280 unit passing + lint clean + all 23
+acceptance suites pass, including the new `binary-payload-broadcast` suite).
 Next action: **ask the user for the next front-end improvement to spec**.

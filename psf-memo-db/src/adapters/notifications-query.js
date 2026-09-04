@@ -18,6 +18,7 @@ class NotificationsQuery {
       likesDb,
       postLikesDb,
       followsDb,
+      muteQuery,
       bchjs = new BCHJS({ restURL: process.env.RESTURL || 'https://api.fullstack.cash/v5/' })
     } = localConfig
 
@@ -46,6 +47,7 @@ class NotificationsQuery {
     this.likesDb = likesDb
     this.postLikesDb = postLikesDb
     this.followsDb = followsDb
+    this.muteQuery = muteQuery || null
     this.bchjs = bchjs
 
     this.listNotifications = this.listNotifications.bind(this)
@@ -57,7 +59,7 @@ class NotificationsQuery {
   }
 
   // Collect active follows where this address is the followee.
-  async _collectFollowNotifications (addr) {
+  async _collectFollowNotifications (addr, mutedAddrs) {
     const myHash160 = this.bchjs.Address.toHash160(addr)
     const notifications = []
 
@@ -67,6 +69,7 @@ class NotificationsQuery {
 
       const followerAddr = record.followerAddr || key.split(':')[0]
       if (followerAddr === addr) continue
+      if (mutedAddrs.has(followerAddr)) continue
 
       notifications.push({
         type: 'follow',
@@ -81,11 +84,12 @@ class NotificationsQuery {
   }
 
   // Collect likes on posts authored by this address, excluding self-likes.
-  async _collectLikeNotifications (addr) {
+  async _collectLikeNotifications (addr, mutedAddrs) {
     const notifications = []
 
     for await (const [likeTxid, like] of this.likesDb.iterator()) {
       if (!like || like.addr === addr) continue
+      if (mutedAddrs.has(like.addr)) continue
 
       const post = await getPostOrNull(this.postsDb, like.postTxid)
       if (!post || post.addr !== addr) continue
@@ -104,7 +108,7 @@ class NotificationsQuery {
   }
 
   // Collect replies to posts authored by this address, excluding own replies.
-  async _collectReplyNotifications (addr) {
+  async _collectReplyNotifications (addr, mutedAddrs) {
     const notifications = []
 
     for await (const [, child] of this.postChildrenDb.iterator()) {
@@ -114,6 +118,7 @@ class NotificationsQuery {
 
       const childPost = await this._replyNotificationChild(child, addr)
       if (!childPost) continue
+      if (mutedAddrs.has(childPost.addr)) continue
 
       notifications.push({
         type: 'reply',
@@ -153,15 +158,25 @@ class NotificationsQuery {
 
   // Return paginated notifications for addr, sorted newest-first.
   async listNotifications (addr, { limit, offset } = {}) {
-    const follows = await this._collectFollowNotifications(addr)
-    const likes = await this._collectLikeNotifications(addr)
-    const replies = await this._collectReplyNotifications(addr)
+    const mutedAddrs = await this._mutedAddrs(addr)
+
+    const follows = await this._collectFollowNotifications(addr, mutedAddrs)
+    const likes = await this._collectLikeNotifications(addr, mutedAddrs)
+    const replies = await this._collectReplyNotifications(addr, mutedAddrs)
 
     const all = this._sortNotifications(follows.concat(likes).concat(replies))
     const total = all.length
     const page = all.slice(offset, offset + limit)
 
     return { notifications: page, total }
+  }
+
+  // Return a Set of addresses muted by addr, or an empty set when no mute
+  // query adapter is available.
+  async _mutedAddrs (addr) {
+    if (!this.muteQuery || !addr) return new Set()
+    const muted = await this.muteQuery.listMuted(addr)
+    return new Set(muted)
   }
 }
 

@@ -48,9 +48,11 @@ function RecentPosts (props) {
 
       try {
         const memoDb = new MemoDb()
+        const viewer = appData?.wallet?.walletInfo?.cashAddress
         const data = await memoDb.getRecentPosts({
           limit: PAGE_SIZE,
-          offset
+          offset,
+          viewer
         })
 
         const loadedPosts = data.posts || []

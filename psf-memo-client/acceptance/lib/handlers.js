@@ -287,6 +287,9 @@ function makeMemoDb () {
     setMuteState (muterAddr, muteeAddr, muted) {
       muteState[`${muterAddr}:${muteeAddr}`] = muted
     },
+    isMuted (muterAddr, muteeAddr) {
+      return muteState[`${muterAddr}:${muteeAddr}`] === true
+    },
     setTopicFollowState (addr, room, following) {
       if (!topicFollow.has(room)) topicFollow.set(room, new Map())
       topicFollow.get(room).set(addr, following)
@@ -301,14 +304,17 @@ function makeMemoDb () {
       }
       return addrs
     },
-    async search (q, { limit = 50, offset = 0 } = {}) {
+    async search (q, { limit = 50, offset = 0, viewer = null } = {}) {
       const normalized = String(q).trim().toLowerCase()
       if (normalized.length === 0) {
         return { posts: [], profiles: [], pagination: { total: 0, hasMore: false } }
       }
-      const matchedPosts = searchPosts.filter((p) =>
+      let matchedPosts = searchPosts.filter((p) =>
         typeof p.text === 'string' && p.text.toLowerCase().includes(normalized)
       )
+      if (viewer) {
+        matchedPosts = matchedPosts.filter((p) => !this.isMuted(viewer, p.addr))
+      }
       const matchedProfiles = searchProfiles.filter((p) =>
         (typeof p.name === 'string' && p.name.toLowerCase().includes(normalized)) ||
         (typeof p.text === 'string' && p.text.toLowerCase().includes(normalized))
@@ -321,9 +327,13 @@ function makeMemoDb () {
         pagination: { total, limit, offset, hasMore: offset + page.length < total }
       }
     },
-    async getRecentPosts ({ limit = 50, offset = 0 } = {}) {
-      const page = posts.slice(offset, offset + limit)
-      return { posts: page, pagination: { total: posts.length, limit, offset, hasMore: offset + page.length < posts.length } }
+    async getRecentPosts ({ limit = 50, offset = 0, viewer = null } = {}) {
+      let filtered = posts
+      if (viewer) {
+        filtered = posts.filter((p) => !this.isMuted(viewer, p.addr))
+      }
+      const page = filtered.slice(offset, offset + limit)
+      return { posts: page, pagination: { total: filtered.length, limit, offset, hasMore: offset + page.length < filtered.length } }
     },
     async getPostsByAddr (addr, { limit = 50, offset = 0 } = {}) {
       const filtered = posts.filter((p) => p.addr === addr)
@@ -347,8 +357,11 @@ function makeMemoDb () {
       list.sort((a, b) => a.room.localeCompare(b.room))
       return { topics: list }
     },
-    async getTopicPosts (room, { limit = 50, offset = 0 } = {}) {
-      const all = topicPosts[room] || []
+    async getTopicPosts (room, { limit = 50, offset = 0, viewer = null } = {}) {
+      let all = topicPosts[room] || []
+      if (viewer) {
+        all = all.filter((p) => !this.isMuted(viewer, p.addr))
+      }
       const page = all.slice(offset, offset + limit)
       return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
     },
@@ -359,6 +372,7 @@ function makeMemoDb () {
         const parent = posts.find((p) => p.txid === reply.parentTxid)
         if (!parent || parent.addr !== addr) continue
         if (reply.addr === addr) continue
+        if (this.isMuted(addr, reply.addr)) continue
         notifications.push({
           type: 'reply',
           txid: reply.txid,
@@ -373,6 +387,7 @@ function makeMemoDb () {
         const post = posts.find((p) => p.txid === like.postTxid)
         if (!post || post.addr !== addr) continue
         if (like.addr === addr) continue
+        if (this.isMuted(addr, like.addr)) continue
         notifications.push({
           type: 'like',
           txid: like.txid,
@@ -384,6 +399,7 @@ function makeMemoDb () {
 
       for (const follow of (followers.get(addr) || [])) {
         if (follow.followerAddr === addr) continue
+        if (this.isMuted(addr, follow.followerAddr)) continue
         notifications.push({
           type: 'follow',
           txid: follow.txid,
@@ -453,7 +469,7 @@ function createWorld () {
   }
 
   // Read-only page controllers backed by the fake psf-memo-db API.
-  world.recentFeedPage = new RecentFeedPage({ memoDb })
+  world.recentFeedPage = new RecentFeedPage({ memoDb, wallet })
   world.followingFeedPage = new FollowingFeedPage({ memoDb, wallet })
   world.notificationsPage = new NotificationsPage({ memoDb, wallet })
   world.profilePage = new ProfilePage({ memoDb })
@@ -464,6 +480,7 @@ function createWorld () {
   })
   world.searchPage = new SearchPage({
     memoDb,
+    wallet,
     navigate: (path) => { world.currentPath = path }
   })
   world.recentProfilesPage = new RecentProfilesPage({ memoDb })
@@ -1436,6 +1453,28 @@ const handlers = [
     }
   },
   {
+    name: 'recent feed shows post text',
+    pattern: /^the recent feed shows the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.recentFeedPage.posts.find((p) => p.text === expected)
+      if (!found) {
+        throw new Error(`Recent feed does not show a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'recent feed does not show post text',
+    pattern: /^the recent feed does not show the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.recentFeedPage.posts.find((p) => p.text === expected)
+      if (found) {
+        throw new Error(`Recent feed unexpectedly shows a post with text "${expected}".`)
+      }
+    }
+  },
+  {
     name: 'open profile page for author',
     pattern: /^I open the profile page for the author of the post with txid (.+)$/,
     async run (m, example, world) {
@@ -1662,6 +1701,15 @@ const handlers = [
     }
   },
   {
+    name: 'API reports I unmute address',
+    pattern: /^the psf-memo-db API reports that I unmute the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.memoDb.setMuteState(myAddr, addr, false)
+    }
+  },
+  {
     name: 'profile page shows Mute button',
     pattern: /^the profile page shows a Mute button$/,
     run (m, example, world) {
@@ -1798,12 +1846,12 @@ const handlers = [
   },
   {
     name: 'API serves post in topic with address and text',
-    pattern: /^the psf-memo-db API serves a post with txid (.+) in the topic "([^"]+)" authored by the address (.+) with text "(.+)"$/,
+    pattern: /^the psf-memo-db API serves a post with txid (.+) in the topic "([^"]+)" authored by the address (.+) with text (.+)$/,
     run (m, example, world) {
       const txid = resolveParam(m[1], example)
       const room = m[2]
       const addr = resolveParam(m[3], example)
-      const text = m[4]
+      const text = resolveText(m[4], example)
       world.memoDb.addTopicPost(room, { txid, addr, text, blockHeight: 100 })
     }
   },
@@ -1901,6 +1949,28 @@ const handlers = [
       }
       if (post.text !== expected) {
         throw new Error(`Expected post ${txid} text "${expected}", got "${post.text}".`)
+      }
+    }
+  },
+  {
+    name: 'topic feed shows post with text',
+    pattern: /^the topic feed shows the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.topicFeedPage.posts.find((p) => p.text === expected)
+      if (!found) {
+        throw new Error(`Topic feed does not show a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'topic feed does not show post with text',
+    pattern: /^the topic feed does not show the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.topicFeedPage.posts.find((p) => p.text === expected)
+      if (found) {
+        throw new Error(`Topic feed unexpectedly shows a post with text "${expected}".`)
       }
     }
   },
@@ -2297,6 +2367,16 @@ const handlers = [
     }
   },
   {
+    name: 'API has search post with text and address',
+    pattern: /^the psf-memo-db API has a post with the text (.+) authored by the address (.+)$/,
+    run (m, example, world) {
+      const text = resolveText(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const txid = require('crypto').createHash('sha256').update(`${text}:${addr}`).digest('hex')
+      world.memoDb.addSearchPost({ txid, addr, text, blockHeight: 100 })
+    }
+  },
+  {
     name: 'API has search profile',
     pattern: /^the psf-memo-db API has a profile named "(.+)" with the bio "(.+)"$/,
     run (m, example, world) {
@@ -2330,6 +2410,17 @@ const handlers = [
       const found = world.searchPage.posts.find((p) => p.text === expected)
       if (!found) {
         throw new Error(`Search results do not include a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'search results do not include post text',
+    pattern: /^the search results do not include a post with the text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.searchPage.posts.find((p) => p.text === expected)
+      if (found) {
+        throw new Error(`Search results unexpectedly include a post with text "${expected}".`)
       }
     }
   },
@@ -2593,6 +2684,19 @@ const handlers = [
       )
       if (!found) {
         throw new Error(`Notifications do not include a reply from ${expectedAddr} with text "${expectedText}".`)
+      }
+    }
+  },
+  {
+    name: 'notifications do not include reply notification',
+    pattern: /^the notifications do not include a reply notification from the address (.+)$/,
+    run (m, example, world) {
+      const expectedAddr = resolveParam(m[1], example)
+      const found = world.notificationsPage.notifications.find((n) =>
+        n.type === 'reply' && n.addr === expectedAddr
+      )
+      if (found) {
+        throw new Error(`Notifications unexpectedly include a reply from ${expectedAddr}.`)
       }
     }
   },

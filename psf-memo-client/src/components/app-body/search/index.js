@@ -79,7 +79,7 @@ function Search (props) {
 
     try {
       const memoDb = new MemoDb()
-      const page = new SearchPage({ memoDb })
+      const page = new SearchPage({ memoDb, wallet: props.appData?.wallet })
       page.setQuery(query)
       const result = await page.submit({ limit: PAGE_SIZE, offset: 0 })
       setPosts(result.posts || [])
@@ -104,7 +104,7 @@ function Search (props) {
 
     try {
       const memoDb = new MemoDb()
-      const page = new SearchPage({ memoDb })
+      const page = new SearchPage({ memoDb, wallet: props.appData?.wallet })
       page.setQuery(query)
       const result = await page.submit({ limit: PAGE_SIZE, offset: nextOffset })
       setPosts(result.posts || [])
