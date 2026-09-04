@@ -17,6 +17,7 @@
 */
 
 const MemoAction = require('./memo-action')
+const { hexToBytes } = require('./hex')
 
 const MEMO_FOLLOW_PREFIX = '6d06'
 const MEMO_UNFOLLOW_PREFIX = '6d07'
@@ -78,7 +79,7 @@ class MemoFollow extends MemoAction {
     await this.wallet.getUtxos()
 
     const hash160 = this._toHash160(followeeAddr)
-    const raw = Buffer.from(hash160, 'hex')
+    const raw = hexToBytes(hash160, PK_HASH_LENGTH, 'Address hash160')
 
     const txid = await this.wallet.sendOpReturn(raw, prefix)
 

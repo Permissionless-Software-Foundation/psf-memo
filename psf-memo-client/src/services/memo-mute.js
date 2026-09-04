@@ -17,6 +17,7 @@
 */
 
 const MemoAction = require('./memo-action')
+const { hexToBytes } = require('./hex')
 
 const MEMO_MUTE_PREFIX = '6d16'
 const MEMO_UNMUTE_PREFIX = '6d17'
@@ -78,7 +79,7 @@ class MemoMute extends MemoAction {
     await this.wallet.getUtxos()
 
     const hash160 = this._toHash160(muteeAddr)
-    const raw = Buffer.from(hash160, 'hex')
+    const raw = hexToBytes(hash160, PK_HASH_LENGTH, 'Address hash160')
 
     const txid = await this.wallet.sendOpReturn(raw, prefix)
 

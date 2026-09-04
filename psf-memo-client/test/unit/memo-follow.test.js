@@ -17,6 +17,10 @@ const MY_ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
 const FOLLOWEE_ADDRESS = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
 const FOLLOWEE_HASH160 = 'cb481232299cd5743151ac4b2d63ae198e7bb0a9'
 
+function broadcastHex (wallet, index = 0) {
+  return Buffer.from(wallet.broadcasts[index].msg).toString('hex')
+}
+
 function makeBchjs () {
   return {
     Address: {
@@ -63,8 +67,8 @@ test('follow broadcasts with the Memo follow prefix and hash160 payload', async 
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoFollow.MEMO_FOLLOW_PREFIX)
-  assert.ok(Buffer.isBuffer(wallet.broadcasts[0].msg))
-  assert.equal(wallet.broadcasts[0].msg.toString('hex'), FOLLOWEE_HASH160)
+  assert.equal(wallet.broadcasts[0].msg.length, MemoFollow.PK_HASH_LENGTH)
+  assert.equal(broadcastHex(wallet, 0), FOLLOWEE_HASH160)
 })
 
 test('unfollow broadcasts with the Memo unfollow prefix and hash160 payload', async () => {
@@ -75,7 +79,8 @@ test('unfollow broadcasts with the Memo unfollow prefix and hash160 payload', as
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoFollow.MEMO_UNFOLLOW_PREFIX)
-  assert.equal(wallet.broadcasts[0].msg.toString('hex'), FOLLOWEE_HASH160)
+  assert.equal(wallet.broadcasts[0].msg.length, MemoFollow.PK_HASH_LENGTH)
+  assert.equal(broadcastHex(wallet, 0), FOLLOWEE_HASH160)
 })
 
 test('follow reflects the new follow state on the profile store', async () => {
