@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-04T16:25:46.345890783Z","feature_name":"YouTube Embed","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/youtube-embed.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: YouTube Embed - 1, YouTube Embed - 2, YouTube Embed - 3
 #
 # When a post's text contains a YouTube link, the client renders an embedded

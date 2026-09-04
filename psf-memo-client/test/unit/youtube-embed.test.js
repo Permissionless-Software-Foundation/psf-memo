@@ -35,6 +35,14 @@ test('extractYouTubeVideoId returns null when the watch URL has no v value', () 
   assert.equal(extractYouTubeVideoId('https://www.youtube.com/watch?v='), null)
 })
 
+test('extractYouTubeVideoId returns null for a watch URL with an invalid video id', () => {
+  assert.equal(extractYouTubeVideoId('https://www.youtube.com/watch?v=abc!def'), null)
+})
+
+test('extractYouTubeVideoId returns null for a youtube.com URL that is not /watch', () => {
+  assert.equal(extractYouTubeVideoId('https://www.youtube.com/not-watch?v=abc'), null)
+})
+
 test('extractYouTubeVideoId returns null when the short URL has no path id', () => {
   assert.equal(extractYouTubeVideoId('https://youtu.be/'), null)
 })
