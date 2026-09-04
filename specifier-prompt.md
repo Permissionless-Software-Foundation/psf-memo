@@ -322,6 +322,15 @@ that a single user-facing feature may require specs in more than one component.
     centralizes the `height % epoch === 0` decision and is called from both the
     IBD and ZMQ paths in `psf-memo-block-indexer.js`. Spec:
     `psf-memo-indexer/specs/zmq-mode-db-backups.feature`.
+17. **Rendering features need a pure, acceptance-testable seam.** Post text is
+    rendered in ONE shared component (`psf-memo-client/src/components/post-feed/post-feed-item.js`,
+    used by both feed and thread views). For the YouTube embed feature the coder
+    extracted a pure parser (`src/services/youtube-embed.js`) that turns post text
+    into `{ text, videoId }`, and a `post-content.js` component written in plain
+    `React.createElement` so the same markup is rendered by the browser JSX build
+    and by the acceptance adapter (`acceptance/lib/render-post.js`) under Node.
+    Spec rendering features against that observable seam (embedded player shown,
+    raw URL suppressed, surrounding text preserved) rather than against the DOM.
 
 ---
 
@@ -359,7 +368,8 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `d99eda3` (merged architect's notifications refactor +
-startup bloat check; verified db 315 passing + lint clean, client 239 passing +
-lint clean + build succeeds).
+Current `master` HEAD: `b63019c` (merged architect's youtube-embed review;
+verified client build OK + 260 unit passing + lint clean + all 21 acceptance
+suites pass incl. youtube-embed 1-3; db 331 passing + lint clean for the
+carried-in CRAP/DRY refactor).
 Next action: **ask the user for the next front-end improvement to spec**.
