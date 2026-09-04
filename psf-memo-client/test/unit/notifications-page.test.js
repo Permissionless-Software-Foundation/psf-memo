@@ -79,7 +79,7 @@ test('load forwards limit and offset to the memo db client', async () => {
   assert.deepEqual(calls, [{ addr: MY_ADDRESS, params: { limit: 10, offset: 20 } }])
 })
 
-test('load defaults limit to 100 and offset to 0', async () => {
+test('load defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const memoDb = {
     async getNotifications (addr, params) {
@@ -91,7 +91,7 @@ test('load defaults limit to 100 and offset to 0', async () => {
 
   await page.load()
 
-  assert.deepEqual(calls, [{ addr: MY_ADDRESS, params: { limit: 100, offset: 0 } }])
+  assert.deepEqual(calls, [{ addr: MY_ADDRESS, params: { limit: 50, offset: 0 } }])
 })
 
 test('load throws when no memo db client is provided', async () => {

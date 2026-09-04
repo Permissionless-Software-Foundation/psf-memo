@@ -12,6 +12,8 @@ import MemoDb from '../../../services/memo-db'
 import SearchPage from '../../../services/search-page'
 import '../../../App.css'
 
+const PAGE_SIZE = 50
+
 function SearchResults (props) {
   const { posts, profiles, searched } = props
 
@@ -64,6 +66,8 @@ function Search (props) {
   const [error, setError] = useState(null)
   const [posts, setPosts] = useState([])
   const [profiles, setProfiles] = useState([])
+  const [pagination, setPagination] = useState(null)
+  const [offset, setOffset] = useState(0)
   const [searched, setSearched] = useState(false)
 
   const handleSubmit = async (event) => {
@@ -71,21 +75,55 @@ function Search (props) {
     setLoading(true)
     setError(null)
     setSearched(true)
+    setOffset(0)
 
     try {
       const memoDb = new MemoDb()
       const page = new SearchPage({ memoDb })
       page.setQuery(query)
-      const result = await page.submit()
+      const result = await page.submit({ limit: PAGE_SIZE, offset: 0 })
       setPosts(result.posts || [])
       setProfiles(result.profiles || [])
+      setPagination(result.pagination || null)
     } catch (err) {
       setError(err.message || 'Search failed')
       setPosts([])
       setProfiles([])
+      setPagination(null)
     }
 
     setLoading(false)
+  }
+
+  const canGoBack = offset > 0
+  const canGoNext = pagination?.hasMore ?? false
+
+  const loadPage = async (nextOffset) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const memoDb = new MemoDb()
+      const page = new SearchPage({ memoDb })
+      page.setQuery(query)
+      const result = await page.submit({ limit: PAGE_SIZE, offset: nextOffset })
+      setPosts(result.posts || [])
+      setProfiles(result.profiles || [])
+      setPagination(result.pagination || null)
+      setOffset(nextOffset)
+    } catch (err) {
+      setError(err.message || 'Search failed')
+    }
+
+    setLoading(false)
+  }
+
+  const handlePreviousPage = () => {
+    loadPage(Math.max(0, offset - PAGE_SIZE))
+  }
+
+  const handleNextPage = () => {
+    loadPage(offset + PAGE_SIZE)
   }
 
   return (
@@ -123,6 +161,26 @@ function Search (props) {
           )}
 
           {!loading && <SearchResults posts={posts} profiles={profiles} searched={searched} />}
+
+          {!loading && searched && (pagination || offset > 0) && (
+            <div className='search-pagination mt-3'>
+              <Button
+                variant='outline-dark'
+                onClick={handlePreviousPage}
+                disabled={!canGoBack}
+              >
+                Previous
+              </Button>
+
+              <Button
+                variant='outline-dark'
+                onClick={handleNextPage}
+                disabled={!canGoNext}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </Col>
       </Row>
     </Container>

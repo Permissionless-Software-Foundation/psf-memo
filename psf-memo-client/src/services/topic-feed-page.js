@@ -18,7 +18,7 @@ class TopicFeedPage {
     this.followers = []
   }
 
-  async load ({ limit = 100, offset = 0 } = {}) {
+  async load ({ limit = 50, offset = 0 } = {}) {
     if (!this.memoDb) {
       throw new Error('Topic feed page requires a memo db client.')
     }
@@ -80,6 +80,10 @@ class TopicFeedPage {
 
   getPost (txid) {
     return this.posts.find((post) => post.txid === txid) || null
+  }
+
+  canLoadMore () {
+    return this.pagination?.hasMore ?? false
   }
 }
 

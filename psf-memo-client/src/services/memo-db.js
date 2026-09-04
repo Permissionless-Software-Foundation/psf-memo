@@ -10,11 +10,11 @@ class MemoDb {
     this.axios = axios
   }
 
-  async getRecentProfiles ({ limit = 100, offset = 0 } = {}) {
+  async getRecentProfiles ({ limit = 50, offset = 0 } = {}) {
     return this.getRecent('/profile/recent', 'getRecentProfiles', { limit, offset })
   }
 
-  async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
+  async getRecentPosts ({ limit = 50, offset = 0 } = {}) {
     return this.getRecent('/posts/recent', 'getRecentPosts', { limit, offset })
   }
 
@@ -58,7 +58,7 @@ class MemoDb {
     return this._getList(`/topics/${encodeURIComponent(room)}/followers`, 'getTopicFollowers', 'followers')
   }
 
-  async search (q, { limit = 100, offset = 0 } = {}) {
+  async search (q, { limit = 50, offset = 0 } = {}) {
     try {
       const result = await this.axios.get(`${config.backend}/search`, {
         params: { q, limit, offset }
@@ -108,7 +108,7 @@ class MemoDb {
   }
 
   // GET a paginated resource page at a full path.
-  async getPage (path, name, { limit = 100, offset = 0 } = {}) {
+  async getPage (path, name, { limit = 50, offset = 0 } = {}) {
     try {
       const result = await this.axios.get(`${config.backend}${path}`, {
         params: { limit, offset }
