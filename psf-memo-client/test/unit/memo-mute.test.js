@@ -12,6 +12,10 @@ const MY_ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
 const MUTEE_ADDRESS = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
 const MUTEE_HASH160 = 'cb481232299cd5743151ac4b2d63ae198e7bb0a9'
 
+function broadcastHex (wallet, index = 0) {
+  return Buffer.from(wallet.broadcasts[index].msg).toString('hex')
+}
+
 function makeBchjs () {
   return {
     Address: {
@@ -58,8 +62,8 @@ test('mute broadcasts with the Memo mute prefix and hash160 payload', async () =
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoMute.MEMO_MUTE_PREFIX)
-  assert.ok(Buffer.isBuffer(wallet.broadcasts[0].msg))
-  assert.equal(wallet.broadcasts[0].msg.toString('hex'), MUTEE_HASH160)
+  assert.equal(wallet.broadcasts[0].msg.length, MemoMute.PK_HASH_LENGTH)
+  assert.equal(broadcastHex(wallet, 0), MUTEE_HASH160)
 })
 
 test('unmute broadcasts with the Memo unmute prefix and hash160 payload', async () => {
@@ -70,7 +74,8 @@ test('unmute broadcasts with the Memo unmute prefix and hash160 payload', async 
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoMute.MEMO_UNMUTE_PREFIX)
-  assert.equal(wallet.broadcasts[0].msg.toString('hex'), MUTEE_HASH160)
+  assert.equal(wallet.broadcasts[0].msg.length, MemoMute.PK_HASH_LENGTH)
+  assert.equal(broadcastHex(wallet, 0), MUTEE_HASH160)
 })
 
 test('mute reflects the new mute state on the profile store', async () => {

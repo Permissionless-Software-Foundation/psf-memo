@@ -31,6 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Page size 50 (2026-09-04):** every paginated page in the client now requests 50
+  items per page instead of 100 to cut payload size and improve page load times.
+  Covers the recent feed, following feed, topic feed, notifications, search,
+  profile, and recent profiles pages. Pagination Previous/Next controls were also
+  added to the search, profile, and recent-profiles pages (which previously had
+  none), and the paginated page controllers were refactored onto a shared
+  `PaginatedPage` base plus `RecentProfilesPage`. Spec:
+  `psf-memo-client/specs/page-size.feature`. Merged to `master` at `cfe6711`.
 - **YouTube embed (2026-09-04):** posts whose text contains a YouTube link
   (`youtube.com/watch?v=…` or `youtu.be/…`) render an embedded player instead
   of the raw URL; surrounding text is preserved; non-embeddable URLs stay plain

@@ -98,8 +98,12 @@ function makeWallet (address) {
       return this.utxos
     },
     sendOpReturn: async function (msg, prefix, bchOutput = []) {
-      // Record the broadcast attempt, then fail if configured to do so.
-      this.broadcasts.push({ msg, prefix, bchOutput })
+      // Normalize binary payloads to Buffer so assertions can safely use
+      // toString('hex'), while preserving string payloads unchanged.
+      const storedMsg = (msg instanceof Uint8Array || ArrayBuffer.isView(msg))
+        ? Buffer.from(msg)
+        : msg
+      this.broadcasts.push({ msg: storedMsg, prefix, bchOutput })
       if (this.failWith) throw new Error(this.failWith)
       return 'aa'.repeat(32)
     }
@@ -1748,6 +1752,38 @@ const handlers = [
       }
       if (last.msg.toString('hex') !== hash160) {
         throw new Error(`Broadcast unmute hash160 did not match ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo binary hash160 payload for address',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo (follow|unfollow|mute|unmute) prefix and the binary hash160 payload for the address (.+)$/,
+    run (m, example, world) {
+      const action = m[1]
+      const addr = resolveParam(m[2], example)
+      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
+      const prefix = {
+        follow: MEMO_FOLLOW_PREFIX,
+        unfollow: MEMO_UNFOLLOW_PREFIX,
+        mute: MEMO_MUTE_PREFIX,
+        unmute: MEMO_UNMUTE_PREFIX
+      }[action]
+      if (!prefix) {
+        throw new Error(`Unknown follow/mute action: ${action}`)
+      }
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== prefix) {
+        throw new Error(`Expected Memo ${action} prefix ${prefix}, got "${last.prefix}".`)
+      }
+      if (last.msg.length !== 20) {
+        throw new Error(`Broadcast ${action} payload is not 20 bytes.`)
+      }
+      if (last.msg.toString('hex') !== hash160) {
+        throw new Error(`Broadcast ${action} hash160 did not match ${addr}.`)
       }
     }
   },

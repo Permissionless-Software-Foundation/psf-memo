@@ -331,6 +331,16 @@ that a single user-facing feature may require specs in more than one component.
     and by the acceptance adapter (`acceptance/lib/render-post.js`) under Node.
     Spec rendering features against that observable seam (embedded player shown,
     raw URL suppressed, surrounding text preserved) rather than against the DOM.
+18. **Page size lives in TWO places per page.** Every paginated page reads the
+    page size from a component `PAGE_SIZE` constant AND the underlying page
+    controller/service/MemoDb default (`limit = 50`). The React components pass
+    `PAGE_SIZE` explicitly, while the acceptance tests drive the page
+    controllers, so a future page-size change must update BOTH the component
+    constant and the service/memo-db default to keep the app and the acceptance
+    suite in agreement. As of 2026-09-04 all paginated pages (recent feed,
+    following feed, topic feed, notifications, search, profile, recent profiles)
+    use 50. The pure paginated controllers share a `PaginatedPage` base; profile,
+    search, and recent-profiles gained Previous/Next controls in the same change.
 
 ---
 
@@ -368,8 +378,9 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `b63019c` (merged architect's youtube-embed review;
-verified client build OK + 260 unit passing + lint clean + all 21 acceptance
-suites pass incl. youtube-embed 1-3; db 331 passing + lint clean for the
-carried-in CRAP/DRY refactor).
+Current `master` HEAD: `cfe6711` (merged architect's page-size-50 job — every
+paginated page now requests 50 items instead of 100, pagination controls added
+to search/profile/recent-profiles, controllers refactored onto `PaginatedPage`;
+verified client build OK + 280 unit passing + 40 property passing + lint clean +
+all 22 acceptance suites pass incl. the new page-size suite).
 Next action: **ask the user for the next front-end improvement to spec**.
