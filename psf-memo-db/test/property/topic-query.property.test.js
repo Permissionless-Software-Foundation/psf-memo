@@ -7,7 +7,7 @@
 
     - listTopics conservation: the sum of postCounts equals the number of
       post entries in the rooms store, each room's count matches its own post
-      entries, and the topics are returned sorted by room name.
+      entries, and the topics are returned sorted by most recent post.
     - getTopicPostTxids ordering + pagination: posts are returned newest-first
       by block height, the total matches the room's post entries, and the
       offset/limit slice is exact.
