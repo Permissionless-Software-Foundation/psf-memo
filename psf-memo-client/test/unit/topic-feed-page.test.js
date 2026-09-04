@@ -71,6 +71,34 @@ test('load forwards limit and offset to the memo db client', async () => {
   assert.deepEqual(calls, [{ room: 'bitcoin', params: { limit: 10, offset: 20 } }])
 })
 
+test('load forwards the viewer address when myAddr is provided', async () => {
+  const calls = []
+  const memoDb = {
+    async getTopicPosts (room, params) {
+      calls.push({ room, params })
+      return { posts: [], pagination: {} }
+    },
+    async getTopicFollowState () {
+      return false
+    },
+    async getTopicFollowers () {
+      return []
+    }
+  }
+  const page = new TopicFeedPage({ memoDb, room: 'bitcoin', myAddr: MY_ADDRESS })
+
+  await page.load({ limit: 10, offset: 20 })
+
+  assert.deepEqual(calls, [{
+    room: 'bitcoin',
+    params: {
+      limit: 10,
+      offset: 20,
+      viewer: MY_ADDRESS
+    }
+  }])
+})
+
 test('load defaults limit and offset to 50 and 0', async () => {
   const calls = []
   const memoDb = {

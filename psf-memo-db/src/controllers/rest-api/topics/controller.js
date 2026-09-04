@@ -61,6 +61,7 @@ class TopicsRESTControllerLib {
    * @apiParam {String} room Topic name
    * @apiQuery {Number} [limit=100] Page size (max 100)
    * @apiQuery {Number} [offset=0] Number of posts to skip after sorting
+   * @apiQuery {String} [viewer] Viewer cash address; posts from addresses the viewer mutes are excluded
    *
    * @apiExample Example usage:
    * curl -X GET "localhost:5021/topics/bitcoin/posts?limit=50&offset=0"
@@ -77,8 +78,10 @@ class TopicsRESTControllerLib {
   async getTopicPosts (ctx) {
     try {
       const { room } = ctx.params
-      const { limit, offset } = ctx.query
-      ctx.body = await this.useCases.listTopicPosts.execute({ room, limit, offset })
+      const { limit, offset, viewer } = ctx.query
+      const args = { room, limit, offset }
+      if (viewer) args.viewerAddr = viewer
+      ctx.body = await this.useCases.listTopicPosts.execute(args)
     } catch (err) {
       this.handleError(ctx, err)
     }

@@ -12,7 +12,7 @@ import { loadReplyTxids } from './lib/load-reply-txids.js'
 
 class SearchQuery {
   constructor (localConfig = {}) {
-    const { postsDb, postParentsDb, namesDb, profilesDb } = localConfig
+    const { postsDb, postParentsDb, namesDb, profilesDb, muteQuery } = localConfig
     if (!postsDb) {
       throw new Error('postsDb required when instantiating SearchQuery adapter.')
     }
@@ -29,21 +29,24 @@ class SearchQuery {
     this.postParentsDb = postParentsDb
     this.namesDb = namesDb
     this.profilesDb = profilesDb
+    this.muteQuery = muteQuery || null
 
     this.searchPosts = this.searchPosts.bind(this)
     this.searchProfiles = this.searchProfiles.bind(this)
     this.profileMatches = this.profileMatches.bind(this)
   }
 
-  async searchPosts (query) {
+  async searchPosts (query, { viewerAddr = null } = {}) {
     const normalized = normalizeQuery(query)
     if (normalized.length === 0) return []
 
     const replyTxids = await loadReplyTxids(this.postParentsDb)
+    const mutedAddrs = await this._mutedAddrs(viewerAddr)
     const matches = []
 
     for await (const [txid, post] of this.postsDb.iterator()) {
       if (this.isMatchingPost(txid, post, replyTxids, normalized)) {
+        if (mutedAddrs.has(post.addr)) continue
         matches.push({
           txid,
           addr: post.addr,
@@ -132,6 +135,14 @@ class SearchQuery {
       seen,
       blockHeight
     }
+  }
+
+  // Return a Set of addresses muted by viewerAddr, or an empty set when no
+  // mute query adapter is available.
+  async _mutedAddrs (viewerAddr) {
+    if (!this.muteQuery || !viewerAddr) return new Set()
+    const muted = await this.muteQuery.listMuted(viewerAddr)
+    return new Set(muted)
   }
 }
 

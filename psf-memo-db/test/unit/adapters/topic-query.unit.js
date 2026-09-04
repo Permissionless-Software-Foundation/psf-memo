@@ -239,19 +239,32 @@ describe('#TopicQuery', () => {
       assert.equal(result.total, 1)
     })
 
-    it('should treat a post without a block height as height 0', async () => {
+    it('should exclude posts from muted addresses when a viewer is provided', async () => {
       async function * mockRooms () {
-        yield ['bitcoin:post-a', { room: 'bitcoin', txid: 'post-a', type: 'post', blockHeight: 0 }]
-        yield ['bitcoin:post-b', { room: 'bitcoin', txid: 'post-b', type: 'post' }]
+        yield ['bitcoin:post-300', { room: 'bitcoin', txid: 'post-300', type: 'post', blockHeight: 300 }]
+        yield ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 }]
       }
       roomsDb.iterator
         .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
         .returns(mockRooms())
+      postsDb.get.callsFake(async (txid) => {
+        if (txid === 'post-300') return { addr: 'muted-addr', text: 'x', blockHeight: 300 }
+        if (txid === 'post-200') return { addr: 'other-addr', text: 'x', blockHeight: 200 }
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      })
 
-      const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 0 })
+      const muteQuery = {
+        listMuted: sandbox.stub().resolves(['muted-addr'])
+      }
+      uut = new TopicQuery({ roomsDb, postsDb, muteQuery })
 
-      assert.deepEqual(result.txids, ['post-a', 'post-b'])
-      assert.equal(result.total, 2)
+      const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 0, viewerAddr: 'viewer-addr' })
+
+      assert.deepEqual(result.txids, ['post-200'])
+      assert.equal(result.total, 1)
+      assert.isTrue(muteQuery.listMuted.calledOnceWith('viewer-addr'))
     })
   })
 

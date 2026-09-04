@@ -123,6 +123,23 @@ describe('#SearchQuery', () => {
     assert.equal(result[0].text, 'bitcoin cash enthusiast')
   })
 
+  it('should exclude posts from muted addresses when a viewer is provided', async () => {
+    postsDb.iterator = () => makeIterator([
+      ['tx1', { addr: 'muted-addr', text: 'hello world', seen: 100, blockHeight: 600100 }],
+      ['tx2', { addr: 'other-addr', text: 'hello again', seen: 200, blockHeight: 600200 }]
+    ])()
+    postParentsDb.iterator = () => makeIterator([])()
+
+    const muteQuery = {
+      listMuted: async () => ['muted-addr']
+    }
+    const uut = new SearchQuery({ postsDb, postParentsDb, namesDb, profilesDb, muteQuery })
+    const result = await uut.searchPosts('hello', { viewerAddr: 'viewer-addr' })
+
+    assert.equal(result.length, 1)
+    assert.equal(result[0].txid, 'tx2')
+  })
+
   it('should return no posts when query is empty', async () => {
     postsDb.iterator = () => makeIterator([
       ['tx1', { addr: 'addr1', text: 'hello world', seen: 100, blockHeight: 600100 }]

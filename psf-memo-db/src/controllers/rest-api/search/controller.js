@@ -36,6 +36,7 @@ class SearchRESTControllerLib {
    * @apiQuery {String} q Search query
    * @apiQuery {Number} [limit=100] Page size (max 100)
    * @apiQuery {Number} [offset=0] Number of results to skip after sorting
+   * @apiQuery {String} [viewer] Viewer cash address; posts from addresses the viewer mutes are excluded
    *
    * @apiExample Example usage:
    * curl -X GET "localhost:5021/search?q=hello&limit=50&offset=0"
@@ -46,8 +47,10 @@ class SearchRESTControllerLib {
    */
   async search (ctx) {
     try {
-      const { q, limit, offset } = ctx.query
-      ctx.body = await this.useCases.searchAll.execute({ q, limit, offset })
+      const { q, limit, offset, viewer } = ctx.query
+      const args = { q, limit, offset }
+      if (viewer) args.viewerAddr = viewer
+      ctx.body = await this.useCases.searchAll.execute(args)
     } catch (err) {
       this.handleError(ctx, err)
     }

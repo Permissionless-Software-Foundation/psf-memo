@@ -11,11 +11,16 @@ const SEARCH_PATH = '/search'
 class SearchPage {
   constructor (deps = {}) {
     this.memoDb = deps.memoDb || null
+    this.wallet = deps.wallet || null
     this.navigate = deps.navigate || (() => {})
     this.query = ''
     this.posts = []
     this.profiles = []
     this.pagination = null
+  }
+
+  getMyAddress () {
+    return this.wallet?.walletInfo?.cashAddress || null
   }
 
   setQuery (q) {
@@ -28,7 +33,10 @@ class SearchPage {
       throw new Error('Search page requires a memo db client.')
     }
 
-    const data = await this.memoDb.search(this.query, { limit, offset })
+    const opts = { limit, offset }
+    const viewer = this.getMyAddress()
+    if (viewer) opts.viewer = viewer
+    const data = await this.memoDb.search(this.query, opts)
     this.posts = data.posts || []
     this.profiles = data.profiles || []
     this.pagination = data.pagination || null

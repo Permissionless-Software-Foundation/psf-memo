@@ -26,7 +26,9 @@ class TopicFeedPage {
       throw new Error('Topic feed page requires a topic room.')
     }
 
-    const data = await this.memoDb.getTopicPosts(this.room, { limit, offset })
+    const opts = { limit, offset }
+    if (this.myAddr) opts.viewer = this.myAddr
+    const data = await this.memoDb.getTopicPosts(this.room, opts)
     this.posts = data.posts || []
     this.pagination = data.pagination || null
     this.followState = await this._loadFollowState()

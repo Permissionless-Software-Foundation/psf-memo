@@ -35,7 +35,8 @@ class Adapters {
       postParentsDb: level.postParentsDb,
       postChildrenDb: level.postChildrenDb,
       likesDb: level.likesDb,
-      postLikesDb: level.postLikesDb
+      postLikesDb: level.postLikesDb,
+      muteQuery: this.muteQuery
     })
     this.followQuery = new FollowQuery({
       followsDb: level.followsDb
@@ -45,7 +46,8 @@ class Adapters {
     })
     this.topicQuery = new TopicQuery({
       roomsDb: level.roomsDb,
-      postsDb: level.postsDb
+      postsDb: level.postsDb,
+      muteQuery: this.muteQuery
     })
     this.pollQuery = new PollQuery({
       pollsDb: level.pollsDb,
@@ -56,7 +58,8 @@ class Adapters {
       postsDb: level.postsDb,
       postParentsDb: level.postParentsDb,
       namesDb: level.namesDb,
-      profilesDb: level.profilesDb
+      profilesDb: level.profilesDb,
+      muteQuery: this.muteQuery
     })
     this.notificationsQuery = new NotificationsQuery({
       postsDb: level.postsDb,
@@ -64,7 +67,8 @@ class Adapters {
       postChildrenDb: level.postChildrenDb,
       likesDb: level.likesDb,
       postLikesDb: level.postLikesDb,
-      followsDb: level.followsDb
+      followsDb: level.followsDb,
+      muteQuery: this.muteQuery
     })
     return true
   }

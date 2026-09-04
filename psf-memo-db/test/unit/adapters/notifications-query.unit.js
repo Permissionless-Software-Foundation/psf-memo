@@ -113,6 +113,42 @@ describe('#NotificationsQuery', () => {
     }
   })
 
+  it('should exclude notifications from muted addresses when a mute query is provided', async () => {
+    const myPostTxid = 'a'.repeat(64)
+    const replyTxid = 'b'.repeat(64)
+    const likeTxid = 'c'.repeat(64)
+
+    postChildrenDb.iterator.returns(makeIterator([
+      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 100 }]
+    ]))
+    likesDb.iterator.returns(makeIterator([
+      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
+    ]))
+    followsDb.iterator.returns(makeIterator([]))
+
+    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
+    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply' })
+
+    const muteQuery = {
+      listMuted: sandbox.stub().resolves([THEIR_ADDR])
+    }
+    uut = new NotificationsQuery({
+      postsDb,
+      postParentsDb: {},
+      postChildrenDb,
+      likesDb,
+      postLikesDb: {},
+      followsDb,
+      muteQuery,
+      bchjs
+    })
+
+    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 0)
+    assert.isTrue(muteQuery.listMuted.calledOnceWith(MY_ADDR))
+  })
+
   it('should return null from getPostOrNull when the post is not found', async () => {
     const missingTxid = 'c'.repeat(64)
     const notFound = new Error('not found')

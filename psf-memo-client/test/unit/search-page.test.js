@@ -49,6 +49,30 @@ test('submit forwards query, limit and offset to the memo db client', async () =
   assert.deepEqual(calls, [{ q: 'alice', params: { limit: 10, offset: 20 } }])
 })
 
+test('submit forwards the viewer address when a wallet is provided', async () => {
+  const calls = []
+  const memoDb = {
+    async search (q, params) {
+      calls.push({ q, params })
+      return { posts: [], profiles: [], pagination: {} }
+    }
+  }
+  const wallet = { walletInfo: { cashAddress: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d' } }
+  const page = new SearchPage({ memoDb, wallet })
+
+  page.setQuery('alice')
+  await page.submit({ limit: 10, offset: 20 })
+
+  assert.deepEqual(calls, [{
+    q: 'alice',
+    params: {
+      limit: 10,
+      offset: 20,
+      viewer: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+    }
+  }])
+})
+
 test('submit defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const memoDb = {

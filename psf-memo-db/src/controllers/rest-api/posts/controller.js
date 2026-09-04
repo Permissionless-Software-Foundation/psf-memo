@@ -62,6 +62,7 @@ class PostsRESTControllerLib {
    *
    * @apiQuery {Number} [limit=100] Page size (max 100)
    * @apiQuery {Number} [offset=0] Number of posts to skip after sorting
+   * @apiQuery {String} [viewer] Viewer cash address; posts from addresses the viewer mutes are excluded
    *
    * @apiExample Example usage:
    * curl -X GET "localhost:5021/posts/recent?limit=50&offset=0"
@@ -80,8 +81,10 @@ class PostsRESTControllerLib {
    * @apiSuccess {Boolean} pagination.hasMore True if more pages exist
    */
   async getRecentPosts (ctx) {
-    const { limit, offset } = ctx.query
-    await this.runUseCase(ctx, () => this.useCases.listRecentPosts.execute({ limit, offset }))
+    const { limit, offset, viewer } = ctx.query
+    const args = { limit, offset }
+    if (viewer) args.viewerAddr = viewer
+    await this.runUseCase(ctx, () => this.useCases.listRecentPosts.execute(args))
   }
 
   /**

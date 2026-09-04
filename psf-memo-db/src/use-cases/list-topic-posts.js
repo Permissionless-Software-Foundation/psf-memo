@@ -25,8 +25,9 @@ class ListTopicPosts {
     const room = parseRequiredString(inObj.room, 'room')
     const limit = parseLimit(inObj.limit)
     const offset = parseOffset(inObj.offset)
+    const viewerAddr = inObj.viewerAddr || inObj.viewer || null
 
-    const { txids, total } = await this.adapters.topicQuery.getTopicPostTxids(room, { limit, offset })
+    const { txids, total } = await this.adapters.topicQuery.getTopicPostTxids(room, { limit, offset, viewerAddr })
     const [posts, replyCounts, likeCounts] = await Promise.all([
       this.adapters.postQuery.loadPostsByTxids(txids),
       this.adapters.postQuery.countRepliesForTxids(txids),

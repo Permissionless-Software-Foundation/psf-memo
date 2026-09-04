@@ -19,13 +19,14 @@ class SearchAll extends ListUseCase {
     const q = normalizeQuery(inObj.q)
     const limit = parseLimit(inObj.limit)
     const offset = parseOffset(inObj.offset)
+    const viewerAddr = inObj.viewerAddr || inObj.viewer || null
 
     if (q.length === 0) {
       return this.emptyResult(limit, offset)
     }
 
     const [allPosts, allProfiles] = await Promise.all([
-      this.adapters.searchQuery.searchPosts(q),
+      this.adapters.searchQuery.searchPosts(q, { viewerAddr }),
       this.adapters.searchQuery.searchProfiles(q)
     ])
 

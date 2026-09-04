@@ -13,7 +13,7 @@ const HEIGHT_PAD = 12
 
 class PostQuery {
   constructor (localConfig = {}) {
-    const { postsDb, postHeightsDb, addrPostHeightsDb, postParentsDb, postChildrenDb, likesDb, postLikesDb } = localConfig
+    const { postsDb, postHeightsDb, addrPostHeightsDb, postParentsDb, postChildrenDb, likesDb, postLikesDb, muteQuery } = localConfig
     if (!postsDb) {
       throw new Error('postsDb required when instantiating PostQuery adapter.')
     }
@@ -42,6 +42,7 @@ class PostQuery {
     this.postChildrenDb = postChildrenDb
     this.likesDb = likesDb
     this.postLikesDb = postLikesDb
+    this.muteQuery = muteQuery || null
 
     this.scanRecentPostTxids = this.scanRecentPostTxids.bind(this)
     this.scanPostsByAddrTxids = this.scanPostsByAddrTxids.bind(this)
@@ -199,11 +200,14 @@ class PostQuery {
     }
   }
 
-  async scanRecentPostTxids ({ limit, offset }) {
+  async scanRecentPostTxids ({ limit, offset, viewerAddr = null }) {
+    const mutedAddrs = await this._mutedAddrs(viewerAddr)
     const txids = []
     let skipped = 0
 
     for await (const txid of this.topLevelPostTxids({ reverse: true })) {
+      if (await this._isMutedPost(txid, mutedAddrs)) continue
+
       if (skipped < offset) {
         skipped++
         continue
@@ -274,13 +278,15 @@ class PostQuery {
     return posts
   }
 
-  async countTopLevelPosts () {
+  async countTopLevelPosts (viewerAddr = null) {
+    const mutedAddrs = await this._mutedAddrs(viewerAddr)
     let count = 0
     const iterator = this.topLevelPostTxids()
 
     for (;;) {
-      const { done } = await iterator.next()
+      const { done, value: txid } = await iterator.next()
       if (done) break
+      if (await this._isMutedPost(txid, mutedAddrs)) continue
       count++
     }
 
@@ -342,6 +348,23 @@ class PostQuery {
     const post = await this.getPostOrNull(txid)
     if (!post) return false
     return followeeSet.has(post.addr)
+  }
+
+  // Return a Set of addresses muted by viewerAddr, or an empty set when no
+  // mute query adapter is available.
+  async _mutedAddrs (viewerAddr) {
+    if (!this.muteQuery || !viewerAddr) return new Set()
+    const muted = await this.muteQuery.listMuted(viewerAddr)
+    return new Set(muted)
+  }
+
+  // True when a post is authored by an address in mutedAddrs. Missing posts
+  // are treated as not muted.
+  async _isMutedPost (txid, mutedAddrs) {
+    if (mutedAddrs.size === 0) return false
+    const post = await this.getPostOrNull(txid)
+    if (!post) return false
+    return mutedAddrs.has(post.addr)
   }
 }
 
