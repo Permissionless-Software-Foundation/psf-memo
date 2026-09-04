@@ -48,3 +48,49 @@
 ## Handoffs sent
 - `git_handoff` to coder and refactorer (`priority: 00`) with the review commit for follow-up
   review.
+
+---
+
+# Follow-up review: property tests (batch 20260904T164750Z)
+
+**By architect.**
+
+## Task and commits reviewed
+- Follow-up on `youtube-embed`: refactorer added property tests pinning down the parser's
+  invariants over broad random inputs.
+- Inbound handoff: refactorer `9ec8760b59` (merged onto `swarmforge-architect`).
+- Reviewed commit: `9ec8760b59` — new `psf-memo-client/test/property/youtube-embed.property.test.js`
+  (119 lines, 4 properties). No source change.
+
+## Architectural findings
+- **Good test placement:** property tests live in `test/property/`, separate from unit tests,
+  per the constitution (property tests are not part of normal unit coverage, mutation, CRAP,
+  or Gherkin mutation). They are run via the dedicated `npm run test:property` command.
+- **Sound invariants:** the four properties (round-trip reconstruction, segment shape with
+  URL-safe video ids, non-YouTube URLs staying text, and video-id round trips) are meaningful
+  and exercise the parser's URL splitting and trailing-punctuation handling over a token pool
+  that mixes words, YouTube links, non-YouTube links, and punctuation.
+- **Deterministic:** uses the shared seeded `harness.js` PRNG (seed 20260904), so runs are
+  reproducible. Tests run sequentially under node:test, so the shared rng stream is stable.
+- No structural or boundary issues; no changes required.
+
+## Verification results
+- **Property tests** (`npm run test:property`): 37 passing (33 prior + 4 new), 0 fail.
+- **Language mutation** (`mutate4javascript src/services/youtube-embed.js --max-workers 8 --mutate-all`):
+  Killed 6, Survived 1, Uncovered 0. The sole survivor (`line 82 1 -> 0` in `parsePostText`,
+  `match[1]` → `match[0]`) is the previously documented genuine equivalent (`URL_RE`'s capture
+  group spans the whole pattern). Property tests are excluded from mutation coverage by design.
+- **DRY** (`dry4javascript src/services/youtube-embed.js`): no duplicate candidates.
+- **Soft Gherkin acceptance mutation** (`gherkin-mutator --level soft` on `youtube-embed.feature`):
+  7 killed, 18 survived. All 18 survivors are single-character case/value mutations of example
+  values (addresses, txids, text, URLs) used consistently on both the setup and assertion sides
+  of their scenarios — intrinsic equivalents for a read-only feature, not implementation gaps.
+- **Unit tests** (`npm test`): 260 passing, 0 fail. **Lint:** clean.
+
+## Suite status
+- psf-memo-client: 260 unit passing, 37 property passing, lint clean. No source change, so
+  acceptance behavior is unchanged from the prior review.
+
+## Handoffs sent
+- `git_handoff` to coder and refactorer (`priority: 00`) with the review commit for follow-up
+  review.
