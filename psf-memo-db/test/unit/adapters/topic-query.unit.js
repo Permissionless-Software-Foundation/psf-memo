@@ -108,10 +108,10 @@ describe('#TopicQuery', () => {
       const result = await uut.listTopics()
 
       assert.deepEqual(result, [
-        { room: 'bitcoin', postCount: 2, lastHeight: 300 },
-        { room: 'cash', postCount: 1, lastHeight: 250 },
-        { room: 'dev', postCount: 1, lastHeight: 100 },
-        { room: 'lone', postCount: 0, lastHeight: 0 }
+        { room: 'bitcoin', postCount: 2 },
+        { room: 'cash', postCount: 1 },
+        { room: 'dev', postCount: 1 },
+        { room: 'lone', postCount: 0 }
       ])
     })
 
@@ -124,10 +124,31 @@ describe('#TopicQuery', () => {
 
       const result = await uut.listTopics()
 
-      assert.deepEqual(result.map((t) => ({ room: t.room, lastHeight: t.lastHeight })), [
-        { room: 'alpha', lastHeight: 2 },
-        { room: 'zoo', lastHeight: 1 }
-      ])
+      assert.deepEqual(result.map((t) => t.room), ['alpha', 'zoo'])
+    })
+
+    it('should treat a post at block height 0 as the least recent', async () => {
+      async function * mockRooms () {
+        yield ['a:post-1', { room: 'a', txid: 'post-1', type: 'post', blockHeight: 0 }]
+        yield ['b:post-1', { room: 'b', txid: 'post-1', type: 'post', blockHeight: 1 }]
+      }
+      roomsDb.iterator.returns(mockRooms())
+
+      const result = await uut.listTopics()
+
+      assert.deepEqual(result.map((t) => t.room), ['b', 'a'])
+    })
+
+    it('should treat a post with no block height as height 0', async () => {
+      async function * mockRooms () {
+        yield ['a:post-1', { room: 'a', txid: 'post-1', type: 'post' }]
+        yield ['b:post-1', { room: 'b', txid: 'post-1', type: 'post', blockHeight: 1 }]
+      }
+      roomsDb.iterator.returns(mockRooms())
+
+      const result = await uut.listTopics()
+
+      assert.deepEqual(result.map((t) => t.room), ['b', 'a'])
     })
   })
 
