@@ -22,7 +22,7 @@ class NotificationsPage {
     return this.wallet?.walletInfo?.cashAddress || null
   }
 
-  async load ({ limit = 100, offset = 0 } = {}) {
+  async load ({ limit = 50, offset = 0 } = {}) {
     if (!this.memoDb) {
       throw new Error('Notifications page requires a memo db client.')
     }

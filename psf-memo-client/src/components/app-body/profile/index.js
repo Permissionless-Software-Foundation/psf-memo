@@ -18,6 +18,8 @@ import PostThreadModal from '../../post-thread-modal'
 import '../../../App.css'
 import './profile.css'
 
+const PAGE_SIZE = 50
+
 function formatSeen (seen) {
   if (!seen) return ''
   const ms = seen > 1e12 ? seen : seen * 1000
@@ -64,6 +66,7 @@ function Profile (props) {
   const [showThreadModal, setShowThreadModal] = useState(false)
   const [profiles, setProfiles] = useState({})
   const [profilePage, setProfilePage] = useState(null)
+  const [offset, setOffset] = useState(0)
   const [busy, setBusy] = useState(false)
 
   const openThread = (txid) => {
@@ -114,7 +117,7 @@ function Profile (props) {
         const [profile, profilePic, pageData] = await Promise.all([
           memoDb.getProfile(addr),
           memoDb.getProfilePic(addr),
-          page.load()
+          page.load({ limit: PAGE_SIZE, offset })
         ])
 
         setProfileText(profile?.text || '')
@@ -136,12 +139,23 @@ function Profile (props) {
       setError('Missing profile address')
       setLoading(false)
     }
-  }, [addr, myAddr, wallet, appProfiles])
+  }, [addr, myAddr, wallet, appProfiles, offset])
 
   const showFollowButton = profilePage && profilePage.canFollow() && !profilePage.isFollowing()
   const showUnfollowButton = profilePage && profilePage.canFollow() && profilePage.isFollowing()
   const showMuteButton = profilePage && profilePage.canMute() && !profilePage.isMuting()
   const showUnmuteButton = profilePage && profilePage.canMute() && profilePage.isMuting()
+
+  const canGoBack = offset > 0
+  const canGoNext = pagination?.hasMore ?? false
+
+  const handlePrevious = () => {
+    setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
+  }
+
+  const handleNext = () => {
+    setOffset((prev) => prev + PAGE_SIZE)
+  }
 
   return (
     <Container fluid className='profile-page mt-4'>
@@ -222,7 +236,7 @@ function Profile (props) {
               <h2 className='profile-posts-title'>Posts</h2>
               {pagination && (
                 <span className='text-muted'>
-                  {pagination.total} post{pagination.total === 1 ? '' : 's'}
+                  {pagination.offset + 1}–{pagination.offset + posts.length} of {pagination.total} posts
                 </span>
               )}
             </div>
@@ -249,6 +263,26 @@ function Profile (props) {
                 </Card.Body>
               </Card>
             ))}
+
+            {!loading && !error && (pagination || offset > 0) && (
+              <div className='profile-posts-pagination mt-3'>
+                <Button
+                  variant='outline-dark'
+                  onClick={handlePrevious}
+                  disabled={!canGoBack}
+                >
+                  Previous
+                </Button>
+
+                <Button
+                  variant='outline-dark'
+                  onClick={handleNext}
+                  disabled={!canGoNext}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </Col>
         </Row>
       )}

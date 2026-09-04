@@ -75,7 +75,7 @@ test('load throws when no address is provided', async () => {
   )
 })
 
-test('load defaults limit to 100 and offset to 0', async () => {
+test('load defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const addr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const memoDb = {
@@ -91,7 +91,7 @@ test('load defaults limit to 100 and offset to 0', async () => {
 
   await page.load()
 
-  assert.deepEqual(calls, [{ a: addr, params: { limit: 100, offset: 0 } }])
+  assert.deepEqual(calls, [{ a: addr, params: { limit: 50, offset: 0 } }])
 })
 
 test('load sets pagination to null when the API returns none', async () => {

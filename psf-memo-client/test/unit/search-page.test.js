@@ -49,7 +49,7 @@ test('submit forwards query, limit and offset to the memo db client', async () =
   assert.deepEqual(calls, [{ q: 'alice', params: { limit: 10, offset: 20 } }])
 })
 
-test('submit defaults limit to 100 and offset to 0', async () => {
+test('submit defaults limit to 50 and offset to 0', async () => {
   const calls = []
   const memoDb = {
     async search (q, params) {
@@ -62,7 +62,7 @@ test('submit defaults limit to 100 and offset to 0', async () => {
   page.setQuery('memo')
   await page.submit()
 
-  assert.deepEqual(calls, [{ q: 'memo', params: { limit: 100, offset: 0 } }])
+  assert.deepEqual(calls, [{ q: 'memo', params: { limit: 50, offset: 0 } }])
 })
 
 test('submit throws when no memo db client is provided', async () => {

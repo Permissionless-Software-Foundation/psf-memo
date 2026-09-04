@@ -29,6 +29,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - A single user-facing feature may still touch more than one component; call
   out all affected components in the task description and in the handoff.
 
+## Recently completed
+
+- **YouTube embed (2026-09-04):** posts whose text contains a YouTube link
+  (`youtube.com/watch?v=…` or `youtu.be/…`) render an embedded player instead
+  of the raw URL; surrounding text is preserved; non-embeddable URLs stay plain
+  text. Client-only rendering feature. Spec:
+  `psf-memo-client/specs/youtube-embed.feature`. Merged to `master` at `b63019c`.
+
 ---
 
 ## Research notes

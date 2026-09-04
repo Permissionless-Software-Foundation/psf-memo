@@ -26,7 +26,7 @@ class ProfilePage {
     this.muteState = null
   }
 
-  async load ({ limit = 100, offset = 0 } = {}) {
+  async load ({ limit = 50, offset = 0 } = {}) {
     this._assertReady()
 
     const data = await this.memoDb.getPostsByAddr(this.addr, { limit, offset })
@@ -122,6 +122,10 @@ class ProfilePage {
 
   getPost (txid) {
     return this.posts.find((post) => post.txid === txid) || null
+  }
+
+  canLoadMore () {
+    return this.pagination?.hasMore ?? false
   }
 }
 

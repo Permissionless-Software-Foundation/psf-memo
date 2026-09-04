@@ -23,7 +23,7 @@ class SearchPage {
     return this
   }
 
-  async submit ({ limit = 100, offset = 0 } = {}) {
+  async submit ({ limit = 50, offset = 0 } = {}) {
     if (!this.memoDb) {
       throw new Error('Search page requires a memo db client.')
     }
@@ -46,6 +46,10 @@ class SearchPage {
 
   getProfile (addr) {
     return this.profiles.find((profile) => profile.addr === addr) || null
+  }
+
+  canLoadMore () {
+    return this.pagination?.hasMore ?? false
   }
 }
 

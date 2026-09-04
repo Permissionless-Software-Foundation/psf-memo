@@ -22,7 +22,7 @@ class FollowingFeedPage {
     return this.wallet?.walletInfo?.cashAddress || null
   }
 
-  async load ({ limit = 100, offset = 0 } = {}) {
+  async load ({ limit = 50, offset = 0 } = {}) {
     if (!this.memoDb) {
       throw new Error('Following feed page requires a memo db client.')
     }

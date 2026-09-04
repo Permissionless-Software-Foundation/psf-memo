@@ -71,7 +71,7 @@ test('load forwards limit and offset to the memo db client', async () => {
   assert.deepEqual(calls, [{ room: 'bitcoin', params: { limit: 10, offset: 20 } }])
 })
 
-test('load defaults limit and offset', async () => {
+test('load defaults limit and offset to 50 and 0', async () => {
   const calls = []
   const memoDb = {
     async getTopicPosts (room, params) {
@@ -89,7 +89,7 @@ test('load defaults limit and offset', async () => {
 
   await page.load()
 
-  assert.deepEqual(calls, [{ limit: 100, offset: 0 }])
+  assert.deepEqual(calls, [{ limit: 50, offset: 0 }])
 })
 
 test('stores the pagination returned by the memo db client', async () => {
