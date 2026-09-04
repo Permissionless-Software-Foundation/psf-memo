@@ -24,6 +24,10 @@ const rng = seededRandom(20260830)
 const MY_ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
 const CHARS = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
 
+function broadcastHex (wallet, index = 0) {
+  return Buffer.from(wallet.broadcasts[index].msg).toString('hex')
+}
+
 // Deterministic 20-byte hash160 hex for any input string, mirroring what a
 // real wallet's bch-js produces for a valid cash address.
 function hash20 (s) {
@@ -86,9 +90,9 @@ test('follow broadcasts exactly one hash160 payload with the follow prefix', asy
 
       return wallet.broadcasts.length === 1 &&
         wallet.broadcasts[0].prefix === MemoFollow.MEMO_FOLLOW_PREFIX &&
-        Buffer.isBuffer(wallet.broadcasts[0].msg) &&
+        wallet.broadcasts[0].msg instanceof Uint8Array &&
         wallet.broadcasts[0].msg.length === MemoFollow.PK_HASH_LENGTH &&
-        wallet.broadcasts[0].msg.toString('hex') === hash20(addr)
+        broadcastHex(wallet, 0) === hash20(addr)
     },
     { label: 'follow broadcast conservation and hash160 length' }
   )
@@ -104,9 +108,9 @@ test('unfollow broadcasts exactly one hash160 payload with the unfollow prefix',
 
       return wallet.broadcasts.length === 1 &&
         wallet.broadcasts[0].prefix === MemoFollow.MEMO_UNFOLLOW_PREFIX &&
-        Buffer.isBuffer(wallet.broadcasts[0].msg) &&
+        wallet.broadcasts[0].msg instanceof Uint8Array &&
         wallet.broadcasts[0].msg.length === MemoFollow.PK_HASH_LENGTH &&
-        wallet.broadcasts[0].msg.toString('hex') === hash20(addr)
+        broadcastHex(wallet, 0) === hash20(addr)
     },
     { label: 'unfollow broadcast conservation and hash160 length' }
   )
