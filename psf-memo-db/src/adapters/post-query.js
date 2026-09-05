@@ -11,6 +11,7 @@ import { getPostOrNull as getPostOrNullShared } from './lib/get-post-or-null.js'
 import { loadMutedAddrs, isMutedPost } from './lib/muted-posts.js'
 
 const HEIGHT_PAD = 12
+const TOTAL_SCAN_CAP = 10
 
 class PostQuery {
   constructor (localConfig = {}) {
@@ -46,6 +47,7 @@ class PostQuery {
     this.muteQuery = muteQuery || null
 
     this.scanRecentPostTxids = this.scanRecentPostTxids.bind(this)
+    this.scanRecentPostTxidsAndCount = this.scanRecentPostTxidsAndCount.bind(this)
     this.scanPostsByAddrTxids = this.scanPostsByAddrTxids.bind(this)
     this.loadPostsByTxids = this.loadPostsByTxids.bind(this)
     this.countTopLevelPosts = this.countTopLevelPosts.bind(this)
@@ -201,24 +203,45 @@ class PostQuery {
     }
   }
 
-  async scanRecentPostTxids ({ limit, offset, viewerAddr = null }) {
+  async scanRecentPostTxids (args) {
+    const { txids } = await this.scanRecentPostTxidsAndCount(args)
+    return txids
+  }
+
+  // Scan the global postHeights index newest first, returning the page txids
+  // plus a capped total count. The raw scan is limited to offset + limit +
+  // TOTAL_SCAN_CAP postHeights entries so the first pages avoid walking the
+  // entire index; the returned total is capped to TOTAL_SCAN_CAP and drives
+  // hasMore via assemblePostPage.
+  async scanRecentPostTxidsAndCount ({ limit, offset, viewerAddr = null, totalScanCap = TOTAL_SCAN_CAP }) {
     const mutedAddrs = await loadMutedAddrs(this.muteQuery, viewerAddr)
     const txids = []
     let skipped = 0
+    let eligibleCount = 0
+    let rawCount = 0
+    const maxRaw = offset + limit + totalScanCap
 
-    for await (const txid of this.topLevelPostTxids({ reverse: true })) {
+    for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
+      rawCount++
+      const txid = this.txidFromPostHeight(key, value)
+      if (await this.isReply(txid)) continue
       if (await isMutedPost((t) => this.getPostOrNull(t), txid, mutedAddrs)) continue
+
+      eligibleCount++
 
       if (skipped < offset) {
         skipped++
         continue
       }
 
-      txids.push(txid)
-      if (txids.length >= limit) break
+      if (txids.length < limit) {
+        txids.push(txid)
+      }
+
+      if (rawCount >= maxRaw) break
     }
 
-    return txids
+    return { txids, total: Math.min(eligibleCount, totalScanCap) }
   }
 
   // Iterate posts for a single address using the addrPostHeights index,

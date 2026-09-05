@@ -44,10 +44,18 @@ function resolveParam (value, example) {
 }
 
 function wrapIterator (db, counter) {
-  const original = db.iterator.bind(db)
+  const originalIterator = db.iterator.bind(db)
   db.iterator = function (...args) {
     counter.calls++
-    return original(...args)
+    const iter = originalIterator(...args)
+    const originalAsyncIterator = iter[Symbol.asyncIterator].bind(iter)
+    iter[Symbol.asyncIterator] = async function * () {
+      for await (const entry of originalAsyncIterator()) {
+        counter.entries = (counter.entries || 0) + 1
+        yield entry
+      }
+    }
+    return iter
   }
 }
 
@@ -189,6 +197,11 @@ async function loadFixture (world, name) {
     return
   }
 
+  if (name === 'many-posts-with-replies') {
+    await loadManyPostsWithReplies(world)
+    return
+  }
+
   if (name !== 'three-top-level-posts-and-one-reply') {
     throw new Error(`Unknown fixture: ${name}`)
   }
@@ -305,6 +318,54 @@ async function loadPostsWithLikes (world) {
       `${like.postTxid}:${like.txid}`,
       { postTxid: like.postTxid, txid: like.txid }
     )
+  }
+}
+
+async function loadManyPostsWithReplies (world) {
+  const posts = []
+  for (let i = 0; i <= 20; i++) {
+    const id = String(i).padStart(3, '0')
+    const txid = `post-${id}`
+    const blockHeight = 600000 + i
+    posts.push({ txid, addr: 'bitcoincash:qaddr', text: `post ${id}`, seen: i, blockHeight })
+  }
+
+  for (const post of posts) {
+    await world.adapters.level.postsDb.put(post.txid, {
+      addr: post.addr,
+      text: post.text,
+      seen: post.seen,
+      blockHeight: post.blockHeight
+    })
+    await world.adapters.level.postHeightsDb.put(
+      String(post.blockHeight).padStart(12, '0') + ':' + post.txid,
+      { txid: post.txid, blockHeight: post.blockHeight }
+    )
+    await world.adapters.level.addrPostHeightsDb.put(
+      `${post.addr}:${String(post.blockHeight).padStart(12, '0')}:${post.txid}`,
+      { txid: post.txid, addr: post.addr, blockHeight: post.blockHeight }
+    )
+  }
+
+  const replies = [
+    { txid: 'reply-020-a', parentTxid: 'post-020', childTxid: 'reply-020-a', blockHeight: 599900 },
+    { txid: 'reply-020-b', parentTxid: 'post-020', childTxid: 'reply-020-b', blockHeight: 599901 },
+    { txid: 'reply-019-a', parentTxid: 'post-019', childTxid: 'reply-019-a', blockHeight: 599902 }
+  ]
+
+  for (const reply of replies) {
+    await world.adapters.level.postsDb.put(reply.txid, {
+      addr: 'bitcoincash:qaddr',
+      text: `reply to ${reply.parentTxid}`,
+      seen: reply.blockHeight,
+      blockHeight: reply.blockHeight
+    })
+    await world.adapters.level.postHeightsDb.put(
+      String(reply.blockHeight).padStart(12, '0') + ':' + reply.txid,
+      { txid: reply.txid, blockHeight: reply.blockHeight }
+    )
+    await world.adapters.level.postParentsDb.put(reply.txid, reply)
+    await world.adapters.level.postChildrenDb.put(`${reply.parentTxid}:${reply.txid}`, reply)
   }
 }
 
@@ -591,6 +652,28 @@ const handlers = [
       }
       if (pagination.hasMore !== expectedHasMore) {
         throw new Error(`Expected hasMore ${expectedHasMore}, got ${pagination.hasMore}`)
+      }
+    }
+  },
+  {
+    name: 'bounded postChildren entries read',
+    pattern: /^the postChildren store was read at most (<max_entries>) entries$/,
+    run (m, example, world) {
+      const max = parseInt(resolveParam(m[1], example), 10)
+      const reads = world.postChildrenIteratorCounter.entries || 0
+      if (reads > max) {
+        throw new Error(`Read ${reads} postChildren entries, expected at most ${max}`)
+      }
+    }
+  },
+  {
+    name: 'bounded postHeights entries read',
+    pattern: /^the postHeights store was read at most (<max_entries>) entries$/,
+    run (m, example, world) {
+      const max = parseInt(resolveParam(m[1], example), 10)
+      const reads = world.postHeightsIteratorCounter.entries || 0
+      if (reads > max) {
+        throw new Error(`Read ${reads} postHeights entries, expected at most ${max}`)
       }
     }
   },

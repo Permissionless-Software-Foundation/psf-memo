@@ -18,12 +18,11 @@ class ListRecentPosts extends ListUseCase {
 
     const scanArgs = { limit, offset }
     if (viewerAddr) scanArgs.viewerAddr = viewerAddr
-    const txids = await this.adapters.postQuery.scanRecentPostTxids(scanArgs)
-    const [posts, replyCounts, likeCounts, total] = await Promise.all([
+    const { txids, total } = await this.adapters.postQuery.scanRecentPostTxidsAndCount(scanArgs)
+    const [posts, replyCounts, likeCounts] = await Promise.all([
       this.adapters.postQuery.loadPostsByTxids(txids),
-      this.adapters.postQuery.buildReplyCountMap(),
-      this.adapters.postQuery.countLikesForTxids(txids),
-      this.adapters.postQuery.countTopLevelPosts(viewerAddr)
+      this.adapters.postQuery.countRepliesForTxids(txids),
+      this.adapters.postQuery.countLikesForTxids(txids)
     ])
 
     return assemblePostPage({ posts, replyCounts, likeCounts, total, limit, offset })

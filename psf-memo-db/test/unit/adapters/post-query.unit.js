@@ -47,6 +47,10 @@ describe('#PostQuery', () => {
     likesDb.iterator.returns(empty())
     postLikesDb.iterator.returns(empty())
 
+    const notFoundErr = new Error('not found')
+    notFoundErr.notFound = true
+    postParentsDb.get.rejects(notFoundErr)
+
     uut = new PostQuery({
       postsDb,
       postHeightsDb,
@@ -131,16 +135,13 @@ describe('#PostQuery', () => {
     })
 
     it('should skip replies when selecting recent posts', async () => {
-      async function * mockParents () {
-        yield ['reply-1', { parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600150 }]
-      }
+      postParentsDb.get.withArgs('reply-1').resolves({ parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600150 })
       async function * mockHeights () {
         yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
         yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
         yield ['000000600150:reply-1', { txid: 'reply-1' }]
         yield ['000000600100:post-100', { txid: 'post-100' }]
       }
-      postParentsDb.iterator.returns(mockParents())
       postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
 
       const result = await uut.scanRecentPostTxids({ limit: 2, offset: 0 })
@@ -172,6 +173,68 @@ describe('#PostQuery', () => {
       await uut.scanRecentPostTxids({ limit: 2, offset: 0 })
 
       assert.isTrue(postHeightsDb.iterator.calledOnce)
+    })
+  })
+
+  describe('#scanRecentPostTxidsAndCount', () => {
+    it('should return txids and a capped total count', async () => {
+      async function * mockHeights () {
+        for (let i = 20; i >= 0; i--) {
+          const id = String(i).padStart(3, '0')
+          yield [`000000${600000 + i}:post-${id}`, { txid: `post-${id}` }]
+        }
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+
+      const result = await uut.scanRecentPostTxidsAndCount({ limit: 3, offset: 0 })
+
+      assert.deepEqual(result.txids, ['post-020', 'post-019', 'post-018'])
+      assert.equal(result.total, 10)
+    })
+
+    it('should cap the raw postHeights scan to limit + offset + cap', async () => {
+      async function * mockHeights () {
+        for (let i = 20; i >= 0; i--) {
+          const id = String(i).padStart(3, '0')
+          yield [`000000${600000 + i}:post-${id}`, { txid: `post-${id}` }]
+        }
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+
+      const result = await uut.scanRecentPostTxidsAndCount({ limit: 5, offset: 0, totalScanCap: 10 })
+
+      assert.deepEqual(result.txids.length, 5)
+      assert.equal(result.total, 10)
+    })
+
+    it('should return actual total when the index exhausts before the cap', async () => {
+      async function * mockHeights () {
+        yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
+        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['000000600100:post-100', { txid: 'post-100' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+
+      const result = await uut.scanRecentPostTxidsAndCount({ limit: 10, offset: 0, totalScanCap: 10 })
+
+      assert.deepEqual(result.txids, ['post-200-b', 'post-200-a', 'post-100'])
+      assert.equal(result.total, 3)
+    })
+
+    it('should skip replies when counting and selecting recent posts', async () => {
+      postParentsDb.get.withArgs('reply-1').resolves({ parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600150 })
+      async function * mockHeights () {
+        yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
+        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
+        yield ['000000600150:reply-1', { txid: 'reply-1' }]
+        yield ['000000600100:post-100', { txid: 'post-100' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+
+      const result = await uut.scanRecentPostTxidsAndCount({ limit: 2, offset: 0, totalScanCap: 10 })
+
+      assert.deepEqual(result.txids, ['post-200-b', 'post-200-a'])
+      assert.equal(result.total, 3)
     })
   })
 

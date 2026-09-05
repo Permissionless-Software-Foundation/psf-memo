@@ -16,13 +16,12 @@ describe('#ListRecentPosts', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     postQuery = {
-      scanRecentPostTxids: sandbox.stub().resolves(['tx-b', 'tx-c', 'tx-a']),
+      scanRecentPostTxidsAndCount: sandbox.stub().resolves({ txids: ['tx-b', 'tx-c', 'tx-a'], total: 3 }),
       loadPostsByTxids: sandbox.stub().callsFake(async (txids) => {
         return txids.map((txid) => ({ txid, ...mockPosts[txid] }))
       }),
-      buildReplyCountMap: sandbox.stub().resolves(new Map([['tx-b', 1]])),
-      countLikesForTxids: sandbox.stub().resolves(new Map([['tx-b', 3], ['tx-a', 5]])),
-      countTopLevelPosts: sandbox.stub().resolves(3)
+      countRepliesForTxids: sandbox.stub().resolves(new Map([['tx-b', 1]])),
+      countLikesForTxids: sandbox.stub().resolves(new Map([['tx-b', 3], ['tx-a', 5]]))
     }
     uut = new ListRecentPosts({
       adapters: { postQuery }
@@ -48,7 +47,7 @@ describe('#ListRecentPosts', () => {
   })
 
   it('should paginate with limit and offset', async () => {
-    postQuery.scanRecentPostTxids.resolves(['tx-c'])
+    postQuery.scanRecentPostTxidsAndCount.resolves({ txids: ['tx-c'], total: 3 })
     const result = await uut.execute({ limit: 1, offset: 1 })
 
     assert.equal(result.posts.length, 1)
@@ -78,7 +77,7 @@ describe('#ListRecentPosts', () => {
   it('should pass limit and offset to postQuery', async () => {
     await uut.execute({ limit: 5, offset: 10 })
 
-    assert.equal(postQuery.scanRecentPostTxids.calledOnce, true)
-    assert.deepEqual(postQuery.scanRecentPostTxids.firstCall.args[0], { limit: 5, offset: 10 })
+    assert.equal(postQuery.scanRecentPostTxidsAndCount.calledOnce, true)
+    assert.deepEqual(postQuery.scanRecentPostTxidsAndCount.firstCall.args[0], { limit: 5, offset: 10 })
   })
 })
