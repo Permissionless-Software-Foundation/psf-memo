@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import AccountPage from '../../../services/account-page'
+import AvatarImage from '../../../components/account/avatar-image'
 import { truncateAddr } from '../../../util'
 
 function Account (props) {
@@ -63,7 +64,7 @@ function Account (props) {
 
   const displayName = accountPage.getName() || name || truncateAddr(address, 24)
   const displayBio = accountPage.getBio() || bio || ''
-  const displayAvatarUrl = accountPage.getAvatarUrl() || avatarUrl || ''
+  const displayAvatarUrl = accountPage.getDisplayAvatarUrl(avatarUrl)
 
   return (
     <Container className='account-page mt-4'>
@@ -91,9 +92,15 @@ function Account (props) {
                 <strong>Bio: </strong>
                 {displayBio || <span className='text-muted'>No bio set</span>}
               </p>
-              <p className='account-avatar-url'>
-                <strong>Avatar URL: </strong>
-                {displayAvatarUrl || <span className='text-muted'>No avatar URL set</span>}
+              <p className='account-avatar'>
+                <strong>Avatar: </strong>
+                {displayAvatarUrl
+                  ? (
+                    <AvatarImage url={displayAvatarUrl} />
+                    )
+                  : (
+                    <span className='text-muted'>No avatar URL set</span>
+                    )}
               </p>
               <p className='account-address'>
                 <strong>Address: </strong>
