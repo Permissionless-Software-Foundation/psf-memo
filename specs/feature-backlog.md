@@ -61,6 +61,16 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
   of the raw URL; surrounding text is preserved; non-embeddable URLs stay plain
   text. Client-only rendering feature. Spec:
   `psf-memo-client/specs/youtube-embed.feature`. Merged to `master` at `b63019c`.
+- **Feed query performance (2026-09-05):** `GET /posts/recent` no longer does
+  two full scans per request. Reply counts are computed per returned post
+  (`countRepliesForTxids`) instead of a global `buildReplyCountMap()` scan, and
+  the `total`/`hasMore` computation is a capped scan of the last
+  `TOTAL_SCAN_CAP` (10) top-level posts instead of walking the whole
+  `postHeights` index. `list-recent-posts.js` now uses
+  `scanRecentPostTxidsAndCount()` which returns the page txids plus a capped
+  total in one bounded scan. Spec:
+  `psf-memo-db/specs/feed-query-performance.feature`. Merged to `master` at
+  `2bcc965`.
 
 ---
 
@@ -137,25 +147,18 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ---
 
-## Next up: feed query performance
+## Next up: feed query performance — DONE (2026-09-05)
 
-`GET /posts/recent` (and the other paginated feeds) is slow at 1.3M posts because
-`list-recent-posts.js` does two full scans on every request:
+`GET /posts/recent` previously did two full scans per request:
+`countTopLevelPosts()` walked the entire `postHeights` index for
+`total`/`hasMore`, and `buildReplyCountMap()` scanned all `postChildren` entries.
+Both are now bounded: reply counts are per-page (`countRepliesForTxids`) and the
+total scan is capped to the last `TOTAL_SCAN_CAP` (10) top-level posts. Merged
+to `master` at `2bcc965`.
 
-- `countTopLevelPosts()` iterates the ENTIRE `postHeights` index to compute the
-  `total`/`hasMore` pagination field.
-- `buildReplyCountMap()` scans ALL `postChildren` entries to build a global
-  reply-count map.
-
-Planned optimization (decision: **capped scan**, keep it simple):
-
-- Replace the global `buildReplyCountMap()` with per-page-txid reply counting
-  (like `countLikesForTxids` already does) — only count replies for the ~50
-  posts on the page.
-- Cap the `total` scan to the last N posts / last N blocks so `hasMore` still
-  works for the first pages without walking all 1.3M entries.
-
-Affected components: `psf-memo-db` (feed use cases + post-query adapter).
+Next feature: TBD — current direction is front-end improvements to
+`psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
+state handling, error surfacing).
 
 ## Notes for future cycles
 

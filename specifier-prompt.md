@@ -366,6 +366,15 @@ that a single user-facing feature may require specs in more than one component.
     address on `:` and yielded just `"bitcoincash"` — strip the trailing
     `:<followeePkHash>` suffix via `key.slice(0, key.lastIndexOf(':'))` instead.
     Spec: `psf-memo-client/specs/mute-feed-filtering.feature`.
+21. **The recent-feed `total` is now capped, not exact.** Since the
+    feed-query-performance job (`2bcc965`), `GET /posts/recent` computes
+    `total`/`hasMore` from a capped scan of the last `TOTAL_SCAN_CAP` (10)
+    top-level posts rather than a full `postHeights` walk. `total` is therefore
+    `min(actual, TOTAL_SCAN_CAP)` and `hasMore` is only reliable for the first
+    few pages; deep pagination past the cap may report `hasMore: false` even
+    when older posts exist. Specs for the recent feed should assert `total`
+    against the cap (e.g. `10`) and only assert `hasMore` for the first pages.
+    Spec: `psf-memo-db/specs/feed-query-performance.feature`.
 
 ---
 
@@ -403,14 +412,15 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `3992395` (merged architect's mute-feed-filtering job —
-muting a profile now hides its content from the viewer's recent feed, topic feed,
-search results, and notifications. Server-side filtering keyed by the viewer's
-address passed as a `viewer` query param; shared `loadMutedAddrs`/`isMutedPost`
-helper in `psf-memo-db/src/adapters/lib/muted-posts.js`. Verified DB 343 unit +
-40 property + 9 acceptance passing + lint clean; client build OK + 284 unit +
-24 acceptance passing + lint clean, including the new `mute-feed-filtering`
-suite).
-Next action: **spec the feed query performance work** (capped scan for the
-`total`/`hasMore` computation + per-page reply counting) — see
-`specs/feature-backlog.md` "Next up: feed query performance".
+Current `master` HEAD: `2bcc965` (merged architect's feed-query-performance job —
+`GET /posts/recent` no longer does two full scans per request. Reply counts are
+computed per returned post (`countRepliesForTxids`) instead of a global
+`buildReplyCountMap()` scan, and the `total`/`hasMore` computation is a capped
+scan of the last `TOTAL_SCAN_CAP` (10) top-level posts instead of walking the
+whole `postHeights` index. `list-recent-posts.js` uses
+`scanRecentPostTxidsAndCount()` which returns page txids plus a capped total in
+one bounded scan. Verified DB unit + 10 acceptance passing + lint clean,
+including the new `feed-query-performance` suite).
+Next action: **TBD** — current direction is front-end improvements to
+`psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
+state handling, error surfacing). See `specs/feature-backlog.md`.
