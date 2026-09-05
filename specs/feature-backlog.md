@@ -31,6 +31,16 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Account avatar display (2026-09-05):** the `/account` page now renders the
+  avatar image when an avatar URL is set, instead of only showing the URL as
+  text. A pure `AvatarImage` component (`src/components/account/avatar-image.js`,
+  plain `React.createElement` so the browser build and the Node acceptance
+  adapter share it) renders the `<img>`; the `AccountPage` service exposes
+  `getDisplayAvatarUrl` / `hasAvatarImage` / `getAvatarImageUrl` as the testable
+  seam. When no avatar URL is set, the page shows "No avatar URL set".
+  Client-only rendering feature. Spec:
+  `psf-memo-client/specs/account-avatar-display.feature`. Merged to `master` at
+  `5afaa64`.
 - **Mute feed filtering (2026-09-04):** muting a profile now hides that profile's
   content from the viewer's recent feed, topic feed, search results, and
   notifications. The psf-memo-db API filters server-side given the viewer's
@@ -147,14 +157,11 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ---
 
-## Next up: feed query performance — DONE (2026-09-05)
+## Next up: account avatar display — DONE (2026-09-05)
 
-`GET /posts/recent` previously did two full scans per request:
-`countTopLevelPosts()` walked the entire `postHeights` index for
-`total`/`hasMore`, and `buildReplyCountMap()` scanned all `postChildren` entries.
-Both are now bounded: reply counts are per-page (`countRepliesForTxids`) and the
-total scan is capped to the last `TOTAL_SCAN_CAP` (10) top-level posts. Merged
-to `master` at `2bcc965`.
+The `/account` page now renders the avatar image when an avatar URL is set
+(pure `AvatarImage` component + `AccountPage` display helpers). Merged to
+`master` at `5afaa64`.
 
 Next feature: TBD — current direction is front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
