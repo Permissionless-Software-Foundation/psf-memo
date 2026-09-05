@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-05T20:15:33.828984609Z","feature_name":"Account Avatar Display","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/account-avatar-display.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Account Avatar Display - 1, Account Avatar Display - 2
 #
 # When the authenticated account has an avatar URL set, the /account page
