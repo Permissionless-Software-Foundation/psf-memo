@@ -53,6 +53,22 @@ class AccountPage {
     return this._getProfileField('getAvatarUrl')
   }
 
+  // The avatar URL to display, preferring the injected profile store and
+  // falling back to an optional externally loaded URL (e.g. from memo-db).
+  getDisplayAvatarUrl (fallbackUrl = null) {
+    return this.getAvatarUrl() || fallbackUrl || null
+  }
+
+  // Whether the account page should display an avatar image.
+  hasAvatarImage (fallbackUrl = null) {
+    return this.getDisplayAvatarUrl(fallbackUrl) !== null
+  }
+
+  // The URL for the account page avatar image, or null when none is set.
+  getAvatarImageUrl (fallbackUrl = null) {
+    return this.getDisplayAvatarUrl(fallbackUrl)
+  }
+
   // Whether the account page exposes a Set Name button.
   hasSetNameButton () {
     return true

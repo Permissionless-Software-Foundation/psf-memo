@@ -53,6 +53,7 @@ const PollOptionPage = require('../../src/services/poll-option-page')
 const MemoPollVote = require('../../src/services/memo-poll-vote')
 const PollVotePage = require('../../src/services/poll-vote-page')
 const { renderPostText } = require('./render-post')
+const { renderAccountAvatar } = require('./render-account-avatar')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
@@ -923,6 +924,41 @@ const handlers = [
     run (m, example, world) {
       if (!world.accountPage.hasSetAvatarUrlButton()) {
         throw new Error('Account page does not show a Set Avatar URL button.')
+      }
+    }
+  },
+  {
+    name: 'account page displays avatar image',
+    pattern: /^the account page displays the avatar image with the URL "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = example[param]
+      if (!world.accountPage.hasAvatarImage()) {
+        throw new Error('Account page does not have an avatar URL to display.')
+      }
+      const actual = world.accountPage.getAvatarImageUrl()
+      if (actual !== expected) {
+        throw new Error(`Expected avatar URL "${expected}", got "${actual}".`)
+      }
+      const html = renderAccountAvatar(actual)
+      if (!html.includes(`src="${expected}"`)) {
+        throw new Error(`Account page does not render an avatar image with src="${expected}".`)
+      }
+      if (!html.includes('<img')) {
+        throw new Error('Account page does not render an avatar image element.')
+      }
+    }
+  },
+  {
+    name: 'account page does not display avatar image',
+    pattern: /^the account page does not display an avatar image$/,
+    run (m, example, world) {
+      if (world.accountPage.hasAvatarImage()) {
+        throw new Error(`Account page unexpectedly has an avatar URL: ${world.accountPage.getAvatarImageUrl()}.`)
+      }
+      const html = renderAccountAvatar(world.accountPage.getAvatarImageUrl())
+      if (html.includes('<img')) {
+        throw new Error('Account page unexpectedly renders an avatar image element.')
       }
     }
   },

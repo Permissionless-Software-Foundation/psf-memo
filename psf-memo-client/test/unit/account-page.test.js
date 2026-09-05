@@ -145,3 +145,72 @@ test('clickSetAvatarUrl navigates to the set-avatar-url page', () => {
 
   assert.deepEqual(navigated, [AccountPage.SET_AVATAR_URL_PATH])
 })
+
+test('hasAvatarImage returns true when an avatar URL is set', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+
+  assert.equal(page.hasAvatarImage(), true)
+})
+
+test('hasAvatarImage returns true when only a fallback URL is provided', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  assert.equal(page.hasAvatarImage('https://fallback.com/avatar.png'), true)
+})
+
+test('hasAvatarImage returns false when no avatar URL is set', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  assert.equal(page.hasAvatarImage(), false)
+})
+
+test('hasAvatarImage returns false without a wallet', () => {
+  const profiles = makeProfiles()
+  const page = new AccountPage({ profiles })
+
+  assert.equal(page.hasAvatarImage(), false)
+})
+
+test('getAvatarImageUrl returns the stored avatar URL', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+
+  assert.equal(page.getAvatarImageUrl(), 'https://example.com/avatar.png')
+})
+
+test('getAvatarImageUrl returns the fallback URL when no profile URL is set', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  assert.equal(page.getAvatarImageUrl('https://fallback.com/avatar.png'), 'https://fallback.com/avatar.png')
+})
+
+test('getAvatarImageUrl returns null when no avatar URL is set', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  assert.equal(page.getAvatarImageUrl(), null)
+})
+
+test('getDisplayAvatarUrl prefers the profile store over the fallback', () => {
+  const profiles = makeProfiles()
+  const wallet = makeWallet()
+  const page = new AccountPage({ wallet, profiles })
+
+  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://profile.com/avatar.png')
+
+  assert.equal(page.getDisplayAvatarUrl('https://fallback.com/avatar.png'), 'https://profile.com/avatar.png')
+})
