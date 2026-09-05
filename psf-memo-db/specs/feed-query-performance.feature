@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-05T01:55:45.225163419Z","feature_name":"Feed query performance","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/feed-query-performance.feature","background_hash":"fdb60916241190cec1b8226cda305cb82f40e26cd569ba064c28ac9b3439f133","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Feed query performance - 1, Feed query performance - 2
 #
 # GET /posts/recent (and the other paginated feeds) is slow at 1.3M posts

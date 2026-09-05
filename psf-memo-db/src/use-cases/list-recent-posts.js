@@ -32,5 +32,5 @@ class ListRecentPosts extends ListUseCase {
 export default ListRecentPosts
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-04T20:25:12.592Z","module_hash":"ea92248aeea697e64e58cad10a149dd6c9fc03dee8b96fb7081e1c3cde1673bb","functions":[{"id":"func/ListRecentPosts.constructor","name":"ListRecentPosts.constructor","line":10,"end_line":12,"hash":"0abcf69664af3b707dfe95a9db5caa65e3bbec6dfb740393cafb923e81aad9ae"},{"id":"func/ListRecentPosts.execute","name":"ListRecentPosts.execute","line":14,"end_line":30,"hash":"5c858a32eaedd44bf5c08ff158b1598874987e46aa73e2cd4de99e876cc8f493"}]}
+// {"version":1,"tested_at":"2026-09-05T01:53:48.116Z","module_hash":"d5e28c97faab892eeb7098689aa4e6458eef289db1a589c20b0fb0888ebb8bc0","functions":[{"id":"func/ListRecentPosts.constructor","name":"ListRecentPosts.constructor","line":10,"end_line":12,"hash":"0abcf69664af3b707dfe95a9db5caa65e3bbec6dfb740393cafb923e81aad9ae"},{"id":"func/ListRecentPosts.execute","name":"ListRecentPosts.execute","line":14,"end_line":29,"hash":"74fc76ccd23b442e804c012ad904d032da5078b5e4f12b226a1d0c21377e31fc"}]}
 // mutate4javascript-manifest-end

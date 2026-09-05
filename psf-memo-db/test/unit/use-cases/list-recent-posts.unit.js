@@ -80,4 +80,16 @@ describe('#ListRecentPosts', () => {
     assert.equal(postQuery.scanRecentPostTxidsAndCount.calledOnce, true)
     assert.deepEqual(postQuery.scanRecentPostTxidsAndCount.firstCall.args[0], { limit: 5, offset: 10 })
   })
+
+  it('should forward viewerAddr to postQuery', async () => {
+    await uut.execute({ limit: 5, offset: 0, viewerAddr: 'viewer-addr' })
+
+    assert.deepEqual(postQuery.scanRecentPostTxidsAndCount.firstCall.args[0], { limit: 5, offset: 0, viewerAddr: 'viewer-addr' })
+  })
+
+  it('should fall back to viewer for viewerAddr', async () => {
+    await uut.execute({ limit: 5, offset: 0, viewer: 'viewer-addr' })
+
+    assert.deepEqual(postQuery.scanRecentPostTxidsAndCount.firstCall.args[0], { limit: 5, offset: 0, viewerAddr: 'viewer-addr' })
+  })
 })

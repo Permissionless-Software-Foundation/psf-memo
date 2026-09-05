@@ -105,21 +105,6 @@ describe('#PostQuery', () => {
     })
   })
 
-  describe('#topLevelPostTxids', () => {
-    it('should iterate top-level txids in forward postHeights order by default', async () => {
-      async function * mockHeights () {
-        yield ['000000600100:post-100', { txid: 'post-100' }]
-        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
-      }
-      postHeightsDb.iterator.withArgs({ reverse: false }).returns(mockHeights())
-
-      const txids = []
-      for await (const txid of uut.topLevelPostTxids()) txids.push(txid)
-
-      assert.deepEqual(txids, ['post-100', 'post-200-a'])
-    })
-  })
-
   describe('#scanRecentPostTxids', () => {
     it('should return top-level post txids sorted by block height descending', async () => {
       async function * mockHeights () {
@@ -205,6 +190,22 @@ describe('#PostQuery', () => {
 
       assert.deepEqual(result.txids.length, 5)
       assert.equal(result.total, 10)
+    })
+
+    it('should stop the raw scan at exactly offset + limit + cap entries', async () => {
+      let reads = 0
+      async function * mockHeights () {
+        for (let i = 20; i >= 0; i--) {
+          reads++
+          const id = String(i).padStart(3, '0')
+          yield [`000000${600000 + i}:post-${id}`, { txid: `post-${id}` }]
+        }
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+
+      await uut.scanRecentPostTxidsAndCount({ limit: 3, offset: 0, totalScanCap: 10 })
+
+      assert.equal(reads, 13) // offset + limit + cap
     })
 
     it('should return actual total when the index exhausts before the cap', async () => {
@@ -502,46 +503,6 @@ describe('#PostQuery', () => {
     })
   })
 
-  describe('#countTopLevelPosts', () => {
-    it('should count top-level posts excluding replies', async () => {
-      async function * mockParents () {
-        yield ['reply-1', { parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600150 }]
-      }
-      async function * mockHeights () {
-        yield ['000000600200:post-200-b', { txid: 'post-200-b' }]
-        yield ['000000600200:post-200-a', { txid: 'post-200-a' }]
-        yield ['000000600150:reply-1', { txid: 'reply-1' }]
-        yield ['000000600100:post-100', { txid: 'post-100' }]
-      }
-      postParentsDb.iterator.returns(mockParents())
-      postHeightsDb.iterator.returns(mockHeights())
-
-      const result = await uut.countTopLevelPosts()
-
-      assert.equal(result, 3)
-    })
-  })
-
-  describe('#countTopLevelPostsByAddr', () => {
-    it('should count top-level posts for an address', async () => {
-      async function * mockAddrHeights () {
-        yield ['bitcoincash:qaddr-a:000000600200:post-200-a', { txid: 'post-200-a' }]
-        yield ['bitcoincash:qaddr-a:000000600100:post-100', { txid: 'post-100' }]
-      }
-      async function * mockParents () {
-        yield ['reply-1', { parentTxid: 'post-200-a', childTxid: 'reply-1', blockHeight: 600050 }]
-      }
-      addrPostHeightsDb.iterator
-        .withArgs({ gte: 'bitcoincash:qaddr-a:', lte: 'bitcoincash:qaddr-a:\uffff' })
-        .returns(mockAddrHeights())
-      postParentsDb.iterator.returns(mockParents())
-
-      const result = await uut.countTopLevelPostsByAddr('bitcoincash:qaddr-a')
-
-      assert.equal(result, 2)
-    })
-  })
-
   describe('#countRepliesForTxids', () => {
     it('should count replies per txid from postChildren', async () => {
       async function * mockChildrenTx1 () {
@@ -559,22 +520,6 @@ describe('#PostQuery', () => {
         .returns(mockChildrenTx2())
 
       const result = await uut.countRepliesForTxids(['tx1', 'tx2'])
-
-      assert.equal(result.get('tx1'), 2)
-      assert.equal(result.get('tx2'), 1)
-    })
-  })
-
-  describe('#buildReplyCountMap', () => {
-    it('should count replies per parent from postChildren', async () => {
-      async function * mockChildren () {
-        yield ['tx1:reply-a', { parentTxid: 'tx1', childTxid: 'reply-a', blockHeight: 600150 }]
-        yield ['tx1:reply-b', { parentTxid: 'tx1', childTxid: 'reply-b', blockHeight: 600160 }]
-        yield ['tx2:reply-c', { parentTxid: 'tx2', childTxid: 'reply-c', blockHeight: 600170 }]
-      }
-      postChildrenDb.iterator.returns(mockChildren())
-
-      const result = await uut.buildReplyCountMap()
 
       assert.equal(result.get('tx1'), 2)
       assert.equal(result.get('tx2'), 1)
@@ -705,39 +650,6 @@ describe('#PostQuery', () => {
 
       assert.deepEqual(result, ['post-200'])
       assert.isTrue(muteQuery.listMuted.calledOnceWith('viewer-addr'))
-    })
-
-    it('should count top-level posts excluding muted addresses', async () => {
-      async function * mockHeights () {
-        yield ['000000600200:post-200-muted', { txid: 'post-200-muted' }]
-        yield ['000000600100:post-100', { txid: 'post-100' }]
-      }
-      postHeightsDb.iterator.withArgs({ reverse: false }).returns(mockHeights())
-      postsDb.get.callsFake(async (txid) => {
-        if (txid === 'post-200-muted') return { addr: 'muted-addr', text: 'x', seen: 1, blockHeight: 600200 }
-        if (txid === 'post-100') return { addr: 'other-addr', text: 'x', seen: 2, blockHeight: 600100 }
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      })
-
-      const muteQuery = {
-        listMuted: sandbox.stub().resolves(['muted-addr'])
-      }
-      uut = new PostQuery({
-        postsDb,
-        postHeightsDb,
-        addrPostHeightsDb,
-        postParentsDb,
-        postChildrenDb,
-        likesDb,
-        postLikesDb,
-        muteQuery
-      })
-
-      const result = await uut.countTopLevelPosts('viewer-addr')
-
-      assert.equal(result, 1)
     })
   })
 })
