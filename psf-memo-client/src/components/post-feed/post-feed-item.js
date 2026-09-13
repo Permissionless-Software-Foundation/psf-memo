@@ -2,7 +2,7 @@
   Instagram-style post card for feed and thread views.
 */
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AppUtil from '../../util'
@@ -37,6 +37,14 @@ function PostFeedItem ({
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(post?.likeCount || 0)
   const [showLikeModal, setShowLikeModal] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const copiedTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+    }
+  }, [])
 
   if (!post) return null
 
@@ -55,6 +63,12 @@ function PostFeedItem ({
   const copyTxid = () => {
     if (!post.txid) return
     appUtil.copyToClipboard(post.txid)
+    setCopied(true)
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+    copiedTimerRef.current = setTimeout(() => {
+      setCopied(false)
+      copiedTimerRef.current = null
+    }, 1500)
   }
 
   const handleLikeClick = () => {
@@ -171,14 +185,25 @@ function PostFeedItem ({
             ·
           </span>
 
-          <button
-            type='button'
-            className='posts-feed-item-txid'
-            title={post.txid}
-            onClick={copyTxid}
-          >
-            {truncateTxid(post.txid, 20)}
-          </button>
+          <span className='posts-feed-item-txid-wrap'>
+            <button
+              type='button'
+              className='posts-feed-item-txid'
+              title={post.txid}
+              onClick={copyTxid}
+            >
+              {truncateTxid(post.txid, 9)}
+            </button>
+            {copied && (
+              <span
+                className='posts-feed-item-txid-copied'
+                role='status'
+                aria-live='polite'
+              >
+                Copied to clipboard
+              </span>
+            )}
+          </span>
         </footer>
       )}
 

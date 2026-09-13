@@ -283,6 +283,12 @@
 
 /* Transaction ID */
 
+.posts-feed-item-txid-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .posts-feed-item-txid {
   color: var(--ig-text-secondary);
   cursor: pointer;
@@ -291,6 +297,42 @@
   text-transform: none;
 
   transition: color 0.15s ease;
+}
+
+.posts-feed-item-txid-copied {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 2;
+
+  padding: 6px 10px;
+
+  color: #fff;
+  background: #262626;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 16px;
+  text-transform: none;
+  white-space: nowrap;
+  pointer-events: none;
+
+  transform: translateX(-50%);
+}
+
+.posts-feed-item-txid-copied::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+
+  border: 5px solid transparent;
+  border-top-color: #262626;
+
+  transform: translateX(-50%);
 }
 
 .posts-feed-item-txid:hover {
