@@ -1110,6 +1110,56 @@ const handlers = [
     }
   },
   {
+    name: 'page shows success modal with txid',
+    pattern: /^the new post page shows a success modal with the post txid$/,
+    run (m, example, world) {
+      const page = world.newPage
+      const txid = page.lastResult && page.lastResult.txid
+      if (!page.showResultModal) {
+        throw new Error('Expected the new post success modal to be visible.')
+      }
+      if (!page.lastResult || !page.lastResult.ok) {
+        throw new Error('Expected a successful post result in the modal.')
+      }
+      if (!txid) {
+        throw new Error('Expected the success modal to include a post txid.')
+      }
+      const expectedUrl = NewPostPage.explorerUrl(txid)
+      if (page.explorerUrl(txid) !== expectedUrl) {
+        throw new Error(`Expected explorer URL ${expectedUrl}, got ${page.explorerUrl(txid)}.`)
+      }
+      if (!expectedUrl.startsWith(NewPostPage.EXPLORER_TX_BASE + '/')) {
+        throw new Error(`Explorer URL ${expectedUrl} is not on bch.loping.net.`)
+      }
+    }
+  },
+  {
+    name: 'page shows failure modal containing text',
+    pattern: /^the new post page shows a failure modal containing "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = example[param]
+      const page = world.newPage
+      const actual = (page.lastResult && page.lastResult.message) || page.broadcastError || ''
+      if (!page.showResultModal) {
+        throw new Error('Expected the new post failure modal to be visible.')
+      }
+      if (page.lastResult && page.lastResult.ok) {
+        throw new Error('Expected a failed post result in the modal.')
+      }
+      if (!actual.includes(expected)) {
+        throw new Error(`Expected a failure modal containing "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
+    name: 'dismiss result modal',
+    pattern: /^I dismiss the result modal$/,
+    run (m, example, world) {
+      world.newPage.dismissResult()
+    }
+  },
+  {
     name: 'page shows validation/length error',
     pattern: /^the (?:app|new post page) shows a (validation|length) error$/,
     run (m, example, world) {

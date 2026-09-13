@@ -14,6 +14,9 @@ Feature: New Post Page
     When I type a memo with the text "<message>"
     When I click the post button
     Then the app broadcasts an OP_RETURN transaction with the Memo post prefix
+    Then the new post page shows a success modal with the post txid
+    Then I remain on the path /posts/new
+    When I dismiss the result modal
     Then I navigate to the path /posts/recent
     Then the feed shows a new post from my address with the text "<message>"
 
@@ -66,7 +69,9 @@ Feature: New Post Page
     When I type a memo with the text "<message>"
     When I click the post button
     Then the app attempts to broadcast an OP_RETURN transaction with the Memo post prefix
-    Then the new post page shows an error containing "<broadcast_error>"
+    Then the new post page shows a failure modal containing "<broadcast_error>"
+    Then I remain on the path /posts/new
+    When I dismiss the result modal
     Then I remain on the path /posts/new
 
     Examples:

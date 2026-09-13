@@ -3,7 +3,7 @@
 
   Expresses the observable behavior described by specs/memo-new.feature:
     - posting a valid memo broadcasts an OP_RETURN with the Memo post prefix and
-      navigates the user to the recent feed.
+      navigates the user to the recent feed after the success modal is dismissed.
     - an empty memo is rejected with a validation error; nothing is broadcast.
     - an over-long memo is rejected with a length error; nothing is broadcast.
     - the character counter counts down from the memo limit.
@@ -79,7 +79,7 @@ registerPageSubmitTests({
   validationCode: 'memo_validation',
   lengthCode: 'memo_length',
   MAX,
-  successPath: '/posts/recent',
+  successPath: null,
   assertBroadcastMsg: (broadcast) => assert.equal(broadcast.msg, 'hello memo'),
   assertStore: (store) => assert.equal(store.posts[0].text, 'hello memo'),
   assertStoreEmpty: (store) => assert.equal(store.posts.length, 0)
@@ -110,6 +110,7 @@ test('a failed broadcast surfaces a different real error message', async () => {
 
   assert.equal(result.ok, false)
   assert.match(page.broadcastError, /Insufficient balance/)
+  assert.equal(page.showResultModal, true)
 })
 
 test('a broadcast failure with an empty message falls back to a string form', async () => {
@@ -126,4 +127,32 @@ test('a broadcast failure with an empty message falls back to a string form', as
   // The real (string) error is surfaced even though the message was empty.
   assert.equal(typeof page.broadcastError, 'string')
   assert.ok(page.broadcastError.length > 0)
+  assert.equal(page.showResultModal, true)
+})
+
+test('dismissing a successful result navigates to the recent feed', async () => {
+  const { page, navigations } = build()
+  page.setInput('hello memo')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.showResultModal, true)
+  assert.deepEqual(navigations, [])
+
+  page.dismissResult()
+
+  assert.equal(page.showResultModal, false)
+  assert.deepEqual(navigations, [NewPostPage.RECENT_FEED_PATH])
+})
+
+test('dismissing a failed result stays on the new post page', async () => {
+  const { wallet, page, navigations } = build()
+  wallet.failWith = 'BCH UTXO list is empty'
+  page.setInput('hello memo')
+
+  await page.submit()
+  page.dismissResult()
+
+  assert.deepEqual(navigations, [])
 })
