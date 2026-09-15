@@ -82,6 +82,22 @@ distinct from per-task verification results, which live in
   as-is. A shared controller base would be a broad cross-module refactor beyond
   any single handoff. Only reduce duplication that is local to the task at hand.
 
+- **`mutate4javascript` default differential run can under-select after a
+  function-set change.** With a manifest present, the default run is
+  differential (`effectiveSinceLastRun`) and selected only **1** changed site for
+  `post-query.js` after a review added `listChildTxids` and removed
+  `buildLikeCountMap`; `--scan` also reported `Changed mutation sites: 1`.
+  Re-running the same file with `--mutate-all` ran all 37 sites (all killed).
+  When a file adds or removes functions, run `--mutate-all` for that file (or
+  confirm `Selected mutation sites` equals `Total mutation sites`) so new
+  mutations are not silently skipped.
+
+- **Capture the `gherkin-mutator` report with `--json` redirected to a file.**
+  The text report (`write-text-report!`, which uses `print`) did not appear in
+  the captured output before the tool's `System/exit`; the JSON report
+  (`--json`) did. Redirect stdout to a file and use `--json` for a reliable,
+  parseable record of killed/survived mutations.
+
 ## Workflow observations
 
 - **Review summaries must be force-added.** `docs/` is in the root `.gitignore`,
