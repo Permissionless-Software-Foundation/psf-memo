@@ -44,5 +44,4 @@ EXPOSE 5455
 
 # Start the application.
 # start-tx-indexer.sh is mounted at runtime via docker-compose.
-VOLUME start-tx-indexer.sh
 CMD ["./start-tx-indexer.sh"]

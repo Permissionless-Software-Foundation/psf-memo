@@ -37,33 +37,8 @@ function NavMenu (props) {
         <Navbar.Toggle aria-controls='responsive-navbar-nav' />
         <Navbar.Collapse id='responsive-navbar-nav'>
           <Nav className='mr-auto'>
-
             <NavLink
-              className={(currentPath === '/bch' || currentPath === '/') ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/bch'
-              onClick={handleClickEvent}
-            >
-              BCH
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/slp-tokens' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/slp-tokens'
-              onClick={handleClickEvent}
-            >
-              Tokens
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/profile/recent' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/profile/recent'
-              onClick={handleClickEvent}
-            >
-              Profiles
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/posts/recent' ? 'nav-link-active' : 'nav-link-inactive'}
+              className={(currentPath === '/posts/recent' || currentPath === '/') ? 'nav-link-active' : 'nav-link-inactive'}
               to='/posts/recent'
               onClick={handleClickEvent}
             >
@@ -76,22 +51,6 @@ function NavMenu (props) {
               onClick={handleClickEvent}
             >
               Topics
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/search' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/search'
-              onClick={handleClickEvent}
-            >
-              Search
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/posts/following' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/posts/following'
-              onClick={handleClickEvent}
-            >
-              Following
             </NavLink>
 
             <NavLink
@@ -111,20 +70,27 @@ function NavMenu (props) {
             </NavLink>
 
             <NavLink
-              className={currentPath === '/wallet' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/wallet'
+              className={currentPath === '/posts/following' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/posts/following'
               onClick={handleClickEvent}
-
             >
-              Wallet
+              Following
             </NavLink>
 
             <NavLink
-              className={(currentPath === '/balance') ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/balance'
+              className={currentPath === '/profile/recent' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/profile/recent'
               onClick={handleClickEvent}
             >
-              Check Balance
+              Profiles
+            </NavLink>
+
+            <NavLink
+              className={currentPath === '/search' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/search'
+              onClick={handleClickEvent}
+            >
+              Search
             </NavLink>
 
             <NavLink
@@ -134,6 +100,31 @@ function NavMenu (props) {
             >
               Account
             </NavLink>
+
+            <NavLink
+              className={currentPath === '/bch' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/bch'
+              onClick={handleClickEvent}
+            >
+              BCH
+            </NavLink>
+
+            <NavLink
+              className={currentPath === '/slp-tokens' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/slp-tokens'
+              onClick={handleClickEvent}
+            >
+              Tokens
+            </NavLink>
+
+            <NavLink
+              className={currentPath === '/wallet' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/wallet'
+              onClick={handleClickEvent}
+            >
+              Wallet
+            </NavLink>
+
             <NavLink
               className={(currentPath === '/sweep') ? 'nav-link-active' : 'nav-link-inactive'}
               to='/sweep'
@@ -141,6 +132,7 @@ function NavMenu (props) {
             >
               Sweep
             </NavLink>
+
             <NavLink
               className={(currentPath === '/sign') ? 'nav-link-active' : 'nav-link-inactive'}
               to='/sign'
@@ -148,6 +140,7 @@ function NavMenu (props) {
             >
               Sign
             </NavLink>
+
             <NavLink
               className={currentPath === '/configuration' ? 'nav-link-active' : 'nav-link-inactive'}
               to='/configuration'

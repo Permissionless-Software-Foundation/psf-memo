@@ -31,6 +31,16 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Account avatar display (2026-09-05):** the `/account` page now renders the
+  avatar image when an avatar URL is set, instead of only showing the URL as
+  text. A pure `AvatarImage` component (`src/components/account/avatar-image.js`,
+  plain `React.createElement` so the browser build and the Node acceptance
+  adapter share it) renders the `<img>`; the `AccountPage` service exposes
+  `getDisplayAvatarUrl` / `hasAvatarImage` / `getAvatarImageUrl` as the testable
+  seam. When no avatar URL is set, the page shows "No avatar URL set".
+  Client-only rendering feature. Spec:
+  `psf-memo-client/specs/account-avatar-display.feature`. Merged to `master` at
+  `5afaa64`.
 - **Mute feed filtering (2026-09-04):** muting a profile now hides that profile's
   content from the viewer's recent feed, topic feed, search results, and
   notifications. The psf-memo-db API filters server-side given the viewer's
@@ -147,18 +157,35 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ---
 
-## Next up: feed query performance — DONE (2026-09-05)
+## Next up: Thread query performance (psf-memo-db)
 
-`GET /posts/recent` previously did two full scans per request:
-`countTopLevelPosts()` walked the entire `postHeights` index for
-`total`/`hasMore`, and `buildReplyCountMap()` scanned all `postChildren` entries.
-Both are now bounded: reply counts are per-page (`countRepliesForTxids`) and the
-total scan is capped to the last `TOTAL_SCAN_CAP` (10) top-level posts. Merged
-to `master` at `2bcc965`.
+`GET /posts/:txid/thread` is slow because `get-post-thread.js` does work
+proportional to the whole database instead of the requested thread. Two
+independent parts, one feature spec:
 
-Next feature: TBD — current direction is front-end improvements to
-`psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
-state handling, error surfacing).
+- **Part A — like counts scoped to the thread.** `execute()` calls
+  `buildLikeCountMap()`, which iterates every `postLikes` entry and loads one
+  post per like. Build the thread first, then count likes for the thread's
+  txids via the existing `countLikesForTxids`.
+- **Part B — child loading uses the parent index.** `loadChildTxids()`
+  iterates every `postChildren` entry once per thread node. Prefix-scan
+  `parentTxid:childTxid` (as `countRepliesForTxids` already does) instead.
+
+Spec: `psf-memo-db/specs/thread-query-performance.feature`. Affected
+component: D (`psf-memo-db`). No client, indexer, or protocol changes.
+
+Thread shape, reply ordering, and per-node `likeCount` remain specified by
+`psf-memo-db/specs/like-counts.feature` (scenario 3). `buildLikeCountMap`
+still has unit/property coverage; the coder should update it if the method is
+removed.
+
+---
+
+## Previous: account avatar display — DONE (2026-09-05)
+
+The `/account` page now renders the avatar image when an avatar URL is set
+(pure `AvatarImage` component + `AccountPage` display helpers). Merged to
+`master` at `5afaa64`.
 
 ## Notes for future cycles
 

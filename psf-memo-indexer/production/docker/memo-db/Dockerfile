@@ -47,5 +47,4 @@ EXPOSE 5021
 
 # Start the application.
 # start-memo-db.sh is mounted at runtime via docker-compose.
-VOLUME start-memo-db.sh
 CMD ["./start-memo-db.sh"]

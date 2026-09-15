@@ -6,6 +6,7 @@ describe('#GetPostThread', () => {
   let uut
   let sandbox
   let postQuery
+  let postsGetCounter
 
   const mockPosts = {
     'root-1': { addr: 'addr-a', text: 'root', seen: 100, blockHeight: 600100 },
@@ -13,8 +14,35 @@ describe('#GetPostThread', () => {
     'reply-2': { addr: 'addr-b', text: 'reply b', seen: 80, blockHeight: 600080 }
   }
 
+  // An in-memory postChildren index that honors the gte/lte prefix bounds the
+  // production code sends, so a full-store scan is observably different from a
+  // bounded prefix scan.
+  function createPostChildrenDb (entries) {
+    return {
+      iterator: sandbox.stub().callsFake((options = {}) => {
+        const { gte, lte } = options
+        return (async function * () {
+          for (const [key, value] of entries) {
+            if (gte !== undefined && key < gte) continue
+            if (lte !== undefined && key > lte) continue
+            yield [key, value]
+          }
+        })()
+      })
+    }
+  }
+
+  function rootThreadChildren () {
+    return createPostChildrenDb([
+      ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }],
+      ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }],
+      ['other-root:reply-x', { parentTxid: 'other-root', childTxid: 'reply-x' }]
+    ])
+  }
+
   beforeEach(() => {
     sandbox = sinon.createSandbox()
+    postsGetCounter = { calls: 0 }
     Object.assign(mockPosts, {
       'root-1': { addr: 'addr-a', text: 'root', seen: 100, blockHeight: 600100 },
       'reply-1': { addr: 'addr-a', text: 'reply', seen: 90, blockHeight: 600090 },
@@ -23,22 +51,20 @@ describe('#GetPostThread', () => {
     postQuery = {
       postsDb: {
         get: sandbox.stub().callsFake(async (txid) => {
+          postsGetCounter.calls++
           if (mockPosts[txid]) return mockPosts[txid]
           const err = new Error('not found')
           err.notFound = true
           throw err
         })
       },
-      postChildrenDb: {
-        iterator: sandbox.stub().callsFake(function * () {
-          yield ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }]
-          yield ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }]
-        })
-      },
-      buildLikeCountMap: sandbox.stub().resolves(new Map([
+      postChildrenDb: rootThreadChildren(),
+      countLikesForTxids: sandbox.stub().resolves(new Map([
         ['root-1', 4],
         ['reply-1', 2]
-      ]))
+      ])),
+      // The thread endpoint must not fall back to a whole-database like scan.
+      buildLikeCountMap: sandbox.stub().rejects(new Error('buildLikeCountMap must not be called'))
     }
     uut = new GetPostThread({ adapters: { postQuery } })
   })
@@ -88,6 +114,55 @@ describe('#GetPostThread', () => {
     assert.equal(reply2.likeCount, 0)
   })
 
+  it('should count likes only for the txids in the thread', async () => {
+    await uut.execute({ txid: 'root-1' })
+
+    assert.isTrue(postQuery.countLikesForTxids.calledOnce)
+    const txids = postQuery.countLikesForTxids.firstCall.args[0]
+    assert.deepEqual([...txids].sort(), ['reply-1', 'reply-2', 'root-1'])
+  })
+
+  it('should not build a whole-database like count map', async () => {
+    await uut.execute({ txid: 'root-1' })
+
+    assert.isTrue(postQuery.buildLikeCountMap.notCalled)
+  })
+
+  it('should only load posts that belong to the thread', async () => {
+    await uut.execute({ txid: 'root-1' })
+
+    // root-1 plus the two replies; no per-like post lookups.
+    assert.equal(postsGetCounter.calls, 3)
+  })
+
+  it('should prefix-scan postChildren for each thread node', async () => {
+    await uut.execute({ txid: 'root-1' })
+
+    const bounds = postQuery.postChildrenDb.iterator.args.map(([options]) => options)
+    assert.deepInclude(bounds, { gte: 'root-1:', lte: 'root-1:\uffff' })
+    assert.deepInclude(bounds, { gte: 'reply-1:', lte: 'reply-1:\uffff' })
+    assert.deepInclude(bounds, { gte: 'reply-2:', lte: 'reply-2:\uffff' })
+  })
+
+  it('should never scan the whole postChildren store', async () => {
+    await uut.execute({ txid: 'root-1' })
+
+    for (const [options] of postQuery.postChildrenDb.iterator.args) {
+      assert.isString(options?.gte)
+      assert.isString(options?.lte)
+    }
+  })
+
+  it('should ignore postChildren entries outside the requested parent prefix', async () => {
+    const result = await uut.execute({ txid: 'root-1' })
+
+    assert.equal(result.post.replyCount, 2)
+    assert.deepEqual(
+      result.post.replies.map((r) => r.txid).sort(),
+      ['reply-1', 'reply-2']
+    )
+  })
+
   it('should sort replies by blockHeight ascending then seen ascending', async () => {
     const result = await uut.execute({ txid: 'root-1' })
 
@@ -97,10 +172,6 @@ describe('#GetPostThread', () => {
   })
 
   it('should tie-break replies with equal blockHeight by seen ascending', async () => {
-    postQuery.postChildrenDb.iterator = sandbox.stub().callsFake(function * () {
-      yield ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }]
-      yield ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }]
-    })
     mockPosts['reply-1'] = { addr: 'addr-a', text: 'reply', seen: 90, blockHeight: 600100 }
     mockPosts['reply-2'] = { addr: 'addr-b', text: 'reply b', seen: 80, blockHeight: 600100 }
 
@@ -125,10 +196,6 @@ describe('#GetPostThread', () => {
   })
 
   it('should default missing seen to 0 when comparing replies', async () => {
-    postQuery.postChildrenDb.iterator = sandbox.stub().callsFake(function * () {
-      yield ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }]
-      yield ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }]
-    })
     mockPosts['reply-1'] = { addr: 'addr-a', text: 'reply', blockHeight: 600100 }
     mockPosts['reply-2'] = { addr: 'addr-b', text: 'reply b', seen: 0, blockHeight: 600100 }
 
@@ -141,10 +208,6 @@ describe('#GetPostThread', () => {
   })
 
   it('should default missing blockHeight to 0 when comparing replies', async () => {
-    postQuery.postChildrenDb.iterator = sandbox.stub().callsFake(function * () {
-      yield ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }]
-      yield ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }]
-    })
     mockPosts['reply-1'] = { addr: 'addr-a', text: 'reply', seen: 100 }
     mockPosts['reply-2'] = { addr: 'addr-b', text: 'reply b', seen: 100, blockHeight: 0 }
 
@@ -157,10 +220,6 @@ describe('#GetPostThread', () => {
   })
 
   it('should treat a missing blockHeight on the second operand as 0', async () => {
-    postQuery.postChildrenDb.iterator = sandbox.stub().callsFake(function * () {
-      yield ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }]
-      yield ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }]
-    })
     mockPosts['reply-1'] = { addr: 'addr-a', text: 'reply', seen: 100, blockHeight: 1 }
     mockPosts['reply-2'] = { addr: 'addr-b', text: 'reply b', seen: 100 }
 
@@ -172,10 +231,6 @@ describe('#GetPostThread', () => {
   })
 
   it('should treat a missing seen on the second operand as 0', async () => {
-    postQuery.postChildrenDb.iterator = sandbox.stub().callsFake(function * () {
-      yield ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }]
-      yield ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }]
-    })
     mockPosts['reply-1'] = { addr: 'addr-a', text: 'reply', seen: 1, blockHeight: 600100 }
     mockPosts['reply-2'] = { addr: 'addr-b', text: 'reply b', blockHeight: 600100 }
 
@@ -194,5 +249,21 @@ describe('#GetPostThread', () => {
   it('compareReplies defaults a missing second blockHeight to 0', () => {
     // a has blockHeight 1, b has no blockHeight (=> 0): a sorts after b.
     assert.ok(uut.compareReplies({ seen: 0, blockHeight: 1 }, { seen: 0 }) > 0)
+  })
+
+  it('should throw when adapters are missing', () => {
+    assert.throws(() => new GetPostThread({}), /Adapters required/)
+  })
+
+  it('should rethrow unexpected post lookup errors', async () => {
+    const boom = new Error('disk failure')
+    postQuery.postsDb.get.rejects(boom)
+
+    try {
+      await uut.execute({ txid: 'root-1' })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.equal(err, boom)
+    }
   })
 })

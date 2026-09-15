@@ -803,8 +803,7 @@ button:focus-visible,
   .navbar-collapse {
     margin-top: 8px;
     padding: 8px 0 12px;
-
-    background: var(--surface);
+    background: transparent;
   }
 
   .navbar-nav {
@@ -989,6 +988,7 @@ button:focus-visible,
 @media (max-width: 767px) {
   .navbar-collapse {
     width: 100%;
+    background: transparent;
   }
 
   .navbar-nav {

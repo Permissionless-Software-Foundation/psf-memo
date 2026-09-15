@@ -41,5 +41,4 @@ RUN npm install
 
 # Start the application.
 # start-block-indexer.sh is mounted at runtime via docker-compose.
-VOLUME start-block-indexer.sh
 CMD ["./start-block-indexer.sh"]

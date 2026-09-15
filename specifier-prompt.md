@@ -375,6 +375,18 @@ that a single user-facing feature may require specs in more than one component.
     when older posts exist. Specs for the recent feed should assert `total`
     against the cap (e.g. `10`) and only assert `hasMore` for the first pages.
     Spec: `psf-memo-db/specs/feed-query-performance.feature`.
+22. **Account avatar rendering uses the pure-component seam (gotcha #17 again).**
+    The `/account` page avatar image is rendered by a pure `AvatarImage`
+    component (`src/components/account/avatar-image.js`) written in plain
+    `React.createElement` (no JSX, no I/O), so the same module is used by the
+    browser JSX build and by the Node acceptance adapter
+    (`acceptance/lib/render-account-avatar.js`). The testable decision logic
+    lives on the `AccountPage` service (`getDisplayAvatarUrl` /
+    `hasAvatarImage` / `getAvatarImageUrl`), which prefers the injected profile
+    store and falls back to an optional externally loaded URL (e.g. from
+    memo-db). Spec rendering features against that seam (image shown with the
+    right `src`, no `<img>` when unset) rather than against the DOM. Spec:
+    `psf-memo-client/specs/account-avatar-display.feature`.
 
 ---
 
@@ -412,15 +424,13 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `2bcc965` (merged architect's feed-query-performance job —
-`GET /posts/recent` no longer does two full scans per request. Reply counts are
-computed per returned post (`countRepliesForTxids`) instead of a global
-`buildReplyCountMap()` scan, and the `total`/`hasMore` computation is a capped
-scan of the last `TOTAL_SCAN_CAP` (10) top-level posts instead of walking the
-whole `postHeights` index. `list-recent-posts.js` uses
-`scanRecentPostTxidsAndCount()` which returns page txids plus a capped total in
-one bounded scan. Verified DB unit + 10 acceptance passing + lint clean,
-including the new `feed-query-performance` suite).
+Current `master` HEAD: `5afaa64` (merged architect's account-avatar-display job —
+the `/account` page now renders the avatar image when an avatar URL is set,
+via a pure `AvatarImage` component shared by the browser build and the Node
+acceptance adapter, with `AccountPage` display helpers
+`getDisplayAvatarUrl`/`hasAvatarImage`/`getAvatarImageUrl` as the testable seam.
+Verified client unit (298) + property (43) + acceptance (all 25 suites) +
+lint + build all passing).
 Next action: **TBD** — current direction is front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing). See `specs/feature-backlog.md`.
