@@ -7,37 +7,12 @@ describe('#GetPostThread', () => {
   let sandbox
   let postQuery
   let postsGetCounter
+  let childLists
 
   const mockPosts = {
     'root-1': { addr: 'addr-a', text: 'root', seen: 100, blockHeight: 600100 },
     'reply-1': { addr: 'addr-a', text: 'reply', seen: 90, blockHeight: 600090 },
     'reply-2': { addr: 'addr-b', text: 'reply b', seen: 80, blockHeight: 600080 }
-  }
-
-  // An in-memory postChildren index that honors the gte/lte prefix bounds the
-  // production code sends, so a full-store scan is observably different from a
-  // bounded prefix scan.
-  function createPostChildrenDb (entries) {
-    return {
-      iterator: sandbox.stub().callsFake((options = {}) => {
-        const { gte, lte } = options
-        return (async function * () {
-          for (const [key, value] of entries) {
-            if (gte !== undefined && key < gte) continue
-            if (lte !== undefined && key > lte) continue
-            yield [key, value]
-          }
-        })()
-      })
-    }
-  }
-
-  function rootThreadChildren () {
-    return createPostChildrenDb([
-      ['root-1:reply-1', { parentTxid: 'root-1', childTxid: 'reply-1' }],
-      ['root-1:reply-2', { parentTxid: 'root-1', childTxid: 'reply-2' }],
-      ['other-root:reply-x', { parentTxid: 'other-root', childTxid: 'reply-x' }]
-    ])
   }
 
   beforeEach(() => {
@@ -48,23 +23,19 @@ describe('#GetPostThread', () => {
       'reply-1': { addr: 'addr-a', text: 'reply', seen: 90, blockHeight: 600090 },
       'reply-2': { addr: 'addr-b', text: 'reply b', seen: 80, blockHeight: 600080 }
     })
+    childLists = { 'root-1': ['reply-1', 'reply-2'] }
     postQuery = {
-      postsDb: {
-        get: sandbox.stub().callsFake(async (txid) => {
-          postsGetCounter.calls++
-          if (mockPosts[txid]) return mockPosts[txid]
-          const err = new Error('not found')
-          err.notFound = true
-          throw err
-        })
-      },
-      postChildrenDb: rootThreadChildren(),
+      // The use case must depend only on the PostQuery interface; the
+      // postChildren key format and prefix bounds are the adapter's concern.
+      getPostOrNull: sandbox.stub().callsFake(async (txid) => {
+        postsGetCounter.calls++
+        return mockPosts[txid] || null
+      }),
+      listChildTxids: sandbox.stub().callsFake(async (txid) => childLists[txid] || []),
       countLikesForTxids: sandbox.stub().resolves(new Map([
         ['root-1', 4],
         ['reply-1', 2]
-      ])),
-      // The thread endpoint must not fall back to a whole-database like scan.
-      buildLikeCountMap: sandbox.stub().rejects(new Error('buildLikeCountMap must not be called'))
+      ]))
     }
     uut = new GetPostThread({ adapters: { postQuery } })
   })
@@ -122,12 +93,6 @@ describe('#GetPostThread', () => {
     assert.deepEqual([...txids].sort(), ['reply-1', 'reply-2', 'root-1'])
   })
 
-  it('should not build a whole-database like count map', async () => {
-    await uut.execute({ txid: 'root-1' })
-
-    assert.isTrue(postQuery.buildLikeCountMap.notCalled)
-  })
-
   it('should only load posts that belong to the thread', async () => {
     await uut.execute({ txid: 'root-1' })
 
@@ -135,32 +100,32 @@ describe('#GetPostThread', () => {
     assert.equal(postsGetCounter.calls, 3)
   })
 
-  it('should prefix-scan postChildren for each thread node', async () => {
+  it('should request child txids from the adapter for each thread node', async () => {
     await uut.execute({ txid: 'root-1' })
 
-    const bounds = postQuery.postChildrenDb.iterator.args.map(([options]) => options)
-    assert.deepInclude(bounds, { gte: 'root-1:', lte: 'root-1:\uffff' })
-    assert.deepInclude(bounds, { gte: 'reply-1:', lte: 'reply-1:\uffff' })
-    assert.deepInclude(bounds, { gte: 'reply-2:', lte: 'reply-2:\uffff' })
+    const requested = postQuery.listChildTxids.args.map(([txid]) => txid).sort()
+    assert.deepEqual(requested, ['reply-1', 'reply-2', 'root-1'])
   })
 
-  it('should never scan the whole postChildren store', async () => {
-    await uut.execute({ txid: 'root-1' })
+  it('should prune a child post that no longer exists', async () => {
+    childLists['root-1'] = ['reply-1', 'missing-reply']
 
-    for (const [options] of postQuery.postChildrenDb.iterator.args) {
-      assert.isString(options?.gte)
-      assert.isString(options?.lte)
-    }
-  })
-
-  it('should ignore postChildren entries outside the requested parent prefix', async () => {
     const result = await uut.execute({ txid: 'root-1' })
 
+    assert.equal(result.post.replyCount, 1)
+    assert.deepEqual(result.post.replies.map((r) => r.txid), ['reply-1'])
+  })
+
+  it('should terminate on a reply cycle and keep each post once', async () => {
+    childLists['reply-1'] = ['root-1']
+
+    const result = await uut.execute({ txid: 'root-1' })
+
+    // root-1 -> reply-1 -> root-1 (cycle back-edge is pruned); reply-2 is a
+    // sibling with no children.
     assert.equal(result.post.replyCount, 2)
-    assert.deepEqual(
-      result.post.replies.map((r) => r.txid).sort(),
-      ['reply-1', 'reply-2']
-    )
+    const reply1 = result.post.replies.find((r) => r.txid === 'reply-1')
+    assert.equal(reply1.replyCount, 0)
   })
 
   it('should sort replies by blockHeight ascending then seen ascending', async () => {
@@ -257,7 +222,7 @@ describe('#GetPostThread', () => {
 
   it('should rethrow unexpected post lookup errors', async () => {
     const boom = new Error('disk failure')
-    postQuery.postsDb.get.rejects(boom)
+    postQuery.getPostOrNull.rejects(boom)
 
     try {
       await uut.execute({ txid: 'root-1' })

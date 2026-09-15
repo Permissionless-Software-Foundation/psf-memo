@@ -5,8 +5,8 @@
   list and thread use cases. These properties pin down the invariants that
   unit tests only probe at a few fixed fixtures:
 
-    - conservation: buildLikeCountMap counts exactly the likes whose post
-      exists in the posts store, ignoring orphaned likes.
+    - conservation: countLikesForTxids counts exactly the likes for each
+      requested post, ignoring likes on other posts.
     - round-trip: attachLikeCounts adds likeCount without mutating or
       dropping any input post.
     - pagination: assemblePostPage preserves pagination metadata and computes
@@ -33,12 +33,17 @@ function mockPostsDb (posts) {
   }
 }
 
-// A postLikes store that iterates [key, postLike] pairs keyed as postTxid:likeTxid.
+// A postLikes store that iterates [key, postLike] pairs keyed as postTxid:likeTxid
+// and honors the gte/lte prefix bounds the adapter sends.
 function mockPostLikesDb (likes) {
   return {
-    async * iterator () {
+    async * iterator (options = {}) {
+      const { gte, lte } = options
       for (const like of likes) {
-        yield [`${like.postTxid}:${like.txid}`, like]
+        const key = `${like.postTxid}:${like.txid}`
+        if (gte !== undefined && key < gte) continue
+        if (lte !== undefined && key > lte) continue
+        yield [key, like]
       }
     }
   }
@@ -56,7 +61,7 @@ function makeQuery (posts, likes) {
   })
 }
 
-test('buildLikeCountMap counts likes per existing post and ignores orphans', async () => {
+test('countLikesForTxids counts likes per requested post', async () => {
   await forAll(
     (i) => {
       const postCount = intGen(rng, 0, 8)()
@@ -77,9 +82,10 @@ test('buildLikeCountMap counts likes per existing post and ignores orphans', asy
       return { posts, likes }
     },
     async ({ posts, likes }) => {
-      const counts = await makeQuery(posts, likes).buildLikeCountMap()
+      const requested = Object.keys(posts)
+      const counts = await makeQuery(posts, likes).countLikesForTxids(requested)
 
-      const expected = new Map()
+      const expected = new Map(requested.map((txid) => [txid, 0]))
       for (const like of likes) {
         if (!posts[like.postTxid]) continue
         expected.set(like.postTxid, (expected.get(like.postTxid) || 0) + 1)
@@ -91,7 +97,7 @@ test('buildLikeCountMap counts likes per existing post and ignores orphans', asy
       }
       return true
     },
-    { label: 'buildLikeCountMap conservation' }
+    { label: 'countLikesForTxids conservation' }
   )
 })
 

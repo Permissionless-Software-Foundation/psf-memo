@@ -526,6 +526,58 @@ describe('#PostQuery', () => {
     })
   })
 
+  describe('#listChildTxids', () => {
+    it('should prefix-scan postChildren for the parent and return its child txids', async () => {
+      async function * mockChildren () {
+        yield ['tx1:reply-a', { parentTxid: 'tx1', childTxid: 'reply-a' }]
+        yield ['tx1:reply-b', { parentTxid: 'tx1', childTxid: 'reply-b' }]
+      }
+      postChildrenDb.iterator
+        .withArgs(sinon.match({ gte: 'tx1:', lte: 'tx1:\uffff' }))
+        .returns(mockChildren())
+
+      const result = await uut.listChildTxids('tx1')
+
+      assert.deepEqual(result, ['reply-a', 'reply-b'])
+      assert.isTrue(postChildrenDb.iterator.calledWith({ gte: 'tx1:', lte: 'tx1:\uffff' }))
+    })
+
+    it('should skip entries whose parentTxid does not match the requested parent', async () => {
+      async function * mockChildren () {
+        // A parent txid that is a string prefix of tx1 can land in the range.
+        yield ['tx1:reply-a', { parentTxid: 'tx1x', childTxid: 'reply-a' }]
+        yield ['tx1:reply-b', { parentTxid: 'tx1', childTxid: 'reply-b' }]
+      }
+      postChildrenDb.iterator
+        .withArgs(sinon.match({ gte: 'tx1:', lte: 'tx1:\uffff' }))
+        .returns(mockChildren())
+
+      const result = await uut.listChildTxids('tx1')
+
+      assert.deepEqual(result, ['reply-b'])
+    })
+
+    it('should skip entries with no child txid', async () => {
+      async function * mockChildren () {
+        yield ['tx1:reply-a', { parentTxid: 'tx1' }]
+        yield ['tx1:reply-b', { parentTxid: 'tx1', childTxid: 'reply-b' }]
+      }
+      postChildrenDb.iterator
+        .withArgs(sinon.match({ gte: 'tx1:', lte: 'tx1:\uffff' }))
+        .returns(mockChildren())
+
+      const result = await uut.listChildTxids('tx1')
+
+      assert.deepEqual(result, ['reply-b'])
+    })
+
+    it('should return an empty list when the parent has no children', async () => {
+      const result = await uut.listChildTxids('tx1')
+
+      assert.deepEqual(result, [])
+    })
+  })
+
   describe('#likeTxidFromPostLike', () => {
     it('should return the likeTxid from the value when present', () => {
       assert.equal(uut.likeTxidFromPostLike('tx1:like-a', { likeTxid: 'like-a' }), 'like-a')
@@ -589,29 +641,14 @@ describe('#PostQuery', () => {
     })
   })
 
-  describe('#buildLikeCountMap', () => {
-    it('should count likes per post from the postLikes index', async () => {
-      async function * mockPostLikes () {
-        yield ['tx1:like-a', { postTxid: 'tx1', txid: 'like-a' }]
-        yield ['tx1:like-b', { postTxid: 'tx1', txid: 'like-b' }]
-        yield ['tx2:like-c', { postTxid: 'tx2', txid: 'like-c' }]
-        yield ['tx3:like-d', {}]
-      }
-      postLikesDb.iterator.returns(mockPostLikes())
-      postsDb.get.callsFake(async (txid) => {
-        if (txid === 'tx1' || txid === 'tx2' || txid === 'tx3') {
-          return { addr: 'addr-a', text: 'x', seen: 1, blockHeight: 1 }
-        }
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      })
+  describe('#postTxidFromPostLike', () => {
+    it('should return the postTxid from the value when present', () => {
+      assert.equal(uut.postTxidFromPostLike('tx1:like-a', { postTxid: 'tx1' }), 'tx1')
+    })
 
-      const result = await uut.buildLikeCountMap()
-
-      assert.equal(result.get('tx1'), 2)
-      assert.equal(result.get('tx2'), 1)
-      assert.equal(result.get('tx3'), 1)
+    it('should parse the post txid from the key when the value is absent', () => {
+      assert.equal(uut.postTxidFromPostLike('tx1:like-a'), 'tx1')
+      assert.equal(uut.postTxidFromPostLike('tx1:like-a', {}), 'tx1')
     })
   })
 

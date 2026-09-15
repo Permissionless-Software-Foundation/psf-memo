@@ -52,8 +52,8 @@ class PostQuery {
     this.scanPostsByAddrTxids = this.scanPostsByAddrTxids.bind(this)
     this.loadPostsByTxids = this.loadPostsByTxids.bind(this)
     this.countRepliesForTxids = this.countRepliesForTxids.bind(this)
+    this.listChildTxids = this.listChildTxids.bind(this)
     this.countLikesForTxids = this.countLikesForTxids.bind(this)
-    this.buildLikeCountMap = this.buildLikeCountMap.bind(this)
     this.txidFromPostHeight = this.txidFromPostHeight.bind(this)
     this.txidFromAddrPostHeight = this.txidFromAddrPostHeight.bind(this)
     this.getPostOrNull = this.getPostOrNull.bind(this)
@@ -108,18 +108,33 @@ class PostQuery {
     }
   }
 
+  // Prefix-scan the postChildren index for one parent, returning its child
+  // txids. The key is `${parentTxid}:${childTxid}`; the \uffff upper bound
+  // covers every child txid, and the parentTxid guard rejects entries whose
+  // parent is merely a string prefix of txid.
+  async listChildTxids (txid) {
+    const childTxids = []
+    const end = ':\uffff'
+
+    for await (
+      const [, child]
+      of this.postChildrenDb.iterator({ gte: `${txid}:`, lte: `${txid}${end}` })
+    ) {
+      if (child?.parentTxid !== txid) continue
+      if (!child?.childTxid) continue
+
+      childTxids.push(child.childTxid)
+    }
+
+    return childTxids
+  }
+
   // Count replies for each txid by prefix-scanning postChildren.
   async countRepliesForTxids (txids) {
     const counts = new Map()
-    const end = ':\uffff'
 
     for (const txid of txids) {
-      const prefix = `${txid}:`
-      let count = 0
-      for await (const [, child] of this.postChildrenDb.iterator({ gte: prefix, lte: `${txid}${end}` })) {
-        if (child?.parentTxid === txid) count++
-      }
-      counts.set(txid, count)
+      counts.set(txid, (await this.listChildTxids(txid)).length)
     }
 
     return counts
@@ -147,22 +162,6 @@ class PostQuery {
     if (value && typeof value.likeTxid === 'string') return value.likeTxid
     if (value && typeof value.txid === 'string') return value.txid
     return this.txidFromKeyParts(key)
-  }
-
-  // Build a global like-count map from the postLikes secondary index,
-  // ignoring likes whose target post no longer exists.
-  async buildLikeCountMap () {
-    const counts = new Map()
-
-    for await (const [key, value] of this.postLikesDb.iterator()) {
-      const postTxid = this.postTxidFromPostLike(key, value)
-      if (!postTxid) continue
-      const post = await this.getPostOrNull(postTxid)
-      if (!post) continue
-      counts.set(postTxid, (counts.get(postTxid) || 0) + 1)
-    }
-
-    return counts
   }
 
   postTxidFromPostLike (key, value) {
@@ -324,5 +323,5 @@ class PostQuery {
 export default PostQuery
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-05T01:46:35.715Z","module_hash":"6be7884d4d46fc0538f332dd781a68cfa6a939d5ebb94d186d18847eaa6e7633","functions":[{"id":"func/PostQuery.constructor","name":"PostQuery.constructor","line":17,"end_line":64,"hash":"61d79608f787f096d0c7196452c2f0b37ffff36e19e4ab8f3628652f7e1c0e6a"},{"id":"func/PostQuery.padHeight","name":"PostQuery.padHeight","line":66,"end_line":68,"hash":"be6c442a4d3d86ab3b60314756b7f7c0592479c21cb3b2e1273dcf139a84fb00"},{"id":"func/PostQuery.postHeightKey","name":"PostQuery.postHeightKey","line":70,"end_line":72,"hash":"2d4dff9464aa4c1e805da5de2ba314fbd856530c046705237ea848d5feff8c7c"},{"id":"func/PostQuery.addrPostHeightKey","name":"PostQuery.addrPostHeightKey","line":74,"end_line":76,"hash":"48579f08593cee36cc2f107c2526ac9def687b354cc5e54089defa3fd37117eb"},{"id":"func/PostQuery.postLikeKey","name":"PostQuery.postLikeKey","line":78,"end_line":80,"hash":"5d16caac2cf88932702b28f9d95927183f8904948eb8c16c7e8c672cd3a0780c"},{"id":"func/PostQuery.txidFromPostHeight","name":"PostQuery.txidFromPostHeight","line":82,"end_line":85,"hash":"0fd135c51089dcc9bd2f166bb9f28faaa6a03d7eb84cf03cb9b36e97cdb3139c"},{"id":"func/PostQuery.txidFromAddrPostHeight","name":"PostQuery.txidFromAddrPostHeight","line":87,"end_line":89,"hash":"314d5432292a78b273e3165343d3e09276600cbaf239f76bcd1b36fe5fcf5e10"},{"id":"func/PostQuery.txidFromKeyParts","name":"PostQuery.txidFromKeyParts","line":92,"end_line":95,"hash":"59fb8173599070095d87e5d6f56eeb999f79e75e4d3f3e435515e9db8ac71868"},{"id":"func/PostQuery.loadReplyTxids","name":"PostQuery.loadReplyTxids","line":97,"end_line":99,"hash":"74621495a3affc6ef8688b9d6a814a91c99b22c86c348d261c952aad25df1661"},{"id":"func/PostQuery.isReply","name":"PostQuery.isReply","line":101,"end_line":109,"hash":"be2e3729bd5f05cbfbab3630678eb5c389bd04c616d53b1e0c48c852f4cb25b1"},{"id":"func/PostQuery.countRepliesForTxids","name":"PostQuery.countRepliesForTxids","line":112,"end_line":126,"hash":"16268cd2a0f8db020a099b704c3d5a3cea5daf6a0936dd1f8d85c38809f006aa"},{"id":"func/PostQuery.countLikesForTxids","name":"PostQuery.countLikesForTxids","line":129,"end_line":144,"hash":"54e6e3e6467e72d9dd033c9861b3b9ef5e426a76aed7a13e8ac1a0f0389468a3"},{"id":"func/PostQuery.likeTxidFromPostLike","name":"PostQuery.likeTxidFromPostLike","line":146,"end_line":150,"hash":"7e07a9c278a9abae8f646b4f1950f88760f2d5c6445600a42fa42f36d029a45a"},{"id":"func/PostQuery.buildLikeCountMap","name":"PostQuery.buildLikeCountMap","line":154,"end_line":166,"hash":"a82ca3b46d68426edbe25f176c4a6019ea5fb6abea4c5d5e84aff3b381f63c61"},{"id":"func/PostQuery.postTxidFromPostLike","name":"PostQuery.postTxidFromPostLike","line":168,"end_line":172,"hash":"da7f8d0c63dbc074fb25da1a31dde5075c2c3469b84a5c700bd4a2961879d8e9"},{"id":"func/PostQuery.getPostOrNull","name":"PostQuery.getPostOrNull","line":175,"end_line":177,"hash":"d06ce38cd8bde722482a749ff58740b174a054900519e67d2045f29a18fce3f7"},{"id":"func/PostQuery.scanRecentPostTxids","name":"PostQuery.scanRecentPostTxids","line":179,"end_line":182,"hash":"004bb510a7463333b7aba90f732e84aa3c16243b0c891d9697068d18723380f3"},{"id":"func/PostQuery.isEligibleRecentPost","name":"PostQuery.isEligibleRecentPost","line":185,"end_line":189,"hash":"92d427447b5d23b22ac34829419382457b06d8a74908cbe1bd19e65cab21d571"},{"id":"func/PostQuery.scanRecentPostTxidsAndCount","name":"PostQuery.scanRecentPostTxidsAndCount","line":196,"end_line":224,"hash":"d6a4a8fbecdb9b27b23917160e414db4e31195385a468b2d766cdbc6dba4a197"},{"id":"func/PostQuery.scanPostsByAddrTxidsAndCount","name":"PostQuery.scanPostsByAddrTxidsAndCount","line":230,"end_line":258,"hash":"a872d7a1f71ce1ba6a1dee46a820989cbbb7287dfc433051be1e15890dbc010b"},{"id":"func/PostQuery.scanPostsByAddrTxids","name":"PostQuery.scanPostsByAddrTxids","line":261,"end_line":264,"hash":"3498f2b9615e79b9472a5c7be26520c78db7c1661071c90a882f981d8acca477"},{"id":"func/PostQuery.loadPostsByTxids","name":"PostQuery.loadPostsByTxids","line":266,"end_line":282,"hash":"86b05107f3ecc240b2e734217cedf29ef44c48474bf31c1c8f75f2e4b4f84bea"},{"id":"func/PostQuery.scanFollowingFeedTxidsAndCount","name":"PostQuery.scanFollowingFeedTxidsAndCount","line":287,"end_line":311,"hash":"1ef4b7fb555d82c33971d3e0a4d2f630c42eb86261a78cd34765a5e3736e5946"},{"id":"func/PostQuery.isFolloweePost","name":"PostQuery.isFolloweePost","line":316,"end_line":321,"hash":"7825f4509ef5103d2340ecb1434b483b02c7b435a263777ca89e4a0d345f2be3"}]}
+// {"version":1,"tested_at":"2026-09-15T19:56:31.806Z","module_hash":"09acd99b64b1cedb4e35403eac5c5f60207f8b55a47f4db36f295158150be77b","functions":[{"id":"func/PostQuery.constructor","name":"PostQuery.constructor","line":17,"end_line":64,"hash":"389e45e5bd381a002b5e98bde2c32805e5adc930290d78b85848ff2caae596d0"},{"id":"func/PostQuery.padHeight","name":"PostQuery.padHeight","line":66,"end_line":68,"hash":"be6c442a4d3d86ab3b60314756b7f7c0592479c21cb3b2e1273dcf139a84fb00"},{"id":"func/PostQuery.postHeightKey","name":"PostQuery.postHeightKey","line":70,"end_line":72,"hash":"2d4dff9464aa4c1e805da5de2ba314fbd856530c046705237ea848d5feff8c7c"},{"id":"func/PostQuery.addrPostHeightKey","name":"PostQuery.addrPostHeightKey","line":74,"end_line":76,"hash":"48579f08593cee36cc2f107c2526ac9def687b354cc5e54089defa3fd37117eb"},{"id":"func/PostQuery.postLikeKey","name":"PostQuery.postLikeKey","line":78,"end_line":80,"hash":"5d16caac2cf88932702b28f9d95927183f8904948eb8c16c7e8c672cd3a0780c"},{"id":"func/PostQuery.txidFromPostHeight","name":"PostQuery.txidFromPostHeight","line":82,"end_line":85,"hash":"0fd135c51089dcc9bd2f166bb9f28faaa6a03d7eb84cf03cb9b36e97cdb3139c"},{"id":"func/PostQuery.txidFromAddrPostHeight","name":"PostQuery.txidFromAddrPostHeight","line":87,"end_line":89,"hash":"314d5432292a78b273e3165343d3e09276600cbaf239f76bcd1b36fe5fcf5e10"},{"id":"func/PostQuery.txidFromKeyParts","name":"PostQuery.txidFromKeyParts","line":92,"end_line":95,"hash":"59fb8173599070095d87e5d6f56eeb999f79e75e4d3f3e435515e9db8ac71868"},{"id":"func/PostQuery.loadReplyTxids","name":"PostQuery.loadReplyTxids","line":97,"end_line":99,"hash":"74621495a3affc6ef8688b9d6a814a91c99b22c86c348d261c952aad25df1661"},{"id":"func/PostQuery.isReply","name":"PostQuery.isReply","line":101,"end_line":109,"hash":"be2e3729bd5f05cbfbab3630678eb5c389bd04c616d53b1e0c48c852f4cb25b1"},{"id":"func/PostQuery.listChildTxids","name":"PostQuery.listChildTxids","line":115,"end_line":130,"hash":"e2016c239c309e4e8771788c788941e308dad11103bc1247d971961ff532cea8"},{"id":"func/PostQuery.countRepliesForTxids","name":"PostQuery.countRepliesForTxids","line":133,"end_line":141,"hash":"874b637df6cb92b898c8f58340639794cdadd053227bd020812b1a7c8f2106c9"},{"id":"func/PostQuery.countLikesForTxids","name":"PostQuery.countLikesForTxids","line":144,"end_line":159,"hash":"54e6e3e6467e72d9dd033c9861b3b9ef5e426a76aed7a13e8ac1a0f0389468a3"},{"id":"func/PostQuery.likeTxidFromPostLike","name":"PostQuery.likeTxidFromPostLike","line":161,"end_line":165,"hash":"7e07a9c278a9abae8f646b4f1950f88760f2d5c6445600a42fa42f36d029a45a"},{"id":"func/PostQuery.postTxidFromPostLike","name":"PostQuery.postTxidFromPostLike","line":167,"end_line":171,"hash":"da7f8d0c63dbc074fb25da1a31dde5075c2c3469b84a5c700bd4a2961879d8e9"},{"id":"func/PostQuery.getPostOrNull","name":"PostQuery.getPostOrNull","line":174,"end_line":176,"hash":"d06ce38cd8bde722482a749ff58740b174a054900519e67d2045f29a18fce3f7"},{"id":"func/PostQuery.scanRecentPostTxids","name":"PostQuery.scanRecentPostTxids","line":178,"end_line":181,"hash":"004bb510a7463333b7aba90f732e84aa3c16243b0c891d9697068d18723380f3"},{"id":"func/PostQuery.isEligibleRecentPost","name":"PostQuery.isEligibleRecentPost","line":184,"end_line":188,"hash":"92d427447b5d23b22ac34829419382457b06d8a74908cbe1bd19e65cab21d571"},{"id":"func/PostQuery.scanRecentPostTxidsAndCount","name":"PostQuery.scanRecentPostTxidsAndCount","line":195,"end_line":223,"hash":"d6a4a8fbecdb9b27b23917160e414db4e31195385a468b2d766cdbc6dba4a197"},{"id":"func/PostQuery.scanPostsByAddrTxidsAndCount","name":"PostQuery.scanPostsByAddrTxidsAndCount","line":229,"end_line":257,"hash":"a872d7a1f71ce1ba6a1dee46a820989cbbb7287dfc433051be1e15890dbc010b"},{"id":"func/PostQuery.scanPostsByAddrTxids","name":"PostQuery.scanPostsByAddrTxids","line":260,"end_line":263,"hash":"3498f2b9615e79b9472a5c7be26520c78db7c1661071c90a882f981d8acca477"},{"id":"func/PostQuery.loadPostsByTxids","name":"PostQuery.loadPostsByTxids","line":265,"end_line":281,"hash":"86b05107f3ecc240b2e734217cedf29ef44c48474bf31c1c8f75f2e4b4f84bea"},{"id":"func/PostQuery.scanFollowingFeedTxidsAndCount","name":"PostQuery.scanFollowingFeedTxidsAndCount","line":286,"end_line":310,"hash":"1ef4b7fb555d82c33971d3e0a4d2f630c42eb86261a78cd34765a5e3736e5946"},{"id":"func/PostQuery.isFolloweePost","name":"PostQuery.isFolloweePost","line":315,"end_line":320,"hash":"7825f4509ef5103d2340ecb1434b483b02c7b435a263777ca89e4a0d345f2be3"}]}
 // mutate4javascript-manifest-end

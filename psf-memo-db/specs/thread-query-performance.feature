@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-15T20:05:07.042976100Z","feature_name":"Thread query performance","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/thread-query-performance.feature","background_hash":"e0defd91132ae900d79c841fc5ebe05d91f6bd154a763b742a951e6d5c3626fe","implementation_hash":"sha256:f7082c686e63a5297f4d1964224d7256faf59f5eea13e9f6de4d73ad6401a2ed","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Thread query performance - 1
 #
 # GET /posts/:txid/thread currently does work proportional to the whole
