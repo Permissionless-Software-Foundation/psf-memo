@@ -14,6 +14,7 @@ class GetPostThread {
 
     this.execute = this.execute.bind(this)
     this.buildThreadNode = this.buildThreadNode.bind(this)
+    this.collectThreadTxids = this.collectThreadTxids.bind(this)
     this.attachLikeCounts = this.attachLikeCounts.bind(this)
     this.fetchPostOrNull = this.fetchPostOrNull.bind(this)
     this.loadChildTxids = this.loadChildTxids.bind(this)
@@ -27,10 +28,7 @@ class GetPostThread {
       throw err
     }
 
-    const [likeCounts, rootPost] = await Promise.all([
-      this.adapters.postQuery.buildLikeCountMap(),
-      this.buildThreadNode(txid)
-    ])
+    const rootPost = await this.buildThreadNode(txid)
 
     if (!rootPost) {
       const err = new Error('Post not found.')
@@ -38,10 +36,25 @@ class GetPostThread {
       throw err
     }
 
+    // Build the thread first, then count likes for only its txids. This keeps
+    // the endpoint's work proportional to the thread, not the whole database.
+    const threadTxids = []
+    this.collectThreadTxids(rootPost, threadTxids)
+    const likeCounts = await this.adapters.postQuery.countLikesForTxids(threadTxids)
+
     this.attachLikeCounts(rootPost, likeCounts)
 
     return {
       post: rootPost
+    }
+  }
+
+  collectThreadTxids (node, txids) {
+    txids.push(node.txid)
+    if (Array.isArray(node.replies)) {
+      for (const reply of node.replies) {
+        this.collectThreadTxids(reply, txids)
+      }
     }
   }
 
@@ -66,12 +79,16 @@ class GetPostThread {
     }
   }
 
+  // Prefix-scan the postChildren index for this parent instead of walking the
+  // whole store, so thread loading stays proportional to the thread size.
   async loadChildTxids (txid) {
     const childTxids = []
+    const prefix = `${txid}:`
+    const end = ':\uffff'
 
     for await (
       const [, child]
-      of this.adapters.postQuery.postChildrenDb.iterator()
+      of this.adapters.postQuery.postChildrenDb.iterator({ gte: prefix, lte: `${txid}${end}` })
     ) {
       if (child?.parentTxid !== txid) continue
       if (!child?.childTxid) continue
