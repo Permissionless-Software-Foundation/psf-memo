@@ -250,4 +250,20 @@ describe('#GetPostThread', () => {
     // a has blockHeight 1, b has no blockHeight (=> 0): a sorts after b.
     assert.ok(uut.compareReplies({ seen: 0, blockHeight: 1 }, { seen: 0 }) > 0)
   })
+
+  it('should throw when adapters are missing', () => {
+    assert.throws(() => new GetPostThread({}), /Adapters required/)
+  })
+
+  it('should rethrow unexpected post lookup errors', async () => {
+    const boom = new Error('disk failure')
+    postQuery.postsDb.get.rejects(boom)
+
+    try {
+      await uut.execute({ txid: 'root-1' })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.equal(err, boom)
+    }
+  })
 })
