@@ -386,7 +386,16 @@ that a single user-facing feature may require specs in more than one component.
     store and falls back to an optional externally loaded URL (e.g. from
     memo-db). Spec rendering features against that seam (image shown with the
     right `src`, no `<img>` when unset) rather than against the DOM. Spec:
-    `psf-memo-client/specs/account-avatar-display.feature`.
+23. **Upper-bound performance assertions can survive Gherkin mutation.**
+    A step like `the postChildren store was read at most <max_entries> entries`
+    only fails when the measured reads exceed the bound, so mutating the example
+    value upward (e.g. `1 -> 3`) can never fail and survives. The
+    thread-query-performance soft mutation run killed 6 of 8 and left both
+    `max_entries` upper-bound mutations alive. Treat these as intrinsic
+    equivalents (documented in `docs/reviews/thread-query-bounds-summary.md`),
+    not implementation gaps; prefer exact counts or independently-tied fixture
+    data when a bound must itself be mutatable. Spec:
+    `psf-memo-db/specs/thread-query-performance.feature`.
 
 ---
 
@@ -424,13 +433,13 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `5afaa64` (merged architect's account-avatar-display job —
-the `/account` page now renders the avatar image when an avatar URL is set,
-via a pure `AvatarImage` component shared by the browser build and the Node
-acceptance adapter, with `AccountPage` display helpers
-`getDisplayAvatarUrl`/`hasAvatarImage`/`getAvatarImageUrl` as the testable seam.
-Verified client unit (298) + property (43) + acceptance (all 25 suites) +
-lint + build all passing).
+Current `master` HEAD: `c8ceb82` (merged architect's thread-query-bounds job —
+`GET /posts/:txid/thread` now counts likes only for the thread's txids via
+`countLikesForTxids` and prefix-scans `postChildren` per parent through a new
+`PostQuery.listChildTxids` seam, so its work is proportional to the thread
+rather than the database. Spec:
+`psf-memo-db/specs/thread-query-performance.feature`. Verified psf-memo-db unit
+(357) + property (44) + acceptance (all 11 suites) + lint all passing).
 Next action: **TBD** — current direction is front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing). See `specs/feature-backlog.md`.

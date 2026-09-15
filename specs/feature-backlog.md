@@ -31,6 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Thread query performance (2026-09-15):** `GET /posts/:txid/thread` now does
+  work proportional to the thread instead of the whole database. Like counts are
+  computed only for the thread's txids via `countLikesForTxids` (the global
+  `buildLikeCountMap` was removed), and child lookups prefix-scan `postChildren`
+  per parent through a new `PostQuery.listChildTxids` seam instead of walking the
+  whole store once per node. Spec:
+  `psf-memo-db/specs/thread-query-performance.feature`. Merged to `master` at
+  `c8ceb82`.
 - **Account avatar display (2026-09-05):** the `/account` page now renders the
   avatar image when an avatar URL is set, instead of only showing the URL as
   text. A pure `AvatarImage` component (`src/components/account/avatar-image.js`,
@@ -157,35 +165,10 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ---
 
-## Next up: Thread query performance (psf-memo-db)
+## Next up: TBD
 
-`GET /posts/:txid/thread` is slow because `get-post-thread.js` does work
-proportional to the whole database instead of the requested thread. Two
-independent parts, one feature spec:
-
-- **Part A — like counts scoped to the thread.** `execute()` calls
-  `buildLikeCountMap()`, which iterates every `postLikes` entry and loads one
-  post per like. Build the thread first, then count likes for the thread's
-  txids via the existing `countLikesForTxids`.
-- **Part B — child loading uses the parent index.** `loadChildTxids()`
-  iterates every `postChildren` entry once per thread node. Prefix-scan
-  `parentTxid:childTxid` (as `countRepliesForTxids` already does) instead.
-
-Spec: `psf-memo-db/specs/thread-query-performance.feature`. Affected
-component: D (`psf-memo-db`). No client, indexer, or protocol changes.
-
-Thread shape, reply ordering, and per-node `likeCount` remain specified by
-`psf-memo-db/specs/like-counts.feature` (scenario 3). `buildLikeCountMap`
-still has unit/property coverage; the coder should update it if the method is
-removed.
-
----
-
-## Previous: account avatar display — DONE (2026-09-05)
-
-The `/account` page now renders the avatar image when an avatar URL is set
-(pure `AvatarImage` component + `AccountPage` display helpers). Merged to
-`master` at `5afaa64`.
+Current direction is front-end improvements to `psf-memo-client` (UI/UX polish,
+accessibility, performance, responsiveness, state handling, error surfacing).
 
 ## Notes for future cycles
 
