@@ -14,8 +14,8 @@
 */
 
 const PageController = require('./page-controller')
+const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 
-const EXPLORER_TX_BASE = 'https://bch.loping.net/tx'
 const SUCCESS_MESSAGE = 'Your like was broadcast to the Bitcoin Cash network.'
 
 class LikeTipPage extends PageController {
@@ -146,9 +146,6 @@ class LikeTipPage extends PageController {
 
 module.exports = LikeTipPage
 
-LikeTipPage.EXPLORER_TX_BASE = EXPLORER_TX_BASE
+LikeTipPage.EXPLORER_TX_BASE = BLOCK_EXPLORER_TX_BASE
 LikeTipPage.SUCCESS_MESSAGE = SUCCESS_MESSAGE
-LikeTipPage.explorerUrl = function (txid) {
-  if (!txid) return ''
-  return `${EXPLORER_TX_BASE}/${txid}`
-}
+LikeTipPage.explorerUrl = blockExplorerTxUrl

@@ -11,14 +11,9 @@
   by the browser components, by unit tests, and by the acceptance handlers.
 */
 
-const BLOCK_EXPLORER_LABEL = 'See on block explorer'
-const BLOCK_EXPLORER_TX_BASE = 'https://bch.loping.net/tx'
+const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 
-// Block explorer URL for a post transaction, or '' without a txid.
-function explorerTxUrl (txid) {
-  if (!txid) return ''
-  return `${BLOCK_EXPLORER_TX_BASE}/${txid}`
-}
+const BLOCK_EXPLORER_LABEL = 'See on block explorer'
 
 // The ordered menu items for a post. The block explorer link is first.
 function postOptionsItems (txid) {
@@ -26,7 +21,7 @@ function postOptionsItems (txid) {
     {
       id: 'block-explorer',
       label: BLOCK_EXPLORER_LABEL,
-      href: explorerTxUrl(txid),
+      href: blockExplorerTxUrl(txid),
       target: '_blank',
       rel: 'noopener noreferrer'
     }
@@ -99,7 +94,7 @@ function postOptionsKeyCommand (key, items = []) {
 module.exports = {
   BLOCK_EXPLORER_LABEL,
   BLOCK_EXPLORER_TX_BASE,
-  explorerTxUrl,
+  explorerTxUrl: blockExplorerTxUrl,
   postOptionsItems,
   initialPostOptionsState,
   openPostOptions,

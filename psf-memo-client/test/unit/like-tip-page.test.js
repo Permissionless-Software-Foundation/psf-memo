@@ -132,3 +132,55 @@ test('a broadcast failure stays on the form and opens no result', async () => {
   assert.equal(page.showResultModal, false)
   assert.equal(page.getBroadcastMessage(), '')
 })
+
+test('open reports a validation error without a memo like handler', () => {
+  const page = new LikeTipPage({})
+
+  const result = page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
+
+  assert.equal(result.ok, false)
+  assert.equal(result.error, 'like_validation')
+  assert.match(result.message, /memo like handler/)
+  assert.equal(page.modalOpen, true)
+  assert.equal(page.showResultModal, false)
+})
+
+test('open reports an empty-balance error below the dust limit', () => {
+  const wallet = makeWallet()
+  wallet.utxos = [{ txid: 'utxo', value: 100 }]
+  const memoLike = new MemoLike({ wallet })
+  const page = new LikeTipPage({ memoLike })
+
+  const result = page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
+
+  assert.equal(result.ok, false)
+  assert.equal(result.error, 'like_empty_balance')
+  assert.match(page.broadcastError, /add BCH/)
+  assert.equal(page.showResultModal, false)
+})
+
+test('submit fails without a memo like handler', async () => {
+  const page = new LikeTipPage({})
+  page.setTip('')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, false)
+  assert.equal(result.error, 'broadcast')
+  assert.match(page.broadcastError, /memo like handler/)
+  assert.equal(page.showResultModal, false)
+})
+
+test('a like with a positive tip sends the tip to the author', async () => {
+  const { wallet, page } = makePage()
+  page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
+  page.setTip('600')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, true)
+  assert.equal(wallet.broadcasts.length, 1)
+  assert.deepEqual(wallet.broadcasts[0].bchOutput, [
+    { address: AUTHOR_ADDRESS, amountSat: 600 }
+  ])
+})

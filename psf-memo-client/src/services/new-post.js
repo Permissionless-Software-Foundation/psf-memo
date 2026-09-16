@@ -15,10 +15,10 @@
 
 const PageController = require('./page-controller')
 const MemoPost = require('./memo-post')
+const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 
 const NEW_POST_PATH = '/posts/new'
 const RECENT_FEED_PATH = '/posts/recent'
-const EXPLORER_TX_BASE = 'https://bch.loping.net/tx'
 
 class NewPostPage extends PageController {
   constructor (deps = {}) {
@@ -95,11 +95,8 @@ class NewPostPage extends PageController {
 
 NewPostPage.NEW_POST_PATH = NEW_POST_PATH
 NewPostPage.RECENT_FEED_PATH = RECENT_FEED_PATH
-NewPostPage.EXPLORER_TX_BASE = EXPLORER_TX_BASE
-NewPostPage.explorerUrl = function (txid) {
-  if (!txid) return ''
-  return `${EXPLORER_TX_BASE}/${txid}`
-}
+NewPostPage.EXPLORER_TX_BASE = BLOCK_EXPLORER_TX_BASE
+NewPostPage.explorerUrl = blockExplorerTxUrl
 
 module.exports = NewPostPage
 

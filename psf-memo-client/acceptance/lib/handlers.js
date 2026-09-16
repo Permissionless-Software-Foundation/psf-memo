@@ -1507,19 +1507,7 @@ const handlers = [
     name: 'like/tip modal shows a broadcast success message',
     pattern: /^the like\/tip modal shows a broadcast success message$/,
     run (m, example, world) {
-      const page = world.likeTipPage
-      if (!page.showResultModal) {
-        throw new Error('Expected the like broadcast result to be shown.')
-      }
-      const message = page.getBroadcastMessage()
-      if (!message) {
-        throw new Error('Expected a like broadcast success message.')
-      }
-      const html = renderLikeResult({
-        txid: page.lastResult.txid,
-        message,
-        explorerUrl: page.explorerUrl(page.lastResult.txid)
-      })
+      const { message, html } = renderLikeBroadcastResult(world)
       if (!html.includes(message)) {
         throw new Error(`The rendered like result does not show the message "${message}".`)
       }
@@ -1529,19 +1517,7 @@ const handlers = [
     name: 'like/tip modal shows the like transaction id',
     pattern: /^the like\/tip modal shows the like transaction id$/,
     run (m, example, world) {
-      const page = world.likeTipPage
-      if (!page.showResultModal || !page.lastResult || !page.lastResult.ok) {
-        throw new Error('Expected a successful like broadcast result.')
-      }
-      const txid = page.lastResult.txid
-      if (!txid) {
-        throw new Error('Expected the like result to include a transaction id.')
-      }
-      const html = renderLikeResult({
-        txid,
-        message: page.getBroadcastMessage(),
-        explorerUrl: page.explorerUrl(txid)
-      })
+      const { txid, html } = renderLikeBroadcastResult(world)
       if (!html.includes(txid)) {
         throw new Error(`The rendered like result does not show the transaction id ${txid}.`)
       }
@@ -1551,20 +1527,10 @@ const handlers = [
     name: 'like/tip modal shows a block explorer link',
     pattern: /^the like\/tip modal shows a link to the block explorer for the like transaction$/,
     run (m, example, world) {
-      const page = world.likeTipPage
-      if (!page.showResultModal || !page.lastResult || !page.lastResult.ok) {
-        throw new Error('Expected a successful like broadcast result.')
-      }
-      const txid = page.lastResult.txid
-      const url = page.explorerUrl(txid)
+      const { url, html } = renderLikeBroadcastResult(world)
       if (!url.startsWith('https://bch.loping.net/tx/')) {
         throw new Error(`Expected a bch.loping.net explorer link, got "${url}".`)
       }
-      const html = renderLikeResult({
-        txid,
-        message: page.getBroadcastMessage(),
-        explorerUrl: url
-      })
       if (!html.includes(`href="${url}"`)) {
         throw new Error(`The rendered like result does not link to ${url}.`)
       }
@@ -3500,6 +3466,26 @@ function togglePostOptionsMenu (world, txid) {
   const menu = getPostOptionsMenu(world, txid)
   Object.assign(menu, PostOptions.togglePostOptions(menu))
   world.activeMenuTxid = txid
+}
+
+// Require a successful like broadcast result and render it to static HTML for
+// the like/tip acceptance assertions. The caller inspects the returned fields.
+function renderLikeBroadcastResult (world) {
+  const page = world.likeTipPage
+  if (!page.showResultModal || !page.lastResult || !page.lastResult.ok) {
+    throw new Error('Expected a successful like broadcast result.')
+  }
+  const txid = page.lastResult.txid
+  if (!txid) {
+    throw new Error('Expected the like result to include a transaction id.')
+  }
+  const message = page.getBroadcastMessage()
+  if (!message) {
+    throw new Error('Expected a like broadcast success message.')
+  }
+  const url = page.explorerUrl(txid)
+  const html = renderLikeResult({ txid, message, explorerUrl: url })
+  return { txid, message, url, html }
 }
 
 // The posts currently rendered by the page the scenario has opened.
