@@ -17,7 +17,13 @@ ok()  { echo "  [ok]   $1"; pass=$((pass+1)); }
 bad() { echo "  [FAIL] $1"; fail=$((fail+1)); }
 
 echo "== Tool repos at latest upstream =="
-for d in tmp/aps-spec tmp/crap4javascript tmp/dry4javascript tmp/mutate4javascript; do
+# APS uses the single canonical checkout under tmp/aps; refresh it in place.
+if "$ROOT/swarmforge/scripts/ensure-aps.sh" --update >/dev/null 2>&1; then
+  ok "tmp/aps present"
+else
+  bad "tmp/aps ensure/update failed"
+fi
+for d in tmp/aps tmp/crap4javascript tmp/dry4javascript tmp/mutate4javascript; do
   if [ ! -d "$d/.git" ]; then
     bad "$d missing (reinstall per constitution)"; continue
   fi
@@ -56,13 +62,13 @@ fi
 
 echo "== APS Babashka tools =="
 if grep -q "usage: gherkin-parser" \
-    <<< "$(cd tmp/aps-spec && bb gherkin-parser 2>&1)"; then
+    <<< "$(cd tmp/aps && bb gherkin-parser 2>&1)"; then
   ok "gherkin-parser"
 else
   bad "gherkin-parser"
 fi
 if grep -qF -- "--runner-worker is required" \
-    <<< "$(cd tmp/aps-spec && bb gherkin-mutator 2>&1)"; then
+    <<< "$(cd tmp/aps && bb gherkin-mutator 2>&1)"; then
   ok "gherkin-mutator"
 else
   bad "gherkin-mutator"

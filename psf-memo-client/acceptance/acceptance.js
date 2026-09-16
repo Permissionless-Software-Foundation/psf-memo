@@ -23,7 +23,9 @@ const specsDir = path.join(root, 'specs')
 const buildDir = path.join(root, 'build', 'acceptance')
 const irDir = path.join(buildDir, 'ir')
 const genDir = path.join(buildDir, 'generated')
-const apsDir = path.join(root, 'tmp', 'aps-spec')
+const repoRoot = path.resolve(root, '..')
+const apsDir = path.join(repoRoot, 'tmp', 'aps')
+const APS_URL = 'https://github.com/unclebob/Acceptance-Pipeline-Specification.git'
 
 function sh (cmd, args, opts = {}) {
   return execFileSync(cmd, args, {
@@ -32,12 +34,16 @@ function sh (cmd, args, opts = {}) {
   }).toString()
 }
 
-// Procure the latest APS tools if not already present in the worktree.
+// Ensure the single canonical APS checkout (tmp/aps) is present.
 function ensureAps () {
-  if (fs.existsSync(apsDir)) return
+  if (fs.existsSync(path.join(apsDir, 'bb.edn'))) return
+  const shared = path.join(repoRoot, 'swarmforge', 'scripts', 'ensure-aps.sh')
+  if (fs.existsSync(shared)) {
+    sh('/bin/bash', [shared])
+    return
+  }
   fs.mkdirSync(path.dirname(apsDir), { recursive: true })
-  sh('git', ['clone', '--depth', '1',
-    'https://github.com/unclebob/Acceptance-Pipeline-Specification.git', apsDir])
+  sh('git', ['clone', '--depth', '1', APS_URL, apsDir])
 }
 
 function main () {

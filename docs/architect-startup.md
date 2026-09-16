@@ -6,7 +6,8 @@ Fast-start notes for the architect role in this monorepo. Captured from the
 ## Tool locations (already installed — do not reinstall or re-verify)
 - Language mutation/CRAP/DRY (JavaScript): `psf-memo-client/node_modules/.bin/`
   - `mutate4javascript`, `crap4javascript`, `dry4javascript`
-- APS Babashka tools: `tmp/aps-spec/` (run via `bb <task>` from that dir)
+- APS Babashka tools: `tmp/aps/` (single canonical checkout; refresh with
+  `swarmforge/scripts/ensure-aps.sh --update`; run via `bb <task>` from that dir)
   - `gherkin-parser`, `gherkin-mutator`, `gherkin-ir-dry-checker`
 - Runner adapters (for `gherkin-mutator`):
   - DB: `psf-memo-db/acceptance/lib/runner-worker.js`
@@ -30,7 +31,7 @@ node ../psf-memo-client/node_modules/mutate4javascript/bin/mutate4javascript.js 
 ```
 
 ## Gherkin soft mutation — canonical invocation
-Run from `tmp/aps-spec/`. Use `--json` and redirect stderr to `/dev/null` for a
+Run from `tmp/aps/`. Use `--json` and redirect stderr to `/dev/null` for a
 clean parseable report (worker logs go to stderr; the report goes to stdout).
 ```bash
 bb gherkin-mutator \
@@ -70,7 +71,7 @@ re-process or re-verify.
 ```bash
 psf-memo-client/node_modules/.bin/mutate4javascript 2>&1 | head -1   # usage
 psf-memo-client/node_modules/.bin/dry4javascript --help 2>&1 | head -1  # usage (NOT bare)
-cd tmp/aps-spec && bb gherkin-parser --help                          # usage
+cd tmp/aps && bb gherkin-parser --help                              # usage
 ```
 
 **IMPORTANT — never run bare `dry4javascript` as a smoke check.** With no
