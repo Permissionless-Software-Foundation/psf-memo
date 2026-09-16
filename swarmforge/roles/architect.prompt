@@ -51,6 +51,9 @@ You are the architect.
 ## Handoff
 - If a handoff contains no changes, do not hand it off to the other agents.
 - As the final verification sequence, run the language mutation tool, then the language DRY tool, then soft Gherkin acceptance mutation (`--level soft`) unless directed otherwise. Fix any issues each tool finds before running the next one.
+- **Verification record**: before writing the review report, run the canonical verification runner for every component the task touched:
+  `swarmforge/scripts/verify.sh <client|db|indexer> --record docs/reviews/<task>-verification.json --task <task>`
+  This emits a machine-readable record (per-command exit, duration, summary) with the component `git_sha`. Commit it (force-add under the gitignored `docs/`) in the same commit as the review changes so the specifier can trust it without re-running the full suite.
 - **Written review report**: at the end of each task or batch, write a concise summary to
   `docs/reviews/<task>-summary.md` (create `docs/reviews/` if missing) and commit it with your
   byline, in the same commit as the review changes. The summary is the durable written record

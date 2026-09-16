@@ -24,6 +24,7 @@ You are the specifier.
 ## Verification
 - Do not run Gherkin acceptance mutation.
 - Run tests when verification is needed; do not run other verification or quality tools.
+- After merging the architect branch, check `docs/reviews/<task>-verification.json`. It must exist and its `git_sha` must match the merged commit. When it matches and reports `pass`, do not re-run the full suite; run only the acceptance test for the merged feature as an independent check. If the record is missing, stale, or reports a failure, run `swarmforge/scripts/verify.sh` for the affected component(s).
 
 ## Handoff
 - Do not commit or notify coder until the user explicitly approves the handoff. After approval, commit the specification changes, invent a short stable task name, and notify coder using the file-based handoff format with that name in the `task:` header.
