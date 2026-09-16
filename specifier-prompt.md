@@ -432,6 +432,14 @@ that a single user-facing feature may require specs in more than one component.
     appeared in `feed-query-performance` scenario 2. If the offset/page identity
     must be mutatable, assert the returned txids (or the first/last returned
     txid) so an offset shift fails.
+29. **The profile page uses a separate post card.** The recent, following, and
+    topic feeds and the thread modal share
+    `src/components/post-feed/post-feed-item.js`, but the profile page
+    (`src/components/app-body/profile/index.js`) renders posts with its own
+    `profile-post-card`. A feature that claims to cover "all post cards" must
+    account for both surfaces, and the user prefers the two cards share one
+    common options-menu component. Spec:
+    `psf-memo-client/specs/post-options-menu.feature`.
 
 ---
 
@@ -483,11 +491,10 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `5e62d1e` (`feed-total-cap` merged from
-`swarmforge-architect` at `5e62d1e`; verification record
-`docs/reviews/feed-total-cap-verification.json` names `b2c78fb`, the last
-code-changing review commit, and the only later commit touches `docs/`). Run
+Current `master` HEAD: `bc964fa88c` (`post-options-menu` spec committed; the
+`feed-total-cap` merge remains the last completed feature at `5e62d1e`). Run
 `swarmforge/scripts/state.sh` to refresh these HEAD lines.
-Next action: **TBD** — current direction is front-end improvements to
-`psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
-state handling, error surfacing). See `specs/feature-backlog.md`.
+Next action: **wait for the architect** to complete `post-options-menu`, then
+merge `swarmforge-architect` into `master`, verify the client per §10, and ask
+the user for the next feature. Spec:
+`psf-memo-client/specs/post-options-menu.feature`; handoff commit `bc964fa88c`.
