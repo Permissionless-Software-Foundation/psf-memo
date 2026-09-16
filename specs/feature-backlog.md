@@ -31,6 +31,18 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Post options menu (2026-09-16):** every post card now has a working
+  three-dots "Post options" menu. The menu is hidden until the button is
+  clicked; its first (top) item is "See on block explorer", linking to the
+  post transaction at `https://bch.loping.net/tx/<txid>` in a new tab. Clicking
+  the button again, clicking outside the menu, or pressing Escape closes the
+  menu, and ArrowDown moves focus to the first item. One shared
+  `PostOptionsMenu` component is used by the recent/following/topic feeds, the
+  thread modal, and the profile post card; pure behavior lives in
+  `psf-memo-client/src/services/post-options.js`. Client-only rendering
+  feature. Spec: `psf-memo-client/specs/post-options-menu.feature`. Merged to
+  `master` at `fdb6efc`.
+
 - **Feed total cap raised to 500 (2026-09-16):** `GET /posts/recent` now caps
   its total scan at 500 eligible top-level posts instead of 10 (`TOTAL_SCAN_CAP`
   in `psf-memo-db/src/adapters/post-query.js`). Corpora with up to 500 eligible
@@ -207,24 +219,10 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
   small; handoffs are blocked on a dirty tree. See `docs/process-improvements.md`
   for the what/why, commits, and verification evidence.
 
-## Next up: Post options menu (client)
+## Next up: TBD
 
-Every post card gets a working three-dots "Post options" menu. The menu is
-hidden until the button is clicked; its first (top) item is "See on block
-explorer", linking to the post transaction at `https://bch.loping.net/tx/<txid>`
-in a new tab. Clicking the button again, clicking outside the menu, or pressing
-Escape closes the menu, and arrow keys move focus to the first item. Scope: the
-recent feed, following feed, topic feed, thread modal, and the profile post
-card.
-
-- Client-only; no psf-memo-db or psf-memo-indexer changes.
-- The shared post card and the profile post card should share one common
-  options-menu component so the behavior stays identical on both.
-- Spec: `psf-memo-client/specs/post-options-menu.feature`.
-
-Current direction remains front-end improvements to `psf-memo-client` (UI/UX
-polish, accessibility, performance, responsiveness, state handling, error
-surfacing).
+Current direction is front-end improvements to `psf-memo-client` (UI/UX polish,
+accessibility, performance, responsiveness, state handling, error surfacing).
 
 ## Notes for future cycles
 

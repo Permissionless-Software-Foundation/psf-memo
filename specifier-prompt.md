@@ -491,10 +491,12 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `bc964fa88c` (`post-options-menu` spec committed; the
-`feed-total-cap` merge remains the last completed feature at `5e62d1e`). Run
-`swarmforge/scripts/state.sh` to refresh these HEAD lines.
-Next action: **wait for the architect** to complete `post-options-menu`, then
-merge `swarmforge-architect` into `master`, verify the client per §10, and ask
-the user for the next feature. Spec:
-`psf-memo-client/specs/post-options-menu.feature`; handoff commit `bc964fa88c`.
+Current `master` HEAD: `fdb6efc950` (`post-options-menu` merged from
+`swarmforge-architect`; verification record
+`docs/reviews/post-options-menu-verification.json` names `07ff61392b`, the last
+code-changing review commit — the review tip and the merge add only `docs/`
+after it). Run `swarmforge/scripts/state.sh` to refresh these HEAD lines.
+Next action: **TBD** — ask the user for the next feature. Current direction is
+front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
+performance, responsiveness, state handling, error surfacing). See
+`specs/feature-backlog.md`.
