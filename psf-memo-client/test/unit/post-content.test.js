@@ -44,6 +44,7 @@ test('renders no anchor for plain text', () => {
 test('renders an embedded YouTube player and a separate link together', () => {
   const html = render('watch https://youtu.be/dQw4w9WgXcQ then read https://memo.fullstackcash.net')
   assert.match(html, /<iframe[^>]+src="https:\/\/www\.youtube\.com\/embed\/dQw4w9WgXcQ"/)
+  assert.match(html, /<iframe[^>]+allowfullscreen/i)
   assert.match(html, /<a[^>]+href="https:\/\/memo\.fullstackcash\.net"/)
   assert.doesNotMatch(html, /<a[^>]+href="https:\/\/youtu\.be\/dQw4w9WgXcQ"/)
 })

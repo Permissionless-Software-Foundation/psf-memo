@@ -100,6 +100,16 @@ distinct from per-task verification results, which live in
 
 ## Workflow observations
 
+- **`architect-startup.sh` checks `tmp/aps` relative to the worktree, but
+  `ensure-aps.sh` resolves the single canonical APS checkout to the git common
+  root's `tmp/aps` (the main checkout). In a role worktree the two disagree, so
+  the startup script reports `[FAIL] tmp/aps missing` even though the tools run.
+  Local workaround: symlink the worktree's ignored `tmp/aps` to the canonical
+  checkout, `ln -sfn <common-root>/tmp/aps tmp/aps`. Proper fix (for a task that
+  owns tooling): have `architect-startup.sh` capture
+  `APS_DIR="$(ensure-aps.sh --update)"` and check/run against `$APS_DIR`
+  instead of the relative path.
+
 - **Review summaries must be force-added.** `docs/` is in the root `.gitignore`,
   so `git add -A` silently skips `docs/reviews/<task>-summary.md`. The role
   requires the summary to be committed with the byline in the same commit as the

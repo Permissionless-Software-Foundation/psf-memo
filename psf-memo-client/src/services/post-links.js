@@ -20,7 +20,8 @@ const LINK_RE = /(https?:\/\/[^\s]+)|((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z
 // such as an email address.
 function isBareDomainBoundary (input, start, end) {
   if (start > 0 && /[A-Za-z0-9_.@-]/.test(input[start - 1])) return false
-  if (end < input.length && input[end] === '@') return false
+  // input[end] is undefined when end === input.length, so no range guard is needed.
+  if (input[end] === '@') return false
   return true
 }
 
@@ -74,3 +75,7 @@ function parsePostLinks (text) {
 }
 
 module.exports = { parsePostLinks }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-16T02:28:07.979Z","module_hash":"9d4045719f423239c99405aadb91cd21944e7d2deaa670b15eb53aee5ee66639","functions":[{"id":"func/isBareDomainBoundary","name":"isBareDomainBoundary","line":21,"end_line":26,"hash":"6cbcecc22428ecc54a2598d4401a350b3d07a849b651e5c76198b9defb927aef"},{"id":"func/pushText","name":"pushText","line":29,"end_line":31,"hash":"abda2060349c814451b88fe350ca235069afdc769eaa3ffa90e9d214673c71b9"},{"id":"func/parsePostLinks","name":"parsePostLinks","line":40,"end_line":75,"hash":"7a51da000274bf77614f288f9db2ba8490069202919a00cda9c3c474d7bf48d8"}]}
+// mutate4javascript-manifest-end

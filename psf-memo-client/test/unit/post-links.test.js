@@ -101,6 +101,17 @@ test('parsePostLinks does not link a dotted user name before an @ sign', () => {
   assert.deepEqual(parsePostLinks(text), [{ type: 'text', text }])
 })
 
+test('parsePostLinks links a bare domain at the start of the text', () => {
+  assert.deepEqual(parsePostLinks('memo.fullstackcash.net is live'), [
+    { type: 'link', href: 'https://memo.fullstackcash.net', text: 'memo.fullstackcash.net' },
+    { type: 'text', text: ' is live' }
+  ])
+})
+
+test('parsePostLinks does not link a bare domain glued to a leading token character', () => {
+  assert.deepEqual(parsePostLinks('-example.com'), [{ type: 'text', text: '-example.com' }])
+})
+
 test('parsePostLinks round-trips: segments reconstruct the original text', () => {
   const samples = [
     'just a normal memo',
