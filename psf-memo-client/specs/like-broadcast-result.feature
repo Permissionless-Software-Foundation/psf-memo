@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-16T19:27:51.931950466Z","feature_name":"Like Broadcast Result","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/like-broadcast-result.feature","background_hash":"1714896143ae0425b1c9938c1bc926ef61183ee3e842aa76d8bfd0ec751fcc9c","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Like Broadcast Result - 1 a successful like keeps the modal open and shows the broadcast result","scenario_hash":"315b01b6a9c59504c9ecf91ec0229a957c7490387f69f246b33f899dd18a896f","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-09-16T19:27:51.931950466Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Like Broadcast Result - 1, Like Broadcast Result - 2, Like Broadcast Result - 3
 #
 # After a like is broadcast from the like/tip modal, the modal no longer closes

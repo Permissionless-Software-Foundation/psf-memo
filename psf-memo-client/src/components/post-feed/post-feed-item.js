@@ -77,9 +77,10 @@ function PostFeedItem ({
   }
 
   const handleLikeSuccess = () => {
+    // Reflect the like immediately. The modal stays open to show the
+    // broadcast result until the user dismisses it.
     setLiked(true)
     setLikeCount((count) => count + 1)
-    setShowLikeModal(false)
   }
 
   const handleLikeModalHide = () => {

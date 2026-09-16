@@ -12,6 +12,7 @@ import { Modal, Form, Button } from 'react-bootstrap'
 
 import MemoLike from '../../services/memo-like'
 import LikeTipPage from '../../services/like-tip-page'
+import LikeResult from './like-result'
 import { getDisplayName } from './post-display'
 import './post-feed.css'
 
@@ -24,6 +25,8 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
   const [tip, setTip] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [resultTxid, setResultTxid] = useState('')
+  const [showResult, setShowResult] = useState(false)
 
   const displayName = post ? getDisplayName(post.addr, profiles) : ''
 
@@ -33,12 +36,16 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
       setTip('')
       setError('')
       setSubmitting(false)
+      setResultTxid('')
+      setShowResult(false)
       return
     }
 
     setTip('')
     setError('')
     setSubmitting(false)
+    setResultTxid('')
+    setShowResult(false)
 
     let cancelled = false
 
@@ -82,6 +89,8 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
       const result = await page.submit()
       if (result.ok) {
         setTip('')
+        setResultTxid(result.txid)
+        setShowResult(true)
         if (typeof onSuccess === 'function') {
           onSuccess()
         }
@@ -95,10 +104,16 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
     }
   }
 
-  function handleCancel () {
+  function handleDismiss () {
     setTip('')
     setError('')
+    setResultTxid('')
+    setShowResult(false)
     onHide()
+  }
+
+  function handleCancel () {
+    handleDismiss()
   }
 
   return (
@@ -108,47 +123,69 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
       </Modal.Header>
 
       <Modal.Body>
-        {post && (
+        {post && !showResult && (
           <p className='like-tip-modal-target'>
             Like the post by <strong>{displayName}</strong>
           </p>
         )}
 
-        <Form onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
-          <Form.Group controlId='like-tip-amount' className='mb-3'>
-            <Form.Label>Tip (satoshis, optional)</Form.Label>
-            <Form.Control
-              type='number'
-              min='0'
-              step='1'
-              placeholder='0'
-              value={tip}
-              onChange={(e) => {
-                setTip(e.target.value)
-                // Clear a previous validation error so the user can retry.
-                setError('')
-              }}
-              disabled={submitting}
+        {showResult
+          ? (
+            <LikeResult
+              txid={resultTxid}
+              message={LikeTipPage.SUCCESS_MESSAGE}
+              explorerUrl={LikeTipPage.explorerUrl(resultTxid)}
             />
-          </Form.Group>
-        </Form>
+            )
+          : (
+            <>
+              <Form onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
+                <Form.Group controlId='like-tip-amount' className='mb-3'>
+                  <Form.Label>Tip (satoshis, optional)</Form.Label>
+                  <Form.Control
+                    type='number'
+                    min='0'
+                    step='1'
+                    placeholder='0'
+                    value={tip}
+                    onChange={(e) => {
+                      setTip(e.target.value)
+                      // Clear a previous validation error so the user can retry.
+                      setError('')
+                    }}
+                    disabled={submitting}
+                  />
+                </Form.Group>
+              </Form>
 
-        {error && (
-          <p className='like-tip-modal-error text-danger'>{error}</p>
-        )}
+              {error && (
+                <p className='like-tip-modal-error text-danger'>{error}</p>
+              )}
+            </>
+            )}
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant='secondary' onClick={handleCancel}>
-          Cancel
-        </Button>
-        <Button
-          variant='primary'
-          onClick={handleSubmit}
-          disabled={submitting || !post || !wallet}
-        >
-          {submitting ? 'Liking...' : 'Like'}
-        </Button>
+        {showResult
+          ? (
+            <Button variant='primary' onClick={handleDismiss}>
+              Close
+            </Button>
+            )
+          : (
+            <>
+              <Button variant='secondary' onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button
+                variant='primary'
+                onClick={handleSubmit}
+                disabled={submitting || !post || !wallet}
+              >
+                {submitting ? 'Liking...' : 'Like'}
+              </Button>
+            </>
+            )}
       </Modal.Footer>
     </Modal>
   )

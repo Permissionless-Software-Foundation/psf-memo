@@ -681,6 +681,18 @@
   font-size: 0.95rem;
 }
 
+.like-result {
+  text-align: left;
+}
+
+.like-result-message {
+  margin-bottom: 0.75rem;
+}
+
+.like-result-txid {
+  font-size: 0.9rem;
+}
+
 .posts-feed-item-youtube {
   position: relative;
   width: 100%;

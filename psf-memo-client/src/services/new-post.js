@@ -15,10 +15,10 @@
 
 const PageController = require('./page-controller')
 const MemoPost = require('./memo-post')
+const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 
 const NEW_POST_PATH = '/posts/new'
 const RECENT_FEED_PATH = '/posts/recent'
-const EXPLORER_TX_BASE = 'https://bch.loping.net/tx'
 
 class NewPostPage extends PageController {
   constructor (deps = {}) {
@@ -95,14 +95,11 @@ class NewPostPage extends PageController {
 
 NewPostPage.NEW_POST_PATH = NEW_POST_PATH
 NewPostPage.RECENT_FEED_PATH = RECENT_FEED_PATH
-NewPostPage.EXPLORER_TX_BASE = EXPLORER_TX_BASE
-NewPostPage.explorerUrl = function (txid) {
-  if (!txid) return ''
-  return `${EXPLORER_TX_BASE}/${txid}`
-}
+NewPostPage.EXPLORER_TX_BASE = BLOCK_EXPLORER_TX_BASE
+NewPostPage.explorerUrl = blockExplorerTxUrl
 
 module.exports = NewPostPage
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-13T13:36:17.184Z","module_hash":"65edafa07e390d316197347119a4d2a50c3fe73980c8e526f38fa0f66ee69689","functions":[{"id":"func/NewPostPage.constructor","name":"NewPostPage.constructor","line":24,"end_line":37,"hash":"1a42004b33ac28f396df02f70b2cec6a91f890d3a065aefe890c23cb1456ace3"},{"id":"func/NewPostPage.addMenuLink","name":"NewPostPage.addMenuLink","line":40,"end_line":43,"hash":"2bb99421f2cdbcf9a39f77244b250e4251b9bd3cc81a4f399589007f71486b79"},{"id":"func/NewPostPage.hasMenuLink","name":"NewPostPage.hasMenuLink","line":46,"end_line":48,"hash":"f2e167f20bd3040ebbcfaf3a3e95254333b9739e0fa93d7801ead542be2a15e3"},{"id":"func/NewPostPage.remainingCount","name":"NewPostPage.remainingCount","line":51,"end_line":53,"hash":"421d0af0e01278b479a5bb8d62d344498f875d188e8307eda420d637c23600d4"},{"id":"func/NewPostPage._setBusy","name":"NewPostPage._setBusy","line":56,"end_line":58,"hash":"1552af7690ee7a92b2a9ed84af1ba301c2468939b6994ca3942fe0b7004028fb"},{"id":"func/NewPostPage._perform","name":"NewPostPage._perform","line":61,"end_line":66,"hash":"c8b7394bcd5a2252278095e9af08cc5e76720b4fab08aa83218cb93fdb372407"},{"id":"func/NewPostPage.explorerUrl","name":"NewPostPage.explorerUrl","line":69,"end_line":71,"hash":"84a048fa78b38cef32573f1e31be11f870c765393213e59744d9799690da4d37"},{"id":"func/NewPostPage.submit","name":"NewPostPage.submit","line":75,"end_line":84,"hash":"1f15969b62987f29fbc310845716fe65c9ace8bec2f7bb2d8bee62e59b7cee95"},{"id":"func/NewPostPage.dismissResult","name":"NewPostPage.dismissResult","line":87,"end_line":93,"hash":"c155b35aedd68c7bbde87329ec086079621cf362ecf01472b65c7e442c9646b7"}]}
+// {"version":1,"tested_at":"2026-09-16T19:19:23.763Z","module_hash":"a285c6a2a27006b4e90960ebfe9968651e6cfd7a4f12e600fca76d521eda2751","functions":[{"id":"func/NewPostPage.constructor","name":"NewPostPage.constructor","line":24,"end_line":37,"hash":"ea4edf077e9c3631366acadc62f27b8cf4d5087cc6d2e317db9086b1d0d18347"},{"id":"func/NewPostPage.addMenuLink","name":"NewPostPage.addMenuLink","line":40,"end_line":43,"hash":"bac97164d2d70bfdb946c4d54e67983c43cad093bac558f1d169e1739ca97137"},{"id":"func/NewPostPage.hasMenuLink","name":"NewPostPage.hasMenuLink","line":46,"end_line":48,"hash":"7e1abf5d0833aaf3b3da3a024de9eb2b80da900b2930e832c7e92d77e0e50344"},{"id":"func/NewPostPage.remainingCount","name":"NewPostPage.remainingCount","line":51,"end_line":53,"hash":"521ce4ed841f62099529b327f2245a9e94c09af2f67ed5d91839e52607bcea37"},{"id":"func/NewPostPage._setBusy","name":"NewPostPage._setBusy","line":56,"end_line":58,"hash":"af4c51d75a9bbfc4d8c2566414ee950704d83831ad915ee04eea8bf2fab65a3e"},{"id":"func/NewPostPage._perform","name":"NewPostPage._perform","line":61,"end_line":66,"hash":"e66f893a4913b5d6f3cc4fcc1ad58e21557b4a316f0150050c961e3ece237795"},{"id":"func/NewPostPage.explorerUrl","name":"NewPostPage.explorerUrl","line":69,"end_line":71,"hash":"947125deea2b19ae2dff9d9bd9449a23f10b6bf6075a9c9be4bc588cd211ff56"},{"id":"func/NewPostPage.submit","name":"NewPostPage.submit","line":75,"end_line":84,"hash":"56282a4dea0927a6ab8bd3e6452f1860b978bcf4598d17cdcf86f6083b561b17"},{"id":"func/NewPostPage.dismissResult","name":"NewPostPage.dismissResult","line":87,"end_line":93,"hash":"35cae53c6e851cd96e5b81dfe5a2b954f458bdacd60d8228676779c025820c73"}]}
 // mutate4javascript-manifest-end
