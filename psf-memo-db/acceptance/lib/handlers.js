@@ -209,6 +209,11 @@ async function loadFixture (world, name) {
     return
   }
 
+  if (name === 'many-top-level-posts') {
+    await loadManyTopLevelPosts(world)
+    return
+  }
+
   if (name !== 'three-top-level-posts-and-one-reply') {
     throw new Error(`Unknown fixture: ${name}`)
   }
@@ -373,6 +378,31 @@ async function loadManyPostsWithReplies (world) {
     )
     await world.adapters.level.postParentsDb.put(reply.txid, reply)
     await world.adapters.level.postChildrenDb.put(`${reply.parentTxid}:${reply.txid}`, reply)
+  }
+}
+
+async function loadManyTopLevelPosts (world) {
+  // 510 eligible top-level posts: larger than the 500 total-scan cap, so the
+  // capped total is exactly 500, while an offset near the end exhausts the
+  // index and reads all 510 entries.
+  for (let i = 0; i < 510; i++) {
+    const id = String(i).padStart(3, '0')
+    const txid = `post-${id}`
+    const blockHeight = 600000 + i
+    await world.adapters.level.postsDb.put(txid, {
+      addr: 'bitcoincash:qaddr',
+      text: `post ${id}`,
+      seen: i,
+      blockHeight
+    })
+    await world.adapters.level.postHeightsDb.put(
+      String(blockHeight).padStart(12, '0') + ':' + txid,
+      { txid, blockHeight }
+    )
+    await world.adapters.level.addrPostHeightsDb.put(
+      `bitcoincash:qaddr:${String(blockHeight).padStart(12, '0')}:${txid}`,
+      { txid, addr: 'bitcoincash:qaddr', blockHeight }
+    )
   }
 }
 

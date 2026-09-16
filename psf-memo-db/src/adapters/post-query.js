@@ -11,7 +11,7 @@ import { getPostOrNull as getPostOrNullShared } from './lib/get-post-or-null.js'
 import { loadMutedAddrs, isMutedPost } from './lib/muted-posts.js'
 
 const HEIGHT_PAD = 12
-const TOTAL_SCAN_CAP = 10
+const TOTAL_SCAN_CAP = 500
 
 class PostQuery {
   constructor (localConfig = {}) {

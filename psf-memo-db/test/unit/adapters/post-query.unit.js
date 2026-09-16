@@ -162,7 +162,7 @@ describe('#PostQuery', () => {
   })
 
   describe('#scanRecentPostTxidsAndCount', () => {
-    it('should return txids and a capped total count', async () => {
+    it('should report the exact total when the index is smaller than the default cap', async () => {
       async function * mockHeights () {
         for (let i = 20; i >= 0; i--) {
           const id = String(i).padStart(3, '0')
@@ -174,7 +174,24 @@ describe('#PostQuery', () => {
       const result = await uut.scanRecentPostTxidsAndCount({ limit: 3, offset: 0 })
 
       assert.deepEqual(result.txids, ['post-020', 'post-019', 'post-018'])
-      assert.equal(result.total, 10)
+      assert.equal(result.total, 21)
+    })
+
+    it('should default the total scan cap to 500', async () => {
+      let reads = 0
+      async function * mockHeights () {
+        for (let i = 599; i >= 0; i--) {
+          reads++
+          const id = String(i).padStart(3, '0')
+          yield [`000000${600000 + i}:post-${id}`, { txid: `post-${id}` }]
+        }
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+
+      const result = await uut.scanRecentPostTxidsAndCount({ limit: 3, offset: 0 })
+
+      assert.equal(result.total, 500)
+      assert.equal(reads, 503) // offset + limit + default cap
     })
 
     it('should cap the raw postHeights scan to limit + offset + cap', async () => {
