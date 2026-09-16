@@ -43,50 +43,70 @@ export async function correctReference (targetDb, reference) {
   return reference
 }
 
+// Repair one referencing store in place. Every record whose reference can be
+// corrected is rewritten; an optional secondary index rebuilds its entry for
+// each corrected record. Returns the number of records corrected.
+async function repairStore ({ sourceDb, referenceField, targetDb, index }) {
+  let correctedCount = 0
+
+  for await (const [recordTxid, record] of sourceDb.iterator()) {
+    const reference = record[referenceField]
+    if (!reference) continue
+
+    const corrected = await correctReference(targetDb, reference)
+    if (corrected === reference) continue
+
+    await sourceDb.put(recordTxid, { ...record, [referenceField]: corrected })
+
+    if (index) {
+      await index.db.del(index.key(reference, recordTxid))
+      await index.db.put(index.key(corrected, recordTxid), index.value(record, corrected, recordTxid))
+    }
+
+    correctedCount++
+  }
+
+  return correctedCount
+}
+
+// A secondary index keyed as <target txid>:<record txid>; both the postLikes
+// and postChildren indexes use this shape.
+function txidIndex (db, value) {
+  return {
+    db,
+    key: (targetTxid, recordTxid) => `${targetTxid}:${recordTxid}`,
+    value
+  }
+}
+
 // Repair likes, replies, poll options, and poll votes in place. Returns a
 // summary of how many records of each kind were corrected.
 export async function repairTxidEncoding (level) {
-  const summary = { likes: 0, replies: 0, pollOptions: 0, pollVotes: 0 }
+  const likes = await repairStore({
+    sourceDb: level.likesDb,
+    referenceField: 'postTxid',
+    targetDb: level.postsDb,
+    index: txidIndex(level.postLikesDb, (record, postTxid, likeTxid) => ({ postTxid, txid: likeTxid }))
+  })
 
-  for await (const [likeTxid, like] of level.likesDb.iterator()) {
-    if (!like.postTxid) continue
-    const corrected = await correctReference(level.postsDb, like.postTxid)
-    if (corrected === like.postTxid) continue
+  const replies = await repairStore({
+    sourceDb: level.postParentsDb,
+    referenceField: 'parentTxid',
+    targetDb: level.postsDb,
+    index: txidIndex(level.postChildrenDb, (record, parentTxid) => ({ ...record, parentTxid }))
+  })
 
-    await level.likesDb.put(likeTxid, { ...like, postTxid: corrected })
-    await level.postLikesDb.del(`${like.postTxid}:${likeTxid}`)
-    await level.postLikesDb.put(`${corrected}:${likeTxid}`, { postTxid: corrected, txid: likeTxid })
-    summary.likes++
-  }
+  const pollOptions = await repairStore({
+    sourceDb: level.pollOptionsDb,
+    referenceField: 'pollTxid',
+    targetDb: level.pollsDb
+  })
 
-  for await (const [replyTxid, reply] of level.postParentsDb.iterator()) {
-    if (!reply.parentTxid) continue
-    const corrected = await correctReference(level.postsDb, reply.parentTxid)
-    if (corrected === reply.parentTxid) continue
+  const pollVotes = await repairStore({
+    sourceDb: level.pollVotesDb,
+    referenceField: 'pollTxid',
+    targetDb: level.pollsDb
+  })
 
-    await level.postParentsDb.put(replyTxid, { ...reply, parentTxid: corrected })
-    await level.postChildrenDb.del(`${reply.parentTxid}:${replyTxid}`)
-    await level.postChildrenDb.put(`${corrected}:${replyTxid}`, { ...reply, parentTxid: corrected })
-    summary.replies++
-  }
-
-  for await (const [optionTxid, option] of level.pollOptionsDb.iterator()) {
-    if (!option.pollTxid) continue
-    const corrected = await correctReference(level.pollsDb, option.pollTxid)
-    if (corrected === option.pollTxid) continue
-
-    await level.pollOptionsDb.put(optionTxid, { ...option, pollTxid: corrected })
-    summary.pollOptions++
-  }
-
-  for await (const [voteTxid, vote] of level.pollVotesDb.iterator()) {
-    if (!vote.pollTxid) continue
-    const corrected = await correctReference(level.pollsDb, vote.pollTxid)
-    if (corrected === vote.pollTxid) continue
-
-    await level.pollVotesDb.put(voteTxid, { ...vote, pollTxid: corrected })
-    summary.pollVotes++
-  }
-
-  return summary
+  return { likes, replies, pollOptions, pollVotes }
 }

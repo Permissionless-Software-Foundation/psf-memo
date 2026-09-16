@@ -35,9 +35,9 @@ function txidToWireBytes (txid, label = 'Value') {
 
 // Build the raw OP_RETURN payload for a txid-referencing Memo action: the
 // given 32-byte txid in little-endian wire order followed by a UTF-8 encoded
-// value.
-function buildTxidTextPayload (txid, text) {
-  const txidBytes = txidToWireBytes(txid, 'Poll txid')
+// value. The label customizes the invalid-txid error message.
+function buildTxidTextPayload (txid, text, label = 'Poll txid') {
+  const txidBytes = txidToWireBytes(txid, label)
   const textBytes = new TextEncoder().encode(text)
   const raw = new Uint8Array(txidBytes.length + textBytes.length)
   raw.set(txidBytes, 0)

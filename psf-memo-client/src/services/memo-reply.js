@@ -18,7 +18,7 @@
 
 const MemoAction = require('./memo-action')
 const { byteLength } = require('./utf8')
-const { txidToWireBytes } = require('./hex')
+const { buildTxidTextPayload } = require('./hex')
 
 const MEMO_REPLY_PREFIX = '6d03'
 const MAX_REPLY_BYTES = 184
@@ -57,7 +57,7 @@ class MemoReply extends MemoAction {
     await this.wallet.getUtxos()
 
     // Build the raw payload: parent txid bytes followed by UTF-8 message bytes.
-    const raw = buildReplyPayload(parentTxid, message)
+    const raw = buildTxidTextPayload(parentTxid, message, 'Parent txid')
     const txid = await this.wallet.sendOpReturn(raw, this.prefix)
 
     // Reflect the result on the injected thread once broadcast succeeds.
@@ -77,17 +77,6 @@ class MemoReply extends MemoAction {
       })
     }
   }
-}
-
-// Build the raw OP_RETURN message payload for a reply.
-// The protocol wire format is: <parent txid 32 bytes><reply text UTF-8 bytes>.
-function buildReplyPayload (parentTxid, message) {
-  const parentBytes = txidToWireBytes(parentTxid, 'Parent txid')
-  const textBytes = new TextEncoder().encode(message)
-  const raw = new Uint8Array(parentBytes.length + textBytes.length)
-  raw.set(parentBytes, 0)
-  raw.set(textBytes, parentBytes.length)
-  return raw
 }
 
 MemoReply.MEMO_REPLY_PREFIX = MEMO_REPLY_PREFIX
