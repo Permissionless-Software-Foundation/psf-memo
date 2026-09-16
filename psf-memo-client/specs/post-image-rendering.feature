@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-16T14:30:45.236912355Z","feature_name":"Post Image Rendering","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/post-image-rendering.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Post Image Rendering - 1 an image URL renders an inline image inside a link","scenario_hash":"7b43dc07b8d3d0c06df1c7afa5d1497a1e555364ae0c27eb3539deff1284b005","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-09-16T14:30:45.236912355Z"},{"index":2,"name":"Post Image Rendering - 3 an image that fails to load falls back to a plain link","scenario_hash":"6fde4a40ced467661bde1c978957b34d93f9ec6162c4276d6ee942d7747af7ba","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-09-16T14:30:45.236912355Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Post Image Rendering - 1, Post Image Rendering - 2, Post Image Rendering - 3
 #
 # When a post contains a URL whose path ends in a common image file extension

@@ -122,5 +122,5 @@ function PostContent ({ text = '', initialFailedImages }) {
 module.exports = PostContent
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-16T02:29:59.905Z","module_hash":"bbc07a4d5e0d9bdf95e1d9014603fbe4ad38611469d51e006b082d32b5bd03c6","functions":[{"id":"func/PostContent","name":"PostContent","line":16,"end_line":63,"hash":"d2202910528f0974b6eaa1892d770e1a46a11e02b5b953c1a8490be59f349895"}]}
+// {"version":1,"tested_at":"2026-09-16T14:26:42.561Z","module_hash":"1d42bd3e5405ed39e16d308688f75b48430484dcd5096bae9de0e702fd058568","functions":[{"id":"func/PostImage","name":"PostImage","line":22,"end_line":51,"hash":"a7bd61e03c785b7ed6ae1ef0ea15e3d025448f5772b60234f08acd4fd4160a2d"},{"id":"func/PostContent","name":"PostContent","line":53,"end_line":120,"hash":"9af7f0009bd6d71655a47b09a3676f558acdf14a2ceb672765370a82aaf0a150"}]}
 // mutate4javascript-manifest-end

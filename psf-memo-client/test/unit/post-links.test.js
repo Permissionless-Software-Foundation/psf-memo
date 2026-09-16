@@ -157,6 +157,13 @@ test('isImageUrl rejects URLs that are not images', () => {
   assert.equal(isImageUrl('not a url'), false)
 })
 
+test('isImageUrl rejects non-string input', () => {
+  assert.equal(isImageUrl(null), false)
+  assert.equal(isImageUrl(undefined), false)
+  assert.equal(isImageUrl(12345), false)
+  assert.equal(isImageUrl({}), false)
+})
+
 test('imageAltText returns the URL filename', () => {
   assert.equal(imageAltText('https://i.imgur.com/swCI56T.jpeg'), 'swCI56T.jpeg')
   assert.equal(imageAltText('https://cdn.example.com/pics/Sunset.PNG'), 'Sunset.PNG')
