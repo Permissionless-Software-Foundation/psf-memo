@@ -110,3 +110,7 @@ export async function repairTxidEncoding (level) {
 
   return { likes, replies, pollOptions, pollVotes }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-16T22:08:39.973Z","module_hash":"503f8556da96560869090037a52d4e6f25755c56115514d69000bb766c3a34b1","functions":[{"id":"func/reverseTxid","name":"reverseTxid","line":20,"end_line":23,"hash":"34ca3f58033b0a4e34f613eca6dbb92874930d818b4258dd1fc3983dc60f5c59"},{"id":"func/hasRecord","name":"hasRecord","line":26,"end_line":34,"hash":"06580e61d91df680470d1702724aa084dad7f830a3d4be251d4bed430c893008"},{"id":"func/correctReference","name":"correctReference","line":39,"end_line":44,"hash":"d21e349238201c186d0c1216290e1c3bc4c357e42cd1bbe12273ae691f33ff32"},{"id":"func/repairStore","name":"repairStore","line":49,"end_line":70,"hash":"4a03f168d7c9ee3bbcd2dced4cca2903ef27b3d1b5616e77ff8b92302e275ab8"},{"id":"func/txidIndex","name":"txidIndex","line":74,"end_line":80,"hash":"2193de97502a9d50cef2cd9077a29a2bd141562b4a52b6f2b234c16f42e98606"},{"id":"func/repairTxidEncoding","name":"repairTxidEncoding","line":84,"end_line":112,"hash":"b1a18916b2681e83b59b1b14e1727a46d6780f47b8efdcd5b7726d2452a89467"}]}
+// mutate4javascript-manifest-end

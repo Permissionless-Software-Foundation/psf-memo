@@ -15,58 +15,13 @@ import {
   correctReference,
   repairTxidEncoding
 } from '../../../src/lib/repair-txid-encoding.js'
+import { makeLevel } from '../../support/level-double.js'
 
 const DISPLAY_POST = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 const REVERSED_POST = 'efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301'
 const DISPLAY_POLL = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
 const REVERSED_POLL = 'ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100'
 const UNKNOWN = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
-
-class FakeDb {
-  constructor () {
-    this.map = new Map()
-  }
-
-  async get (key) {
-    if (!this.map.has(key)) {
-      const err = new Error(`not found: ${key}`)
-      err.notFound = true
-      throw err
-    }
-    return this.map.get(key)
-  }
-
-  async put (key, value) {
-    this.map.set(key, value)
-  }
-
-  async del (key) {
-    this.map.delete(key)
-  }
-
-  async * iterator () {
-    for (const [key, value] of this.map) {
-      yield [key, value]
-    }
-  }
-
-  keys () {
-    return [...this.map.keys()].sort()
-  }
-}
-
-function makeLevel () {
-  return {
-    postsDb: new FakeDb(),
-    likesDb: new FakeDb(),
-    postLikesDb: new FakeDb(),
-    postParentsDb: new FakeDb(),
-    postChildrenDb: new FakeDb(),
-    pollsDb: new FakeDb(),
-    pollOptionsDb: new FakeDb(),
-    pollVotesDb: new FakeDb()
-  }
-}
 
 function loadReversedFixture (level) {
   level.postsDb.put(DISPLAY_POST, { addr: 'addr-a', text: 'post', blockHeight: 1 })

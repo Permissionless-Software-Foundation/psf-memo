@@ -44,6 +44,18 @@ test('reply broadcasts the parent txid in little-endian wire order', async () =>
   assert.equal(buf.slice(32).toString('utf8'), 'hello memo')
 })
 
+test('isTooLong accepts a message exactly at the byte limit', () => {
+  const memoReply = new MemoReply()
+
+  assert.equal(memoReply.isTooLong('a'.repeat(MemoReply.MAX_REPLY_BYTES)), false)
+})
+
+test('isTooLong rejects a message over the byte limit', () => {
+  const memoReply = new MemoReply()
+
+  assert.equal(memoReply.isTooLong('a'.repeat(MemoReply.MAX_REPLY_BYTES + 1)), true)
+})
+
 test('reply reflects the parent txid in display order on the thread store', async () => {
   const wallet = makeWallet()
   const added = []

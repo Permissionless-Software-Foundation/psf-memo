@@ -175,3 +175,60 @@ test('_buildTipOutput omits the output for a zero tip', () => {
 
   assert.deepEqual(memoLike._buildTipOutput(0, MY_ADDRESS), [])
 })
+
+test('validate reports ok for a valid post txid', () => {
+  const memoLike = new MemoLike()
+
+  assert.deepEqual(memoLike.validate(POST_TXID), { ok: true })
+})
+
+test('validateTip reports ok when the tip exactly matches the spendable balance', () => {
+  const memoLike = new MemoLike()
+
+  assert.deepEqual(memoLike.validateTip(3000, 3000), { ok: true })
+})
+
+test('_validateTipAmount accepts a tip exactly at the maximum', () => {
+  const memoLike = new MemoLike()
+
+  assert.equal(memoLike._validateTipAmount(MemoLike.MAX_TIP_SATS), undefined)
+})
+
+test('getSpendableSats treats a utxo without a value field as zero', () => {
+  const wallet = { utxos: [{ satoshis: 1000 }, { txid: 'no-value' }] }
+  const memoLike = new MemoLike({ wallet })
+
+  assert.equal(memoLike.getSpendableSats(), 1000)
+})
+
+test('_requireTipAddress requires an address for a positive tip', () => {
+  const memoLike = new MemoLike()
+
+  assert.throws(
+    () => memoLike._requireTipAddress(1, ''),
+    (err) => err.code === 'like_validation'
+  )
+})
+
+test('_requireTipAddress accepts a one-character address', () => {
+  const memoLike = new MemoLike()
+
+  assert.equal(memoLike._requireTipAddress(1000, 'a'), undefined)
+})
+
+test('_buildTipOutput builds the output for a positive tip', () => {
+  const memoLike = new MemoLike()
+
+  assert.deepEqual(memoLike._buildTipOutput(1, MY_ADDRESS), [
+    { address: MY_ADDRESS, amountSat: 1 }
+  ])
+})
+
+test('_incrementPostCount defaults a missing likeCount to zero', () => {
+  const feed = { posts: [{ txid: POST_TXID }] }
+  const memoLike = new MemoLike({ feed })
+
+  memoLike._incrementPostCount(POST_TXID)
+
+  assert.equal(feed.posts[0].likeCount, 1)
+})
