@@ -20,11 +20,13 @@ the last run. If you add tests to kill survivors but the SOURCE is unchanged, a
 plain re-run reports `Killed: 0, Survived: 0, Uncovered: 0` and silently skips
 the survivors.
 
-**Always pass `--mutate-all` when re-running mutation on a file that already has
-a manifest** (especially right after adding hardening tests). New files (no
-manifest) run fully on the first pass.
-
-Canonical invocation (run from the component dir so `npm test` works):
+Prefer `swarmforge/scripts/mutate-file.sh`, which detects differential
+under-selection automatically (`Selected < Covered`) and reruns once with
+`--mutate-all`. Run it from the component directory:
+```bash
+../swarmforge/scripts/mutate-file.sh src/<file>.js --max-workers 8
+```
+Manual fallback when you must run the binary directly:
 ```bash
 node ../psf-memo-client/node_modules/mutate4javascript/bin/mutate4javascript.js \
   src/<file>.js --max-workers 8 --mutate-all
@@ -44,6 +46,14 @@ bb gherkin-mutator \
 Parse survivors with a small python one-liner over `d['results']` (filter
 `Status == 'survived'`).
 
+### Equivalent upper-bound survivors (no project filter hook)
+APS `gherkin-mutator` exposes no project-specific mutation-filter hook, so
+upper-bound steps such as `the store was read at most <max_entries> entries`
+leave survivors when the bound is mutated upward (a larger bound can never
+fail). Treat these as intrinsic equivalents, document them in the review
+summary, and do not chase them. Prefer exact counts or independently-tied
+fixture values when a bound must itself be mutatable.
+
 ## Long runs
 - Mutation and gherkin-mutator runs take 60-180s each. Use `--max-workers 8` /
   `--workers 8` and `--status-interval` so progress is visible.
@@ -56,8 +66,7 @@ Stale `tmp/acceptance` (LevelDB dirs) and `target/mutation-workers` can bloat to
 hang. `architect-startup.sh` now flags any of these over 100MB as `[FAIL]`.
 Clean them before any mutation run:
 ```bash
-rm -rf psf-memo-db/tmp/acceptance psf-memo-db/target/mutation-workers \
-       psf-memo-client/tmp/acceptance psf-memo-client/target/mutation-workers
+swarmforge/scripts/clean-builds.sh
 ```
 This cut a notifications-query mutation run from 20+ minutes to ~2 minutes.
 
