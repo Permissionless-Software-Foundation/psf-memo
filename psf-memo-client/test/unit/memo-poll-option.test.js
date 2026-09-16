@@ -13,7 +13,8 @@ const assert = require('node:assert/strict')
 const MemoPollOption = require('../../src/services/memo-poll-option')
 
 const MY_ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
-const POLL_TXID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+// A non-palindromic txid so a missing byte reversal is observable.
+const POLL_TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 
 function makeWallet (address = MY_ADDRESS) {
   return {

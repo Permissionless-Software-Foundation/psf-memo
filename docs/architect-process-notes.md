@@ -109,9 +109,26 @@ distinct from per-task verification results, which live in
 
 - **Capture the `gherkin-mutator` report with `--json` redirected to a file.**
   The text report (`write-text-report!`, which uses `print`) did not appear in
-  the captured output before the tool's `System/exit`; the JSON report
+the captured output before the tool's `System/exit`; the JSON report
   (`--json`) did. Redirect stdout to a file and use `--json` for a reliable,
   parseable record of killed/survived mutations.
+
+- **`gherkin-mutator` can run from `tmp/aps` with absolute component paths.**
+  The Babashka task must run where `bb.edn` defines it (`tmp/aps`), but the
+  runner worker resolves the job's `feature_json`/`work_dir`/`generated_dir`
+  paths as given. Run `cd tmp/aps && bb gherkin-mutator --feature
+  <abs>/<component>/specs/x.feature --work-dir <abs>/<component>/build/acceptance-mutation
+  --runner-worker "node <abs>/<component>/acceptance/lib/runner-worker.js"
+  --level soft --workers 8 --status-interval 15s --json > report.json`. The
+  runner command is split on whitespace, so it must be a bare `node <path>`
+  with no spaces in the path. The tool writes its manifest (and, when clean, a
+  `# mutation-stamp`) into the feature file; commit that tool-written change.
+
+- **`mutate-file.sh` works from every component dir, including the DB.** It
+  defaults `MUTATE4JS_BIN` to the client's installed
+  `node_modules/mutate4javascript`, and the tool's `npm test` baseline runs in
+  the current component, so the DB mutation runs use the DB suite without a
+  second tool install.
 
 ## Workflow observations
 
@@ -142,3 +159,11 @@ distinct from per-task verification results, which live in
 
 - **Run per-component verification for every component a task touches** before
   handing off (client, db, indexer), per the monorepo rules.
+
+- **`verify.sh` records one component per invocation, so multi-component tasks
+  need multiple records.** A task touching the client and the DB cannot use a
+  single `<task>-verification.json`. The first recent two-component task
+  (`txid-wire-encoding`) used the canonical `<task>-verification.json` for the
+  primary component and `<task>-db-verification.json` for the second; both
+  carry the same review `git_sha`. State the mapping explicitly in the review
+  summary, since the specifier's brief names only the canonical file.

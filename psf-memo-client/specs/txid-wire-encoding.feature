@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-16T22:22:12.675245296Z","feature_name":"Txid wire encoding","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/txid-wire-encoding.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Txid wire encoding - 1 a like broadcasts the post txid in little-endian wire order","scenario_hash":"42f1932ce013d74c217b8becad4e7f496e84e5236a2728dcc2418b57d67bd6e6","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-09-16T22:22:12.675245296Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Txid wire encoding - 1, Txid wire encoding - 2, Txid wire encoding - 3, Txid wire encoding - 4
 #
 # Memo actions that reference a parent transaction embed that txid as 32 raw

@@ -67,12 +67,11 @@ test('buildTxidTextPayload round-trips the canonical Memo wire format', async ()
     ({ txid, text }) => {
       const bytes = buildTxidTextPayload(txid, text)
       if (bytes.length !== 32 + byteLength(text)) return false
-      // The payload carries the txid's literal 32 bytes in order, followed by
-      // the UTF-8 bytes of the value.
-      const expectedTxidBytes = hexToBytes(txid, 32, 'Poll txid')
-      for (let i = 0; i < 32; i++) {
-        if (bytes[i] !== expectedTxidBytes[i]) return false
-      }
+      // The payload carries the txid in little-endian wire order, followed by
+      // the UTF-8 bytes of the value. Reversing the wire bytes must recover
+      // the 64-character display txid.
+      const wire = Buffer.from(bytes.slice(0, 32))
+      if (wire.reverse().toString('hex') !== txid) return false
       const storedText = Buffer.from(bytes.slice(32)).toString('utf8')
       return storedText === text
     },
