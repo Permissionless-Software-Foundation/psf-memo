@@ -16,6 +16,7 @@ import {
   truncateTxid
 } from './post-display'
 import PostContent from './post-content'
+import PostOptionsMenu from './post-options-menu'
 import './post-feed.css'
 
 const appUtil = new AppUtil()
@@ -131,14 +132,7 @@ function PostFeedItem ({
           </span>
         </div>
 
-        <button
-          type='button'
-          className='posts-feed-item-menu'
-          aria-label='Post options'
-          title='Post options'
-        >
-          <span aria-hidden='true'>•••</span>
-        </button>
+        <PostOptionsMenu txid={post.txid} />
       </header>
 
       <div className='posts-feed-item-content'>

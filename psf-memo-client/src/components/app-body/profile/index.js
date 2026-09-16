@@ -14,6 +14,7 @@ import ProfilePage from '../../../services/profile-page'
 import { getViewerAddress } from '../../../services/profile-wallet'
 import PostReplyCount from '../../post-reply-count'
 import LikeButton from '../../post-feed/like-button'
+import PostOptionsMenu from '../../post-feed/post-options-menu'
 import PostThreadModal from '../../post-thread-modal'
 import '../../../App.css'
 import './profile.css'
@@ -248,9 +249,12 @@ function Profile (props) {
             {posts.map((post) => (
               <Card key={post.txid} className='profile-post-card mb-3'>
                 <Card.Body>
-                  <div className='profile-post-meta text-muted mb-2'>
-                    <span>{formatSeen(post.seen)}</span>
-                    <span className='profile-post-block ms-2'>Block {post.blockHeight}</span>
+                  <div className='profile-post-meta d-flex justify-content-between align-items-start text-muted mb-2'>
+                    <div>
+                      <span>{formatSeen(post.seen)}</span>
+                      <span className='profile-post-block ms-2'>Block {post.blockHeight}</span>
+                    </div>
+                    <PostOptionsMenu txid={post.txid} />
                   </div>
                   <Card.Text className='profile-post-text'>{post.text}</Card.Text>
                   <div className='profile-post-actions d-flex gap-3 align-items-center'>
