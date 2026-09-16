@@ -152,6 +152,13 @@ async function createWorld () {
       } catch (err) {
         // ignore close errors
       }
+      // Each scenario opens an isolated LevelDB directory. Remove it here so
+      // tmp/acceptance cannot grow without bound across runs.
+      try {
+        fs.rmSync(levelDir, { recursive: true, force: true })
+      } catch (err) {
+        // ignore cleanup errors
+      }
     }
   }
 }

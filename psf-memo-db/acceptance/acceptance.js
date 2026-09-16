@@ -33,7 +33,19 @@ function ensureAps () {
     'https://github.com/unclebob/Acceptance-Pipeline-Specification.git', apsDir])
 }
 
+// Each scenario opens an isolated LevelDB directory under tmp/acceptance.
+// Remove leftovers from earlier runs (including pre-fix runs that leaked them)
+// so the directory cannot grow without bound.
+function cleanStaleWorlds () {
+  try {
+    fs.rmSync(path.join(root, 'tmp', 'acceptance'), { recursive: true, force: true })
+  } catch (err) {
+    // ignore cleanup errors
+  }
+}
+
 function main () {
+  cleanStaleWorlds()
   ensureAps()
 
   const features = fs
