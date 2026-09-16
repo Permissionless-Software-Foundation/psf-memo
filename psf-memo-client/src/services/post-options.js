@@ -69,6 +69,25 @@ function handlePostOptionsOutsideClick (state) {
   return closePostOptions(state)
 }
 
+// Resolve a key press to the menu's next state. Returns null for keys that are
+// not menu shortcuts. ArrowDown reveals the menu and focuses its first item;
+// Escape closes it. preventDefault is true for keys that would otherwise scroll
+// the page.
+function postOptionsKeyCommand (key, items = []) {
+  if (key === 'Escape') {
+    return { transition: handlePostOptionsEscape, preventDefault: false }
+  }
+
+  if (key === 'ArrowDown') {
+    return {
+      transition: (state) => focusFirstPostOption(state, items),
+      preventDefault: true
+    }
+  }
+
+  return null
+}
+
 module.exports = {
   BLOCK_EXPLORER_LABEL,
   BLOCK_EXPLORER_TX_BASE,
@@ -80,5 +99,6 @@ module.exports = {
   togglePostOptions,
   focusFirstPostOption,
   handlePostOptionsEscape,
-  handlePostOptionsOutsideClick
+  handlePostOptionsOutsideClick,
+  postOptionsKeyCommand
 }

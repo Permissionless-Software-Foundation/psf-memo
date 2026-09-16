@@ -101,6 +101,45 @@ test('focusing the first item is a no-op with no items', () => {
   assert.equal(focused.focusedIndex, -1)
 })
 
+test('the Escape key command closes the menu without preventing default', () => {
+  const command = PostOptions.postOptionsKeyCommand(
+    'Escape',
+    PostOptions.postOptionsItems(TXID)
+  )
+
+  assert.equal(command.preventDefault, false)
+  const next = command.transition(
+    PostOptions.openPostOptions(PostOptions.initialPostOptionsState())
+  )
+  assert.equal(next.open, false)
+  assert.equal(next.focusedIndex, -1)
+})
+
+test('the ArrowDown key command focuses the first item and prevents default', () => {
+  const command = PostOptions.postOptionsKeyCommand(
+    'ArrowDown',
+    PostOptions.postOptionsItems(TXID)
+  )
+
+  assert.equal(command.preventDefault, true)
+  const next = command.transition(PostOptions.initialPostOptionsState())
+  assert.equal(next.open, true)
+  assert.equal(next.focusedIndex, 0)
+})
+
+test('the ArrowDown key command keeps the menu closed when there are no items', () => {
+  const command = PostOptions.postOptionsKeyCommand('ArrowDown', [])
+  const next = command.transition(PostOptions.initialPostOptionsState())
+
+  assert.equal(next.open, false)
+  assert.equal(next.focusedIndex, -1)
+})
+
+test('other keys have no menu command', () => {
+  assert.equal(PostOptions.postOptionsKeyCommand('Enter', PostOptions.postOptionsItems(TXID)), null)
+  assert.equal(PostOptions.postOptionsKeyCommand('Tab', []), null)
+})
+
 test('the closed menu renders the post options button but no items', () => {
   const html = renderMenu()
 

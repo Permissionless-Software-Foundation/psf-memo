@@ -16,9 +16,8 @@ const React = require('react')
 const {
   postOptionsItems,
   togglePostOptions,
-  focusFirstPostOption,
-  handlePostOptionsEscape,
-  handlePostOptionsOutsideClick
+  handlePostOptionsOutsideClick,
+  postOptionsKeyCommand
 } = require('../../services/post-options')
 
 function PostOptionsMenu ({
@@ -48,15 +47,11 @@ function PostOptionsMenu ({
   }, [state.open])
 
   const handleKeyDown = (event) => {
-    if (event.key === 'Escape') {
-      setState((previous) => handlePostOptionsEscape(previous))
-      return
-    }
+    const command = postOptionsKeyCommand(event.key, items)
+    if (!command) return
 
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setState((previous) => focusFirstPostOption(previous, items))
-    }
+    if (command.preventDefault) event.preventDefault()
+    setState((previous) => command.transition(previous))
   }
 
   return React.createElement(

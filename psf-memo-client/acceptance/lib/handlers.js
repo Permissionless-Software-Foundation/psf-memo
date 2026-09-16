@@ -3298,20 +3298,14 @@ const handlers = [
     name: 'click post options button',
     pattern: /^I click the post options button for the post with txid (.+)$/,
     run (m, example, world) {
-      const txid = resolveParam(m[1], example)
-      const menu = getPostOptionsMenu(world, txid)
-      Object.assign(menu, PostOptions.togglePostOptions(menu))
-      world.activeMenuTxid = txid
+      togglePostOptionsMenu(world, resolveParam(m[1], example))
     }
   },
   {
     name: 'click post options button again',
     pattern: /^I click the post options button again for the post with txid (.+)$/,
     run (m, example, world) {
-      const txid = resolveParam(m[1], example)
-      const menu = getPostOptionsMenu(world, txid)
-      Object.assign(menu, PostOptions.togglePostOptions(menu))
-      world.activeMenuTxid = txid
+      togglePostOptionsMenu(world, resolveParam(m[1], example))
     }
   },
   {
@@ -3362,16 +3356,14 @@ const handlers = [
     name: 'click outside post options menu',
     pattern: /^I click outside the post options menu$/,
     run (m, example, world) {
-      const menu = getPostOptionsMenu(world, world.activeMenuTxid)
-      Object.assign(menu, PostOptions.handlePostOptionsOutsideClick(menu))
+      transitionActivePostOptionsMenu(world, PostOptions.handlePostOptionsOutsideClick)
     }
   },
   {
     name: 'press Escape key',
     pattern: /^I press the Escape key$/,
     run (m, example, world) {
-      const menu = getPostOptionsMenu(world, world.activeMenuTxid)
-      Object.assign(menu, PostOptions.handlePostOptionsEscape(menu))
+      transitionActivePostOptionsMenu(world, PostOptions.handlePostOptionsEscape)
     }
   },
   {
@@ -3379,9 +3371,7 @@ const handlers = [
     pattern: /^I press the ArrowDown key$/,
     run (m, example, world) {
       const txid = world.activeMenuTxid
-      const menu = getPostOptionsMenu(world, txid)
-      Object.assign(
-        menu,
+      transitionActivePostOptionsMenu(world, (menu) =>
         PostOptions.focusFirstPostOption(menu, PostOptions.postOptionsItems(txid))
       )
     }
@@ -3410,6 +3400,19 @@ function getPostOptionsMenu (world, txid) {
     world.postOptionsMenus[txid] = { txid, ...PostOptions.initialPostOptionsState() }
   }
   return world.postOptionsMenus[txid]
+}
+
+// Apply a post options state transition to the active menu.
+function transitionActivePostOptionsMenu (world, transition) {
+  const menu = getPostOptionsMenu(world, world.activeMenuTxid)
+  Object.assign(menu, transition(menu))
+}
+
+// Toggle a post's options menu and make it the active menu.
+function togglePostOptionsMenu (world, txid) {
+  const menu = getPostOptionsMenu(world, txid)
+  Object.assign(menu, PostOptions.togglePostOptions(menu))
+  world.activeMenuTxid = txid
 }
 
 // The posts currently rendered by the page the scenario has opened.
