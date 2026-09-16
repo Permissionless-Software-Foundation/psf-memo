@@ -37,12 +37,22 @@ function relativeRequire (fromDir, targetFile) {
   return rel
 }
 
+function hashFile (file) {
+  try {
+    return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+  } catch (err) {
+    return null
+  }
+}
+
 function main () {
   const irArg = process.argv[2]
   const outArg = process.argv[3]
+  const featureArg = process.argv[4]
+  const apsCommit = process.argv[5]
 
   if (!irArg || !outArg) {
-    console.error('usage: acceptance-entrypoint-generator <json-ir> <generated-test-output-dir>')
+    console.error('usage: acceptance-entrypoint-generator <json-ir> <generated-test-output-dir> [feature-file] [aps-commit]')
     process.exit(2)
   }
 
@@ -99,7 +109,9 @@ main().catch((err) => { console.error(err); process.exit(1) })
     ir_path: path.resolve(irArg),
     implementation_hash: `sha256:${hash}`,
     hash_scope: 'generated_files',
-    generated_files: [testFile]
+    generated_files: [testFile],
+    feature_hash: featureArg ? hashFile(featureArg) : null,
+    aps_commit: apsCommit || null
   }
   fs.writeFileSync(
     path.join(metaDir, metadataName(featureKey)),
