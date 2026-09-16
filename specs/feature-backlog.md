@@ -31,6 +31,28 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Txid wire encoding repair (2026-09-16):** fixed the endianness bug that
+  broke every like, reply, poll option, and poll vote broadcast by
+  psf-memo-client. The client embedded the referenced txid in big-endian
+  display order while the indexer expected little-endian wire order
+  (`txHashFromPush` reverses it), so the indexer stored a byte-reversed
+  reference that never matched the post/poll: like counts read 0, replies
+  vanished from threads, and poll options/votes detached. `hex.js` now owns
+  `txidToWireBytes`; `buildTxidTextPayload` reverses the txid, and the
+  reply-only `buildReplyPayload` was replaced by that shared helper. Added
+  `psf-memo-db/src/lib/repair-txid-encoding.js`
+  (`correctReference`/`repairTxidEncoding`) and the
+  `psf-memo-db/util/txid/repair-txid-encoding.js` CLI to rewrite existing
+  reversed references in `likes`/`postLikes`, `postParents`/`postChildren`,
+  `pollOptions`, and `pollVotes`, using `posts`/`polls` existence to keep the
+  correct orientation, leave unknown targets alone, and stay idempotent. The
+  20-byte hash160 follow/mute path is unchanged. Client + DB. Specs:
+  `psf-memo-client/specs/txid-wire-encoding.feature` and
+  `psf-memo-db/specs/repair-txid-encoding.feature`. Merged to `master` at
+  `8f24ac0` (review commit `a2229f7`; records
+  `docs/reviews/txid-wire-encoding-verification.json` and
+  `docs/reviews/txid-wire-encoding-db-verification.json`).
+
 - **Like broadcast result modal (2026-09-16):** after a successful like (with
   or without a tip), the like/tip modal no longer auto-closes. It now shows a
   broadcast success message, the like transaction id, and a block-explorer link

@@ -459,6 +459,41 @@ that a single user-facing feature may require specs in more than one component.
     injection (Scenario 3 has no txid-validity/broadcast assertion). Treat these
     as the gotcha #12 class, not implementation gaps.
 
+32. **Memo txid wire order is little-endian (the endianness bug class).** Any
+    client action that embeds a referenced transaction id (like `0x6d04`,
+    reply `0x6d03`, poll option `0x6d13`, poll vote `0x6d14`) must write the
+    32 bytes in little-endian wire order — the byte-reverse of the 64-char
+    display txid. `psf-memo-client/src/services/hex.js` owns this in
+    `txidToWireBytes`, and the indexer's `txHashFromPush`
+    (`psf-memo-indexer/src/use-cases/action-types/helpers.js`) reverses it
+    back. A big-endian payload is silently stored under a byte-reversed
+    reference key and never matches the post/poll, so like counts read 0,
+    replies vanish from threads, and poll options/votes detach. Do NOT reverse
+    the 20-byte hash160 follow/mute path (`memo-state-action.js`); only
+    32-byte txids are endian-swapped. Existing bad records are repaired by
+    `psf-memo-db/util/txid/repair-txid-encoding.js` (logic in
+    `psf-memo-db/src/lib/repair-txid-encoding.js`), which uses `posts`/`polls`
+    existence to keep the correct orientation and only rewrites reversed
+    references.
+
+33. **Two-component tasks produce two verification records.** When a task
+    touches the client and the DB (or indexer), the canonical client record is
+    `docs/reviews/<task>-verification.json` and the second component uses
+    `docs/reviews/<task>-db-verification.json` (or `-indexer-`). Both carry the
+    same review `git_sha`. Check both after merging, and run each merged
+    feature's acceptance suite as the independent check.
+
+34. **Soft Gherkin mutation survivors from weak text assertions.** For
+    `txid-wire-encoding.feature` the survivors were single-character case
+    mutations of carried text (`message`/`option`/`comment`) that no scenario
+    asserts (the scenarios assert the Memo prefix and the referenced txid).
+    For `repair-txid-encoding.feature` the survivors were mutations of
+    `reversedPostTxid` in the negative "contains 0 entry whose key starts
+    with ..." assertions: the key is absent by construction, so any mutated
+    value still yields 0. Both are intrinsic equivalents (gotcha #12 class),
+    not implementation gaps; the wire-order and positive-repair mutations were
+    killed (14 executed/8 killed and 21/18).
+
 ---
 
 ## 10. Run / verify the app
@@ -509,11 +544,15 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `f92f596bdd` (`like-result-modal` merged from
-`swarmforge-architect`; verification record
-`docs/reviews/like-result-modal-verification.json` names `e071881ea0`, the last
-code-changing review commit — the review tip `bf7edd5` and the merge add only
-`docs/` after it). Run `swarmforge/scripts/state.sh` to refresh these HEAD lines.
+Current `master` HEAD: `8f24ac0` (`txid-wire-encoding` merged from
+`swarmforge-architect`). Two verification records name the review commit
+`a2229f7dd4`: `docs/reviews/txid-wire-encoding-verification.json` (client,
+417 unit / 80 property / 30 acceptance suites / lint / build) and
+`docs/reviews/txid-wire-encoding-db-verification.json` (db, 371 unit / 54
+property / 13 acceptance suites / lint); the architect tip added only `docs/`.
+This task fixed the client big-endian txid bug for likes/replies/polls and
+added the DB repair utility. Run `swarmforge/scripts/state.sh` to refresh these
+HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
 performance, responsiveness, state handling, error surfacing). See
