@@ -165,6 +165,16 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ---
 
+## Process & tooling improvements
+
+- **2026-09-16 process-efficiency pass:** architect always notifies the specifier;
+  acceptance LevelDB temp dirs are cleaned up; the handoff daemon self-heals;
+  APS is single-sourced at `tmp/aps`; acceptance generation is incremental;
+  `verify.sh` emits machine-readable verification records; `mutate-file.sh`
+  guards differential under-selection; `clean-builds.sh` keeps worker copies
+  small; handoffs are blocked on a dirty tree. See `docs/process-improvements.md`
+  for the what/why, commits, and verification evidence.
+
 ## Next up: TBD
 
 Current direction is front-end improvements to `psf-memo-client` (UI/UX polish,
