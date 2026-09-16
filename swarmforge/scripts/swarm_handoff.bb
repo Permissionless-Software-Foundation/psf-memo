@@ -302,6 +302,20 @@
     (fs/move tmp-file outbox-file)
     outbox-file))
 
+(defn dirty-files []
+  (->> (:out (command "." "git" "status" "--porcelain"))
+       str/split-lines
+       (remove str/blank?)))
+
+(defn guard-clean-tree! []
+  (let [dirty (dirty-files)]
+    (when (and (seq dirty) (not (System/getenv "SWARMFORGE_ALLOW_DIRTY")))
+      (binding [*out* *err*]
+        (println "HANDOFF BLOCKED: working tree has uncommitted changes.")
+        (doseq [line dirty] (println "  " line))
+        (println "Commit or stash them, or set SWARMFORGE_ALLOW_DIRTY=1 to send anyway."))
+      (System/exit 3))))
+
 (defn error-report [draft errors]
   (binding [*out* *err*]
     (println "HANDOFF INVALID:" (str draft))
@@ -328,6 +342,7 @@
         (when (seq all-errors)
           (error-report draft all-errors)
           (System/exit 2))
+        (guard-clean-tree!)
         (let [outbox-file (write-handoff! {:headers headers
                                            :recipients (:recipients validation)
                                            :canonical-commit (:canonical-commit validation)

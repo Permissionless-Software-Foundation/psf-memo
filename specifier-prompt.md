@@ -459,13 +459,14 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `c8ceb82` (merged architect's thread-query-bounds job —
-`GET /posts/:txid/thread` now counts likes only for the thread's txids via
-`countLikesForTxids` and prefix-scans `postChildren` per parent through a new
-`PostQuery.listChildTxids` seam, so its work is proportional to the thread
-rather than the database. Spec:
-`psf-memo-db/specs/thread-query-performance.feature`. Verified psf-memo-db unit
-(357) + property (44) + acceptance (all 11 suites) + lint all passing).
+Current `master` HEAD: `a5f8967` (thread-query-bounds merged at `c8ceb82`, then
+a process-improvement pass on this branch: the architect now always notifies
+the specifier; acceptance LevelDB temp dirs are cleaned up; the handoff daemon
+is self-healing; APS is single-sourced at `tmp/aps`; acceptance generation is
+incremental; `verify.sh` emits a machine-readable verification record;
+`mutate-file.sh` guards differential under-selection; and `clean-builds.sh`
+keeps mutation worker copies small. Run `swarmforge/scripts/state.sh` to refresh
+these HEAD lines.)
 Next action: **TBD** — current direction is front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing). See `specs/feature-backlog.md`.
