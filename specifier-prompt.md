@@ -441,6 +441,24 @@ that a single user-facing feature may require specs in more than one component.
     common options-menu component. Spec:
     `psf-memo-client/specs/post-options-menu.feature`.
 
+30. **Block-explorer URLs are single-sourced at
+    `src/services/block-explorer.js`.** The New Post result modal, the post
+    options menu, and the like result modal all build their explorer links from
+    the shared helper (`https://bch.loping.net/tx/<txid>`). The old
+    `EXPLORER_TX_BASE`/`explorerUrl` aliases remain for existing callers; prefer
+    the shared helper for new explorer links.
+
+31. **The like result modal mirrors `NewPostPage`'s result state but is a
+    separate controller.** `LikeTipPage` now carries
+    `showResultModal`/`lastResult`/`submit`/`dismissResult` with a different
+    policy (dismissal closes the modal; no navigation). The architect recorded a
+    shared result-modal controller as a follow-up candidate, not part of this
+    task. Soft Gherkin mutation of `like-broadcast-result.feature` left
+    intrinsic consistent-value survivors: `tip 600 -> 601` / `25000 -> 25007`
+    (the same `<tip>` is entered and asserted) and a Scenario 3 `liked_txid`
+    injection (Scenario 3 has no txid-validity/broadcast assertion). Treat these
+    as the gotcha #12 class, not implementation gaps.
+
 ---
 
 ## 10. Run / verify the app
@@ -491,11 +509,11 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `fdb6efc950` (`post-options-menu` merged from
+Current `master` HEAD: `f92f596bdd` (`like-result-modal` merged from
 `swarmforge-architect`; verification record
-`docs/reviews/post-options-menu-verification.json` names `07ff61392b`, the last
-code-changing review commit — the review tip and the merge add only `docs/`
-after it). Run `swarmforge/scripts/state.sh` to refresh these HEAD lines.
+`docs/reviews/like-result-modal-verification.json` names `e071881ea0`, the last
+code-changing review commit — the review tip `bf7edd5` and the merge add only
+`docs/` after it). Run `swarmforge/scripts/state.sh` to refresh these HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
 performance, responsiveness, state handling, error surfacing). See

@@ -31,6 +31,17 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Like broadcast result modal (2026-09-16):** after a successful like (with
+  or without a tip), the like/tip modal no longer auto-closes. It now shows a
+  broadcast success message, the like transaction id, and a block-explorer link
+  to the transaction, mirroring the New Post result modal. The like count and
+  filled heart still update, and the user must manually dismiss the result to
+  close the modal. The explorer URL was extracted to a shared
+  `psf-memo-client/src/services/block-explorer.js` used by the New Post modal,
+  the post options menu, and the like result. Client-only behavior. Spec:
+  `psf-memo-client/specs/like-broadcast-result.feature`. Merged to `master` at
+  `f92f596`, task `like-result-modal`.
+
 - **Post options menu (2026-09-16):** every post card now has a working
   three-dots "Post options" menu. The menu is hidden until the button is
   clicked; its first (top) item is "See on block explorer", linking to the
