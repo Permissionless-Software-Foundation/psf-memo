@@ -31,6 +31,19 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Post image rendering (2026-09-16):** post text now renders inline images for
+  URLs whose path ends in a common image extension (`.jpg`, `.jpeg`, `.png`,
+  `.gif`, `.webp`, `.bmp`; case-insensitive; query string and fragment ignored;
+  SVG excluded). The image renders inside an anchor that opens the original URL
+  in a new tab, with the URL's filename as `alt` text; the URL is not shown as
+  text and surrounding text is preserved. Non-image URLs keep the plain-link
+  behavior, and an image that fails to load falls back to a plain link. Pure
+  helpers `isImageUrl`/`imageAltText` in
+  `psf-memo-client/src/services/post-links.js`, a pure failed-image state
+  transition in `src/services/failed-images.js`, and a presentational
+  `PostImage`/`PostContent` renderer. Client-only rendering feature. Spec:
+  `psf-memo-client/specs/post-image-rendering.feature`. Merged to `master` at
+  `c2bfbc3`.
 - **Post link formatting (2026-09-16):** post text now auto-links `http://` and
   `https://` URLs and bare domains such as `memo.fullstackcash.net`. Explicit
   URLs keep their scheme; bare domains are linked with `https://` while their
