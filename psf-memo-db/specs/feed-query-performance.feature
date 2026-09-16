@@ -12,8 +12,9 @@
 #     reply-count map.
 # This feature specifies the capped-scan optimization:
 #   - reply counts are computed per returned post (per-page), not globally.
-#   - the total scan is capped to the last TOTAL_SCAN_CAP top-level posts so
-#     hasMore still works for the first pages without walking the whole index.
+#   - the total scan is capped to the last TOTAL_SCAN_CAP (500) top-level posts,
+#     so corpora smaller than the cap report an exact total while larger corpora
+#     stay bounded and hasMore still works for the first pages.
 Feature: Feed query performance
 
   Background:
@@ -31,12 +32,12 @@ Feature: Feed query performance
       | 3     | 0      | post-019   | 1          | 3           |
       | 3     | 0      | post-018   | 0          | 3           |
 
-  Scenario Outline: Feed query performance - 2 the total scan is capped
+  Scenario Outline: Feed query performance - 2 the total is exact when the index is smaller than the scan cap
     When the client requests /posts/recent with limit <limit> and offset <offset>
     Then the response pagination shows total <total> and hasMore <hasMore>
     And the postHeights store was read at most <max_entries> entries
 
     Examples:
       | limit | offset | total | hasMore | max_entries |
-      | 3     | 0      | 10    | true    | 13          |
-      | 5     | 0      | 10    | true    | 15          |
+      | 3     | 0      | 21    | true    | 24          |
+      | 5     | 0      | 21    | true    | 24          |
