@@ -54,6 +54,8 @@ const MemoPollVote = require('../../src/services/memo-poll-vote')
 const PollVotePage = require('../../src/services/poll-vote-page')
 const { renderPostText } = require('./render-post')
 const { renderAccountAvatar } = require('./render-account-avatar')
+const { renderPostOptions } = require('./render-post-options')
+const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
@@ -3260,8 +3262,172 @@ const handlers = [
         renderPostText(post.text, { initialFailedImages: [...world.failedImages] })
       )
     }
+  },
+  {
+    name: 'page shows a post options button for the post',
+    pattern: /^the page shows a post options button for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const post = findPostOnCurrentPage(txid, world)
+      if (!post) {
+        throw new Error(`The displayed page does not show a post with txid ${txid}.`)
+      }
+      const menu = getPostOptionsMenu(world, txid)
+      const html = renderPostOptions(txid, { open: menu.open })
+      if (!html.includes('aria-label="Post options"')) {
+        throw new Error(`Post ${txid} does not render a post options button.`)
+      }
+    }
+  },
+  {
+    name: 'post options menu is hidden',
+    pattern: /^the post options menu is hidden for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const menu = getPostOptionsMenu(world, txid)
+      if (menu.open) {
+        throw new Error(`Post options menu for ${txid} is open, but it should be hidden.`)
+      }
+      const html = renderPostOptions(txid, { open: menu.open })
+      if (html.includes(PostOptions.BLOCK_EXPLORER_LABEL)) {
+        throw new Error(`Post options menu for ${txid} renders items while hidden.`)
+      }
+    }
+  },
+  {
+    name: 'click post options button',
+    pattern: /^I click the post options button for the post with txid (.+)$/,
+    run (m, example, world) {
+      togglePostOptionsMenu(world, resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'click post options button again',
+    pattern: /^I click the post options button again for the post with txid (.+)$/,
+    run (m, example, world) {
+      togglePostOptionsMenu(world, resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'post options menu is shown',
+    pattern: /^the post options menu is shown for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const menu = getPostOptionsMenu(world, txid)
+      if (!menu.open) {
+        throw new Error(`Post options menu for ${txid} is hidden, but it should be shown.`)
+      }
+    }
+  },
+  {
+    name: 'first post options menu item label',
+    pattern: /^the first item in the post options menu is "(.+)"$/,
+    run (m, example, world) {
+      const label = m[1]
+      const items = PostOptions.postOptionsItems(world.activeMenuTxid)
+      if (!items[0] || items[0].label !== label) {
+        throw new Error(`Expected the first post options item to be "${label}".`)
+      }
+    }
+  },
+  {
+    name: 'first post options menu item links in new tab',
+    pattern: /^the first post options menu item links to (.+) and opens in a new tab$/,
+    run (m, example, world) {
+      const href = resolveParam(m[1], example)
+      const txid = world.activeMenuTxid
+      const first = PostOptions.postOptionsItems(txid)[0]
+      if (!first || first.href !== href) {
+        throw new Error(`Expected the first post options item to link to ${href}.`)
+      }
+      if (first.target !== '_blank') {
+        throw new Error('Expected the first post options item to open in a new tab.')
+      }
+      const html = renderPostOptions(txid, { open: true, focusedIndex: 0 })
+      if (!html.includes(`href="${href}"`) || !html.includes('target="_blank"')) {
+        throw new Error(`The rendered post options menu does not link to ${href} in a new tab.`)
+      }
+      if (!html.includes(PostOptions.BLOCK_EXPLORER_LABEL)) {
+        throw new Error('The rendered post options menu does not show the block explorer item.')
+      }
+    }
+  },
+  {
+    name: 'click outside post options menu',
+    pattern: /^I click outside the post options menu$/,
+    run (m, example, world) {
+      transitionActivePostOptionsMenu(world, PostOptions.handlePostOptionsOutsideClick)
+    }
+  },
+  {
+    name: 'press Escape key',
+    pattern: /^I press the Escape key$/,
+    run (m, example, world) {
+      transitionActivePostOptionsMenu(world, PostOptions.handlePostOptionsEscape)
+    }
+  },
+  {
+    name: 'press ArrowDown key',
+    pattern: /^I press the ArrowDown key$/,
+    run (m, example, world) {
+      const txid = world.activeMenuTxid
+      transitionActivePostOptionsMenu(world, (menu) =>
+        PostOptions.focusFirstPostOption(menu, PostOptions.postOptionsItems(txid))
+      )
+    }
+  },
+  {
+    name: 'first post options menu item has focus',
+    pattern: /^the first post options menu item has focus$/,
+    run (m, example, world) {
+      const txid = world.activeMenuTxid
+      const menu = getPostOptionsMenu(world, txid)
+      if (menu.focusedIndex !== 0) {
+        throw new Error('Expected the first post options item to have focus.')
+      }
+      const html = renderPostOptions(txid, { open: true, focusedIndex: 0 })
+      if (!html.includes('tabindex="0"')) {
+        throw new Error('The rendered first post options item is not focusable.')
+      }
+    }
   }
 ]
+
+// Find the post options menu state for a txid, creating a closed one on first use.
+function getPostOptionsMenu (world, txid) {
+  if (!world.postOptionsMenus) world.postOptionsMenus = {}
+  if (!world.postOptionsMenus[txid]) {
+    world.postOptionsMenus[txid] = { txid, ...PostOptions.initialPostOptionsState() }
+  }
+  return world.postOptionsMenus[txid]
+}
+
+// Apply a post options state transition to the active menu.
+function transitionActivePostOptionsMenu (world, transition) {
+  const menu = getPostOptionsMenu(world, world.activeMenuTxid)
+  Object.assign(menu, transition(menu))
+}
+
+// Toggle a post's options menu and make it the active menu.
+function togglePostOptionsMenu (world, txid) {
+  const menu = getPostOptionsMenu(world, txid)
+  Object.assign(menu, PostOptions.togglePostOptions(menu))
+  world.activeMenuTxid = txid
+}
+
+// The posts currently rendered by the page the scenario has opened.
+function postsOnCurrentPage (world) {
+  const path = world.currentPath || ''
+  if (world.threadPage && world.threadPage.rootPost) return world.threadPage.allPosts || []
+  if (path.startsWith(ProfilePage.PROFILE_PATH_PREFIX)) return world.profilePage?.posts || []
+  if (path.startsWith('/topics/')) return world.topicFeedPage?.posts || []
+  if (path === FollowingFeedPage.FOLLOWING_FEED_PATH) return world.followingFeedPage?.posts || []
+  return world.recentFeedPage?.posts || []
+}
+
+function findPostOnCurrentPage (txid, world) {
+  return postsOnCurrentPage(world).find((post) => post && post.txid === txid) || null
+}
 
 // Return the cached rendered feed HTML, computing it on first use.
 function getRenderedFeed (world) {
