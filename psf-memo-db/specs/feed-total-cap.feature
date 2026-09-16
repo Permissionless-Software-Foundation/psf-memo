@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-16T15:57:56.067084303Z","feature_name":"Feed total cap","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/feed-total-cap.feature","background_hash":"017a68400a34f87bfc687eda63db5d65eaddacabcba87c977a27cedbfd24b530","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Feed total cap - 1
 #
 # GET /posts/recent caps its total scan at TOTAL_SCAN_CAP (500) eligible
