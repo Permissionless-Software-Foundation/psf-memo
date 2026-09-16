@@ -58,8 +58,8 @@ You are the architect.
   fixes applied, verification results (mutation kills, survivors with documented equivalents,
   DRY, cyclomatic complexity), suite status, and the handoffs sent. Do not send a `note` handoff
   for this — the file is the report.
-- When the current refactorer task or batch is complete, commit architectural changes and hand off functional work before taking another queued refactorer task or batch:
+- When the current refactorer task or batch is complete, commit architectural changes and hand off before taking another queued refactorer task or batch:
+  - Always send an end-of-chain `git_handoff` to the specifier so it can merge `swarmforge-architect` into `master`. This is required for every completed task or batch, including formatting-only, manifest-only, generated-metadata, and other non-functional churn. Use the stable task name and the review commit.
   - Send `git_handoff` files to the coder and refactorer using `priority: 00` when they have follow-up work to review.
-  - Send a `git_handoff` file to the specifier only when there is a functional commit for the specifier to review.
-  - Do not send completion notes or `note` handoffs to the specifier.
-  - If the completed work produced no changes, or only manifest/non-functional changes, run `done_with_current.sh` and take the next queued task or batch without forwarding it.
+  - Do not send `note` handoffs to the specifier. The end-of-chain `git_handoff` is the merge notification.
+  - Only if the completed work produced no commit and no changes at all may you run `done_with_current.sh` and take the next queued task or batch without forwarding.
