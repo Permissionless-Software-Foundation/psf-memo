@@ -84,6 +84,16 @@ test('Escape and an outside click both close the menu', () => {
   assert.equal(PostOptions.handlePostOptionsOutsideClick(open).open, false)
 })
 
+test('isOutsidePostOptions is true only for a click outside a mounted menu', () => {
+  const inside = { contains: () => true }
+  const outside = { contains: () => false }
+
+  assert.equal(PostOptions.isOutsidePostOptions(inside, {}), false)
+  assert.equal(PostOptions.isOutsidePostOptions(outside, {}), true)
+  assert.equal(PostOptions.isOutsidePostOptions(null, {}), false)
+  assert.equal(PostOptions.isOutsidePostOptions(undefined, {}), false)
+})
+
 test('focusing the first item selects index 0 when items exist', () => {
   const open = PostOptions.openPostOptions(PostOptions.initialPostOptionsState())
   const focused = PostOptions.focusFirstPostOption(
@@ -163,4 +173,10 @@ test('the focused first item is tabbable and the others are not', () => {
   const html = renderMenu({ initialOpen: true, initialFocusedIndex: 0 })
 
   assert.match(html, /tabindex="0"/)
+})
+
+test('an open menu with no focused index makes no item tabbable', () => {
+  const html = renderMenu({ initialOpen: true })
+
+  assert.doesNotMatch(html, /tabindex="0"/)
 })

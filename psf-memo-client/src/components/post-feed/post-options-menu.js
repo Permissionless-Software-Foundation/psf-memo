@@ -17,6 +17,7 @@ const {
   postOptionsItems,
   togglePostOptions,
   handlePostOptionsOutsideClick,
+  isOutsidePostOptions,
   postOptionsKeyCommand
 } = require('../../services/post-options')
 
@@ -37,7 +38,7 @@ function PostOptionsMenu ({
     if (!state.open) return undefined
 
     const handleDocumentMouseDown = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (isOutsidePostOptions(containerRef.current, event.target)) {
         setState((previous) => handlePostOptionsOutsideClick(previous))
       }
     }
@@ -110,3 +111,7 @@ function PostOptionsMenu ({
 }
 
 module.exports = PostOptionsMenu
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-16T16:54:35.472Z","module_hash":"68c1b9ad46f613f4d84aecc6be2fc0a2e370b9f3c50b15e50f702f6587e93b45","functions":[{"id":"func/PostOptionsMenu","name":"PostOptionsMenu","line":24,"end_line":111,"hash":"df85571487654169765129cbe38d08247311fbd32bd94ad3a395834a202aa69b"}]}
+// mutate4javascript-manifest-end
