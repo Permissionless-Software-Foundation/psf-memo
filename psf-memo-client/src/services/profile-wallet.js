@@ -8,8 +8,6 @@
   address becomes available.
 */
 
-'use strict'
-
 function getViewerAddress (appData) {
   return appData?.bchWalletState?.cashAddress ||
     appData?.wallet?.walletInfo?.cashAddress ||

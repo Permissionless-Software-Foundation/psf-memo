@@ -6,8 +6,6 @@
   tested directly and reused by the UI and acceptance adapters.
 */
 
-'use strict'
-
 // Strip trailing punctuation that is never part of a link.
 const TRAILING_PUNCTUATION_RE = /[.,;:!?)\]]+$/
 
