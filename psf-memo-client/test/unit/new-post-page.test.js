@@ -38,10 +38,12 @@ function makeMemoPost (opts = {}) {
   return { wallet, feed, memoPost: new MemoPost({ wallet, feed }) }
 }
 
-test('the in-flight flag starts false', () => {
+test('the in-flight and result-modal flags start false', () => {
   const page = new NewPostPage({ navigate: () => {} })
 
   assert.equal(page.posting, false)
+  assert.equal(page.showResultModal, false)
+  assert.equal(page.lastResult, null)
 })
 
 test('NEW_POST_PATH and RECENT_FEED_PATH constants', () => {

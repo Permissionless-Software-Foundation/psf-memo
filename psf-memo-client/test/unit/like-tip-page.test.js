@@ -37,9 +37,21 @@ function makeWallet () {
 
 function makePage (opts = {}) {
   const wallet = makeWallet()
+  if (opts.balance !== undefined) {
+    wallet.utxos = [{ txid: 'utxo', value: opts.balance }]
+  }
   if (opts.failWith) wallet.failWith = opts.failWith
   const memoLike = new MemoLike({ wallet })
   return { wallet, page: new LikeTipPage({ memoLike }) }
+}
+
+// Open the modal, submit a like with no tip, and return the page and result.
+async function submitLike (opts = {}) {
+  const { wallet, page } = makePage(opts)
+  page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
+  page.setTip('')
+  const result = await page.submit()
+  return { wallet, page, result }
 }
 
 test('the result modal starts hidden', () => {
@@ -47,6 +59,18 @@ test('the result modal starts hidden', () => {
 
   assert.equal(page.showResultModal, false)
   assert.equal(page.lastResult, null)
+  assert.equal(page.modalOpen, false)
+  assert.equal(page.tipping, false)
+})
+
+test('the controller seeds the post txid and author from deps', () => {
+  const page = new LikeTipPage({
+    postTxid: SAMPLE_TXID,
+    authorAddress: AUTHOR_ADDRESS
+  })
+
+  assert.equal(page.postTxid, SAMPLE_TXID)
+  assert.equal(page.authorAddress, AUTHOR_ADDRESS)
 })
 
 test('explorerUrl builds a bch.loping.net transaction link', () => {
@@ -66,11 +90,7 @@ test('SUCCESS_MESSAGE announces the broadcast', () => {
 })
 
 test('a successful like keeps the modal open and shows the result', async () => {
-  const { page } = makePage()
-  page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
-  page.setTip('')
-
-  const result = await page.submit()
+  const { page, result } = await submitLike()
 
   assert.equal(result.ok, true)
   assert.equal(result.txid, LIKE_TXID)
@@ -81,10 +101,7 @@ test('a successful like keeps the modal open and shows the result', async () => 
 })
 
 test('dismissing the result closes the like/tip modal', async () => {
-  const { page } = makePage()
-  page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
-  page.setTip('')
-  await page.submit()
+  const { page } = await submitLike()
 
   page.dismissResult()
 
@@ -93,10 +110,7 @@ test('dismissing the result closes the like/tip modal', async () => {
 })
 
 test('opening the modal clears any previous result', async () => {
-  const { page } = makePage()
-  page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
-  page.setTip('')
-  await page.submit()
+  const { page } = await submitLike()
 
   page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
 
@@ -113,6 +127,7 @@ test('a validation failure stays on the form and opens no result', async () => {
 
   assert.equal(result.ok, false)
   assert.equal(result.error, 'like_validation')
+  assert.equal(page.broadcastError, 'Tip must be a valid number of satoshis.')
   assert.equal(page.modalOpen, true)
   assert.equal(page.showResultModal, false)
   assert.equal(page.lastResult.ok, false)
@@ -127,7 +142,7 @@ test('a broadcast failure stays on the form and opens no result', async () => {
 
   assert.equal(result.ok, false)
   assert.equal(result.error, 'broadcast')
-  assert.match(page.broadcastError, /Insufficient balance/)
+  assert.equal(page.broadcastError, 'Insufficient balance')
   assert.equal(page.modalOpen, true)
   assert.equal(page.showResultModal, false)
   assert.equal(page.getBroadcastMessage(), '')
@@ -146,10 +161,7 @@ test('open reports a validation error without a memo like handler', () => {
 })
 
 test('open reports an empty-balance error below the dust limit', () => {
-  const wallet = makeWallet()
-  wallet.utxos = [{ txid: 'utxo', value: 100 }]
-  const memoLike = new MemoLike({ wallet })
-  const page = new LikeTipPage({ memoLike })
+  const { page } = makePage({ balance: 100 })
 
   const result = page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
 
@@ -157,6 +169,16 @@ test('open reports an empty-balance error below the dust limit', () => {
   assert.equal(result.error, 'like_empty_balance')
   assert.match(page.broadcastError, /add BCH/)
   assert.equal(page.showResultModal, false)
+})
+
+test('open accepts a balance exactly at the dust limit', () => {
+  const { page } = makePage({ balance: 3000 })
+
+  const result = page.open(SAMPLE_TXID, AUTHOR_ADDRESS)
+
+  assert.equal(result.ok, true)
+  assert.equal(page.submitError, null)
+  assert.equal(page.broadcastError, null)
 })
 
 test('submit fails without a memo like handler', async () => {
@@ -183,4 +205,12 @@ test('a like with a positive tip sends the tip to the author', async () => {
   assert.deepEqual(wallet.broadcasts[0].bchOutput, [
     { address: AUTHOR_ADDRESS, amountSat: 600 }
   ])
+})
+
+test('an empty, null, or undefined tip parses as zero', () => {
+  const { page } = makePage()
+
+  assert.equal(page._parseTip(''), 0)
+  assert.equal(page._parseTip(null), 0)
+  assert.equal(page._parseTip(undefined), 0)
 })
