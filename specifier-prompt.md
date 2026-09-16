@@ -459,7 +459,7 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `a5f8967` (thread-query-bounds merged at `c8ceb82`, then
+Current `master` HEAD: `0942b2e` (thread-query-bounds merged at `c8ceb82`, then
 a process-improvement pass on this branch: the architect now always notifies
 the specifier; acceptance LevelDB temp dirs are cleaned up; the handoff daemon
 is self-healing; APS is single-sourced at `tmp/aps`; acceptance generation is
