@@ -18,6 +18,21 @@ distinct from per-task verification results, which live in
 
 ## Tooling behavior / runtime
 
+- **Pure modules can legitimately report 0 mutation sites.** `mutate4javascript`
+  only targets arithmetic, comparison, equality, boolean, logical, and `0<->1`
+  constant sites. A module built from `!` guards, ternaries, and template
+  literals (e.g. `block-explorer.js`, `like-result.js`) scans as `Total mutation
+  sites: 0` with `Killed: 0, Survived: 0`. Run `--scan` to confirm the zero is
+  structural and not a skipped/under-selected run before treating it as a pass.
+
+- **Run `dry4javascript` scoped to the changed files/dirs, not the whole client.**
+  A broad `src test acceptance` run reports hundreds of pre-existing duplicate
+  blocks (475 in the client on 2026-09-16) — mostly `acceptance/lib/handlers.js`
+  step-handler boilerplate and repeated older-suite test setup — which buries the
+  one or two task-local candidates. Scope the run to the changed production
+  files, tests, and adapters; the broad run is only a noise floor, consistent
+  with prior reviews.
+
 - **Bare `dry4javascript` runs the full test suite (~1m50s).** It is a DRY
   analysis that invokes tests, so running it with no arguments is a slow
   full-suite run, not a fast readiness probe. Never use it as a startup smoke
