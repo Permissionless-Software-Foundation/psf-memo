@@ -11,10 +11,58 @@ const {
   parsePostText,
   YOUTUBE_EMBED_BASE_URL
 } = require('../../services/youtube-embed')
-const { parsePostLinks } = require('../../services/post-links')
+const {
+  parsePostLinks,
+  isImageUrl,
+  imageAltText
+} = require('../../services/post-links')
 
-function PostContent ({ text = '' }) {
+// A post image that falls back to a plain link if the image fails to load.
+function PostImage ({ href, alt, failed, onError }) {
+  if (failed) {
+    return React.createElement(
+      'a',
+      {
+        href,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        className: 'posts-feed-item-link'
+      },
+      href
+    )
+  }
+
+  return React.createElement(
+    'a',
+    {
+      href,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      className: 'posts-feed-item-image-link'
+    },
+    React.createElement('img', {
+      src: href,
+      alt,
+      className: 'posts-feed-item-image',
+      onError
+    })
+  )
+}
+
+function PostContent ({ text = '', initialFailedImages }) {
+  const [failedImages, setFailedImages] = React.useState(
+    () => new Set(initialFailedImages || [])
+  )
   const children = []
+
+  const failImage = (href) => {
+    setFailedImages((previous) => {
+      if (previous.has(href)) return previous
+      const next = new Set(previous)
+      next.add(href)
+      return next
+    })
+  }
 
   for (const segment of parsePostText(text)) {
     if (segment.type === 'youtube') {
@@ -38,22 +86,35 @@ function PostContent ({ text = '' }) {
     }
 
     for (const link of parsePostLinks(segment.text)) {
-      if (link.type === 'link') {
-        children.push(
-          React.createElement(
-            'a',
-            {
-              href: link.href,
-              target: '_blank',
-              rel: 'noopener noreferrer',
-              className: 'posts-feed-item-link'
-            },
-            link.text
-          )
-        )
-      } else {
+      if (link.type !== 'link') {
         children.push(React.createElement('span', null, link.text))
+        continue
       }
+
+      if (isImageUrl(link.href)) {
+        children.push(
+          React.createElement(PostImage, {
+            href: link.href,
+            alt: imageAltText(link.href),
+            failed: failedImages.has(link.href),
+            onError: () => failImage(link.href)
+          })
+        )
+        continue
+      }
+
+      children.push(
+        React.createElement(
+          'a',
+          {
+            href: link.href,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            className: 'posts-feed-item-link'
+          },
+          link.text
+        )
+      )
     }
   }
 

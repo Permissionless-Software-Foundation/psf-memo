@@ -72,7 +72,37 @@ function parsePostLinks (text) {
   return segments
 }
 
-module.exports = { parsePostLinks }
+// Common image file extensions recognized in a URL path.
+const IMAGE_EXTENSION_RE = /\.(?:jpg|jpeg|png|gif|webp|bmp)$/i
+
+/**
+ * True when a URL's path ends in a recognized image file extension. Only the
+ * parsed pathname is examined, so query strings and fragments are ignored.
+ */
+function isImageUrl (url) {
+  if (typeof url !== 'string') return false
+  try {
+    return IMAGE_EXTENSION_RE.test(new URL(url).pathname)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Derive accessible alt text for an image URL: its filename, or "post image"
+ * when the URL carries no filename.
+ */
+function imageAltText (url) {
+  try {
+    const segments = new URL(url).pathname.split('/')
+    const filename = segments[segments.length - 1]
+    return filename || 'post image'
+  } catch {
+    return 'post image'
+  }
+}
+
+module.exports = { parsePostLinks, isImageUrl, imageAltText }
 
 // mutate4javascript-manifest-begin
 // {"version":1,"tested_at":"2026-09-16T02:28:07.979Z","module_hash":"9d4045719f423239c99405aadb91cd21944e7d2deaa670b15eb53aee5ee66639","functions":[{"id":"func/isBareDomainBoundary","name":"isBareDomainBoundary","line":21,"end_line":26,"hash":"6cbcecc22428ecc54a2598d4401a350b3d07a849b651e5c76198b9defb927aef"},{"id":"func/pushText","name":"pushText","line":29,"end_line":31,"hash":"abda2060349c814451b88fe350ca235069afdc769eaa3ffa90e9d214673c71b9"},{"id":"func/parsePostLinks","name":"parsePostLinks","line":40,"end_line":75,"hash":"7a51da000274bf77614f288f9db2ba8490069202919a00cda9c3c474d7bf48d8"}]}

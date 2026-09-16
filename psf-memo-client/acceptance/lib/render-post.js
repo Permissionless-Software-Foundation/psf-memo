@@ -12,8 +12,11 @@ const React = require('react')
 const ReactDOMServer = require('react-dom/server')
 const PostContent = require('../../src/components/post-feed/post-content')
 
-function renderPostText (text) {
-  const element = React.createElement(PostContent, { text })
+function renderPostText (text, options = {}) {
+  const element = React.createElement(PostContent, {
+    text,
+    initialFailedImages: options.initialFailedImages
+  })
   return ReactDOMServer.renderToStaticMarkup(element)
 }
 

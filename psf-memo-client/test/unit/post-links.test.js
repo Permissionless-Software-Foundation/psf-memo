@@ -12,7 +12,11 @@
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { parsePostLinks } = require('../../src/services/post-links')
+const {
+  parsePostLinks,
+  isImageUrl,
+  imageAltText
+} = require('../../src/services/post-links')
 
 test('parsePostLinks returns a single text segment for plain text', () => {
   const text = 'just a normal memo'
@@ -128,4 +132,41 @@ test('parsePostLinks round-trips: segments reconstruct the original text', () =>
       .join('')
     assert.equal(rebuilt, text)
   }
+})
+
+test('isImageUrl recognizes every supported image extension', () => {
+  for (const ext of ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']) {
+    assert.equal(isImageUrl(`https://example.com/photo.${ext}`), true, ext)
+  }
+})
+
+test('isImageUrl is case-insensitive', () => {
+  assert.equal(isImageUrl('https://example.com/photo.PNG'), true)
+  assert.equal(isImageUrl('https://example.com/photo.JPEG'), true)
+})
+
+test('isImageUrl ignores query strings and fragments', () => {
+  assert.equal(isImageUrl('https://example.com/photo.webp?w=500'), true)
+  assert.equal(isImageUrl('https://example.com/photo.png#section'), true)
+})
+
+test('isImageUrl rejects URLs that are not images', () => {
+  assert.equal(isImageUrl('https://example.com/page'), false)
+  assert.equal(isImageUrl('https://example.com/logo.svg'), false)
+  assert.equal(isImageUrl('https://example.com/photo?format=jpg'), false)
+  assert.equal(isImageUrl('not a url'), false)
+})
+
+test('imageAltText returns the URL filename', () => {
+  assert.equal(imageAltText('https://i.imgur.com/swCI56T.jpeg'), 'swCI56T.jpeg')
+  assert.equal(imageAltText('https://cdn.example.com/pics/Sunset.PNG'), 'Sunset.PNG')
+})
+
+test('imageAltText ignores query strings when deriving the filename', () => {
+  assert.equal(imageAltText('https://example.com/img/photo.webp?w=500'), 'photo.webp')
+})
+
+test('imageAltText falls back to "post image" when there is no filename', () => {
+  assert.equal(imageAltText('https://example.com/'), 'post image')
+  assert.equal(imageAltText('not a url'), 'post image')
 })

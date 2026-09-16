@@ -3214,6 +3214,60 @@ const handlers = [
         throw new Error('Feed unexpectedly shows an embedded video player.')
       }
     }
+  },
+  {
+    name: 'feed shows an image',
+    pattern: /^the feed shows an image with the URL (.+) and alt text (.+)$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      const alt = resolveParam(m[2], example)
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) =>
+        imagesIn(html).some((image) =>
+          image.attrs.includes(`src="${url}"`) &&
+          image.attrs.includes(`alt="${alt}"`)
+        )
+      )
+      if (!found) {
+        throw new Error(`Feed does not show an image with URL ${url} and alt text "${alt}".`)
+      }
+    }
+  },
+  {
+    name: 'feed shows no image',
+    pattern: /^the feed shows no image$/,
+    run (m, example, world) {
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) => imagesIn(html).length > 0)
+      if (found) {
+        throw new Error('Feed unexpectedly shows an image.')
+      }
+    }
+  },
+  {
+    name: 'feed does not show the URL as text',
+    pattern: /^the feed does not show the URL (.+) as text$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) =>
+        html.replace(/<[^>]+>/g, '').includes(url)
+      )
+      if (found) {
+        throw new Error(`Feed unexpectedly shows the URL ${url} as text.`)
+      }
+    }
+  },
+  {
+    name: 'image fails to load',
+    pattern: /^the image at (.+) fails to load$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      world.failedImages = new Set([...(world.failedImages || []), url])
+      world.renderedFeed = world.recentFeedPage.posts.map((post) =>
+        renderPostText(post.text, { initialFailedImages: [...world.failedImages] })
+      )
+    }
   }
 ]
 
@@ -3235,6 +3289,18 @@ function anchorsIn (html) {
     anchors.push({ attrs: match[1], text: match[2] })
   }
   return anchors
+}
+
+// Extract the image tags from a rendered HTML string. The acceptance adapter
+// renders a small, controlled HTML subset, so a regex match is sufficient.
+function imagesIn (html) {
+  const images = []
+  const re = /<img\s([^>]*?)\/?>/g
+  let match
+  while ((match = re.exec(html)) !== null) {
+    images.push({ attrs: match[1] })
+  }
+  return images
 }
 
 // Decode a raw create-poll payload into poll_type, option_count, and question.
