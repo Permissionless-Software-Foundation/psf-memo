@@ -200,10 +200,10 @@ when specing reply/like/follow.
 
 ## 7. Gherkin & acceptance tooling
 
-- Clone the Acceptance Pipeline Spec fresh (do NOT rely on cached/stale copies):
+- The Acceptance Pipeline Spec is single-sourced at `tmp/aps`. Refresh it in
+  place (do not create separate clones):
   ```bash
-  mkdir -p tmp && cd tmp
-  git clone https://github.com/unclebob/Acceptance-Pipeline-Specification.git aps
+  swarmforge/scripts/ensure-aps.sh --update
   ```
   Temp files go in the worktree's `./tmp/`, never `/tmp`.
 - Commands (run from `tmp/aps`):
@@ -212,7 +212,7 @@ when specing reply/like/follow.
   bb gherkin-ir-dry-checker [--include-exact] <json-ir> <report>
   # optional: bb gherkin-mutator (you do not run acceptance mutation)
   ```
-- Read `aps/parser-spec.md` and `aps/ir-dry-checker-spec.md`.
+- Read `tmp/aps/parser-spec.md` and `tmp/aps/ir-dry-checker-spec.md`.
 - Rules: `Feature:`, one `Background:`, `Scenario Outline:` with `Examples:`.
   Name each scenario `Feature Name - N`. Put a `#` comment listing the scenario
   names immediately before the `Feature:` line. Use `<parameter>` placeholders
@@ -258,8 +258,10 @@ that a single user-facing feature may require specs in more than one component.
 1. **Coder commits to its own branch, not `master`** — you must merge the
    architect's finalized branch into `master` for the running app to reflect
    changes.
-2. **Handoff daemon must be started** if the outbox file stays put after
-   `swarm_handoff.sh`.
+2. **Handoff daemon is self-healing.** `swarm_handoff.sh` and
+   `ready_for_next.sh` call `swarmforge/scripts/ensure_handoff_daemon.sh`, which
+   restarts `handoffd` when it is not running. If a handoff still sits in the
+   outbox, run that script and check `.swarmforge/daemon/handoffd.log`.
 3. **`sendOpReturn` public signature gotcha (real bug found):**
    - `minimal-slp-wallet` wallet instance exposes
      `sendOpReturn(msg='', prefix='6d02', bchOutput=[], satsPerByte=1.0)` — it
@@ -397,6 +399,16 @@ that a single user-facing feature may require specs in more than one component.
     data when a bound must itself be mutatable. Spec:
     `psf-memo-db/specs/thread-query-performance.feature`.
 
+24. **APS is single-sourced at `tmp/aps`.** Use
+    `swarmforge/scripts/ensure-aps.sh --update`; do not create `tmp/aps-spec` or
+    component-local copies. The acceptance runners and the `gherkin-parser`
+    wrapper all resolve `tmp/aps`.
+25. **Trust the architect's verification record.** The architect commits
+    `docs/reviews/<task>-verification.json` for each touched component. After
+    merging, check its `git_sha` matches the merged commit; on a matching
+    `pass`, do not re-run the full suite — run only the merged feature's
+    acceptance test.
+
 ---
 
 ## 10. Run / verify the app
@@ -421,6 +433,20 @@ npm test
 
 After merging architect into `master`, run the verification commands for every
 component the feature touched.
+
+Prefer the canonical runner, which runs the same sequence and emits a
+machine-readable record:
+```bash
+swarmforge/scripts/verify.sh client  --record docs/reviews/<task>-verification.json --task <task>
+swarmforge/scripts/verify.sh db      --record docs/reviews/<task>-verification.json --task <task>
+swarmforge/scripts/verify.sh indexer --record docs/reviews/<task>-verification.json --task <task>
+```
+After merging the architect branch, check `docs/reviews/<task>-verification.json`:
+it must exist and its `git_sha` must match the merged commit. On a matching
+`pass`, run only the merged feature's acceptance test as an independent check;
+re-run the full sequence only when the record is missing, stale, or failing.
+
+Use `swarmforge/scripts/state.sh` to refresh the HEAD lines in §11.
 
 ---
 
