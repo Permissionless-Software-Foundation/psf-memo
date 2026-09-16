@@ -55,6 +55,7 @@ const PollVotePage = require('../../src/services/poll-vote-page')
 const { renderPostText } = require('./render-post')
 const { renderAccountAvatar } = require('./render-account-avatar')
 const { renderPostOptions } = require('./render-post-options')
+const { renderLikeResult } = require('./render-like-result')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
 
@@ -1491,6 +1492,92 @@ const handlers = [
       if (world.likeTipPage.modalOpen) {
         throw new Error('Expected like/tip modal to be closed.')
       }
+    }
+  },
+  {
+    name: 'like/tip modal remains open',
+    pattern: /^the like\/tip modal remains open$/,
+    run (m, example, world) {
+      if (!world.likeTipPage.modalOpen) {
+        throw new Error('Expected like/tip modal to remain open.')
+      }
+    }
+  },
+  {
+    name: 'like/tip modal shows a broadcast success message',
+    pattern: /^the like\/tip modal shows a broadcast success message$/,
+    run (m, example, world) {
+      const page = world.likeTipPage
+      if (!page.showResultModal) {
+        throw new Error('Expected the like broadcast result to be shown.')
+      }
+      const message = page.getBroadcastMessage()
+      if (!message) {
+        throw new Error('Expected a like broadcast success message.')
+      }
+      const html = renderLikeResult({
+        txid: page.lastResult.txid,
+        message,
+        explorerUrl: page.explorerUrl(page.lastResult.txid)
+      })
+      if (!html.includes(message)) {
+        throw new Error(`The rendered like result does not show the message "${message}".`)
+      }
+    }
+  },
+  {
+    name: 'like/tip modal shows the like transaction id',
+    pattern: /^the like\/tip modal shows the like transaction id$/,
+    run (m, example, world) {
+      const page = world.likeTipPage
+      if (!page.showResultModal || !page.lastResult || !page.lastResult.ok) {
+        throw new Error('Expected a successful like broadcast result.')
+      }
+      const txid = page.lastResult.txid
+      if (!txid) {
+        throw new Error('Expected the like result to include a transaction id.')
+      }
+      const html = renderLikeResult({
+        txid,
+        message: page.getBroadcastMessage(),
+        explorerUrl: page.explorerUrl(txid)
+      })
+      if (!html.includes(txid)) {
+        throw new Error(`The rendered like result does not show the transaction id ${txid}.`)
+      }
+    }
+  },
+  {
+    name: 'like/tip modal shows a block explorer link',
+    pattern: /^the like\/tip modal shows a link to the block explorer for the like transaction$/,
+    run (m, example, world) {
+      const page = world.likeTipPage
+      if (!page.showResultModal || !page.lastResult || !page.lastResult.ok) {
+        throw new Error('Expected a successful like broadcast result.')
+      }
+      const txid = page.lastResult.txid
+      const url = page.explorerUrl(txid)
+      if (!url.startsWith('https://bch.loping.net/tx/')) {
+        throw new Error(`Expected a bch.loping.net explorer link, got "${url}".`)
+      }
+      const html = renderLikeResult({
+        txid,
+        message: page.getBroadcastMessage(),
+        explorerUrl: url
+      })
+      if (!html.includes(`href="${url}"`)) {
+        throw new Error(`The rendered like result does not link to ${url}.`)
+      }
+      if (!html.includes('target="_blank"')) {
+        throw new Error('The rendered like explorer link does not open in a new tab.')
+      }
+    }
+  },
+  {
+    name: 'dismiss like result',
+    pattern: /^I dismiss the like result$/,
+    run (m, example, world) {
+      world.likeTipPage.dismissResult()
     }
   },
   {

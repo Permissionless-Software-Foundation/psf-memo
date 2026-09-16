@@ -15,6 +15,9 @@
 
 const PageController = require('./page-controller')
 
+const EXPLORER_TX_BASE = 'https://bch.loping.net/tx'
+const SUCCESS_MESSAGE = 'Your like was broadcast to the Bitcoin Cash network.'
+
 class LikeTipPage extends PageController {
   constructor (deps = {}) {
     super(deps)
@@ -25,6 +28,10 @@ class LikeTipPage extends PageController {
     this.authorAddress = deps.authorAddress || ''
     this.successPath = null
     this.validationCodes = ['like_validation', 'like_dust', 'like_maximum', 'like_balance', 'like_empty_balance']
+    // After a broadcast, the like/tip modal stays open and shows the result
+    // until the user dismisses it.
+    this.showResultModal = false
+    this.lastResult = null
   }
 
   // Open the like/tip modal for a post and check that the wallet has enough
@@ -33,6 +40,8 @@ class LikeTipPage extends PageController {
     this.postTxid = postTxid
     this.authorAddress = authorAddress
     this.modalOpen = true
+    this.showResultModal = false
+    this.lastResult = null
     this.submitError = null
     this.broadcastError = null
 
@@ -75,6 +84,38 @@ class LikeTipPage extends PageController {
     this.tipping = value
   }
 
+  // Submit the like. A successful broadcast leaves the modal open and shows
+  // the broadcast result instead of closing or navigating. Validation and
+  // broadcast failures stay on the form.
+  async submit () {
+    this.showResultModal = false
+    this.lastResult = null
+    const result = await super.submit()
+    this.lastResult = result
+    if (result.ok) {
+      this.showResultModal = true
+      this.modalOpen = true
+    }
+    return result
+  }
+
+  // The broadcast success message shown while the result is visible.
+  getBroadcastMessage () {
+    if (!this.lastResult || !this.lastResult.ok) return ''
+    return SUCCESS_MESSAGE
+  }
+
+  // Block explorer URL for a broadcast like transaction.
+  explorerUrl (txid) {
+    return LikeTipPage.explorerUrl(txid)
+  }
+
+  // Dismiss the broadcast result. This closes the like/tip modal.
+  dismissResult () {
+    this.showResultModal = false
+    this.close()
+  }
+
   // Parse a non-empty tip string into an integer number of satoshis.
   _parseTip (input) {
     if (input === '' || input === null || input === undefined) return 0
@@ -104,3 +145,10 @@ class LikeTipPage extends PageController {
 }
 
 module.exports = LikeTipPage
+
+LikeTipPage.EXPLORER_TX_BASE = EXPLORER_TX_BASE
+LikeTipPage.SUCCESS_MESSAGE = SUCCESS_MESSAGE
+LikeTipPage.explorerUrl = function (txid) {
+  if (!txid) return ''
+  return `${EXPLORER_TX_BASE}/${txid}`
+}
