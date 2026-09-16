@@ -3139,6 +3139,48 @@ const handlers = [
     }
   },
   {
+    name: 'feed shows a link that opens in a new tab',
+    pattern: /^the feed shows a link to (.+) that opens in a new tab$/,
+    run (m, example, world) {
+      const href = resolveParam(m[1], example)
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) =>
+        anchorsIn(html).some((anchor) =>
+          anchor.attrs.includes(`href="${href}"`) &&
+          anchor.attrs.includes('target="_blank"')
+        )
+      )
+      if (!found) {
+        throw new Error(`Feed does not show a link to ${href} that opens in a new tab.`)
+      }
+    }
+  },
+  {
+    name: 'feed shows a link with the text',
+    pattern: /^the feed shows a link with the text (.+)$/,
+    run (m, example, world) {
+      const label = resolveParam(m[1], example)
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) =>
+        anchorsIn(html).some((anchor) => anchor.text === label)
+      )
+      if (!found) {
+        throw new Error(`Feed does not show a link with the text "${label}".`)
+      }
+    }
+  },
+  {
+    name: 'feed shows no link',
+    pattern: /^the feed shows no link$/,
+    run (m, example, world) {
+      const rendered = getRenderedFeed(world)
+      const found = rendered.some((html) => anchorsIn(html).length > 0)
+      if (found) {
+        throw new Error('Feed unexpectedly shows a link.')
+      }
+    }
+  },
+  {
     name: 'feed does not show raw URL',
     pattern: /^the feed does not show the raw URL (.+)$/,
     run (m, example, world) {
@@ -3181,6 +3223,18 @@ function getRenderedFeed (world) {
     world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
   }
   return world.renderedFeed
+}
+
+// Extract the anchors from a rendered HTML string. The acceptance adapter
+// renders a small, controlled HTML subset, so a regex match is sufficient.
+function anchorsIn (html) {
+  const anchors = []
+  const re = /<a\s([^>]*)>([\s\S]*?)<\/a>/g
+  let match
+  while ((match = re.exec(html)) !== null) {
+    anchors.push({ attrs: match[1], text: match[2] })
+  }
+  return anchors
 }
 
 // Decode a raw create-poll payload into poll_type, option_count, and question.
