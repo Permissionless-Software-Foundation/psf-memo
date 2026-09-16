@@ -31,6 +31,16 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Feed total cap raised to 500 (2026-09-16):** `GET /posts/recent` now caps
+  its total scan at 500 eligible top-level posts instead of 10 (`TOTAL_SCAN_CAP`
+  in `psf-memo-db/src/adapters/post-query.js`). Corpora with up to 500 eligible
+  top-level posts report an exact `pagination.total`; larger corpora report
+  `total = 500` and read at most `offset + limit + 500` postHeights entries.
+  Adds DB acceptance fixture `many-top-level-posts` (510 posts) and
+  `recent-feed-cap` property tests. DB-only behavior change. Specs:
+  `psf-memo-db/specs/feed-total-cap.feature` and
+  `psf-memo-db/specs/feed-query-performance.feature`. Merged to `master` at
+  `5e62d1e`.
 - **Post image rendering (2026-09-16):** post text now renders inline images for
   URLs whose path ends in a common image extension (`.jpg`, `.jpeg`, `.png`,
   `.gif`, `.webp`, `.bmp`; case-insensitive; query string and fragment ignored;

@@ -368,15 +368,17 @@ that a single user-facing feature may require specs in more than one component.
     address on `:` and yielded just `"bitcoincash"` — strip the trailing
     `:<followeePkHash>` suffix via `key.slice(0, key.lastIndexOf(':'))` instead.
     Spec: `psf-memo-client/specs/mute-feed-filtering.feature`.
-21. **The recent-feed `total` is now capped, not exact.** Since the
-    feed-query-performance job (`2bcc965`), `GET /posts/recent` computes
-    `total`/`hasMore` from a capped scan of the last `TOTAL_SCAN_CAP` (10)
-    top-level posts rather than a full `postHeights` walk. `total` is therefore
-    `min(actual, TOTAL_SCAN_CAP)` and `hasMore` is only reliable for the first
-    few pages; deep pagination past the cap may report `hasMore: false` even
-    when older posts exist. Specs for the recent feed should assert `total`
-    against the cap (e.g. `10`) and only assert `hasMore` for the first pages.
-    Spec: `psf-memo-db/specs/feed-query-performance.feature`.
+21. **The recent-feed `total` is capped, not exact.** Since the
+    feed-query-performance job (`2bcc965`) and the feed-total-cap job
+    (`5e62d1e`), `GET /posts/recent` computes `total`/`hasMore` from a capped
+    scan of the last `TOTAL_SCAN_CAP` (500) top-level posts rather than a full
+    `postHeights` walk. `total` is therefore `min(actual, 500)`; corpora with up
+    to 500 eligible top-level posts report an exact total, while larger corpora
+    report `500` and `hasMore` is only reliable up to that cap. The live corpus
+    (~1.3M posts) exceeds the cap, so the client label reads
+    "Showing 1–50 of 500", not the true total. Specs:
+    `psf-memo-db/specs/feed-total-cap.feature` and
+    `psf-memo-db/specs/feed-query-performance.feature`.
 22. **Account avatar rendering uses the pure-component seam (gotcha #17 again).**
     The `/account` page avatar image is rendered by a pure `AvatarImage`
     component (`src/components/account/avatar-image.js`) written in plain
@@ -422,6 +424,14 @@ that a single user-facing feature may require specs in more than one component.
     they pin the parser's whitespace boundary, but expect those case mutations
     to survive; they are weak example-to-assertion links, not implementation
     gaps.
+28. **Capped-feed examples leak offset/page-slice survivors unless they assert
+    the returned page.** In `feed-total-cap.feature` the soft mutation
+    `offset 499 -> 504` survived because the scenario asserts `total`,
+    `hasMore`, and the read bound but not the returned page slice; shifting the
+    offset within the tail still passes. A similar `offset 0 -> 7` survivor
+    appeared in `feed-query-performance` scenario 2. If the offset/page identity
+    must be mutatable, assert the returned txids (or the first/last returned
+    txid) so an offset shift fails.
 
 ---
 
@@ -473,10 +483,11 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `16af94e` (post-link-formatting merged at `b63792f`; a
-refreshed client verification record was committed at `16af94e` after the
-architect's record named the pre-review refactorer commit. Run
-`swarmforge/scripts/state.sh` to refresh these HEAD lines.)
+Current `master` HEAD: `5e62d1e` (`feed-total-cap` merged from
+`swarmforge-architect` at `5e62d1e`; verification record
+`docs/reviews/feed-total-cap-verification.json` names `b2c78fb`, the last
+code-changing review commit, and the only later commit touches `docs/`). Run
+`swarmforge/scripts/state.sh` to refresh these HEAD lines.
 Next action: **TBD** — current direction is front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing). See `specs/feature-backlog.md`.
