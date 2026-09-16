@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-03
+**Last updated**: 2026-09-16
 
 ---
 
@@ -31,6 +31,15 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Post link formatting (2026-09-16):** post text now auto-links `http://` and
+  `https://` URLs and bare domains such as `memo.fullstackcash.net`. Explicit
+  URLs keep their scheme; bare domains are linked with `https://` while their
+  visible text stays as written. Links render as anchors with `target="_blank"`;
+  embeddable YouTube links keep embedding instead of becoming plain links. Pure
+  parser `psf-memo-client/src/services/post-links.js` (`parsePostLinks`) feeds
+  the shared `PostContent` renderer. Client-only rendering feature. Spec:
+  `psf-memo-client/specs/post-link-formatting.feature`. Merged to `master` at
+  `b63792f`.
 - **Thread query performance (2026-09-15):** `GET /posts/:txid/thread` now does
   work proportional to the thread instead of the whole database. Like counts are
   computed only for the thread's txids via `countLikesForTxids` (the global

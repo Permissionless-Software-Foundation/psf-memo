@@ -408,6 +408,20 @@ that a single user-facing feature may require specs in more than one component.
     merging, check its `git_sha` matches the merged commit; on a matching
     `pass`, do not re-run the full suite — run only the merged feature's
     acceptance test.
+26. **An architect verification record can name the pre-review commit.** For
+    post-link-formatting the record's `git_sha` was the refactorer commit
+    `e17c515`, not the review commit `b63792f`. The review commit changed
+    `post-links.js`, `post-content.js`, and tests, so the record was stale;
+    re-ran `verify.sh client` on the merged `b63792f` and committed the
+    refreshed record (`16af94e`). Always compare the record's `git_sha` to the
+    actual architect review commit, not just the branch tip.
+27. **Trailing prose in link examples can survive Gherkin mutation.** Soft
+    Gherkin mutation of `post-link-formatting.feature` left 3 survivors:
+    single-character case mutations of setup-only trailing words (`herE`,
+    `rePly`, `livE`) that no assertion reads. Keep the trailing words because
+    they pin the parser's whitespace boundary, but expect those case mutations
+    to survive; they are weak example-to-assertion links, not implementation
+    gaps.
 
 ---
 
@@ -459,14 +473,10 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `0942b2e` (thread-query-bounds merged at `c8ceb82`, then
-a process-improvement pass on this branch: the architect now always notifies
-the specifier; acceptance LevelDB temp dirs are cleaned up; the handoff daemon
-is self-healing; APS is single-sourced at `tmp/aps`; acceptance generation is
-incremental; `verify.sh` emits a machine-readable verification record;
-`mutate-file.sh` guards differential under-selection; and `clean-builds.sh`
-keeps mutation worker copies small. Run `swarmforge/scripts/state.sh` to refresh
-these HEAD lines.)
+Current `master` HEAD: `16af94e` (post-link-formatting merged at `b63792f`; a
+refreshed client verification record was committed at `16af94e` after the
+architect's record named the pre-review refactorer commit. Run
+`swarmforge/scripts/state.sh` to refresh these HEAD lines.)
 Next action: **TBD** — current direction is front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing). See `specs/feature-backlog.md`.
