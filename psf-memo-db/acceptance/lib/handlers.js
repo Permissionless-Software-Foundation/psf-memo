@@ -27,6 +27,7 @@ import ListMuted from '../../src/use-cases/list-muted.js'
 import GetPoll from '../../src/use-cases/get-poll.js'
 import GetPollOptions from '../../src/use-cases/get-poll-options.js'
 import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
+import { repairTxidEncoding } from '../../src/lib/repair-txid-encoding.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -201,6 +202,11 @@ async function loadFixture (world, name) {
 
   if (name === 'poll-with-options-and-vote') {
     await loadPollWithOptionsAndVote(world)
+    return
+  }
+
+  if (name === 'db-with-reversed-txid-references') {
+    await loadReversedTxidFixture(world)
     return
   }
 
@@ -548,6 +554,37 @@ async function loadPollWithOptionsAndVote (world) {
   })
 }
 
+async function loadReversedTxidFixture (world) {
+  const displayPost = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+  const reversedPost = 'efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301'
+  const displayPoll = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
+  const reversedPoll = 'ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100'
+  const unknownPost = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
+
+  await world.adapters.level.postsDb.put(displayPost, {
+    addr: 'bitcoincash:qaddr-a', text: 'referenced post', seen: 1, blockHeight: 600100
+  })
+  await world.adapters.level.pollsDb.put(displayPoll, {
+    addr: 'bitcoincash:qaddr-a', pollType: 1, optionCount: 2, question: 'which?', seen: 2, blockHeight: 600101
+  })
+
+  await world.adapters.level.likesDb.put('like-1', { addr: 'bitcoincash:liker-1', postTxid: reversedPost, seen: 3, blockHeight: 600200 })
+  await world.adapters.level.likesDb.put('like-2', { addr: 'bitcoincash:liker-2', postTxid: displayPost, seen: 4, blockHeight: 600201 })
+  await world.adapters.level.likesDb.put('like-3', { addr: 'bitcoincash:liker-3', postTxid: unknownPost, seen: 5, blockHeight: 600202 })
+  await world.adapters.level.postLikesDb.put(`${reversedPost}:like-1`, { postTxid: reversedPost, txid: 'like-1' })
+  await world.adapters.level.postLikesDb.put(`${displayPost}:like-2`, { postTxid: displayPost, txid: 'like-2' })
+
+  await world.adapters.level.postParentsDb.put('reply-1', { parentTxid: reversedPost, childTxid: 'reply-1', blockHeight: 600050 })
+  await world.adapters.level.postParentsDb.put('reply-2', { parentTxid: displayPost, childTxid: 'reply-2', blockHeight: 600051 })
+  await world.adapters.level.postChildrenDb.put(`${reversedPost}:reply-1`, { parentTxid: reversedPost, childTxid: 'reply-1' })
+  await world.adapters.level.postChildrenDb.put(`${displayPost}:reply-2`, { parentTxid: displayPost, childTxid: 'reply-2' })
+
+  await world.adapters.level.pollOptionsDb.put('option-1', { addr: 'bitcoincash:qaddr-a', pollTxid: reversedPoll, option: 'yes', seen: 6, blockHeight: 600300 })
+  await world.adapters.level.pollOptionsDb.put('option-2', { addr: 'bitcoincash:qaddr-b', pollTxid: displayPoll, option: 'no', seen: 7, blockHeight: 600301 })
+  await world.adapters.level.pollVotesDb.put('vote-1', { addr: 'bitcoincash:qaddr-a', pollTxid: reversedPoll, comment: 'yes', seen: 8, blockHeight: 600302 })
+  await world.adapters.level.pollVotesDb.put('vote-2', { addr: 'bitcoincash:qaddr-b', pollTxid: displayPoll, comment: 'no', seen: 9, blockHeight: 600303 })
+}
+
 async function loadMutes (world) {
   const muter1 = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const muter2 = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
@@ -593,6 +630,13 @@ const handlers = [
     }
   },
   {
+    name: 'db instance with txid repair stores',
+    pattern: /^a psf-memo-db instance with posts, likes, postLikes, postParents, postChildren, polls, pollOptions, and pollVotes stores$/,
+    async run () {
+      // World is already created with all stores.
+    }
+  },
+  {
     name: 'load fixture',
     pattern: /^the fixture "(.+)" is loaded into the posts (?:store|and likes stores)$/,
     async run (m, example, world) {
@@ -602,6 +646,13 @@ const handlers = [
   {
     name: 'load fixture into posts and likes stores',
     pattern: /^the fixture "(.+)" is loaded into the posts and likes stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'load bare fixture',
+    pattern: /^the fixture "(.+)" is loaded$/,
     async run (m, example, world) {
       await loadFixture(world, m[1])
     }
@@ -618,6 +669,20 @@ const handlers = [
     pattern: /^the backfill utility is run again$/,
     async run (m, example, world) {
       await backfillIndexes(world)
+    }
+  },
+  {
+    name: 'run txid repair utility',
+    pattern: /^the txid repair utility is run$/,
+    async run (m, example, world) {
+      await repairTxidEncoding(world.adapters.level)
+    }
+  },
+  {
+    name: 'run txid repair utility again',
+    pattern: /^the txid repair utility is run again$/,
+    async run (m, example, world) {
+      await repairTxidEncoding(world.adapters.level)
     }
   },
   {
@@ -859,7 +924,7 @@ const handlers = [
   },
   {
     name: 'postLikes contains entry',
-    pattern: /^the postLikes store contains (<count>) entry whose key starts with (<postTxid>) and ends with (<likeTxid>)$/,
+    pattern: /^the postLikes store contains (<[A-Za-z0-9_]+>|[0-9]+) entry whose key starts with (<[A-Za-z0-9_]+>) and ends with (<[A-Za-z0-9_]+>)$/,
     async run (m, example, world) {
       const expectedCount = parseInt(resolveParam(m[1], example), 10)
       const postTxid = resolveParam(m[2], example)
@@ -870,6 +935,70 @@ const handlers = [
       }
       if (count !== expectedCount) {
         throw new Error(`Expected ${expectedCount} postLikes entry/entries for ${postTxid}/${likeTxid}, got ${count}`)
+      }
+    }
+  },
+  {
+    name: 'postChildren contains entry',
+    pattern: /^the postChildren store contains (<[A-Za-z0-9_]+>|[0-9]+) entry whose key starts with (<[A-Za-z0-9_]+>) and ends with (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const postTxid = resolveParam(m[2], example)
+      const replyTxid = resolveParam(m[3], example)
+      let count = 0
+      for await (const [key] of world.adapters.level.postChildrenDb.iterator()) {
+        if (key.startsWith(`${postTxid}:`) && key.endsWith(`:${replyTxid}`)) count++
+      }
+      if (count !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} postChildren entry/entries for ${postTxid}/${replyTxid}, got ${count}`)
+      }
+    }
+  },
+  {
+    name: 'likes store maps like to post',
+    pattern: /^the likes store maps like (<[A-Za-z0-9_]+>) to post (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const likeTxid = resolveParam(m[1], example)
+      const postTxid = resolveParam(m[2], example)
+      const like = await world.adapters.level.likesDb.get(likeTxid)
+      if (like.postTxid !== postTxid) {
+        throw new Error(`Expected like ${likeTxid} to map to post ${postTxid}, got ${like.postTxid}.`)
+      }
+    }
+  },
+  {
+    name: 'postParents store maps reply to parent',
+    pattern: /^the postParents store maps reply (<[A-Za-z0-9_]+>) to parent (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const replyTxid = resolveParam(m[1], example)
+      const postTxid = resolveParam(m[2], example)
+      const reply = await world.adapters.level.postParentsDb.get(replyTxid)
+      if (reply.parentTxid !== postTxid) {
+        throw new Error(`Expected reply ${replyTxid} to map to parent ${postTxid}, got ${reply.parentTxid}.`)
+      }
+    }
+  },
+  {
+    name: 'pollOptions store maps option to poll',
+    pattern: /^the pollOptions store maps option (<[A-Za-z0-9_]+>) to poll (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const optionTxid = resolveParam(m[1], example)
+      const pollTxid = resolveParam(m[2], example)
+      const option = await world.adapters.level.pollOptionsDb.get(optionTxid)
+      if (option.pollTxid !== pollTxid) {
+        throw new Error(`Expected poll option ${optionTxid} to map to poll ${pollTxid}, got ${option.pollTxid}.`)
+      }
+    }
+  },
+  {
+    name: 'pollVotes store maps vote to poll',
+    pattern: /^the pollVotes store maps vote (<[A-Za-z0-9_]+>) to poll (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const voteTxid = resolveParam(m[1], example)
+      const pollTxid = resolveParam(m[2], example)
+      const vote = await world.adapters.level.pollVotesDb.get(voteTxid)
+      if (vote.pollTxid !== pollTxid) {
+        throw new Error(`Expected poll vote ${voteTxid} to map to poll ${pollTxid}, got ${vote.pollTxid}.`)
       }
     }
   },

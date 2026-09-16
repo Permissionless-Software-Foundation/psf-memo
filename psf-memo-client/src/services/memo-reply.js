@@ -18,11 +18,10 @@
 
 const MemoAction = require('./memo-action')
 const { byteLength } = require('./utf8')
-const { hexToBytes } = require('./hex')
+const { txidToWireBytes } = require('./hex')
 
 const MEMO_REPLY_PREFIX = '6d03'
 const MAX_REPLY_BYTES = 184
-const PARENT_TXID_BYTES = 32
 
 class MemoReply extends MemoAction {
   static config = {
@@ -83,7 +82,7 @@ class MemoReply extends MemoAction {
 // Build the raw OP_RETURN message payload for a reply.
 // The protocol wire format is: <parent txid 32 bytes><reply text UTF-8 bytes>.
 function buildReplyPayload (parentTxid, message) {
-  const parentBytes = hexToBytes(parentTxid, PARENT_TXID_BYTES, 'Parent txid')
+  const parentBytes = txidToWireBytes(parentTxid, 'Parent txid')
   const textBytes = new TextEncoder().encode(message)
   const raw = new Uint8Array(parentBytes.length + textBytes.length)
   raw.set(parentBytes, 0)

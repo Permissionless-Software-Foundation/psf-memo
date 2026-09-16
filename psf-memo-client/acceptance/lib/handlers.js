@@ -545,16 +545,18 @@ function createWorld () {
 }
 
 // Decode a raw reply payload into its parent txid (hex) and reply text.
+// The wire stores the txid little-endian, so reverse it into display order.
 function decodeReplyPayload (raw) {
   const buf = Buffer.from(raw)
-  const parentTxid = buf.slice(0, 32).toString('hex')
+  const parentTxid = Buffer.from(buf.slice(0, 32)).reverse().toString('hex')
   const text = buf.slice(32).toString('utf8')
   return { parentTxid, text }
 }
 
-// Decode a raw like payload back into the liked post txid (hex).
+// Decode a raw like payload back into the liked post txid (hex) in display
+// order. The wire stores the txid little-endian, so reverse it.
 function decodeLikeTxid (raw) {
-  return Buffer.from(raw).toString('hex')
+  return Buffer.from(raw).reverse().toString('hex')
 }
 
 // Resolve a literal value or a <parameter> placeholder from the example store.

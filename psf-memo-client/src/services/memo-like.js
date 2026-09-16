@@ -23,7 +23,7 @@
 */
 
 const MemoAction = require('./memo-action')
-const { hexToBytes } = require('./hex')
+const { hexToBytes, txidToWireBytes } = require('./hex')
 
 const MEMO_LIKE_PREFIX = '6d04'
 const DUST_LIMIT_SATS = 3000
@@ -136,7 +136,7 @@ class MemoLike extends MemoAction {
     this.validateTip(tipSats, spendable)
     this._requireTipAddress(tipSats, authorAddress)
 
-    const raw = hexToBytes(postTxid, PARENT_TXID_BYTES, 'Post txid')
+    const raw = txidToWireBytes(postTxid, 'Post txid')
     const bchOutput = this._buildTipOutput(tipSats, authorAddress)
 
     const txid = await this.wallet.sendOpReturn(raw, this.prefix, bchOutput)
