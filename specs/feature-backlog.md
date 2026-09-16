@@ -207,10 +207,24 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
   small; handoffs are blocked on a dirty tree. See `docs/process-improvements.md`
   for the what/why, commits, and verification evidence.
 
-## Next up: TBD
+## Next up: Post options menu (client)
 
-Current direction is front-end improvements to `psf-memo-client` (UI/UX polish,
-accessibility, performance, responsiveness, state handling, error surfacing).
+Every post card gets a working three-dots "Post options" menu. The menu is
+hidden until the button is clicked; its first (top) item is "See on block
+explorer", linking to the post transaction at `https://bch.loping.net/tx/<txid>`
+in a new tab. Clicking the button again, clicking outside the menu, or pressing
+Escape closes the menu, and arrow keys move focus to the first item. Scope: the
+recent feed, following feed, topic feed, thread modal, and the profile post
+card.
+
+- Client-only; no psf-memo-db or psf-memo-indexer changes.
+- The shared post card and the profile post card should share one common
+  options-menu component so the behavior stays identical on both.
+- Spec: `psf-memo-client/specs/post-options-menu.feature`.
+
+Current direction remains front-end improvements to `psf-memo-client` (UI/UX
+polish, accessibility, performance, responsiveness, state handling, error
+surfacing).
 
 ## Notes for future cycles
 
