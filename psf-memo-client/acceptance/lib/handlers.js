@@ -3173,11 +3173,7 @@ const handlers = [
     name: 'feed shows no link',
     pattern: /^the feed shows no link$/,
     run (m, example, world) {
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) => anchorsIn(html).length > 0)
-      if (found) {
-        throw new Error('Feed unexpectedly shows a link.')
-      }
+      assertFeedHasNoElement(world, anchorsIn, 'Feed unexpectedly shows a link.')
     }
   },
   {
@@ -3237,11 +3233,7 @@ const handlers = [
     name: 'feed shows no image',
     pattern: /^the feed shows no image$/,
     run (m, example, world) {
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) => imagesIn(html).length > 0)
-      if (found) {
-        throw new Error('Feed unexpectedly shows an image.')
-      }
+      assertFeedHasNoElement(world, imagesIn, 'Feed unexpectedly shows an image.')
     }
   },
   {
@@ -3277,6 +3269,15 @@ function getRenderedFeed (world) {
     world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
   }
   return world.renderedFeed
+}
+
+// Fail when any rendered feed HTML contains an element matched by extract.
+function assertFeedHasNoElement (world, extract, message) {
+  const rendered = getRenderedFeed(world)
+  const found = rendered.some((html) => extract(html).length > 0)
+  if (found) {
+    throw new Error(message)
+  }
 }
 
 // Extract the anchors from a rendered HTML string. The acceptance adapter

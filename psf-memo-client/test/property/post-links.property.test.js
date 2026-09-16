@@ -22,7 +22,11 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { seededRandom, forAll, intGen } = require('./harness')
-const { parsePostLinks } = require('../../src/services/post-links')
+const {
+  parsePostLinks,
+  isImageUrl,
+  imageAltText
+} = require('../../src/services/post-links')
 
 const rng = seededRandom(20260916)
 
@@ -170,4 +174,105 @@ test('parsePostLinks stringifies nullish and non-string input', () => {
   assert.deepEqual(parsePostLinks(null), [{ type: 'text', text: '' }])
   assert.deepEqual(parsePostLinks(undefined), [{ type: 'text', text: '' }])
   assert.deepEqual(parsePostLinks(12345), [{ type: 'text', text: '12345' }])
+})
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+const NON_IMAGE_EXTENSIONS = ['svg', 'pdf', 'txt', 'html', 'json', 'js']
+
+function randomCase (value) {
+  let out = ''
+  for (const ch of value) {
+    out += rng() < 0.5 ? ch.toLowerCase() : ch.toUpperCase()
+  }
+  return out
+}
+
+function randomName () {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const n = intGen(rng, 1, 10)()
+  let out = ''
+  for (let i = 0; i < n; i++) out += alphabet[Math.floor(rng() * alphabet.length)]
+  return out
+}
+
+function randomHost () {
+  return ['example.com', 'cdn.example.org', 'i.imgur.com', 'images.example.net'][Math.floor(rng() * 4)]
+}
+
+function randomQueryOrFragment () {
+  const kind = Math.floor(rng() * 4)
+  if (kind === 0) return ''
+  if (kind === 1) return `?w=${intGen(rng, 1, 2000)()}`
+  if (kind === 2) return '#section'
+  return '?a=1&b=2#frag'
+}
+
+function randomImageUrl () {
+  const ext = randomCase(IMAGE_EXTENSIONS[Math.floor(rng() * IMAGE_EXTENSIONS.length)])
+  const dir = ['', 'pics/', 'a/b/', 'img/'][Math.floor(rng() * 4)]
+  return `https://${randomHost()}/${dir}${randomName()}.${ext}${randomQueryOrFragment()}`
+}
+
+function randomNonImageUrl () {
+  if (Math.floor(rng() * 3) === 0) {
+    return `https://${randomHost()}/page${randomQueryOrFragment()}`
+  }
+  const ext = NON_IMAGE_EXTENSIONS[Math.floor(rng() * NON_IMAGE_EXTENSIONS.length)]
+  return `https://${randomHost()}/${randomName()}.${ext}${randomQueryOrFragment()}`
+}
+
+test('isImageUrl recognizes supported image extensions regardless of case or query', async () => {
+  await forAll(
+    () => randomImageUrl(),
+    async (url) => isImageUrl(url) === true,
+    { label: 'isImageUrl image urls', samples: 2000 }
+  )
+})
+
+test('isImageUrl rejects non-image paths even when a query mentions an image', async () => {
+  await forAll(
+    () => randomNonImageUrl(),
+    async (url) => isImageUrl(url) === false,
+    { label: 'isImageUrl non-image urls', samples: 2000 }
+  )
+})
+
+test('isImageUrl and imageAltText never throw and are deterministic for arbitrary input', async () => {
+  await forAll(
+    () => randomText(),
+    async (text) => {
+      let image, alt, imageAgain, altAgain
+      try {
+        image = isImageUrl(text)
+        alt = imageAltText(text)
+        imageAgain = isImageUrl(text)
+        altAgain = imageAltText(text)
+      } catch {
+        return false
+      }
+      if (typeof image !== 'boolean') return false
+      if (typeof alt !== 'string' || alt.length === 0) return false
+      return image === imageAgain && alt === altAgain
+    },
+    { label: 'isImageUrl/imageAltText robustness', samples: 3000 }
+  )
+})
+
+test('imageAltText returns the URL filename, ignoring query string and fragment', async () => {
+  await forAll(
+    () => randomImageUrl(),
+    async (url) => imageAltText(url) === new URL(url).pathname.split('/').pop(),
+    { label: 'imageAltText filename', samples: 2000 }
+  )
+})
+
+test('parsePostLinks keeps an image URL intact so isImageUrl still recognizes it', async () => {
+  await forAll(
+    () => randomImageUrl(),
+    async (url) => {
+      const link = parsePostLinks(`see ${url} now`).find((segment) => segment.type === 'link')
+      return Boolean(link) && link.href === url && isImageUrl(link.href) === true
+    },
+    { label: 'parsePostLinks image url round trip', samples: 2000 }
+  )
 })

@@ -16,6 +16,7 @@ const {
   isImageUrl,
   imageAltText
 } = require('../../services/post-links')
+const { addFailedImage } = require('../../services/failed-images')
 
 // A post image that falls back to a plain link if the image fails to load.
 function PostImage ({ href, alt, failed, onError }) {
@@ -56,12 +57,7 @@ function PostContent ({ text = '', initialFailedImages }) {
   const children = []
 
   const failImage = (href) => {
-    setFailedImages((previous) => {
-      if (previous.has(href)) return previous
-      const next = new Set(previous)
-      next.add(href)
-      return next
-    })
+    setFailedImages((previous) => addFailedImage(previous, href))
   }
 
   for (const segment of parsePostText(text)) {
