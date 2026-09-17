@@ -58,8 +58,11 @@ class MemoTopicPost extends MemoAction {
 
     await this.wallet.getUtxos()
 
-    const payload = this.room + message
-    const txid = await this.wallet.sendOpReturn(payload, this.prefix)
+    const pushes = [
+      new TextEncoder().encode(this.room),
+      new TextEncoder().encode(message)
+    ]
+    const txid = await this.wallet.sendOpReturn(pushes, this.prefix)
 
     this.reflect(txid, message)
 

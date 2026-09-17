@@ -15,7 +15,7 @@
 */
 
 const MemoTxidAction = require('./memo-txid-action')
-const { buildTxidTextPayload } = require('./hex')
+const { buildTxidTextPushes } = require('./hex')
 
 const MEMO_POLL_VOTE_PREFIX = '6d14'
 const MAX_COMMENT_BYTES = 184
@@ -35,7 +35,7 @@ class MemoPollVote extends MemoTxidAction {
 
   // Compose and broadcast a Memo poll-vote action.
   vote (comment) {
-    return this.broadcastTxid(comment, buildTxidTextPayload)
+    return this.broadcastTxid(comment, buildTxidTextPushes)
   }
 }
 

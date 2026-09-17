@@ -6,6 +6,7 @@
 import axios from 'axios'
 // Local libraries
 import GistServers from './gist-servers'
+import memoMultipush from './memo-multipush'
 
 class AsyncLoad {
   constructor () {
@@ -65,6 +66,10 @@ class AsyncLoad {
       }
 
       this.wallet = wallet
+
+      // Teach the wallet to broadcast multi-field Memo actions as separate
+      // OP_RETURN pushes.
+      memoMultipush.attachMultiPushOpReturn(wallet)
 
       return wallet
     } catch (error) {
@@ -239,6 +244,10 @@ class AsyncLoad {
       }
 
       this.wallet = wallet
+
+      // Teach the wallet to broadcast multi-field Memo actions as separate
+      // OP_RETURN pushes.
+      memoMultipush.attachMultiPushOpReturn(wallet)
 
       return wallet
     } catch (error) {

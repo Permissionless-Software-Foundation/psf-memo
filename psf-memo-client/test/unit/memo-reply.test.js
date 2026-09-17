@@ -31,7 +31,7 @@ function makeWallet () {
   }
 }
 
-test('reply broadcasts the parent txid in little-endian wire order', async () => {
+test('reply broadcasts the parent txid and text as separate pushes', async () => {
   const wallet = makeWallet()
   const memoReply = new MemoReply({ wallet })
 
@@ -39,9 +39,11 @@ test('reply broadcasts the parent txid in little-endian wire order', async () =>
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoReply.MEMO_REPLY_PREFIX)
-  const buf = Buffer.from(wallet.broadcasts[0].msg)
-  assert.equal(buf.slice(0, 32).toString('hex'), WIRE_HEX)
-  assert.equal(buf.slice(32).toString('utf8'), 'hello memo')
+  const pushes = wallet.broadcasts[0].msg
+  assert.ok(Array.isArray(pushes), 'expected separate pushes')
+  assert.equal(pushes.length, 2)
+  assert.equal(Buffer.from(pushes[0]).toString('hex'), WIRE_HEX)
+  assert.equal(Buffer.from(pushes[1]).toString('utf8'), 'hello memo')
 })
 
 test('isTooLong accepts a message exactly at the byte limit', () => {

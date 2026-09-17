@@ -28,16 +28,7 @@ function makeWallet (address = MY_ADDRESS) {
   }
 }
 
-function decodePayload (raw) {
-  const buf = Buffer.from(raw)
-  return {
-    pollType: buf[0],
-    optionCount: buf[1],
-    question: buf.slice(2).toString('utf8')
-  }
-}
-
-test('create broadcasts with the create-poll prefix and payload', async () => {
+test('create broadcasts the poll type, option count, and question as separate pushes', async () => {
   const wallet = makeWallet()
   const memoPollCreate = new MemoPollCreate({ wallet })
 
@@ -45,10 +36,12 @@ test('create broadcasts with the create-poll prefix and payload', async () => {
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoPollCreate.MEMO_CREATE_POLL_PREFIX)
-  const decoded = decodePayload(wallet.broadcasts[0].msg)
-  assert.equal(decoded.question, 'which is better?')
-  assert.equal(decoded.optionCount, 2)
-  assert.equal(decoded.pollType, 1)
+  const pushes = wallet.broadcasts[0].msg
+  assert.ok(Array.isArray(pushes), 'expected separate pushes')
+  assert.equal(pushes.length, 3)
+  assert.equal(Buffer.from(pushes[0])[0], 1)
+  assert.equal(Buffer.from(pushes[1])[0], 2)
+  assert.equal(Buffer.from(pushes[2]).toString('utf8'), 'which is better?')
 })
 
 test('create accepts an option count of one', async () => {

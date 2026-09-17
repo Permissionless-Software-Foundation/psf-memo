@@ -18,7 +18,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { seededRandom, forAll, intGen } = require('./harness')
-const { txidToWireBytes, buildTxidTextPayload } = require('../../src/services/hex')
+const { txidToWireBytes, buildTxidTextPushes } = require('../../src/services/hex')
 
 const HEX_CHARS = '0123456789abcdef'
 
@@ -87,8 +87,8 @@ test('payload embeds the wire txid followed by the UTF-8 text', async () => {
   await forAll(
     () => ({ txid: randomTxid(rng), text: randomText(rng) }),
     ({ txid, text }) => {
-      const raw = buildTxidTextPayload(txid, text)
-      const buf = Buffer.from(raw)
+      const pushes = buildTxidTextPushes(txid, text)
+      const buf = Buffer.concat(pushes.map((p) => Buffer.from(p)))
       const wire = Buffer.from(txidToWireBytes(txid)).toString('hex')
       const expectedText = Buffer.from(text, 'utf8')
 
@@ -96,13 +96,13 @@ test('payload embeds the wire txid followed by the UTF-8 text', async () => {
       if (buf.subarray(0, 32).toString('hex') !== wire) return false
       return buf.subarray(32).equals(expectedText)
     },
-    { label: 'buildTxidTextPayload shape' }
+    { label: 'buildTxidTextPushes shape' }
   )
 })
 
 test('a reply payload rejects an invalid txid with the parent label', () => {
   assert.throws(
-    () => buildTxidTextPayload('not-a-txid', 'hi', 'Parent txid'),
+    () => buildTxidTextPushes('not-a-txid', 'hi', 'Parent txid'),
     /Parent txid must be a 64-character hex string/
   )
 })

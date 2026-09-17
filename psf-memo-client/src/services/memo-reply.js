@@ -18,7 +18,7 @@
 
 const MemoAction = require('./memo-action')
 const { byteLength } = require('./utf8')
-const { buildTxidTextPayload } = require('./hex')
+const { buildTxidTextPushes } = require('./hex')
 
 const MEMO_REPLY_PREFIX = '6d03'
 const MAX_REPLY_BYTES = 184
@@ -56,9 +56,9 @@ class MemoReply extends MemoAction {
     // Refresh the wallet's spendable UTXO store so the broadcast has inputs.
     await this.wallet.getUtxos()
 
-    // Build the raw payload: parent txid bytes followed by UTF-8 message bytes.
-    const raw = buildTxidTextPayload(parentTxid, message, 'Parent txid')
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
+    // Build the separate pushes: parent txid bytes, then UTF-8 message bytes.
+    const pushes = buildTxidTextPushes(parentTxid, message, 'Parent txid')
+    const txid = await this.wallet.sendOpReturn(pushes, this.prefix)
 
     // Reflect the result on the injected thread once broadcast succeeds.
     this.reflect(txid, message, parentTxid)

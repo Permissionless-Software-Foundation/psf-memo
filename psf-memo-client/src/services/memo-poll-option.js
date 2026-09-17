@@ -15,7 +15,7 @@
 */
 
 const MemoTxidAction = require('./memo-txid-action')
-const { buildTxidTextPayload } = require('./hex')
+const { buildTxidTextPushes } = require('./hex')
 
 const MEMO_ADD_POLL_OPTION_PREFIX = '6d13'
 const MAX_OPTION_BYTES = 184
@@ -35,7 +35,7 @@ class MemoPollOption extends MemoTxidAction {
 
   // Compose and broadcast a Memo add-poll-option action.
   add (option) {
-    return this.broadcastTxid(option, buildTxidTextPayload)
+    return this.broadcastTxid(option, buildTxidTextPushes)
   }
 }
 

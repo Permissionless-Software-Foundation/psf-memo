@@ -62,8 +62,8 @@ class MemoPollCreate extends MemoAction {
 
     await this.wallet.getUtxos()
 
-    const raw = buildCreatePollPayload(question, this.pollType, count)
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
+    const pushes = buildCreatePollPushes(question, this.pollType, count)
+    const txid = await this.wallet.sendOpReturn(pushes, this.prefix)
 
     this.reflect(txid, question, count)
 
@@ -84,15 +84,15 @@ class MemoPollCreate extends MemoAction {
   }
 }
 
-// Build the raw OP_RETURN message payload for a create-poll action.
-// The protocol wire format is: <poll_type 1 byte><option_count 1 byte><question UTF-8 bytes>.
-function buildCreatePollPayload (question, pollType, optionCount) {
+// Build the separate OP_RETURN pushes for a create-poll action: the poll type
+// byte, the option count byte, and the UTF-8 question, each as its own push.
+function buildCreatePollPushes (question, pollType, optionCount) {
   const textBytes = new TextEncoder().encode(question)
-  const raw = new Uint8Array(2 + textBytes.length)
-  raw[0] = pollType & 0xff
-  raw[1] = optionCount & 0xff
-  raw.set(textBytes, 2)
-  return raw
+  return [
+    Uint8Array.from([pollType & 0xff]),
+    Uint8Array.from([optionCount & 0xff]),
+    textBytes
+  ]
 }
 
 MemoPollCreate.MEMO_CREATE_POLL_PREFIX = MEMO_CREATE_POLL_PREFIX
