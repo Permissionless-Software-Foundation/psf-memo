@@ -157,6 +157,18 @@ the captured output before the tool's `System/exit`; the JSON report
   with no spaces in the path. The tool writes its manifest (and, when clean, a
   `# mutation-stamp`) into the feature file; commit that tool-written change.
 
+- **DB soft Gherkin mutation was impractically slow until the runner-worker
+  narrowed its scope.** Each mutant re-ran the whole feature (12 examples), and
+  DB acceptance creates a fresh LevelDB world per example, so a 48-mutation
+  feature took >900s (only 32 mutations reached after 15 min). `runner-worker.js`
+  now diffs the mutated IR against `<work>/base/feature.json` — derived from the
+  mutation path `<work>/mutations/<id>/feature.json`, because the mutator's
+  `job.work_dir` may be the mutation-specific directory — and runs only the
+  changed scenario/example. This is safe because every scenario uses an isolated
+  world. The same 48-mutation feature now completes in ~74s. The indexer and
+  client runner-workers still run the full feature; apply the same pattern if
+  their soft runs get slow.
+
 - **`mutate-file.sh` works from every component dir, including the DB.** It
   defaults `MUTATE4JS_BIN` to the client's installed
   `node_modules/mutate4javascript`, and the tool's `npm test` baseline runs in
