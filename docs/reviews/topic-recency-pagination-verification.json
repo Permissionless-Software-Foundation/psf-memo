@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task": "topic-recency-pagination",
+  "component": "psf-memo-indexer",
+  "git_sha": "0e8f8f0eae2d4115d0b5b65eda2d924a7e3620da",
+  "branch": "swarmforge-architect",
+  "timestamp": "2026-09-17T17:27:48.078Z",
+  "commands": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "exit": 0,
+      "duration_ms": 8139,
+      "summary": "101 passing"
+    },
+    {
+      "name": "property",
+      "command": "npm run property",
+      "exit": 0,
+      "duration_ms": 5329,
+      "summary": "12 pass / 0 fail"
+    },
+    {
+      "name": "acceptance",
+      "command": "npm run acceptance",
+      "exit": 0,
+      "duration_ms": 1715,
+      "summary": "all 6 acceptance suites passed"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit": 0,
+      "duration_ms": 4463,
+      "summary": "ok"
+    }
+  ],
+  "result": "pass"
+}
