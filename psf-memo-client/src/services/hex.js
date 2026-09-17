@@ -7,6 +7,8 @@
   testable conversion helper.
 */
 
+const { encodeUtf8 } = require('./utf8')
+
 // Decode a hex string into a Uint8Array of the requested byte length.
 // The label parameter customizes error messages for the caller's context.
 function hexToBytes (hex, byteLength = 32, label = 'Value') {
@@ -38,7 +40,7 @@ function txidToWireBytes (txid, label = 'Value') {
 // each as its own push. The label customizes the invalid-txid error message.
 function buildTxidTextPushes (txid, text, label = 'Poll txid') {
   const txidBytes = txidToWireBytes(txid, label)
-  const textBytes = new TextEncoder().encode(text)
+  const textBytes = encodeUtf8(text)
   return [txidBytes, textBytes]
 }
 

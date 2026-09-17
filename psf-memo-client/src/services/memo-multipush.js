@@ -18,7 +18,6 @@
 // Normalize one push value (a UTF-8 string or byte array) to a Buffer.
 function toPushBuffer (value) {
   if (typeof value === 'string') return Buffer.from(value, 'utf8')
-  if (value instanceof Uint8Array) return Buffer.from(value)
   return Buffer.from(value)
 }
 

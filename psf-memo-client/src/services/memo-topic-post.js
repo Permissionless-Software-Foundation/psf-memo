@@ -16,7 +16,7 @@
 */
 
 const MemoAction = require('./memo-action')
-const { byteLength } = require('./utf8')
+const { byteLength, encodeUtf8 } = require('./utf8')
 
 const MEMO_TOPIC_MESSAGE_PREFIX = '6d0c'
 const MAX_TOPIC_MESSAGE_BYTES = 214
@@ -59,8 +59,8 @@ class MemoTopicPost extends MemoAction {
     await this.wallet.getUtxos()
 
     const pushes = [
-      new TextEncoder().encode(this.room),
-      new TextEncoder().encode(message)
+      encodeUtf8(this.room),
+      encodeUtf8(message)
     ]
     const txid = await this.wallet.sendOpReturn(pushes, this.prefix)
 

@@ -15,6 +15,7 @@ const assert = require('node:assert/strict')
 const {
   toPushBuffer,
   buildPushes,
+  broadcastMultiPush,
   attachMultiPushOpReturn
 } = require('../../src/services/memo-multipush')
 
@@ -120,4 +121,11 @@ test('attaching twice does not double-wrap the wallet', async () => {
   await wallet.sendOpReturn('single', '6d02')
 
   assert.equal(wallet.calls.length, 1)
+})
+
+test('broadcastMultiPush rejects a wallet without the OP_RETURN builder', async () => {
+  await assert.rejects(
+    broadcastMultiPush({ opReturn: {} }, ['hi'], '6d02'),
+    /does not support multi-push OP_RETURN broadcasts/
+  )
 })

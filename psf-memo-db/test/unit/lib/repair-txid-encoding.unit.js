@@ -44,6 +44,15 @@ function loadReversedFixture (level) {
   level.pollVotesDb.put('vote-2', { pollTxid: DISPLAY_POLL, comment: 'no', blockHeight: 11 })
 }
 
+// Load the reversed-reference fixture, run the repair once, and return the
+// repaired level for assertions.
+async function repairedFixture () {
+  const level = makeLevel()
+  loadReversedFixture(level)
+  await repairTxidEncoding(level)
+  return level
+}
+
 describe('#RepairTxidEncoding', () => {
   describe('reverseTxid', () => {
     it('reverses the byte order of a display txid', () => {
@@ -98,10 +107,7 @@ describe('#RepairTxidEncoding', () => {
 
   describe('repairTxidEncoding', () => {
     it('corrects a reversed like reference and rebuilds postLikes', async () => {
-      const level = makeLevel()
-      loadReversedFixture(level)
-
-      await repairTxidEncoding(level)
+      const level = await repairedFixture()
 
       assert.equal((await level.likesDb.get('like-1')).postTxid, DISPLAY_POST)
       assert.include(level.postLikesDb.keys(), `${DISPLAY_POST}:like-1`)
@@ -109,10 +115,7 @@ describe('#RepairTxidEncoding', () => {
     })
 
     it('corrects a reversed reply reference and rebuilds postChildren', async () => {
-      const level = makeLevel()
-      loadReversedFixture(level)
-
-      await repairTxidEncoding(level)
+      const level = await repairedFixture()
 
       assert.equal((await level.postParentsDb.get('reply-1')).parentTxid, DISPLAY_POST)
       assert.include(level.postChildrenDb.keys(), `${DISPLAY_POST}:reply-1`)
@@ -120,20 +123,14 @@ describe('#RepairTxidEncoding', () => {
     })
 
     it('corrects reversed poll option and vote references', async () => {
-      const level = makeLevel()
-      loadReversedFixture(level)
-
-      await repairTxidEncoding(level)
+      const level = await repairedFixture()
 
       assert.equal((await level.pollOptionsDb.get('option-1')).pollTxid, DISPLAY_POLL)
       assert.equal((await level.pollVotesDb.get('vote-1')).pollTxid, DISPLAY_POLL)
     })
 
     it('leaves correctly-encoded references unchanged', async () => {
-      const level = makeLevel()
-      loadReversedFixture(level)
-
-      await repairTxidEncoding(level)
+      const level = await repairedFixture()
 
       assert.equal((await level.likesDb.get('like-2')).postTxid, DISPLAY_POST)
       assert.equal((await level.postParentsDb.get('reply-2')).parentTxid, DISPLAY_POST)
@@ -142,10 +139,7 @@ describe('#RepairTxidEncoding', () => {
     })
 
     it('leaves an unknown reference unchanged', async () => {
-      const level = makeLevel()
-      loadReversedFixture(level)
-
-      await repairTxidEncoding(level)
+      const level = await repairedFixture()
 
       assert.equal((await level.likesDb.get('like-3')).postTxid, UNKNOWN)
     })
@@ -163,10 +157,7 @@ describe('#RepairTxidEncoding', () => {
     })
 
     it('is idempotent', async () => {
-      const level = makeLevel()
-      loadReversedFixture(level)
-
-      await repairTxidEncoding(level)
+      const level = await repairedFixture()
       await repairTxidEncoding(level)
 
       const postLikes = level.postLikesDb.keys()

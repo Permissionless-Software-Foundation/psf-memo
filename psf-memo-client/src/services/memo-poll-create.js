@@ -17,7 +17,7 @@
 */
 
 const MemoAction = require('./memo-action')
-const { byteLength } = require('./utf8')
+const { byteLength, encodeUtf8 } = require('./utf8')
 
 const MEMO_CREATE_POLL_PREFIX = '6d10'
 const MAX_QUESTION_BYTES = 209
@@ -87,7 +87,7 @@ class MemoPollCreate extends MemoAction {
 // Build the separate OP_RETURN pushes for a create-poll action: the poll type
 // byte, the option count byte, and the UTF-8 question, each as its own push.
 function buildCreatePollPushes (question, pollType, optionCount) {
-  const textBytes = new TextEncoder().encode(question)
+  const textBytes = encodeUtf8(question)
   return [
     Uint8Array.from([pollType & 0xff]),
     Uint8Array.from([optionCount & 0xff]),

@@ -22,8 +22,9 @@ class MemoTxidAction extends MemoAction {
   }
 
   // Compose and broadcast an action that embeds this.pollTxid plus the given
-  // value through the supplied buildPayload(pollTxid, value) function.
-  async broadcastTxid (value, buildPayload) {
+  // value. buildPushes(pollTxid, value) returns the ordered OP_RETURN field
+  // pushes for the action.
+  async broadcastTxid (value, buildPushes) {
     const check = this.validate(value)
     this._throwIfInvalid(check)
 
@@ -39,8 +40,8 @@ class MemoTxidAction extends MemoAction {
 
     await this.wallet.getUtxos()
 
-    const raw = buildPayload(this.pollTxid, value)
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
+    const fields = buildPushes(this.pollTxid, value)
+    const txid = await this.wallet.sendOpReturn(fields, this.prefix)
 
     this.reflect(txid, value)
 
