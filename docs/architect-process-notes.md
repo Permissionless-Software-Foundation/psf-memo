@@ -169,11 +169,25 @@ the captured output before the tool's `System/exit`; the JSON report
   client runner-workers still run the full feature; apply the same pattern if
   their soft runs get slow.
 
+- **`gherkin-mutator` status lines may not appear until the run finishes.** A
+  long run can print only its initial `completed=0` line and look hung; the
+  final status/report only lands at the end. Gauge real progress by counting the
+  `mutations/` subdirectories in the work dir, not the status output.
+
 - **`mutate-file.sh` works from every component dir, including the DB.** It
   defaults `MUTATE4JS_BIN` to the client's installed
   `node_modules/mutate4javascript`, and the tool's `npm test` baseline runs in
   the current component, so the DB mutation runs use the DB suite without a
   second tool install.
+
+- **A killed `mutate4javascript` run can strip the embedded manifest.** If the
+  tool is killed after it removes the old `mutate4javascript-manifest` block but
+  before it rewrites it (seen on `topic-query.js` when a worker hung and the
+  shell timeout fired), `git diff` shows the whole manifest as deleted. Restore
+  it with the tool's own command from the component dir:
+  `<tool> <source-file> --update-manifest`. After any timeout, confirm every
+  mutated file still contains `mutate4javascript-manifest-begin` before
+  committing.
 
 ## Workflow observations
 
@@ -194,6 +208,14 @@ the captured output before the tool's `System/exit`; the JSON report
   `git add -f docs/process-notes.md`) before committing. This has silently
   dropped 8 of 13 summaries in the past; verify with `git ls-files docs/reviews/`
   after committing.
+
+- **Run `verify.sh` after committing the review changes, not before.** The
+  verification record's `git_sha` comes from `git rev-parse HEAD`, so uncommitted
+  review changes produce a record pinned to the parent commit. Order: commit the
+  review code/tests/manifests, then run
+  `verify.sh <component> --record <file> --task <task>` for each component (the
+  `git_sha` now matches the review commit), then commit the records and summary.
+  This matches the prior `fac0173` (review) -> `18d1fb1` (record) pattern.
 
 - **`ready_for_next.sh` / `done_with_current.sh`** are the source of truth for
   queued work. `done_with_current.sh` prints `NO_TASK` when the queue is empty;
