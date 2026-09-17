@@ -85,3 +85,7 @@ export async function backfillTopicIndexes ({ roomsDb, topicSummariesDb, topicRe
 
   return { rooms: summaries.size }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-17T16:40:51.620Z","module_hash":"7a67d2c6ca7ea2494b1ff3a6dcc703c47a0dfd341fe2d593750b82b810f36da1","functions":[{"id":"func/topicRecencyKey","name":"topicRecencyKey","line":26,"end_line":29,"hash":"a034a6023f72d08e40d28bb51e41e370c1a42d5682315b162a7c2a81f7f31310"},{"id":"func/roomFromEntry","name":"roomFromEntry","line":33,"end_line":36,"hash":"5bf2a8338a623f65191729bc2433a87869b085b29547fbb5e42ebaa67d6473c1"},{"id":"func/applyPost","name":"applyPost","line":39,"end_line":43,"hash":"4edf9dd98a5889c62fd60f4107563427f0a55dc0250c27f6ac0af49b6b934c42"},{"id":"func/collectSummaries","name":"collectSummaries","line":45,"end_line":60,"hash":"73a07286477939379fb82ceace71991aa0cd830f041897dbe4cb5748c091a93f"},{"id":"func/removeStale","name":"removeStale","line":63,"end_line":69,"hash":"09cc44be72b9f955722f17c117d8ca18fe953dcf2cbd6efab110798dce4d0417"},{"id":"func/backfillTopicIndexes","name":"backfillTopicIndexes","line":71,"end_line":87,"hash":"7a6c1207032b16c5e7fc90fe9f7e2543b22d126fc0924296573c911dbf21d8c4"}]}
+// mutate4javascript-manifest-end

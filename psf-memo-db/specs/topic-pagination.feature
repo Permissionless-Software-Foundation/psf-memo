@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-17T17:22:41.386110241Z","feature_name":"Topic Pagination","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/topic-pagination.feature","background_hash":"4a01ae658dda9a91b7f19edbeb3e657bef1d666b5355b8dd30496013bed35d7e","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topic Pagination - 1, Topic Pagination - 2, Topic Pagination - 3
 #
 # GET /topics returns a page of topics ordered by their most recent post's

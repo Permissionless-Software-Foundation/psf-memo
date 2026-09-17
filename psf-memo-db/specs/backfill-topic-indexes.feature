@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=62b1088abcd456b0067ce18fd78f32c715254e912046c44d8d67fdd54417147f
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-17T17:23:44.068113041Z","feature_name":"Backfill topic indexes","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/backfill-topic-indexes.feature","background_hash":"386b39215fd2ac58af1a095ce21b3e5a94c26a052be33ebb653986f56d1cdaf5","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Backfill topic indexes - 1 backfill summarizes every room","scenario_hash":"98e2a49f35bf2c57825af892d343b091df3b8ea9938d88877112a244195e2b6a","mutation_count":9,"result":{"Total":9,"Killed":9,"Survived":0,"Errors":0},"tested_at":"2026-09-17T17:23:44.068113041Z"},{"index":1,"name":"Backfill topic indexes - 2 backfill builds the recency index","scenario_hash":"6210a596d0011bd42ab984430a01e639932e19bb99dd05e6b79c0e3d8e50ccdc","mutation_count":6,"result":{"Total":6,"Killed":6,"Survived":0,"Errors":0},"tested_at":"2026-09-17T17:23:44.068113041Z"},{"index":2,"name":"Backfill topic indexes - 3 backfill is idempotent","scenario_hash":"93b5d81880c0f9bf768aa363353607761c7cebd4d6b1c6cef52eae0f40fd3cc0","mutation_count":6,"result":{"Total":6,"Killed":6,"Survived":0,"Errors":0},"tested_at":"2026-09-17T17:23:44.068113041Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Backfill topic indexes - 1, Backfill topic indexes - 2, Backfill topic indexes - 3
 #
 # The topic backfill utility builds topicSummaries and topicRecency from the

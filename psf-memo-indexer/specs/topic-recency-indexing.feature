@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-17T16:45:30.497089416Z","feature_name":"Topic Recency Indexing","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/topic-recency-indexing.feature","background_hash":"0639f3e7176ddd178bf266b5f62c66fcfff9acda7487916f3496de2a3dd86e3f","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topic Recency Indexing - 1, Topic Recency Indexing - 2, Topic Recency Indexing - 3, Topic Recency Indexing - 4, Topic Recency Indexing - 5
 #
 # The indexer maintains two topic indexes so the read side can list topics by

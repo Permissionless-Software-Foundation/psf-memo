@@ -48,3 +48,7 @@ export async function ensureTopicRoom (adapters, room) {
   await adapters.topicSummaryDb.update(room, { room, postCount: 0, lastHeight: 0 })
   await adapters.topicRecencyDb.update(topicRecencyKey(0, room), { room, blockHeight: 0 })
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-17T16:22:46.190Z","module_hash":"cdd90074000f9eddb01ce298351d75ae8afdecc8fe34711a0a415099d64a7e70","functions":[{"id":"func/recordTopicPost","name":"recordTopicPost","line":19,"end_line":40,"hash":"91b542cddca534356bcaf15426ec2abccd04d610cf8db4c21de7deb216b250d8"},{"id":"func/ensureTopicRoom","name":"ensureTopicRoom","line":44,"end_line":50,"hash":"ca3cb6538d16deea7546a5bbf1a24a752f803a8929b7da8c3b8ba9582a20816a"}]}
+// mutate4javascript-manifest-end

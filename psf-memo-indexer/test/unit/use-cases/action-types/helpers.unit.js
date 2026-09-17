@@ -4,7 +4,9 @@ import {
   normalizeTwoPushMemoDatas,
   stripLeadingEmptyPushes,
   txHashFromPush,
-  logProcessError
+  logProcessError,
+  topicRecencyKey,
+  isNotFound
 } from '../../../../src/use-cases/action-types/helpers.js'
 import { PREFIX_SET_PROFILE_PIC, PREFIX_POST } from '../../../../src/lib/memo-codes.js'
 
@@ -118,6 +120,24 @@ describe('#action-types/helpers', () => {
       assert.equal(create.firstCall.args[0], 'tx1')
       assert.equal(create.firstCall.args[1].error, 'bad data')
       assert.equal(create.firstCall.args[1].blockHeight, 600100)
+    })
+  })
+
+  describe('#topicRecencyKey', () => {
+    it('should encode an inverted, zero-padded height with the room name', () => {
+      assert.equal(topicRecencyKey(0, 'bitcoin'), '999999999999:bitcoin')
+      assert.equal(topicRecencyKey(600200, 'bitcoin'), '999999399799:bitcoin')
+      assert.equal(topicRecencyKey(undefined, 'dev'), '999999999999:dev')
+    })
+  })
+
+  describe('#isNotFound', () => {
+    it('should recognize not-found errors and reject everything else', () => {
+      assert.isTrue(isNotFound({ notFound: true }))
+      assert.isTrue(isNotFound({ code: 'LEVEL_NOT_FOUND' }))
+      assert.isTrue(isNotFound({ response: { status: 404 } }))
+      assert.isFalse(isNotFound({}))
+      assert.isFalse(isNotFound(null))
     })
   })
 })

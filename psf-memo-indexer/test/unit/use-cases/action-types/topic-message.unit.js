@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 import { handleTopicMessage } from '../../../../src/use-cases/action-types/topic-message.js'
 import { topicRecencyKey } from '../../../../src/use-cases/action-types/helpers.js'
+import { MAX_POST_SIZE } from '../../../../src/lib/memo-codes.js'
 
 function makeDb () {
   const store = new Map()
@@ -153,6 +154,27 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.equal(adapters.processErrorDb.store.size, 1)
     assert.equal(adapters.topicSummaryDb.store.size, 0)
     assert.equal(adapters.topicRecencyDb.store.size, 0)
+  })
+
+  it('should index a topic message with room and message exactly at the maximum size', async () => {
+    const adapters = makeAdapters()
+    const room = 'bitcoin'
+    const message = 'x'.repeat(MAX_POST_SIZE - room.length)
+
+    await processTopicMessage(adapters, {
+      txid: 'topic-max',
+      room,
+      addr: 'bitcoincash:qaddr-a',
+      height: 600100,
+      text: message
+    })
+
+    assert.equal(adapters.processErrorDb.store.size, 0)
+    assert.deepEqual(adapters.topicSummaryDb.store.get(room), {
+      room,
+      postCount: 1,
+      lastHeight: 600100
+    })
   })
 
   it('should log a process error and index nothing for an oversized topic message', async () => {
