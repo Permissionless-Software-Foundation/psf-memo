@@ -113,6 +113,15 @@ the captured output before the tool's `System/exit`; the JSON report
   (`--json`) did. Redirect stdout to a file and use `--json` for a reliable,
   parseable record of killed/survived mutations.
 
+- **`gherkin-mutator` writes an empty `scenarios` manifest when every scenario
+  has an intrinsic survivor.** `new-manifest` records only scenarios with
+  `Survived = 0` and `Errors = 0`. When all mutations are single-character case
+  changes of example values used consistently on both the setup and assertion
+  sides, every scenario survives and the committed manifest is
+  `"scenarios":[]` with no `# mutation-stamp`. This is the tool's expected
+  output (those scenarios are intentionally re-mutated next run), not a partial
+  write; commit it as-is and document the equivalents in the review summary.
+
 - **`gherkin-mutator` can run from `tmp/aps` with absolute component paths.**
   The Babashka task must run where `bb.edn` defines it (`tmp/aps`), but the
   runner worker resolves the job's `feature_json`/`work_dir`/`generated_dir`
