@@ -29,6 +29,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - A single user-facing feature may still touch more than one component; call
   out all affected components in the task description and in the handoff.
 
+## In progress
+
+- **Topic recency ordering and pagination (task `topic-recency-pagination`):**
+  make `GET /topics` order by most recent topic post without scanning the whole
+  `rooms` store, and paginate it. The indexer maintains two new stores:
+  `topicSummaries` (one record per room with `postCount` and `lastHeight`) and
+  `topicRecency` (one record per room at its latest post height; follow-only
+  rooms at height 0). `GET /topics` gains `limit`/`offset` and returns
+  `pagination`; the client topics page loads 50 per page with Previous/Next.
+  A topic backfill utility builds both indexes from the existing `rooms` store.
+  Client + indexer + DB. Specs:
+  `psf-memo-indexer/specs/topic-recency-indexing.feature`,
+  `psf-memo-db/specs/backfill-topic-indexes.feature`,
+  `psf-memo-db/specs/topic-pagination.feature`,
+  `psf-memo-client/specs/topic-pagination.feature`.
+
 ## Recently completed
 
 - **Memo multi-push encoding (2026-09-17):** fixed the payload layout for

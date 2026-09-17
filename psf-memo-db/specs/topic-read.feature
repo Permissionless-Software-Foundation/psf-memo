@@ -22,11 +22,18 @@
 #     post-200 { txid: post-200, addr: addr-b, text: bitcoin again, blockHeight: 200 }
 #     post-250 { txid: post-250, addr: addr-a, text: cash rules, blockHeight: 250 }
 #     post-400 { txid: post-400, addr: addr-c, text: dev stuff, blockHeight: 400 }
+#   topicSummaries store (derived from rooms):
+#     bitcoin { room: bitcoin, postCount: 2, lastHeight: 300 }
+#     cash    { room: cash, postCount: 1, lastHeight: 250 }
+#     dev     { room: dev, postCount: 1, lastHeight: 400 }
+#     lone    { room: lone, postCount: 0, lastHeight: 0 }
+#   topicRecency store (derived from rooms):
+#     bitcoin at 300, cash at 250, dev at 400, lone at 0
 Feature: Topic Read
 
   Background:
-    Given a psf-memo-db instance with a rooms store and a posts store
-    Given the fixture "topics-with-posts" is loaded into the rooms and posts stores
+    Given a psf-memo-db instance with rooms, posts, topicSummaries, and topicRecency stores
+    Given the fixture "topics-with-posts" is loaded into the rooms, posts, topicSummaries, and topicRecency stores
 
   Scenario Outline: Topic Read - 1 GET /topics lists distinct topics with their post counts
     When the client requests /topics
