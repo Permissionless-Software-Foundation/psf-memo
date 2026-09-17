@@ -31,21 +31,28 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Topic recency ordering and pagination (task `topic-recency-pagination`):**
-  make `GET /topics` order by most recent topic post without scanning the whole
-  `rooms` store, and paginate it. The indexer maintains two new stores:
+_(none)_
+
+## Recently completed
+
+- **Topic recency ordering and pagination (2026-09-17):** `GET /topics` now
+  orders topics by each room's most recent post and paginates without scanning
+  the whole `rooms` store. The indexer maintains two new stores:
   `topicSummaries` (one record per room with `postCount` and `lastHeight`) and
   `topicRecency` (one record per room at its latest post height; follow-only
-  rooms at height 0). `GET /topics` gains `limit`/`offset` and returns
-  `pagination`; the client topics page loads 50 per page with Previous/Next.
-  A topic backfill utility builds both indexes from the existing `rooms` store.
-  Client + indexer + DB. Specs:
+  rooms at height 0), both idempotent. `GET /topics` gained `limit`/`offset`
+  and returns `pagination`; rooms with posts come first by most recent post
+  height descending, ties by room name ascending, follow-only rooms last. A
+  topic backfill utility (`util/room/backfill-topic-indexes.js`) builds both
+  indexes from existing `rooms`. The client topics page loads 50 per page with
+  Previous/Next. Client + indexer + DB. Specs:
   `psf-memo-indexer/specs/topic-recency-indexing.feature`,
   `psf-memo-db/specs/backfill-topic-indexes.feature`,
   `psf-memo-db/specs/topic-pagination.feature`,
-  `psf-memo-client/specs/topic-pagination.feature`.
-
-## Recently completed
+  `psf-memo-client/specs/topic-pagination.feature`. Merged to `master` at
+  `090f41f` (review commit `0e8f8f0`; records
+  `docs/reviews/topic-recency-pagination-verification.json` (indexer),
+  `-client-verification.json`, and `-db-verification.json`).
 
 - **Memo multi-push encoding (2026-09-17):** fixed the payload layout for
   every multi-field Memo action. `minimal-slp-wallet`'s

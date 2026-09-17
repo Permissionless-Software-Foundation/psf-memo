@@ -523,6 +523,24 @@ that a single user-facing feature may require specs in more than one component.
     option count — killed all 8 non-text mutations. `gherkin-mutator` wrote an
     empty `scenarios` manifest because every scenario has an intrinsic
     survivor; that is expected and committed as tool-written.
+38. **A verification record may name the architect code-review commit while the
+    branch tip is a later docs-only commit.** For `topic-recency-pagination`
+    the three records name `0e8f8f0`, while the merged tip `090f41f` ("Record
+    ... review and verification") added only `docs/reviews/` files.
+    `git diff 0e8f8f0 090f41f` was docs-only, so the records were valid for
+    the merged tree. Extends gotcha #26: compare the record's `git_sha` to the
+    architect code-review commit and confirm any later commits are
+    docs/generated-metadata only before deciding the record is stale.
+39. **Three-component tasks produce three records, and the canonical name is not
+    always the client.** For `topic-recency-pagination` the records were
+    `docs/reviews/topic-recency-pagination-verification.json` (indexer),
+    `docs/reviews/topic-recency-pagination-client-verification.json`, and
+    `docs/reviews/topic-recency-pagination-db-verification.json`. Check every
+    component record, not just `<task>-verification.json`, when a task spans
+    client + db + indexer. When no record matches the merged commit, run only
+    the merged features' generated acceptance test files (parse with
+    `bb gherkin-parser`, generate with `acceptance/lib/generate.js`, then run
+    the generated test) instead of the full suite.
 
 ---
 
@@ -574,16 +592,18 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `4dedc51` (`memo-multipush-encoding` merged from
-`swarmforge-architect`). One verification record names the review commit
-`fac01730c4`: `docs/reviews/memo-multipush-encoding-verification.json`
-(client, 425 unit / 85 property / 31 acceptance suites / lint / build); the
-commits after the review commit added only `docs/` (summary, record, architect
-process note). This task fixed the multi-field payload layout for reply, topic
-message, add-poll-option, poll vote, and create-poll. The specifier merged the
-branch and ran only the merged feature's acceptance suite (10/10 executions
-passed) as the independent check. Run `swarmforge/scripts/state.sh` to refresh
-these HEAD lines.
+Current `master` HEAD: `090f41f` (`topic-recency-pagination` merged from
+`swarmforge-architect`). The three verification records name the architect code
+review commit `0e8f8f0`; the commits after it (`090f41f`) added only `docs/`
+(records and summary), so the records are valid for the merged tree. This task
+made `GET /topics` order by most recent post and paginate using two new indexes
+(`topicSummaries`, `topicRecency`) plus an idempotent backfill and client
+topics-page pagination. Records:
+`docs/reviews/topic-recency-pagination-verification.json` (indexer),
+`-client-verification.json`, `-db-verification.json`. The specifier merged the
+branch and ran only the merged features' acceptance suites (indexer 8/8, db
+31/31, client 4/4) as the independent check. Run `swarmforge/scripts/state.sh`
+to refresh these HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
 performance, responsiveness, state handling, error surfacing). See
