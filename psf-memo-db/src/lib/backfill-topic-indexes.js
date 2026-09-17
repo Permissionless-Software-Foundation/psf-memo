@@ -47,6 +47,7 @@ async function collectSummaries (roomsDb) {
 
   for await (const [key, value] of roomsDb.iterator()) {
     const room = roomFromEntry(key, value)
+    if (!room) continue
     if (!summaries.has(room)) {
       summaries.set(room, { room, postCount: 0, lastHeight: 0 })
     }
