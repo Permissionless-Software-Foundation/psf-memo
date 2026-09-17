@@ -24,6 +24,7 @@ const {
   buildPushes,
   attachMultiPushOpReturn
 } = require('../../src/services/memo-multipush')
+const { encodeScript } = require('../support/script-encoding')
 
 const rng = seededRandom(20260916)
 
@@ -59,17 +60,6 @@ function randomFields () {
   const fields = []
   for (let i = 0; i < count; i++) fields.push(randomField())
   return fields
-}
-
-// Encode a script the way Bitcoin does: an opcode number is one byte, a
-// Buffer becomes a length-prefixed push.
-function encodeScript (script) {
-  const parts = script.map((el) => {
-    if (typeof el === 'number') return Buffer.from([el])
-    const buf = Buffer.from(el)
-    return Buffer.concat([Buffer.from([buf.length]), buf])
-  })
-  return Buffer.concat(parts)
 }
 
 // A double of the minimal-slp-wallet surface the adapter reuses.

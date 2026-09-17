@@ -45,5 +45,5 @@ MemoPollVote.MAX_COMMENT_BYTES = MAX_COMMENT_BYTES
 module.exports = MemoPollVote
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T23:38:23.086Z","module_hash":"c60989293dede6eeaf8edd168d00745e7299620b80874f87680337cc2f4d36fc","functions":[{"id":"func/MemoPollVote.vote","name":"MemoPollVote.vote","line":37,"end_line":39,"hash":"c6c194dfaf6c92f5cafcf86772bd295d038536ea20079931e4144eb5141c7101"}]}
+// {"version":1,"tested_at":"2026-09-17T04:17:10.193Z","module_hash":"e03a12dfad981e8a9ce4d4af763f0c57bd7a0f70a8bf22adc4b83d539b4e4725","functions":[{"id":"func/MemoPollVote.vote","name":"MemoPollVote.vote","line":37,"end_line":39,"hash":"e7ec8ae8f66c762cd7bb9fd9bb3001fe2a1b63843933d57372d6fd6f6a87b3dc"}]}
 // mutate4javascript-manifest-end

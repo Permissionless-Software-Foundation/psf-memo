@@ -589,6 +589,16 @@ function txidWireHex (txid) {
   return Buffer.from(txid, 'hex').reverse().toString('hex')
 }
 
+// Assert that the most recent broadcast's push at `index` decodes to the
+// expected UTF-8 text. Shared by the topic/text/question push assertions.
+function assertUtf8Push (world, index, expected, label) {
+  const push = broadcastPush(world, index)
+  const actual = push.toString('utf8')
+  if (actual !== expected) {
+    throw new Error(`${label} push "${actual}" did not match "${expected}".`)
+  }
+}
+
 // Resolve a literal value or a <parameter> placeholder from the example store.
 function resolveParam (value, example) {
   const match = /^<([A-Za-z0-9_]+)>$/.exec(String(value).trim())
@@ -1113,11 +1123,7 @@ const handlers = [
     name: 'second broadcast push is UTF-8 topic',
     pattern: /^the second broadcast push is the UTF-8 topic "(.+)"$/,
     run (m, example, world) {
-      const topic = resolveText(m[1], example)
-      const push = broadcastPush(world, 1)
-      if (push.toString('utf8') !== topic) {
-        throw new Error(`Second push "${push.toString('utf8')}" did not match topic "${topic}".`)
-      }
+      assertUtf8Push(world, 1, resolveText(m[1], example), 'Second')
     }
   },
   {
@@ -1135,11 +1141,7 @@ const handlers = [
     name: 'third broadcast push is UTF-8 text',
     pattern: /^the third broadcast push is the UTF-8 text "(.+)"$/,
     run (m, example, world) {
-      const text = resolveText(m[1], example)
-      const push = broadcastPush(world, 2)
-      if (push.toString('utf8') !== text) {
-        throw new Error(`Third push "${push.toString('utf8')}" did not match text "${text}".`)
-      }
+      assertUtf8Push(world, 2, resolveText(m[1], example), 'Third')
     }
   },
   {
@@ -1157,11 +1159,7 @@ const handlers = [
     name: 'fourth broadcast push is UTF-8 question',
     pattern: /^the fourth broadcast push is the UTF-8 question "(.+)"$/,
     run (m, example, world) {
-      const question = resolveText(m[1], example)
-      const push = broadcastPush(world, 3)
-      if (push.toString('utf8') !== question) {
-        throw new Error(`Fourth push "${push.toString('utf8')}" did not match question "${question}".`)
-      }
+      assertUtf8Push(world, 3, resolveText(m[1], example), 'Fourth')
     }
   },
   {

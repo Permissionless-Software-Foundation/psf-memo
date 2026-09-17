@@ -21,5 +21,5 @@ function byteLength (str) {
 module.exports = { encodeUtf8, byteLength }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-26T12:17:55.885Z","module_hash":"7f91541c49f2b6f421e8d4158bfe808b35a5449534cb26c567162fce6fec64bf","functions":[{"id":"func/byteLength","name":"byteLength","line":11,"end_line":13,"hash":"973c9dadcd1d8bbd53587252443880db13c8be3639fa74ce3c69a08ea358c8e2"}]}
+// {"version":1,"tested_at":"2026-09-17T04:11:15.796Z","module_hash":"530eeae383fa202f8e50d83126a9bafaaa49b04268f297e9e91027a89cde71b4","functions":[{"id":"func/encodeUtf8","name":"encodeUtf8","line":12,"end_line":14,"hash":"8d56bdd5607b741578d5f51511391e0376cc410181401b2570fde0990b6bf976"},{"id":"func/byteLength","name":"byteLength","line":17,"end_line":19,"hash":"4d5266d6b3715a761b533e67477846156cfbd497460e5af448a8ea7a72bb580c"}]}
 // mutate4javascript-manifest-end

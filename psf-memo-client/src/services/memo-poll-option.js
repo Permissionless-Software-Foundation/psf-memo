@@ -45,5 +45,5 @@ MemoPollOption.MAX_OPTION_BYTES = MAX_OPTION_BYTES
 module.exports = MemoPollOption
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T23:38:02.285Z","module_hash":"f8432d9ccb0073f5cce9f96415fdfb033876f498a7d80aadaca1ed96d89d4ce3","functions":[{"id":"func/MemoPollOption.add","name":"MemoPollOption.add","line":37,"end_line":39,"hash":"e0343ddce138d48e3fec2c5c0169e9d99f374835cc95d381383a254297d7f1dc"}]}
+// {"version":1,"tested_at":"2026-09-17T04:16:42.577Z","module_hash":"4bcfeb64bcefaafb3d61272db2623e832b65930f966f5494bebfd417b29dc833","functions":[{"id":"func/MemoPollOption.add","name":"MemoPollOption.add","line":37,"end_line":39,"hash":"d8bdf2dda07743c5d6927b7a6ef69715f033aefe2e77b5ca6923c2afe3772088"}]}
 // mutate4javascript-manifest-end

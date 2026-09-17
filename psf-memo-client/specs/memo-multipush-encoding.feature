@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-17T04:24:27.366008662Z","feature_name":"Memo multi-push encoding","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/memo-multipush-encoding.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Memo multi-push encoding - 1, Memo multi-push encoding - 2, Memo multi-push encoding - 3, Memo multi-push encoding - 4, Memo multi-push encoding - 5
 #
 # Memo actions that carry more than one field encode each protocol field as

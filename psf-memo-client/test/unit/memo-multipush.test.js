@@ -18,17 +18,7 @@ const {
   broadcastMultiPush,
   attachMultiPushOpReturn
 } = require('../../src/services/memo-multipush')
-
-// Encode a script the way Bitcoin does: an opcode number is one byte, a
-// Buffer/string becomes a length-prefixed push. Enough to observe the pushes.
-function encodeScript (script) {
-  const parts = script.map((el) => {
-    if (typeof el === 'number') return Buffer.from([el])
-    const buf = Buffer.from(el)
-    return Buffer.concat([Buffer.from([buf.length]), buf])
-  })
-  return Buffer.concat(parts)
-}
+const { encodeScript } = require('../support/script-encoding')
 
 // A double of the minimal-slp-wallet surface the adapter reuses.
 function makeSlpWalletDouble () {
@@ -75,6 +65,24 @@ test('toPushBuffer encodes a string as UTF-8 and passes bytes through', () => {
   assert.equal(toPushBuffer(Uint8Array.from([1, 2])).toString('hex'), '0102')
 })
 
+// The browser bundle has no global Buffer (CRA 5 does not polyfill Node
+// globals and the wallet script does not set window.Buffer), so the adapter
+// must import its own. Re-require it with the global removed to prove it.
+test('the adapter builds pushes without a browser-global Buffer', () => {
+  const modulePath = require.resolve('../../src/services/memo-multipush')
+  const savedBuffer = global.Buffer
+  global.Buffer = undefined
+  delete require.cache[modulePath]
+  try {
+    const fresh = require('../../src/services/memo-multipush')
+    assert.equal(fresh.toPushBuffer('hi').toString('hex'), '6869')
+    assert.equal(fresh.buildPushes('6d03', ['hi'])[0].toString('hex'), '6d03')
+  } finally {
+    global.Buffer = savedBuffer
+    delete require.cache[modulePath]
+  }
+})
+
 test('buildPushes puts the prefix first and each field in order', () => {
   const pushes = buildPushes('6d03', [Buffer.from('aa', 'hex'), 'hi'])
 
@@ -116,11 +124,20 @@ test('a single field delegates to the original wallet sendOpReturn', async () =>
 test('attaching twice does not double-wrap the wallet', async () => {
   const { wallet } = makeSlpWalletDouble()
   attachMultiPushOpReturn(wallet)
+  const wrapped = wallet.sendOpReturn
   attachMultiPushOpReturn(wallet)
+
+  // The second attach must leave the wrapper untouched rather than nesting it.
+  assert.equal(wallet.sendOpReturn, wrapped)
 
   await wallet.sendOpReturn('single', '6d02')
 
   assert.equal(wallet.calls.length, 1)
+})
+
+test('attaching to a falsy wallet is a no-op', () => {
+  assert.equal(attachMultiPushOpReturn(null), null)
+  assert.equal(attachMultiPushOpReturn(undefined), undefined)
 })
 
 test('broadcastMultiPush rejects a wallet without the OP_RETURN builder', async () => {
