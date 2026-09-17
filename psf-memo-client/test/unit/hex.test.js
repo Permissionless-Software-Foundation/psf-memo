@@ -4,14 +4,14 @@
   Memo actions that embed a parent poll txid use hexToBytes to decode the
   64-character hex txid into 32 raw bytes. These direct tests pin the length
   and hex-validity guards independently of the memo-poll broadcast path that
-  also reaches hexToBytes through buildTxidTextPayload.
+  also reaches hexToBytes through buildTxidTextPushes.
 */
 
 'use strict'
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { hexToBytes, buildTxidTextPayload, txidToWireBytes } = require('../../src/services/hex')
+const { hexToBytes, buildTxidTextPushes, txidToWireBytes } = require('../../src/services/hex')
 
 // A non-palindromic txid so a missing byte reversal is observable.
 const DISPLAY_TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
@@ -57,13 +57,13 @@ test('hexToBytes rejects a non-string value', () => {
   )
 })
 
-test('buildTxidTextPayload prefixes the raw txid bytes', () => {
-  const raw = buildTxidTextPayload('ab'.repeat(32), 'hi')
-  const buf = Buffer.from(raw)
+test('buildTxidTextPushes returns the txid and text as separate pushes', () => {
+  const pushes = buildTxidTextPushes('ab'.repeat(32), 'hi')
 
-  assert.equal(buf.length, 32 + 2)
-  assert.equal(buf[0], 0xab)
-  assert.equal(buf.slice(32).toString('utf8'), 'hi')
+  assert.equal(pushes.length, 2)
+  assert.equal(Buffer.from(pushes[0]).length, 32)
+  assert.equal(Buffer.from(pushes[0])[0], 0xab)
+  assert.equal(Buffer.from(pushes[1]).toString('utf8'), 'hi')
 })
 
 test('txidToWireBytes reverses the display txid into little-endian wire order', () => {
@@ -80,10 +80,9 @@ test('txidToWireBytes rejects an invalid txid', () => {
   )
 })
 
-test('buildTxidTextPayload embeds the txid in little-endian wire order', () => {
-  const raw = buildTxidTextPayload(DISPLAY_TXID, 'hi')
-  const buf = Buffer.from(raw)
+test('buildTxidTextPushes embeds the txid in little-endian wire order', () => {
+  const pushes = buildTxidTextPushes(DISPLAY_TXID, 'hi')
 
-  assert.equal(buf.slice(0, 32).toString('hex'), WIRE_HEX)
-  assert.equal(buf.slice(32).toString('utf8'), 'hi')
+  assert.equal(Buffer.from(pushes[0]).toString('hex'), WIRE_HEX)
+  assert.equal(Buffer.from(pushes[1]).toString('utf8'), 'hi')
 })

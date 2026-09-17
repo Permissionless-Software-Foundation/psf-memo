@@ -17,7 +17,7 @@
 */
 
 const MemoAction = require('./memo-action')
-const { byteLength } = require('./utf8')
+const { byteLength, encodeUtf8 } = require('./utf8')
 
 const MEMO_CREATE_POLL_PREFIX = '6d10'
 const MAX_QUESTION_BYTES = 209
@@ -62,8 +62,8 @@ class MemoPollCreate extends MemoAction {
 
     await this.wallet.getUtxos()
 
-    const raw = buildCreatePollPayload(question, this.pollType, count)
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
+    const pushes = buildCreatePollPushes(question, this.pollType, count)
+    const txid = await this.wallet.sendOpReturn(pushes, this.prefix)
 
     this.reflect(txid, question, count)
 
@@ -84,15 +84,15 @@ class MemoPollCreate extends MemoAction {
   }
 }
 
-// Build the raw OP_RETURN message payload for a create-poll action.
-// The protocol wire format is: <poll_type 1 byte><option_count 1 byte><question UTF-8 bytes>.
-function buildCreatePollPayload (question, pollType, optionCount) {
-  const textBytes = new TextEncoder().encode(question)
-  const raw = new Uint8Array(2 + textBytes.length)
-  raw[0] = pollType & 0xff
-  raw[1] = optionCount & 0xff
-  raw.set(textBytes, 2)
-  return raw
+// Build the separate OP_RETURN pushes for a create-poll action: the poll type
+// byte, the option count byte, and the UTF-8 question, each as its own push.
+function buildCreatePollPushes (question, pollType, optionCount) {
+  const textBytes = encodeUtf8(question)
+  return [
+    Uint8Array.from([pollType & 0xff]),
+    Uint8Array.from([optionCount & 0xff]),
+    textBytes
+  ]
 }
 
 MemoPollCreate.MEMO_CREATE_POLL_PREFIX = MEMO_CREATE_POLL_PREFIX
@@ -102,5 +102,5 @@ MemoPollCreate.DEFAULT_POLL_TYPE = DEFAULT_POLL_TYPE
 module.exports = MemoPollCreate
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T22:45:49.496Z","module_hash":"3455852bee199b40530bbbe787f85429a7a15bf0116989231ac06f9ca9eadf36","functions":[{"id":"func/MemoPollCreate.constructor","name":"MemoPollCreate.constructor","line":36,"end_line":40,"hash":"9404cf1f0df5cc8756e0ea24abab27ade844fa461f84818162faac807b838dd1"},{"id":"func/MemoPollCreate.isTooLong","name":"MemoPollCreate.isTooLong","line":43,"end_line":45,"hash":"ca9087a454f1fba64ac35738a037372ade36ba6d4c2270d2025adc00b860412c"},{"id":"func/MemoPollCreate.create","name":"MemoPollCreate.create","line":48,"end_line":71,"hash":"b5e769b07f3795a5db0d4202106f4b25b5a0b69e30e70491a7a9c2ac52085fce"},{"id":"func/MemoPollCreate.reflect","name":"MemoPollCreate.reflect","line":74,"end_line":84,"hash":"ec559b778b279c1efb46bdb2440a0c197dae242052d7c1ebf5331078258b719f"},{"id":"func/buildCreatePollPayload","name":"buildCreatePollPayload","line":89,"end_line":96,"hash":"f5abdaad00f9e3c857c65766a981d6971e1bc7c64e0200cbb4105ab798bd94da"}]}
+// {"version":1,"tested_at":"2026-09-17T04:15:33.060Z","module_hash":"f768a640a3cf8aff7dd9836bcbed38ca2d2fa6892cca97f8d078f4ad5d9d5287","functions":[{"id":"func/MemoPollCreate.constructor","name":"MemoPollCreate.constructor","line":36,"end_line":40,"hash":"9404cf1f0df5cc8756e0ea24abab27ade844fa461f84818162faac807b838dd1"},{"id":"func/MemoPollCreate.isTooLong","name":"MemoPollCreate.isTooLong","line":43,"end_line":45,"hash":"ca9087a454f1fba64ac35738a037372ade36ba6d4c2270d2025adc00b860412c"},{"id":"func/MemoPollCreate.create","name":"MemoPollCreate.create","line":48,"end_line":71,"hash":"dd0f77edcf6d20b5273c4949a0b7b52f7b60686556b33491139077bbb6866120"},{"id":"func/MemoPollCreate.reflect","name":"MemoPollCreate.reflect","line":74,"end_line":84,"hash":"ec559b778b279c1efb46bdb2440a0c197dae242052d7c1ebf5331078258b719f"},{"id":"func/buildCreatePollPushes","name":"buildCreatePollPushes","line":89,"end_line":96,"hash":"54b38bb7fba8a90968c93441588aa42754d2b961d75778daf8b764a017030334"}]}
 // mutate4javascript-manifest-end

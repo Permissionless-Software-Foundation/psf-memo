@@ -26,7 +26,7 @@ function makeWallet (address = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26
   }
 }
 
-test('post broadcasts topic name and message with the topic-message prefix', async () => {
+test('post broadcasts topic name and message as separate pushes', async () => {
   const wallet = makeWallet()
   const memoTopicPost = new MemoTopicPost({ wallet, room: 'bitcoin' })
 
@@ -34,7 +34,11 @@ test('post broadcasts topic name and message with the topic-message prefix', asy
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoTopicPost.MEMO_TOPIC_MESSAGE_PREFIX)
-  assert.equal(wallet.broadcasts[0].msg, 'bitcoinhello bitcoin')
+  const pushes = wallet.broadcasts[0].msg
+  assert.ok(Array.isArray(pushes), 'expected separate pushes')
+  assert.equal(pushes.length, 2)
+  assert.equal(Buffer.from(pushes[0]).toString('utf8'), 'bitcoin')
+  assert.equal(Buffer.from(pushes[1]).toString('utf8'), 'hello bitcoin')
 })
 
 test('post reflects the new topic post on the injected feed', async () => {

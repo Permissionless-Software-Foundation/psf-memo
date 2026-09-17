@@ -18,7 +18,7 @@
 
 const MemoAction = require('./memo-action')
 const { byteLength } = require('./utf8')
-const { buildTxidTextPayload } = require('./hex')
+const { buildTxidTextPushes } = require('./hex')
 
 const MEMO_REPLY_PREFIX = '6d03'
 const MAX_REPLY_BYTES = 184
@@ -56,9 +56,9 @@ class MemoReply extends MemoAction {
     // Refresh the wallet's spendable UTXO store so the broadcast has inputs.
     await this.wallet.getUtxos()
 
-    // Build the raw payload: parent txid bytes followed by UTF-8 message bytes.
-    const raw = buildTxidTextPayload(parentTxid, message, 'Parent txid')
-    const txid = await this.wallet.sendOpReturn(raw, this.prefix)
+    // Build the separate pushes: parent txid bytes, then UTF-8 message bytes.
+    const pushes = buildTxidTextPushes(parentTxid, message, 'Parent txid')
+    const txid = await this.wallet.sendOpReturn(pushes, this.prefix)
 
     // Reflect the result on the injected thread once broadcast succeeds.
     this.reflect(txid, message, parentTxid)
@@ -85,5 +85,5 @@ MemoReply.MAX_REPLY_BYTES = MAX_REPLY_BYTES
 module.exports = MemoReply
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-16T22:14:19.213Z","module_hash":"6c515a91afe94a6be8671a1541302446bb6b1015d03ce0e278644508ebd20090","functions":[{"id":"func/MemoReply.constructor","name":"MemoReply.constructor","line":36,"end_line":39,"hash":"23091c1b8f7847199bab3b54d8d81e9d8432c6da96138d72ac03fcf9426d542c"},{"id":"func/MemoReply.isTooLong","name":"MemoReply.isTooLong","line":42,"end_line":44,"hash":"2e867501d184010313ba9b27a6bb1e446df8f093514ee231b90ce77699ecbaf2"},{"id":"func/MemoReply.reply","name":"MemoReply.reply","line":48,"end_line":67,"hash":"00fb3598d5c3bdc3c6744d1316ad552364574fed105438af4aa011347f3306ce"},{"id":"func/MemoReply.reflect","name":"MemoReply.reflect","line":70,"end_line":79,"hash":"344e1bf304a4dfd475b02824b7ddbf555da0f3ec89f73b4f6009cf0bf097fb02"}]}
+// {"version":1,"tested_at":"2026-09-17T04:12:17.098Z","module_hash":"53a16ce9198c0c94446ca0f89463072d83a9646de676708a1b9061086dbac40c","functions":[{"id":"func/MemoReply.constructor","name":"MemoReply.constructor","line":36,"end_line":39,"hash":"23091c1b8f7847199bab3b54d8d81e9d8432c6da96138d72ac03fcf9426d542c"},{"id":"func/MemoReply.isTooLong","name":"MemoReply.isTooLong","line":42,"end_line":44,"hash":"2e867501d184010313ba9b27a6bb1e446df8f093514ee231b90ce77699ecbaf2"},{"id":"func/MemoReply.reply","name":"MemoReply.reply","line":48,"end_line":67,"hash":"b8dc4228aefdae7a9e29273a7cef7d92177af9ba6d19d318d6455bf4d202fcc6"},{"id":"func/MemoReply.reflect","name":"MemoReply.reflect","line":70,"end_line":79,"hash":"344e1bf304a4dfd475b02824b7ddbf555da0f3ec89f73b4f6009cf0bf097fb02"}]}
 // mutate4javascript-manifest-end

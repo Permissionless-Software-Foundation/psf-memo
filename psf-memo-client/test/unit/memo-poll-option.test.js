@@ -30,14 +30,7 @@ function makeWallet (address = MY_ADDRESS) {
   }
 }
 
-function decodePayload (raw) {
-  const buf = Buffer.from(raw)
-  const pollTxid = Buffer.from(buf.slice(0, 32)).reverse().toString('hex')
-  const option = buf.slice(32).toString('utf8')
-  return { pollTxid, option }
-}
-
-test('add broadcasts with the add-poll-option prefix and payload', async () => {
+test('add broadcasts the poll txid and option as separate pushes', async () => {
   const wallet = makeWallet()
   const memoPollOption = new MemoPollOption({ wallet, pollTxid: POLL_TXID })
 
@@ -45,9 +38,11 @@ test('add broadcasts with the add-poll-option prefix and payload', async () => {
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoPollOption.MEMO_ADD_POLL_OPTION_PREFIX)
-  const decoded = decodePayload(wallet.broadcasts[0].msg)
-  assert.equal(decoded.pollTxid, POLL_TXID)
-  assert.equal(decoded.option, 'yes')
+  const pushes = wallet.broadcasts[0].msg
+  assert.ok(Array.isArray(pushes), 'expected separate pushes')
+  assert.equal(pushes.length, 2)
+  assert.equal(Buffer.from(pushes[0]).reverse().toString('hex'), POLL_TXID)
+  assert.equal(Buffer.from(pushes[1]).toString('utf8'), 'yes')
 })
 
 test('add reflects the new option on the injected poll store', async () => {

@@ -4,8 +4,8 @@
   These pin down invariants over broad random inputs that the unit tests only
   probe at fixed fixtures:
 
-    - Round-trip: buildTxidTextPayload encodes a poll txid + text into the
-      canonical Memo wire payload, so the stored reverse-hex txid and the
+    - Round-trip: buildTxidTextPushes encodes a poll txid + text into the
+      canonical Memo wire pushes, so the stored reverse-hex txid and the
       UTF-8 text both decode back unchanged.
     - hexToBytes length contract: only 64-character hex txids decode to
       32 bytes; everything else throws.
@@ -19,7 +19,7 @@
 
 const test = require('node:test')
 const { seededRandom, forAll } = require('./harness')
-const { hexToBytes, buildTxidTextPayload } = require('../../src/services/hex')
+const { hexToBytes, buildTxidTextPushes } = require('../../src/services/hex')
 const { byteLength } = require('../../src/services/utf8')
 const MemoPollOption = require('../../src/services/memo-poll-option')
 const MemoPollVote = require('../../src/services/memo-poll-vote')
@@ -61,13 +61,14 @@ function makeWallet () {
   }
 }
 
-test('buildTxidTextPayload round-trips the canonical Memo wire format', async () => {
+test('buildTxidTextPushes round-trips the canonical Memo wire format', async () => {
   await forAll(
     () => ({ txid: randomTxid(), text: randomText(200) }),
     ({ txid, text }) => {
-      const bytes = buildTxidTextPayload(txid, text)
+      const pushes = buildTxidTextPushes(txid, text)
+      const bytes = Buffer.concat(pushes.map((p) => Buffer.from(p)))
       if (bytes.length !== 32 + byteLength(text)) return false
-      // The payload carries the txid in little-endian wire order, followed by
+      // The pushes carry the txid in little-endian wire order, followed by
       // the UTF-8 bytes of the value. Reversing the wire bytes must recover
       // the 64-character display txid.
       const wire = Buffer.from(bytes.slice(0, 32))

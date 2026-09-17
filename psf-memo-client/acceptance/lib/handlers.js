@@ -58,6 +58,7 @@ const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
+const { toPushBuffer } = require('../../src/services/memo-multipush')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -102,12 +103,19 @@ function makeWallet (address) {
       return this.utxos
     },
     sendOpReturn: async function (msg, prefix, bchOutput = []) {
-      // Normalize binary payloads to Buffer so assertions can safely use
-      // toString('hex'), while preserving string payloads unchanged.
-      const storedMsg = (msg instanceof Uint8Array || ArrayBuffer.isView(msg))
-        ? Buffer.from(msg)
-        : msg
-      this.broadcasts.push({ msg: storedMsg, prefix, bchOutput })
+      // Multi-field actions pass an array of field pushes. Expose each push
+      // separately for the multi-push assertions, while keeping `msg` as the
+      // concatenated payload so older combined-payload assertions still work.
+      const isMulti = Array.isArray(msg)
+      const fields = isMulti ? msg : [msg]
+      const fieldBuffers = fields.map((field) => toPushBuffer(field))
+      const storedMsg = isMulti
+        ? Buffer.concat(fieldBuffers)
+        : ((msg instanceof Uint8Array || ArrayBuffer.isView(msg))
+            ? Buffer.from(msg)
+            : msg)
+      const pushes = [Buffer.from(prefix, 'hex'), ...fieldBuffers]
+      this.broadcasts.push({ msg: storedMsg, pushes, prefix, bchOutput })
       if (this.failWith) throw new Error(this.failWith)
       return 'aa'.repeat(32)
     }
@@ -557,6 +565,38 @@ function decodeReplyPayload (raw) {
 // order. The wire stores the txid little-endian, so reverse it.
 function decodeLikeTxid (raw) {
   return Buffer.from(raw).reverse().toString('hex')
+}
+
+// Return the most recent wallet broadcast, or fail when none was sent.
+function lastBroadcast (world) {
+  const broadcasts = world.wallet.broadcasts
+  if (!broadcasts.length) throw new Error('No OP_RETURN transaction was broadcast.')
+  return broadcasts[broadcasts.length - 1]
+}
+
+// Return the push at the given zero-based index from the most recent
+// broadcast. Index 0 is the action prefix; later indexes are the fields.
+function broadcastPush (world, index) {
+  const last = lastBroadcast(world)
+  if (!Array.isArray(last.pushes) || last.pushes.length <= index) {
+    throw new Error(`Broadcast does not have a push at index ${index}.`)
+  }
+  return Buffer.from(last.pushes[index])
+}
+
+// Reverse a display txid into little-endian wire hex.
+function txidWireHex (txid) {
+  return Buffer.from(txid, 'hex').reverse().toString('hex')
+}
+
+// Assert that the most recent broadcast's push at `index` decodes to the
+// expected UTF-8 text. Shared by the topic/text/question push assertions.
+function assertUtf8Push (world, index, expected, label) {
+  const push = broadcastPush(world, index)
+  const actual = push.toString('utf8')
+  if (actual !== expected) {
+    throw new Error(`${label} push "${actual}" did not match "${expected}".`)
+  }
 }
 
 // Resolve a literal value or a <parameter> placeholder from the example store.
@@ -1044,6 +1084,82 @@ const handlers = [
       if (text !== world.replyPage.input) {
         throw new Error('Broadcast reply text did not match the typed reply.')
       }
+    }
+  },
+  {
+    name: 'wallet broadcasts multi-push OP_RETURN with prefix',
+    pattern: /^the wallet broadcasts an OP_RETURN with the Memo (reply|topic-message|add-poll-option|poll-vote|create-poll) prefix and (\d+) pushes$/,
+    run (m, example, world) {
+      const prefix = {
+        reply: MEMO_REPLY_PREFIX,
+        'topic-message': MEMO_TOPIC_MESSAGE_PREFIX,
+        'add-poll-option': MEMO_ADD_POLL_OPTION_PREFIX,
+        'poll-vote': MEMO_POLL_VOTE_PREFIX,
+        'create-poll': MEMO_CREATE_POLL_PREFIX
+      }[m[1]]
+      const expectedPushes = parseInt(m[2], 10)
+      const last = lastBroadcast(world)
+      if (last.prefix !== prefix) {
+        throw new Error(`Expected Memo ${m[1]} prefix ${prefix}, got "${last.prefix}".`)
+      }
+      const actual = Array.isArray(last.pushes) ? last.pushes.length : 0
+      if (actual !== expectedPushes) {
+        throw new Error(`Expected ${expectedPushes} OP_RETURN pushes, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'second broadcast push is referenced txid in wire order',
+    pattern: /^the second broadcast push is the referenced txid (.+) in little-endian wire order$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const push = broadcastPush(world, 1)
+      if (push.toString('hex') !== txidWireHex(txid)) {
+        throw new Error(`Second push did not match the wire txid ${txid}.`)
+      }
+    }
+  },
+  {
+    name: 'second broadcast push is UTF-8 topic',
+    pattern: /^the second broadcast push is the UTF-8 topic "(.+)"$/,
+    run (m, example, world) {
+      assertUtf8Push(world, 1, resolveText(m[1], example), 'Second')
+    }
+  },
+  {
+    name: 'second broadcast push is poll type',
+    pattern: /^the second broadcast push is the poll type (\d+)$/,
+    run (m, example, world) {
+      const expected = parseInt(m[1], 10)
+      const push = broadcastPush(world, 1)
+      if (push.length !== 1 || push[0] !== expected) {
+        throw new Error(`Second push was not the poll type ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'third broadcast push is UTF-8 text',
+    pattern: /^the third broadcast push is the UTF-8 text "(.+)"$/,
+    run (m, example, world) {
+      assertUtf8Push(world, 2, resolveText(m[1], example), 'Third')
+    }
+  },
+  {
+    name: 'third broadcast push is option count',
+    pattern: /^the third broadcast push is the option count (.+)$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const push = broadcastPush(world, 2)
+      if (push.length !== 1 || push[0] !== expected) {
+        throw new Error(`Third push was not the option count ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'fourth broadcast push is UTF-8 question',
+    pattern: /^the fourth broadcast push is the UTF-8 question "(.+)"$/,
+    run (m, example, world) {
+      assertUtf8Push(world, 3, resolveText(m[1], example), 'Fourth')
     }
   },
   {
@@ -2223,7 +2339,8 @@ const handlers = [
         throw new Error(`Expected Memo topic-message prefix ${MEMO_TOPIC_MESSAGE_PREFIX}, got "${last.prefix}".`)
       }
       const expectedPayload = room + world.topicPostPage.input
-      if (last.msg !== expectedPayload) {
+      const actualPayload = Buffer.isBuffer(last.msg) ? last.msg.toString('utf8') : last.msg
+      if (actualPayload !== expectedPayload) {
         throw new Error(`Broadcast topic-message payload did not match ${room} + input.`)
       }
     }

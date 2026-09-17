@@ -30,14 +30,7 @@ function makeWallet (address = MY_ADDRESS) {
   }
 }
 
-function decodePayload (raw) {
-  const buf = Buffer.from(raw)
-  const pollTxid = Buffer.from(buf.slice(0, 32)).reverse().toString('hex')
-  const comment = buf.slice(32).toString('utf8')
-  return { pollTxid, comment }
-}
-
-test('vote broadcasts with the poll-vote prefix and payload', async () => {
+test('vote broadcasts the poll txid and comment as separate pushes', async () => {
   const wallet = makeWallet()
   const memoPollVote = new MemoPollVote({ wallet, pollTxid: POLL_TXID })
 
@@ -45,9 +38,11 @@ test('vote broadcasts with the poll-vote prefix and payload', async () => {
 
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, MemoPollVote.MEMO_POLL_VOTE_PREFIX)
-  const decoded = decodePayload(wallet.broadcasts[0].msg)
-  assert.equal(decoded.pollTxid, POLL_TXID)
-  assert.equal(decoded.comment, 'yes')
+  const pushes = wallet.broadcasts[0].msg
+  assert.ok(Array.isArray(pushes), 'expected separate pushes')
+  assert.equal(pushes.length, 2)
+  assert.equal(Buffer.from(pushes[0]).reverse().toString('hex'), POLL_TXID)
+  assert.equal(Buffer.from(pushes[1]).toString('utf8'), 'yes')
 })
 
 test('vote reflects the new vote on the injected poll store', async () => {
