@@ -6,7 +6,7 @@
     generator -> generated test entry points -> node test runner
 */
 
-import { execFileSync } from 'node:child_process'
+import { execFile, execFileSync } from 'node:child_process'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -27,6 +27,43 @@ function sh (cmd, args, opts = {}) {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...opts
   }).toString()
+}
+
+// Async variant used to run generated acceptance test files concurrently. Each
+// generated test opens its own isolated LevelDB world under tmp/acceptance, so
+// running several at once does not share state.
+function shAsync (cmd, args) {
+  return new Promise((resolve) => {
+    execFile(cmd, args, { maxBuffer: 64 * 1024 * 1024 }, (error, stdout, stderr) => {
+      resolve({ ok: !error, stdout: stdout || '', stderr: stderr || '' })
+    })
+  })
+}
+
+// Run generated test files with bounded concurrency, preserving per-file
+// output order. Generation stays sequential; only the test phase is pooled.
+// Override the pool size with ACCEPTANCE_CONCURRENCY (1 restores the old
+// sequential behavior).
+async function runTests (tests) {
+  const requested = Number.parseInt(process.env.ACCEPTANCE_CONCURRENCY || '', 10)
+  const concurrency = Number.isFinite(requested) && requested > 0
+    ? requested
+    : Math.min(4, tests.length)
+  const results = new Array(tests.length)
+  let next = 0
+
+  async function worker () {
+    while (true) {
+      const index = next++
+      if (index >= tests.length) return
+      const testFile = tests[index]
+      const result = await shAsync('node', [path.join(genDir, testFile)])
+      results[index] = { testFile, ...result }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, tests.length) }, worker))
+  return results
 }
 
 function ensureAps () {
@@ -94,7 +131,7 @@ function removeStaleGeneratedTests (features) {
   }
 }
 
-function main () {
+async function main () {
   cleanStaleWorlds()
   ensureAps()
 
@@ -131,16 +168,15 @@ function main () {
     .filter((f) => f.endsWith('.acceptance.test.js'))
     .sort()
 
+  const results = await runTests(tests)
   let failures = 0
-  for (const testFile of tests) {
-    try {
-      const out = sh('node', [path.join(genDir, testFile)])
-      process.stdout.write(out)
+  for (const { testFile, ok, stdout, stderr } of results) {
+    process.stdout.write(stdout)
+    process.stderr.write(stderr)
+    if (ok) {
       console.log(`ACCEPTANCE PASS: ${testFile}`)
-    } catch (err) {
+    } else {
       failures++
-      process.stdout.write(err.stdout || '')
-      process.stderr.write(err.stderr || '')
       console.error(`ACCEPTANCE FAIL: ${testFile}`)
     }
   }
@@ -153,4 +189,7 @@ function main () {
   }
 }
 
-main()
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

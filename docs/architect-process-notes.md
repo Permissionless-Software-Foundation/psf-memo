@@ -55,6 +55,30 @@ distinct from per-task verification results, which live in
   sequentially, and use `--max-workers 8` to keep the mutation phase fast.
   The DRY and soft-Gherkin-mutation steps are comparatively quick.
 
+- **A mutated synchronous infinite loop can orphan a mocha process and wedge
+  later runs.** On 2026-09-17 a `mutate4javascript` worker on `helpers.js`
+  (`stripLeadingEmptyPushes`, `1 -> 0`) timed out but left a `c8`/`mocha`
+  process at ~100% CPU for 45+ minutes; the next mutation baseline then hung
+  behind it. The indexer and DB `npm test` mocha has no `--timeout`, so a
+  synchronous loop in mutated code cannot be interrupted by mocha — only the
+  tool's `--timeout-factor` (default 10x baseline) applies. Defenses: run each
+  mutation file under a shell-level `timeout`, redirect output to a file and
+  grep the `Mutation Report` section, and after any timeout `kill -9` orphaned
+  `mocha`/`mutate4javascript` processes before the next file. Tool-written
+  manifest updates in the source are expected; re-check `git status` to confirm
+  no mutant source remains applied.
+
+- **DB acceptance was the dominant verification cost; the test phase is now
+  pooled.** Before 2026-09-17, `npm run acceptance` in psf-memo-db ran its 15
+  generated test files strictly sequentially (~430–790s; 145 scenarios, each
+  opening/closing 21 LevelDB stores at ~850ms close apiece). `acceptance.js`
+  now runs the generated files with bounded concurrency (default
+  `min(4, files)`; override with `ACCEPTANCE_CONCURRENCY`, `=1` restores the
+  old sequential behavior). Measured 96s wall for the full DB suite. Generation
+  still runs sequentially before the pooled test phase, so the constitution's
+  "generation then tests" ordering is preserved. Pooling is safe because each
+  generated file creates its own uniquely named `tmp/acceptance/level-*` world.
+
 - **`mutate4javascript` copies the whole project into each worker, including
   `tmp/`.** The worker copy skips only `.git`, `node_modules`, and `target`.
   A stale `tmp/acceptance` (LevelDB dirs from prior acceptance runs) can be
