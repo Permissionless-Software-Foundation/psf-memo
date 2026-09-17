@@ -24,6 +24,8 @@ const DB_NAMES = [
   'follows',
   'mutes',
   'rooms',
+  'topicSummaries',
+  'topicRecency',
   'processErrors',
   'ptxs',
   'polls',

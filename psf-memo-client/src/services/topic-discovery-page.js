@@ -1,29 +1,23 @@
 /*
-  Topic Discovery Page behavior: load and display the list of Memo topics.
+  Topic Discovery Page behavior: load and display a page of Memo topics.
 
   This is the testable controller behind the React "Topics" page. It wraps
-  the MemoDb client and exposes the loaded topics so the view can render each
-  topic name and post count.
+  the MemoDb client and exposes the loaded topics and pagination so the view
+  can render each topic name and post count and move between pages.
 */
+
+const PaginatedPage = require('./paginated-page')
 
 const TOPICS_PATH = '/topics'
 
-class TopicDiscoveryPage {
+class TopicDiscoveryPage extends PaginatedPage {
   constructor (deps = {}) {
-    this.memoDb = deps.memoDb || null
+    super(deps, {
+      listField: 'topics',
+      loadMethod: 'getTopics',
+      errorMessage: 'Topic discovery page requires a memo db client.'
+    })
     this.navigate = deps.navigate || (() => {})
-    this.topics = []
-  }
-
-  async load () {
-    if (!this.memoDb) {
-      throw new Error('Topic discovery page requires a memo db client.')
-    }
-
-    const data = await this.memoDb.getTopics()
-    this.topics = data.topics || []
-
-    return { topics: this.topics }
   }
 
   getTopic (room) {

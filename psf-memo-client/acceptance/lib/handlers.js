@@ -361,13 +361,18 @@ function makeMemoDb () {
     async getMuteState (muterAddr, muteeAddr) {
       return muteState[`${muterAddr}:${muteeAddr}`] || false
     },
-    async getTopics () {
+    async getTopics ({ limit = 50, offset = 0 } = {}) {
       const list = []
       for (const [room, postCount] of topicCounts.entries()) {
         list.push({ room, postCount })
       }
       list.sort((a, b) => a.room.localeCompare(b.room))
-      return { topics: list }
+      const total = list.length
+      const page = list.slice(offset, offset + limit)
+      return {
+        topics: page,
+        pagination: { limit, offset, total, hasMore: offset + page.length < total }
+      }
     },
     async getTopicPosts (room, { limit = 50, offset = 0, viewer = null } = {}) {
       let all = topicPosts[room] || []
@@ -2139,6 +2144,54 @@ const handlers = [
     async run (m, example, world) {
       await world.topicDiscoveryPage.load()
       world.currentPath = TopicDiscoveryPage.TOPICS_PATH
+    }
+  },
+  {
+    name: 'open topics page at offset',
+    pattern: /^I open the topics page at offset (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const offset = parseInt(resolveParam(m[1], example), 10)
+      await world.topicDiscoveryPage.load({ limit: 50, offset })
+      world.currentPath = TopicDiscoveryPage.TOPICS_PATH
+    }
+  },
+  {
+    name: 'API serves N topics',
+    pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) topics$/,
+    run (m, example, world) {
+      const count = parseInt(resolveParam(m[1], example), 10)
+      for (let i = 0; i < count; i++) {
+        world.memoDb.addTopic(`topic-${String(i + 1).padStart(3, '0')}`, 1)
+      }
+    }
+  },
+  {
+    name: 'topics page shows N topics',
+    pattern: /^the topics page shows (<[A-Za-z0-9_]+>) topics$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const actual = world.topicDiscoveryPage.topics.length
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} topics on the topics page, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'topics page can load more topics',
+    pattern: /^the topics page can load more topics$/,
+    run (m, example, world) {
+      if (!world.topicDiscoveryPage.canLoadMore()) {
+        throw new Error('Expected the topics page to have more topics, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'topics page has no more topics',
+    pattern: /^the topics page has no more topics$/,
+    run (m, example, world) {
+      if (world.topicDiscoveryPage.canLoadMore()) {
+        throw new Error('Expected the topics page to have no more topics, but pagination says there are more.')
+      }
     }
   },
   {

@@ -44,8 +44,8 @@ class MemoDb {
     return this._getList(`/mute/muted/${encodeURIComponent(muterAddr)}`, 'getMuted', 'muted')
   }
 
-  async getTopics () {
-    return this.getRecent('/topics', 'getTopics', {})
+  async getTopics ({ limit = 50, offset = 0 } = {}) {
+    return this.getRecent('/topics', 'getTopics', { limit, offset })
   }
 
   async getTopicPosts (room, { limit = 50, offset = 0, viewer = null } = {}) {

@@ -19,6 +19,7 @@ import test from 'node:test'
 
 import { seededRandom, forAll, intGen, txidGen } from './harness.js'
 import TopicQuery from '../../src/adapters/topic-query.js'
+import { topicRecencyKey } from '../../src/lib/backfill-topic-indexes.js'
 
 const rng = seededRandom(20260828)
 
@@ -45,8 +46,53 @@ function makeRoomsDb (entries) {
 function makeQuery (entries) {
   return new TopicQuery({
     roomsDb: makeRoomsDb(entries),
-    postsDb: {}
+    postsDb: {},
+    topicSummariesDb: makeIndexDb([]),
+    topicRecencyDb: makeIndexDb([])
   })
+}
+
+// In-memory index store honoring the LevelDB `limit` option used by listTopics.
+function makeIndexDb (records) {
+  const store = new Map(records)
+  return {
+    async * iterator (opts = {}) {
+      const keys = Array.from(store.keys()).sort()
+      const limit = opts.limit === undefined ? keys.length : opts.limit
+      for (const key of keys.slice(0, limit)) {
+        yield [key, store.get(key)]
+      }
+    }
+  }
+}
+
+// Derive topicSummaries and topicRecency records from rooms-store entries the
+// way the indexer and backfill do.
+function indexDbsFromEntries (entries) {
+  const summaries = new Map()
+  for (const e of entries) {
+    const room = e.value.room
+    if (!summaries.has(room)) summaries.set(room, { room, postCount: 0, lastHeight: 0 })
+    if (e.value.type === 'post') {
+      const summary = summaries.get(room)
+      summary.postCount++
+      const height = e.value.blockHeight ?? 0
+      if (height > summary.lastHeight) summary.lastHeight = height
+    }
+  }
+
+  const recency = []
+  for (const summary of summaries.values()) {
+    recency.push([
+      topicRecencyKey(summary.lastHeight, summary.room),
+      { room: summary.room, blockHeight: summary.lastHeight }
+    ])
+  }
+
+  return {
+    topicSummariesDb: makeIndexDb(Array.from(summaries.entries())),
+    topicRecencyDb: makeIndexDb(recency)
+  }
 }
 
 // In-memory posts store exposing the LevelDB `get` contract used by the mute
@@ -112,14 +158,15 @@ function fixtureGen () {
 test('listTopics conserves post counts and returns rooms sorted by most recent post', async () => {
   await forAll(
     fixtureGen(),
-    async ({ entries, rooms }) => {
-      const query = makeQuery(entries)
-      const topics = await query.listTopics()
+    async ({ entries, limit, offset }) => {
+      const query = new TopicQuery({
+        roomsDb: makeRoomsDb(entries),
+        postsDb: {},
+        ...indexDbsFromEntries(entries)
+      })
+      const { topics, pagination } = await query.listTopics({ limit, offset })
 
       const postEntries = entries.filter((e) => e.value.type === 'post')
-      const totalPosts = topics.reduce((sum, t) => sum + t.postCount, 0)
-      if (totalPosts !== postEntries.length) return false
-
       const expectedTopics = [...new Set(entries.map((e) => e.value.room))]
         .map((room) => {
           const heights = entries
@@ -131,7 +178,12 @@ test('listTopics conserves post counts and returns rooms sorted by most recent p
           if (b.lastHeight !== a.lastHeight) return b.lastHeight - a.lastHeight
           return a.room.localeCompare(b.room)
         })
-      if (JSON.stringify(topics.map((t) => t.room)) !== JSON.stringify(expectedTopics.map((t) => t.room))) return false
+
+      if (pagination.total !== expectedTopics.length) return false
+
+      const expectedPage = expectedTopics.slice(offset, offset + limit)
+      if (JSON.stringify(topics.map((t) => t.room)) !== JSON.stringify(expectedPage.map((t) => t.room))) return false
+      if (pagination.hasMore !== (offset + topics.length < pagination.total)) return false
 
       for (const topic of topics) {
         const roomPosts = postEntries.filter((e) => e.value.room === topic.room).length
@@ -139,7 +191,7 @@ test('listTopics conserves post counts and returns rooms sorted by most recent p
       }
       return true
     },
-    { label: 'listTopics conservation and ordering' }
+    { label: 'listTopics conservation, ordering, and pagination' }
   )
 })
 
@@ -204,6 +256,8 @@ test('getTopicPostTxids excludes muted addresses and conserves total and paginat
       const query = new TopicQuery({
         roomsDb: makeRoomsDb(entries),
         postsDb: makePostsDb(entries),
+        topicSummariesDb: makeIndexDb([]),
+        topicRecencyDb: makeIndexDb([]),
         muteQuery
       })
 

@@ -14,6 +14,9 @@ import { handleCreatePoll } from '../../src/use-cases/action-types/poll-create.j
 import { handleAddPollOption } from '../../src/use-cases/action-types/poll-option.js'
 import { handlePollVote } from '../../src/use-cases/action-types/poll-vote.js'
 import { handleMute } from '../../src/use-cases/action-types/mute.js'
+import { handleTopicMessage } from '../../src/use-cases/action-types/topic-message.js'
+import { handleTopicFollow } from '../../src/use-cases/action-types/topic-follow.js'
+import { topicRecencyKey } from '../../src/use-cases/action-types/helpers.js'
 import BackupDb from '../../src/use-cases/backup-db.js'
 
 function makeInMemoryDb () {
@@ -85,6 +88,9 @@ async function createWorld () {
   const pollOptionDb = makeInMemoryDb()
   const pollVoteDb = makeInMemoryDb()
   const muteDb = makeInMemoryDb()
+  const roomDb = makeInMemoryDb()
+  const topicSummaryDb = makeInMemoryDb()
+  const topicRecencyDb = makeInMemoryDb()
 
   const adapters = {
     postDb: postsDb,
@@ -98,6 +104,9 @@ async function createWorld () {
     pollOptionDb,
     pollVoteDb,
     muteDb,
+    roomDb,
+    topicSummaryDb,
+    topicRecencyDb,
     processErrorDb: makeInMemoryDb(),
     dbCtrl: {
       backupDb: async (height, epoch) => {
@@ -121,6 +130,9 @@ async function createWorld () {
     pollOptionsDb: pollOptionDb,
     pollVotesDb: pollVoteDb,
     mutesDb: muteDb,
+    roomsDb: roomDb,
+    topicSummariesDb: topicSummaryDb,
+    topicRecencyDb,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -695,6 +707,112 @@ const muteHandlers = [
       const mutes = world.mutesDb.entries().filter(([key]) => key === txid)
       if (mutes.length !== 0) {
         throw new Error(`Expected no mute document for txid ${txid}, but one was stored`)
+      }
+    }
+  },
+  {
+    name: 'db instance with rooms and topic index stores',
+    pattern: /^a psf-memo-db instance with rooms, topicSummaries, and topicRecency stores$/,
+    async run () {
+      // World is already created with the room and topic index stores.
+    }
+  },
+  {
+    name: 'process a Memo topic message',
+    pattern: /^the indexer processes a Memo topic message (.+) in room "(.+)" from (.+) at block height (.+) with text "(.+)"$/,
+    async run (m, example, world) {
+      const txid = resolveTxid(m[1], example, world)
+      const room = m[2]
+      const addr = resolveParam(m[3], example)
+      const height = parseInt(resolveParam(m[4], example), 10)
+      const text = m[5]
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d0c', 'hex')
+      const ctx = {
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'topicMessage',
+          prefix,
+          pushDatas: [prefix, Buffer.from(room, 'utf8'), Buffer.from(text, 'utf8')]
+        }
+      }
+      world.lastTopicMessage = ctx
+
+      await handleTopicMessage(ctx)
+    }
+  },
+  {
+    name: 'reprocess the last Memo topic message',
+    pattern: /^the indexer processes the same Memo topic message (.+) again$/,
+    async run (m, example, world) {
+      if (!world.lastTopicMessage) {
+        throw new Error('No previous topic message to reprocess')
+      }
+      await handleTopicMessage(world.lastTopicMessage)
+    }
+  },
+  {
+    name: 'process a Memo topic follow',
+    pattern: /^the indexer processes a Memo topic follow for room "(.+)" from (.+)$/,
+    async run (m, example, world) {
+      const room = m[1]
+      const addr = resolveParam(m[2], example)
+      const txid = deriveTxid(`topic-follow-${room}-${addr}`)
+
+      world.lastTxid = txid
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d0d', 'hex')
+      await handleTopicFollow({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: 600000,
+        decoded: {
+          action: 'topicFollow',
+          prefix,
+          pushDatas: [prefix, Buffer.from(room, 'utf8')]
+        }
+      })
+    }
+  },
+  {
+    name: 'topicSummaries contains room with postCount and lastHeight',
+    pattern: /^the topicSummaries store contains the room "(.+)" with postCount (.+) and lastHeight (.+)$/,
+    async run (m, example, world) {
+      const room = m[1]
+      const postCount = parseInt(resolveParam(m[2], example), 10)
+      const lastHeight = parseInt(resolveParam(m[3], example), 10)
+      const record = await world.topicSummariesDb.get(room)
+      if (!record) {
+        throw new Error(`No topicSummaries record for ${room}`)
+      }
+      if (record.room !== room || record.postCount !== postCount || record.lastHeight !== lastHeight) {
+        throw new Error(`Expected ${room} postCount ${postCount} lastHeight ${lastHeight}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'topicRecency records room at height',
+    pattern: /^the topicRecency store records the room "(.+)" at block height (.+)$/,
+    async run (m, example, world) {
+      const room = m[1]
+      const height = parseInt(resolveParam(m[2], example), 10)
+      const record = await world.topicRecencyDb.get(topicRecencyKey(height, room))
+      if (!record) {
+        throw new Error(`No topicRecency record for ${room} at ${height}`)
+      }
+      if (record.room !== room || record.blockHeight !== height) {
+        throw new Error(`Expected topicRecency ${room} at ${height}, got ${JSON.stringify(record)}`)
       }
     }
   }

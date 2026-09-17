@@ -47,10 +47,19 @@ function makeRoomsDb (entries) {
   }
 }
 
+// Empty index store; this suite exercises the follow read side, not listTopics.
+function makeEmptyIndexDb () {
+  return {
+    async * iterator () {}
+  }
+}
+
 function makeQuery (entries) {
   return new TopicQuery({
     roomsDb: makeRoomsDb(entries),
-    postsDb: {}
+    postsDb: {},
+    topicSummariesDb: makeEmptyIndexDb(),
+    topicRecencyDb: makeEmptyIndexDb()
   })
 }
 

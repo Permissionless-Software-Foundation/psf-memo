@@ -1,8 +1,9 @@
 /*
-  Use case: list all distinct Memo topics with their post counts.
+  Use case: list a page of distinct Memo topics ordered by most recent post.
 */
 
 import { ListUseCase } from './lib/use-case.js'
+import { parseLimit, parseOffset } from './lib/pagination.js'
 
 class ListTopics extends ListUseCase {
   constructor (localConfig = {}) {
@@ -10,8 +11,9 @@ class ListTopics extends ListUseCase {
   }
 
   async execute (inObj = {}) {
-    const topics = await this.adapters.topicQuery.listTopics()
-    return { topics }
+    const limit = parseLimit(inObj.limit)
+    const offset = parseOffset(inObj.offset)
+    return this.adapters.topicQuery.listTopics({ limit, offset })
   }
 }
 

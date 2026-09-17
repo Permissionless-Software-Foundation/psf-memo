@@ -32,7 +32,11 @@ class TopicsRESTControllerLib {
    * @apiName GetTopics
    * @apiGroup REST Topics
    *
-   * @apiDescription Returns all distinct Memo topics with their post counts.
+   * @apiDescription Returns a page of distinct Memo topics ordered by their
+   * most recent post, newest first. Supports limit and offset.
+   *
+   * @apiQuery {Number} [limit=100] Page size (max 100)
+   * @apiQuery {Number} [offset=0] Number of topics to skip after sorting
    *
    * @apiExample Example usage:
    * curl -X GET "localhost:5021/topics"
@@ -40,10 +44,12 @@ class TopicsRESTControllerLib {
    * @apiSuccess {Object[]} topics Array of topic objects
    * @apiSuccess {String} topics.room Topic name
    * @apiSuccess {Number} topics.postCount Number of posts in the topic
+   * @apiSuccess {Object} pagination Pagination metadata
    */
   async getTopics (ctx) {
     try {
-      ctx.body = await this.useCases.listTopics.execute()
+      const { limit, offset } = ctx.query
+      ctx.body = await this.useCases.listTopics.execute({ limit, offset })
     } catch (err) {
       this.handleError(ctx, err)
     }

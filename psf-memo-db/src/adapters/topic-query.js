@@ -5,8 +5,16 @@
     - Topic posts are keyed `${room}:${txid}` with type 'post'.
     - Topic follows are keyed `${room}:${addr}` with type 'follow'.
 
+  Topic listing is served from two indexes so it can order and paginate
+  without iterating the rooms store:
+    - topicSummaries: one record per room keyed by room, value
+      { room, postCount, lastHeight }.
+    - topicRecency: one record per room keyed `${invertedHeight}:${room}`, value
+      { room, blockHeight }. Follow-only rooms live at height 0. The height is
+      inverted so an ascending scan yields newest-first.
+
   This adapter exposes:
-    - listTopics()           - distinct rooms with post counts
+    - listTopics()           - ordered, paginated distinct rooms with counts
     - getTopicPostTxids()    - paginated txids for a room sorted by block height
 */
 
@@ -14,15 +22,23 @@ import { loadMutedAddrs, isMutedPost } from './lib/muted-posts.js'
 
 class TopicQuery {
   constructor (localConfig = {}) {
-    const { roomsDb, postsDb, muteQuery } = localConfig
+    const { roomsDb, postsDb, topicSummariesDb, topicRecencyDb, muteQuery } = localConfig
     if (!roomsDb) {
       throw new Error('roomsDb required when instantiating TopicQuery adapter.')
     }
     if (!postsDb) {
       throw new Error('postsDb required when instantiating TopicQuery adapter.')
     }
+    if (!topicSummariesDb) {
+      throw new Error('topicSummariesDb required when instantiating TopicQuery adapter.')
+    }
+    if (!topicRecencyDb) {
+      throw new Error('topicRecencyDb required when instantiating TopicQuery adapter.')
+    }
     this.roomsDb = roomsDb
     this.postsDb = postsDb
+    this.topicSummariesDb = topicSummariesDb
+    this.topicRecencyDb = topicRecencyDb
     this.muteQuery = muteQuery || null
 
     this.listTopics = this.listTopics.bind(this)
@@ -44,35 +60,52 @@ class TopicQuery {
     return parts[parts.length - 1]
   }
 
-  async listTopics () {
-    const topics = new Map()
+  // The topicSummaries key is the room name; fall back to the key when the
+  // stored value omits it.
+  summaryRoom (key, value) {
+    if (value && typeof value.room === 'string') return value.room
+    return String(key)
+  }
 
-    for await (const [key, value] of this.roomsDb.iterator()) {
-      const room = this.roomFromKey(key, value)
-      if (!topics.has(room)) {
-        topics.set(room, { postCount: 0, lastHeight: 0 })
-      }
-      const topic = topics.get(room)
-      if (value?.type === 'post') {
-        topic.postCount++
-        const height = value?.blockHeight ?? 0
-        if (height > topic.lastHeight) {
-          topic.lastHeight = height
-        }
-      }
+  // The topicRecency key is `${invertedHeight}:${room}`; the stored value
+  // carries the room name, but fall back to the key for robustness.
+  recencyRoom (key, value) {
+    if (value && typeof value.room === 'string') return value.room
+    const parts = String(key).split(':')
+    return parts.slice(1).join(':')
+  }
+
+  // Return a page of topics ordered by their most recent post, descending,
+  // with rooms at the same height ordered by name ascending. Counts and the
+  // total come from topicSummaries; ordering and pagination come from
+  // topicRecency, which is read only through offset + limit records.
+  async listTopics ({ limit = 100, offset = 0 } = {}) {
+    const postCounts = new Map()
+    for await (const [key, value] of this.topicSummariesDb.iterator()) {
+      postCounts.set(this.summaryRoom(key, value), value?.postCount ?? 0)
+    }
+    const total = postCounts.size
+
+    const recencyRooms = []
+    for await (const [key, value] of this.topicRecencyDb.iterator({ limit: offset + limit })) {
+      recencyRooms.push(this.recencyRoom(key, value))
     }
 
-    return Array.from(topics.entries())
-      .map(([room, { postCount, lastHeight }]) => ({ room, postCount, lastHeight }))
-      .sort((a, b) => {
-        if (b.lastHeight !== a.lastHeight) {
-          return b.lastHeight - a.lastHeight
-        }
-        return a.room.localeCompare(b.room)
-      })
-      // lastHeight is an internal ordering key; keep it out of the public
-      // API contract so the response exposes only room and postCount.
-      .map(({ room, postCount }) => ({ room, postCount }))
+    const pageRooms = recencyRooms.slice(offset, offset + limit)
+    const topics = pageRooms.map((room) => ({
+      room,
+      postCount: postCounts.get(room) ?? 0
+    }))
+
+    return {
+      topics,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasMore: offset + topics.length < total
+      }
+    }
   }
 
   async getTopicPostTxids (room, { limit, offset, viewerAddr = null }) {

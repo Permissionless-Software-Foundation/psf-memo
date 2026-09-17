@@ -62,6 +62,30 @@ export function roomKey (roomName, txid) {
   return `${roomName}:${txid}`
 }
 
+// The topicRecency store is keyed with an inverted height so a plain iterator
+// yields rooms ordered by most recent post height and, within a height, by
+// room name ascending.
+export function topicRecencyKey (blockHeight, roomName) {
+  const inverted = 999999999999 - (blockHeight ?? 0)
+  return `${String(inverted).padStart(12, '0')}:${roomName}`
+}
+
+// True for the LevelDB not-found error, its in-memory equivalent, and the
+// 404 surfaced by the psf-memo-db entity routes.
+export function isNotFound (err) {
+  return Boolean(err && (err.notFound || err.code === 'LEVEL_NOT_FOUND' || err.response?.status === 404))
+}
+
+// Read a record, or null when it does not exist. Rethrows real errors.
+export async function getIfPresent (db, key) {
+  try {
+    return await db.get(key)
+  } catch (err) {
+    if (isNotFound(err)) return null
+    throw err
+  }
+}
+
 export function postHeightKey (blockHeight, txid) {
   const padded = String(blockHeight).padStart(12, '0')
   return `${padded}:${txid}`

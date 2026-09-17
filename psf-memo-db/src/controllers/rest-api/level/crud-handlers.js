@@ -47,6 +47,8 @@ export const ENTITY_CONFIG = [
   { route: 'profilepic', dbProp: 'profilePicsDb', keyParam: 'addr', bodyIdField: 'addr', bodyDataField: 'profilePicData' },
   { route: 'follow', dbProp: 'followsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'followData' },
   { route: 'room', dbProp: 'roomsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'roomData' },
+  { route: 'topicsummary', dbProp: 'topicSummariesDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'topicSummaryData' },
+  { route: 'topicrecency', dbProp: 'topicRecencyDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'topicRecencyData' },
   { route: 'processerror', dbProp: 'processErrorsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'errorData' },
   { route: 'ptx', dbProp: 'ptxsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'ptxData' },
   { route: 'poll', dbProp: 'pollsDb', keyParam: 'txid', bodyIdField: 'txid', bodyDataField: 'pollData' },

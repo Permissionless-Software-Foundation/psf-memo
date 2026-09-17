@@ -28,6 +28,7 @@ import GetPoll from '../../src/use-cases/get-poll.js'
 import GetPollOptions from '../../src/use-cases/get-poll-options.js'
 import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
 import { repairTxidEncoding } from '../../src/lib/repair-txid-encoding.js'
+import { backfillTopicIndexes, topicRecencyKey } from '../../src/lib/backfill-topic-indexes.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -97,12 +98,16 @@ async function createWorld () {
   const postsGetCounter = { calls: 0 }
   const likesIteratorCounter = { calls: 0 }
   const postLikesIteratorCounter = { calls: 0 }
+  const roomsIteratorCounter = { calls: 0, entries: 0 }
+  const topicRecencyIteratorCounter = { calls: 0, entries: 0 }
   wrapIterator(adapters.level.postHeightsDb, postHeightsIteratorCounter)
   wrapIterator(adapters.level.addrPostHeightsDb, addrPostHeightsIteratorCounter)
   wrapIterator(adapters.level.postChildrenDb, postChildrenIteratorCounter)
   wrapGet(adapters.level.postsDb, postsGetCounter)
   wrapIterator(adapters.level.likesDb, likesIteratorCounter)
   wrapIterator(adapters.level.postLikesDb, postLikesIteratorCounter)
+  wrapIterator(adapters.level.roomsDb, roomsIteratorCounter)
+  wrapIterator(adapters.level.topicRecencyDb, topicRecencyIteratorCounter)
 
   const listRecentPosts = new ListRecentPosts({ adapters })
   const listPostsByAddr = new ListPostsByAddr({ adapters })
@@ -145,6 +150,8 @@ async function createWorld () {
     postsGetCounter,
     likesIteratorCounter,
     postLikesIteratorCounter,
+    roomsIteratorCounter,
+    topicRecencyIteratorCounter,
     getLastResponse: () => lastResponse,
     setLastResponse: (resp) => { lastResponse = resp },
     close: async () => {
@@ -192,6 +199,16 @@ async function loadFixture (world, name) {
 
   if (name === 'topics-with-posts') {
     await loadTopicsWithPosts(world)
+    return
+  }
+
+  if (name === 'topic-indexes') {
+    await loadTopicIndexes(world)
+    return
+  }
+
+  if (name === 'rooms-with-topics-and-follows') {
+    await loadRoomsWithTopicsAndFollows(world)
     return
   }
 
@@ -501,6 +518,56 @@ async function loadTopicsWithPosts (world) {
 
   for (const [txid, post] of Object.entries(posts)) {
     await world.adapters.level.postsDb.put(txid, post)
+  }
+
+  // Derived topic indexes (see topic-read.feature).
+  const summaries = [
+    { room: 'bitcoin', postCount: 2, lastHeight: 300 },
+    { room: 'cash', postCount: 1, lastHeight: 250 },
+    { room: 'dev', postCount: 1, lastHeight: 400 },
+    { room: 'lone', postCount: 0, lastHeight: 0 }
+  ]
+  for (const summary of summaries) {
+    await world.adapters.level.topicSummariesDb.put(summary.room, summary)
+    await world.adapters.level.topicRecencyDb.put(
+      topicRecencyKey(summary.lastHeight, summary.room),
+      { room: summary.room, blockHeight: summary.lastHeight }
+    )
+  }
+}
+
+// Fixture "topic-indexes" from topic-pagination.feature: indexes only.
+async function loadTopicIndexes (world) {
+  const summaries = [
+    { room: 'memo', postCount: 5, lastHeight: 600500 },
+    { room: 'cash', postCount: 2, lastHeight: 600400 },
+    { room: 'dance', postCount: 3, lastHeight: 600400 },
+    { room: 'anime', postCount: 1, lastHeight: 600300 },
+    { room: 'lone', postCount: 0, lastHeight: 0 },
+    { room: 'quiet', postCount: 0, lastHeight: 0 }
+  ]
+
+  for (const summary of summaries) {
+    await world.adapters.level.topicSummariesDb.put(summary.room, summary)
+    await world.adapters.level.topicRecencyDb.put(
+      topicRecencyKey(summary.lastHeight, summary.room),
+      { room: summary.room, blockHeight: summary.lastHeight }
+    )
+  }
+}
+
+// Fixture "rooms-with-topics-and-follows" from backfill-topic-indexes.feature.
+async function loadRoomsWithTopicsAndFollows (world) {
+  const entries = [
+    { key: 'bitcoin:post-100', room: 'bitcoin', txid: 'post-100', type: 'post', blockHeight: 600100 },
+    { key: 'bitcoin:post-200', room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 600200 },
+    { key: 'bitcoin:addr-f', room: 'bitcoin', addr: 'addr-f', type: 'follow', unfollow: false },
+    { key: 'cash:post-250', room: 'cash', txid: 'post-250', type: 'post', blockHeight: 600250 },
+    { key: 'lone:addr-f', room: 'lone', addr: 'addr-f', type: 'follow', unfollow: false }
+  ]
+
+  for (const entry of entries) {
+    await world.adapters.level.roomsDb.put(entry.key, entry)
   }
 }
 
@@ -1119,7 +1186,7 @@ const handlers = [
   },
   {
     name: 'response lists topics in order',
-    pattern: /^the response lists topics in order (<expected_order>)$/,
+    pattern: /^the response lists topics in order (<[A-Za-z0-9_]+>)$/,
     run (m, example, world) {
       const expected = resolveParam(m[1], example).split(',').map((s) => s.trim())
       const actual = world.getLastResponse().topics.map((t) => t.room)
@@ -1161,6 +1228,157 @@ const handlers = [
     pattern: /^the fixture "(.+)" is loaded into the rooms store$/,
     async run (m, example, world) {
       await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'db instance with rooms, posts, and topic index stores',
+    pattern: /^a psf-memo-db instance with rooms, posts, topicSummaries, and topicRecency stores$/,
+    async run () {
+      // World is already created with all stores.
+    }
+  },
+  {
+    name: 'load fixture into rooms, posts, and topic index stores',
+    pattern: /^the fixture "(.+)" is loaded into the rooms, posts, topicSummaries, and topicRecency stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'db instance with topic index stores',
+    pattern: /^a psf-memo-db instance with topicSummaries and topicRecency stores$/,
+    async run () {
+      // World is already created with both topic index stores.
+    }
+  },
+  {
+    name: 'load fixture into topic index stores',
+    pattern: /^the fixture "(.+)" is loaded into the topic index stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'db instance with rooms and topic index stores',
+    pattern: /^a psf-memo-db instance with rooms, topicSummaries, and topicRecency stores$/,
+    async run () {
+      // World is already created with all stores.
+    }
+  },
+  {
+    name: 'request topics with limit and offset',
+    pattern: /^the client requests \/topics with limit (<limit>) and offset (<offset>)$/,
+    async run (m, example, world) {
+      const limit = parseInt(resolveParam(m[1], example), 10)
+      const offset = parseInt(resolveParam(m[2], example), 10)
+      const resp = await world.listTopics.execute({ limit, offset })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'response contains quoted topic with post count',
+    pattern: /^the response contains the topic "(<topic>)" with post count (<postCount>)$/,
+    run (m, example, world) {
+      const topic = resolveParam(m[1], example)
+      const expectedCount = parseInt(resolveParam(m[2], example), 10)
+      const found = world.getLastResponse().topics.find((t) => t.room === topic)
+      if (!found) {
+        throw new Error(`Topic ${topic} not found in response`)
+      }
+      if (found.postCount !== expectedCount) {
+        throw new Error(`Expected post count ${expectedCount} for ${topic}, got ${found.postCount}`)
+      }
+    }
+  },
+  {
+    name: 'response pagination shows total and hasMore',
+    pattern: /^the response pagination shows total (<total>) and hasMore (<hasMore>)$/,
+    run (m, example, world) {
+      const expectedTotal = parseInt(resolveParam(m[1], example), 10)
+      const expectedHasMore = resolveParam(m[2], example) === 'true'
+      const pagination = world.getLastResponse().pagination
+      if (!pagination) {
+        throw new Error('Response has no pagination metadata')
+      }
+      if (pagination.total !== expectedTotal) {
+        throw new Error(`Expected total ${expectedTotal}, got ${pagination.total}`)
+      }
+      if (pagination.hasMore !== expectedHasMore) {
+        throw new Error(`Expected hasMore ${expectedHasMore}, got ${pagination.hasMore}`)
+      }
+    }
+  },
+  {
+    name: 'topicRecency store read count',
+    pattern: /^the topicRecency store was read exactly (<read_count>) records$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const actual = world.topicRecencyIteratorCounter.entries || 0
+      if (actual !== expected) {
+        throw new Error(`Expected topicRecency to be read ${expected} times, got ${actual}`)
+      }
+    }
+  },
+  {
+    name: 'rooms store was not iterated',
+    pattern: /^the rooms store was not iterated$/,
+    run (m, example, world) {
+      if (world.roomsIteratorCounter.calls !== 0) {
+        throw new Error(`Expected rooms store not to be iterated, got ${world.roomsIteratorCounter.calls} call(s)`)
+      }
+    }
+  },
+  {
+    name: 'run topic backfill utility',
+    pattern: /^the topic backfill utility is run$/,
+    async run (m, example, world) {
+      await backfillTopicIndexes({
+        roomsDb: world.adapters.level.roomsDb,
+        topicSummariesDb: world.adapters.level.topicSummariesDb,
+        topicRecencyDb: world.adapters.level.topicRecencyDb
+      })
+    }
+  },
+  {
+    name: 'run topic backfill utility again',
+    pattern: /^the topic backfill utility is run again$/,
+    async run (m, example, world) {
+      await backfillTopicIndexes({
+        roomsDb: world.adapters.level.roomsDb,
+        topicSummariesDb: world.adapters.level.topicSummariesDb,
+        topicRecencyDb: world.adapters.level.topicRecencyDb
+      })
+    }
+  },
+  {
+    name: 'topicSummaries contains room with postCount and lastHeight',
+    pattern: /^the topicSummaries store contains the room "(<room>)" with postCount (<postCount>) and lastHeight (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const postCount = parseInt(resolveParam(m[2], example), 10)
+      const lastHeight = parseInt(resolveParam(m[3], example), 10)
+      const record = await world.adapters.level.topicSummariesDb.get(room)
+      if (!record) {
+        throw new Error(`No topicSummaries record for ${room}`)
+      }
+      if (record.room !== room || record.postCount !== postCount || record.lastHeight !== lastHeight) {
+        throw new Error(`Expected ${room} postCount ${postCount} lastHeight ${lastHeight}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'topicRecency records room at height',
+    pattern: /^the topicRecency store records the room "(<room>)" at block height (<height>)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const height = parseInt(resolveParam(m[2], example), 10)
+      const record = await world.adapters.level.topicRecencyDb.get(topicRecencyKey(height, room))
+      if (!record) {
+        throw new Error(`No topicRecency record for ${room} at ${height}`)
+      }
+      if (record.room !== room || record.blockHeight !== height) {
+        throw new Error(`Expected topicRecency ${room} at ${height}, got ${JSON.stringify(record)}`)
+      }
     }
   },
   {

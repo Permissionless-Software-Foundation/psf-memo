@@ -45,10 +45,11 @@ describe('#TopicsRESTController', () => {
   afterEach(() => sandbox.restore())
 
   it('should return topics from use case', async () => {
-    const ctx = { body: null, throw: sandbox.stub() }
+    const ctx = { query: { limit: '2', offset: '4' }, body: null, throw: sandbox.stub() }
     await uut.getTopics(ctx)
 
     assert.equal(uut.useCases.listTopics.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.listTopics.execute.firstCall.args[0], { limit: '2', offset: '4' })
     assert.equal(ctx.body.topics.length, 2)
     assert.equal(ctx.body.topics[0].room, 'bitcoin')
   })
@@ -106,7 +107,7 @@ describe('#TopicsRESTController', () => {
 
   it('should throw a 500 when the use case fails without a status', async () => {
     uut.useCases.listTopics.execute = sandbox.stub().rejects(new Error('boom'))
-    const ctx = { body: null, throw: sandbox.stub() }
+    const ctx = { query: {}, body: null, throw: sandbox.stub() }
 
     await uut.getTopics(ctx)
 

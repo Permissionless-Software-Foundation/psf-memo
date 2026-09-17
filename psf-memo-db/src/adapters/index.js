@@ -50,6 +50,8 @@ class Adapters {
     this.topicQuery = new TopicQuery({
       roomsDb: level.roomsDb,
       postsDb: level.postsDb,
+      topicSummariesDb: level.topicSummariesDb,
+      topicRecencyDb: level.topicRecencyDb,
       muteQuery: this.muteQuery
     })
     this.pollQuery = new PollQuery({

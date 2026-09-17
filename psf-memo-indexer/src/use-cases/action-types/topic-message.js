@@ -1,6 +1,7 @@
-import { utf8FromPush, logProcessError, roomKey } from './helpers.js'
+import { utf8FromPush, logProcessError, roomKey, getIfPresent } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
 import { handlePost } from './post.js'
+import { recordTopicPost } from './topic-indexing.js'
 
 export async function handleTopicMessage (ctx) {
   const { adapters, txid, decoded, seen, blockHeight } = ctx
@@ -18,10 +19,20 @@ export async function handleTopicMessage (ctx) {
     return
   }
 
+  // The room record is the marker that this topic message was already
+  // indexed. Check it before writing so reprocessing does not double-count the
+  // room's post summary.
+  const key = roomKey(room, txid)
+  const alreadyIndexed = (await getIfPresent(adapters.roomDb, key)) !== null
+
   await handlePost({
     ...ctx,
     decoded: { ...decoded, pushDatas: [pushDatas[0], pushDatas[2]] }
   })
 
-  await adapters.roomDb.create(roomKey(room, txid), { room, txid, seen, type: 'post', blockHeight })
+  await adapters.roomDb.create(key, { room, txid, seen, type: 'post', blockHeight })
+
+  if (!alreadyIndexed) {
+    await recordTopicPost(adapters, room, blockHeight)
+  }
 }

@@ -1,5 +1,6 @@
 import { utf8FromPush, logProcessError, roomKey } from './helpers.js'
 import { PREFIX_TOPIC_UNFOLLOW } from '../../lib/memo-codes.js'
+import { ensureTopicRoom } from './topic-indexing.js'
 
 export async function handleTopicFollow (ctx) {
   const { adapters, txid, signerAddr, decoded, seen, blockHeight } = ctx
@@ -22,4 +23,8 @@ export async function handleTopicFollow (ctx) {
     type: 'follow',
     blockHeight
   })
+
+  if (!unfollow) {
+    await ensureTopicRoom(adapters, room)
+  }
 }

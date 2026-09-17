@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 import sinon from 'sinon'
 import TopicQuery from '../../../src/adapters/topic-query.js'
+import { topicRecencyKey } from '../../../src/lib/backfill-topic-indexes.js'
 
 function makeRoomsDb (records = {}) {
   const store = new Map(Object.entries(records))
@@ -37,11 +38,38 @@ function makeRoomsDb (records = {}) {
   }
 }
 
+// In-memory index store whose iterator honors the LevelDB `limit` option, so
+// the read path's bounded recency reads can be asserted.
+function makeIteratorDb (records = []) {
+  const store = new Map(records)
+  return {
+    async get (key) {
+      if (!store.has(key)) {
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      }
+      return store.get(key)
+    },
+    async * iterator (opts = {}) {
+      let keys = Array.from(store.keys()).sort()
+      if (opts.gte !== undefined) keys = keys.filter((k) => k >= opts.gte)
+      if (opts.lte !== undefined) keys = keys.filter((k) => k <= opts.lte)
+      const limit = opts.limit === undefined ? keys.length : opts.limit
+      for (const key of keys.slice(0, limit)) {
+        yield [key, store.get(key)]
+      }
+    }
+  }
+}
+
 describe('#TopicQuery', () => {
   let uut
   let sandbox
   let roomsDb
   let postsDb
+  let topicSummariesDb
+  let topicRecencyDb
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -52,8 +80,10 @@ describe('#TopicQuery', () => {
     postsDb = {
       get: sandbox.stub()
     }
+    topicSummariesDb = makeIteratorDb()
+    topicRecencyDb = makeIteratorDb()
 
-    uut = new TopicQuery({ roomsDb, postsDb })
+    uut = new TopicQuery({ roomsDb, postsDb, topicSummariesDb, topicRecencyDb })
   })
 
   afterEach(() => sandbox.restore())
@@ -71,10 +101,30 @@ describe('#TopicQuery', () => {
   it('should throw when postsDb is missing', () => {
     try {
       // eslint-disable-next-line no-new
-      new TopicQuery({ roomsDb })
+      new TopicQuery({ roomsDb, topicSummariesDb, topicRecencyDb })
       assert.fail('Expected error')
     } catch (err) {
       assert.include(err.message, 'postsDb required')
+    }
+  })
+
+  it('should throw when topicSummariesDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new TopicQuery({ roomsDb, postsDb, topicRecencyDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'topicSummariesDb required')
+    }
+  })
+
+  it('should throw when topicRecencyDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new TopicQuery({ roomsDb, postsDb, topicSummariesDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'topicRecencyDb required')
     }
   })
 
@@ -95,60 +145,85 @@ describe('#TopicQuery', () => {
   })
 
   describe('#listTopics', () => {
-    it('should return distinct topics with post counts', async () => {
-      async function * mockRooms () {
-        yield ['bitcoin:post-300', { room: 'bitcoin', txid: 'post-300', type: 'post', blockHeight: 300 }]
-        yield ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 }]
-        yield ['cash:post-250', { room: 'cash', txid: 'post-250', type: 'post', blockHeight: 250 }]
-        yield ['dev:post-100', { room: 'dev', txid: 'post-100', type: 'post', blockHeight: 100 }]
-        yield ['lone:addr-f', { room: 'lone', addr: 'addr-f', type: 'follow', unfollow: false }]
-      }
-      roomsDb.iterator.returns(mockRooms())
+    const summaries = [
+      ['memo', { room: 'memo', postCount: 5, lastHeight: 600500 }],
+      ['cash', { room: 'cash', postCount: 2, lastHeight: 600400 }],
+      ['dance', { room: 'dance', postCount: 3, lastHeight: 600400 }],
+      ['anime', { room: 'anime', postCount: 1, lastHeight: 600300 }],
+      ['lone', { room: 'lone', postCount: 0, lastHeight: 0 }],
+      ['quiet', { room: 'quiet', postCount: 0, lastHeight: 0 }]
+    ]
+    const recency = [
+      [topicRecencyKey(600500, 'memo'), { room: 'memo', blockHeight: 600500 }],
+      [topicRecencyKey(600400, 'cash'), { room: 'cash', blockHeight: 600400 }],
+      [topicRecencyKey(600400, 'dance'), { room: 'dance', blockHeight: 600400 }],
+      [topicRecencyKey(600300, 'anime'), { room: 'anime', blockHeight: 600300 }],
+      [topicRecencyKey(0, 'lone'), { room: 'lone', blockHeight: 0 }],
+      [topicRecencyKey(0, 'quiet'), { room: 'quiet', blockHeight: 0 }]
+    ]
 
-      const result = await uut.listTopics()
+    it('should return topics ordered by recency with counts from summaries', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb(summaries),
+        topicRecencyDb: makeIteratorDb(recency)
+      })
 
-      assert.deepEqual(result, [
-        { room: 'bitcoin', postCount: 2 },
-        { room: 'cash', postCount: 1 },
-        { room: 'dev', postCount: 1 },
-        { room: 'lone', postCount: 0 }
+      const result = await uut.listTopics({ limit: 100, offset: 0 })
+
+      assert.deepEqual(result.topics, [
+        { room: 'memo', postCount: 5 },
+        { room: 'cash', postCount: 2 },
+        { room: 'dance', postCount: 3 },
+        { room: 'anime', postCount: 1 },
+        { room: 'lone', postCount: 0 },
+        { room: 'quiet', postCount: 0 }
       ])
+      assert.deepEqual(result.pagination, { limit: 100, offset: 0, total: 6, hasMore: false })
     })
 
-    it('should sort topics by most recent post descending', async () => {
-      async function * mockRooms () {
-        yield ['zoo:post-1', { room: 'zoo', txid: 'post-1', type: 'post', blockHeight: 1 }]
-        yield ['alpha:post-1', { room: 'alpha', txid: 'post-1', type: 'post', blockHeight: 2 }]
-      }
-      roomsDb.iterator.returns(mockRooms())
+    it('should paginate using recency order and report total and hasMore', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb(summaries),
+        topicRecencyDb: makeIteratorDb(recency)
+      })
 
-      const result = await uut.listTopics()
+      const result = await uut.listTopics({ limit: 2, offset: 2 })
 
-      assert.deepEqual(result.map((t) => t.room), ['alpha', 'zoo'])
+      assert.deepEqual(result.topics.map((t) => t.room), ['dance', 'anime'])
+      assert.equal(result.pagination.total, 6)
+      assert.equal(result.pagination.hasMore, true)
     })
 
-    it('should treat a post at block height 0 as the least recent', async () => {
-      async function * mockRooms () {
-        yield ['a:post-1', { room: 'a', txid: 'post-1', type: 'post', blockHeight: 0 }]
-        yield ['b:post-1', { room: 'b', txid: 'post-1', type: 'post', blockHeight: 1 }]
-      }
-      roomsDb.iterator.returns(mockRooms())
+    it('should report hasMore false on the last page', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb(summaries),
+        topicRecencyDb: makeIteratorDb(recency)
+      })
 
-      const result = await uut.listTopics()
+      const result = await uut.listTopics({ limit: 2, offset: 4 })
 
-      assert.deepEqual(result.map((t) => t.room), ['b', 'a'])
+      assert.deepEqual(result.topics.map((t) => t.room), ['lone', 'quiet'])
+      assert.equal(result.pagination.total, 6)
+      assert.equal(result.pagination.hasMore, false)
     })
 
-    it('should treat a post with no block height as height 0', async () => {
-      async function * mockRooms () {
-        yield ['a:post-1', { room: 'a', txid: 'post-1', type: 'post' }]
-        yield ['b:post-1', { room: 'b', txid: 'post-1', type: 'post', blockHeight: 1 }]
-      }
-      roomsDb.iterator.returns(mockRooms())
+    it('should read the recency index without iterating the rooms store', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb(summaries),
+        topicRecencyDb: makeIteratorDb(recency)
+      })
 
-      const result = await uut.listTopics()
+      await uut.listTopics({ limit: 2, offset: 2 })
 
-      assert.deepEqual(result.map((t) => t.room), ['b', 'a'])
+      assert.equal(roomsDb.iterator.callCount, 0)
     })
   })
 
@@ -258,7 +333,7 @@ describe('#TopicQuery', () => {
       const muteQuery = {
         listMuted: sandbox.stub().resolves(['muted-addr'])
       }
-      uut = new TopicQuery({ roomsDb, postsDb, muteQuery })
+      uut = new TopicQuery({ roomsDb, postsDb, topicSummariesDb, topicRecencyDb, muteQuery })
 
       const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 0, viewerAddr: 'viewer-addr' })
 
@@ -320,7 +395,9 @@ describe('#TopicQuery', () => {
           'bitcoin:addr-c': { room: 'bitcoin', addr: 'addr-c', type: 'follow', unfollow: true },
           'cash:addr-a': { room: 'cash', addr: 'addr-a', type: 'follow', unfollow: false }
         }),
-        postsDb
+        postsDb,
+        topicSummariesDb,
+        topicRecencyDb
       })
 
       const result = await query.listRoomFollowers('bitcoin')
@@ -332,7 +409,9 @@ describe('#TopicQuery', () => {
         roomsDb: makeRoomsDb({
           'bitcoin:addr-a': { room: 'bitcoin', type: 'follow', unfollow: false }
         }),
-        postsDb
+        postsDb,
+        topicSummariesDb,
+        topicRecencyDb
       })
 
       const result = await query.listRoomFollowers('bitcoin')
@@ -342,7 +421,9 @@ describe('#TopicQuery', () => {
     it('should return an empty array for a room with no followers', async () => {
       const query = new TopicQuery({
         roomsDb: makeRoomsDb({}),
-        postsDb
+        postsDb,
+        topicSummariesDb,
+        topicRecencyDb
       })
 
       const result = await query.listRoomFollowers('lone')
