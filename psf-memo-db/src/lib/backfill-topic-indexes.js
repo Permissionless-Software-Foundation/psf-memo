@@ -28,20 +28,31 @@ export function topicRecencyKey (blockHeight, room) {
   return `${String(inverted).padStart(HEIGHT_PAD, '0')}:${room}`
 }
 
+// The room name is stored on the record; fall back to the first key segment so
+// a record written without it is still attributed to a room.
+function roomFromEntry (key, value) {
+  if (value && typeof value.room === 'string') return value.room
+  return String(key).split(':')[0]
+}
+
+// Fold one post entry into its room summary, tracking the newest height.
+function applyPost (summary, value) {
+  summary.postCount++
+  const height = value.blockHeight ?? 0
+  if (height > summary.lastHeight) summary.lastHeight = height
+}
+
 async function collectSummaries (roomsDb) {
   const summaries = new Map()
 
   for await (const [key, value] of roomsDb.iterator()) {
-    const room = (value && typeof value.room === 'string') ? value.room : String(key).split(':')[0]
+    const room = roomFromEntry(key, value)
     if (!summaries.has(room)) {
       summaries.set(room, { room, postCount: 0, lastHeight: 0 })
     }
 
     if (value?.type === 'post') {
-      const summary = summaries.get(room)
-      summary.postCount++
-      const height = value.blockHeight ?? 0
-      if (height > summary.lastHeight) summary.lastHeight = height
+      applyPost(summaries.get(room), value)
     }
   }
 

@@ -103,4 +103,26 @@ describe('#handleTopicFollow topic indexes', () => {
     assert.equal(adapters.topicSummaryDb.store.size, 0)
     assert.equal(adapters.topicRecencyDb.store.size, 0)
   })
+
+  it('should log a process error and write nothing when the push data count is invalid', async () => {
+    const adapters = makeAdapters()
+
+    await handleTopicFollow({
+      adapters,
+      txid: 'follow-bad',
+      signerAddr: 'bitcoincash:qaddr-a',
+      seen: 1,
+      blockHeight: 600000,
+      decoded: {
+        action: 'topic-follow',
+        prefix: PREFIX_TOPIC_FOLLOW,
+        pushDatas: [PREFIX_TOPIC_FOLLOW]
+      }
+    })
+
+    assert.equal(adapters.processErrorDb.store.size, 1)
+    assert.equal(adapters.roomDb.store.size, 0)
+    assert.equal(adapters.topicSummaryDb.store.size, 0)
+    assert.equal(adapters.topicRecencyDb.store.size, 0)
+  })
 })

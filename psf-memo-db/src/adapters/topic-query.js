@@ -47,6 +47,7 @@ class TopicQuery {
     this.listRoomFollowers = this.listRoomFollowers.bind(this)
     this.roomFromKey = this.roomFromKey.bind(this)
     this.txidFromKey = this.txidFromKey.bind(this)
+    this.roomRange = this.roomRange.bind(this)
     this.followAddrFromValue = this.followAddrFromValue.bind(this)
   }
 
@@ -58,6 +59,13 @@ class TopicQuery {
   txidFromKey (key) {
     const parts = String(key).split(':')
     return parts[parts.length - 1]
+  }
+
+  // Key range bounding every record for a room. The trailing \uffff sorts
+  // after any address or txid segment, so the range is exclusive of other
+  // rooms regardless of their name.
+  roomRange (room) {
+    return { gte: `${room}:`, lte: `${room}:\uffff` }
   }
 
   // The topicSummaries key is the room name; fall back to the key when the
@@ -110,11 +118,9 @@ class TopicQuery {
 
   async getTopicPostTxids (room, { limit, offset, viewerAddr = null }) {
     const mutedAddrs = await loadMutedAddrs(this.muteQuery, viewerAddr)
-    const start = `${room}:`
-    const end = `${room}:\uffff`
     const entries = []
 
-    for await (const [key, value] of this.roomsDb.iterator({ gte: start, lte: end })) {
+    for await (const [key, value] of this.roomsDb.iterator(this.roomRange(room))) {
       if (value?.type !== 'post') continue
       const txid = (value && typeof value.txid === 'string') ? value.txid : this.txidFromKey(key)
       if (await isMutedPost((t) => this.postsDb.get(t).catch(() => null), txid, mutedAddrs)) continue
@@ -144,10 +150,8 @@ class TopicQuery {
 
   // Return the cash addresses that currently follow the room.
   async listRoomFollowers (room) {
-    const start = `${room}:`
-    const end = `${room}:\uffff`
     const followers = []
-    for await (const [key, value] of this.roomsDb.iterator({ gte: start, lte: end })) {
+    for await (const [key, value] of this.roomsDb.iterator(this.roomRange(room))) {
       if (value?.type !== 'follow') continue
       if (value?.unfollow === true) continue
       const addr = this.followAddrFromValue(value, key)

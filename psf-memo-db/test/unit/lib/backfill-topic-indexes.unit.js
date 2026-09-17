@@ -86,4 +86,17 @@ describe('#backfillTopicIndexes', () => {
     assert.isFalse(topicRecencyDb.store.has(topicRecencyKey(0, 'stale')))
     assert.isTrue(topicRecencyDb.store.has(topicRecencyKey(600200, 'bitcoin')))
   })
+
+  it('should fall back to the key room segment when a record omits the room', async () => {
+    const roomsDb = makeDb([
+      ['cash:post-1', { type: 'post', blockHeight: 500 }]
+    ])
+    const topicSummariesDb = makeDb()
+    const topicRecencyDb = makeDb()
+
+    await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
+
+    assert.deepEqual(topicSummariesDb.store.get('cash'), { room: 'cash', postCount: 1, lastHeight: 500 })
+    assert.deepEqual(topicRecencyDb.store.get(topicRecencyKey(500, 'cash')), { room: 'cash', blockHeight: 500 })
+  })
 })

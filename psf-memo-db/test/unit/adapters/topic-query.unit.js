@@ -144,6 +144,26 @@ describe('#TopicQuery', () => {
     })
   })
 
+  describe('#summaryRoom', () => {
+    it('should return the room from the value when present', () => {
+      assert.equal(uut.summaryRoom('ignored', { room: 'bitcoin' }), 'bitcoin')
+    })
+
+    it('should fall back to the key when the value omits the room', () => {
+      assert.equal(uut.summaryRoom('cash', {}), 'cash')
+    })
+  })
+
+  describe('#recencyRoom', () => {
+    it('should return the room from the value when present', () => {
+      assert.equal(uut.recencyRoom('ignored', { room: 'bitcoin' }), 'bitcoin')
+    })
+
+    it('should parse the room out of the inverted-height key when the value omits it', () => {
+      assert.equal(uut.recencyRoom(topicRecencyKey(600100, 'bitcoin'), {}), 'bitcoin')
+    })
+  })
+
   describe('#listTopics', () => {
     const summaries = [
       ['memo', { room: 'memo', postCount: 5, lastHeight: 600500 }],

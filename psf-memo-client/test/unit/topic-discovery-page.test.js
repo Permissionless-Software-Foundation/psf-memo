@@ -110,6 +110,29 @@ test('getTopic returns null when the topic is not loaded', async () => {
   assert.equal(page.getTopic('bitcoin'), null)
 })
 
+test('openTopic navigates to the encoded topic feed path', () => {
+  const calls = []
+  const page = new TopicDiscoveryPage({
+    memoDb: makeMemoDb({ topics: [] }),
+    navigate: (path) => calls.push(path)
+  })
+
+  const result = page.openTopic('space room')
+
+  assert.deepEqual(result, { path: '/topics/space%20room' })
+  assert.deepEqual(calls, ['/topics/space%20room'])
+})
+
+test('topicFeedPath percent-encodes the room name', () => {
+  assert.equal(TopicDiscoveryPage.topicFeedPath('a/b'), '/topics/a%2Fb')
+})
+
+test('openTopic uses a no-op navigate by default', () => {
+  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics: [] }) })
+
+  assert.deepEqual(page.openTopic('bitcoin'), { path: '/topics/bitcoin' })
+})
+
 test('exposes the topics page path', () => {
   assert.equal(TopicDiscoveryPage.TOPICS_PATH, '/topics')
 })

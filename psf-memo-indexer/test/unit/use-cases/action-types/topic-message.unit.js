@@ -132,4 +132,48 @@ describe('#handleTopicMessage topic indexes', () => {
     })
     assert.equal(adapters.topicRecencyDb.store.size, 1)
   })
+
+  it('should log a process error and index nothing for an invalid push data count', async () => {
+    const adapters = makeAdapters()
+    const prefix = Buffer.from('6d0c', 'hex')
+
+    await handleTopicMessage({
+      adapters,
+      txid: 'topic-bad',
+      signerAddr: 'bitcoincash:qaddr-a',
+      seen: 1,
+      blockHeight: 600100,
+      decoded: {
+        action: 'topic-message',
+        prefix,
+        pushDatas: [prefix, Buffer.from('bitcoin', 'utf8')]
+      }
+    })
+
+    assert.equal(adapters.processErrorDb.store.size, 1)
+    assert.equal(adapters.topicSummaryDb.store.size, 0)
+    assert.equal(adapters.topicRecencyDb.store.size, 0)
+  })
+
+  it('should log a process error and index nothing for an oversized topic message', async () => {
+    const adapters = makeAdapters()
+    const prefix = Buffer.from('6d0c', 'hex')
+
+    await handleTopicMessage({
+      adapters,
+      txid: 'topic-big',
+      signerAddr: 'bitcoincash:qaddr-a',
+      seen: 1,
+      blockHeight: 600100,
+      decoded: {
+        action: 'topic-message',
+        prefix,
+        pushDatas: [prefix, Buffer.from('bitcoin', 'utf8'), Buffer.from('x'.repeat(65000), 'utf8')]
+      }
+    })
+
+    assert.equal(adapters.processErrorDb.store.size, 1)
+    assert.equal(adapters.topicSummaryDb.store.size, 0)
+    assert.equal(adapters.topicRecencyDb.store.size, 0)
+  })
 })
