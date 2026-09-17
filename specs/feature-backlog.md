@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-16
+**Last updated**: 2026-09-17
 
 ---
 
@@ -30,6 +30,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
   out all affected components in the task description and in the handoff.
 
 ## Recently completed
+
+- **Memo multi-push encoding (2026-09-17):** fixed the payload layout for
+  every multi-field Memo action. `minimal-slp-wallet`'s
+  `sendOpReturn(msg, prefix)` can only emit two OP_RETURN pushes
+  (`[prefix, msg]`), so the client had been concatenating all fields into one
+  push. The indexer and memo.cash expect one push per protocol field, so the
+  indexer logged `invalid reply push data count 2` and dropped every reply,
+  topic message, add-poll-option, and poll vote; create-poll was accepted by
+  our indexer only because it tolerates the combined form. Added the
+  browser-safe `psf-memo-client/src/services/memo-multipush.js` adapter
+  (`attachMultiPushOpReturn`/`broadcastMultiPush`) and switched the five action
+  services to broadcast field arrays: reply `[6d03, txid(32 LE), text]`,
+  topic message `[6d0c, topic, text]`, add-poll-option `[6d13, txid(32 LE),
+  option]`, poll vote `[6d14, txid(32 LE), comment]`, and create-poll `[6d10,
+  poll_type, option_count, question]`. Client-only. Spec:
+  `psf-memo-client/specs/memo-multipush-encoding.feature`. Merged to `master`
+  at `4dedc51` (review commit `fac0173`; record
+  `docs/reviews/memo-multipush-encoding-verification.json`, 425 unit / 85
+  property / 31 acceptance suites / lint / build).
 
 - **Txid wire encoding repair (2026-09-16):** fixed the endianness bug that
   broke every like, reply, poll option, and poll vote broadcast by

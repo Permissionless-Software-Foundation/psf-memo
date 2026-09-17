@@ -494,6 +494,36 @@ that a single user-facing feature may require specs in more than one component.
     not implementation gaps; the wire-order and positive-repair mutations were
     killed (14 executed/8 killed and 21/18).
 
+35. **`minimal-slp-wallet` cannot emit multi-push OP_RETURNs (the
+    payload-layout bug class).** `sendOpReturn(msg, prefix)` hardcodes
+    `[OP_RETURN, prefix, msg]` and `bchjs.Script.encode2` will not nest arrays,
+    so every multi-field Memo action was flattened into one push. The indexer
+    requires `[prefix, txid(32 LE), text]` for reply/topic-message/
+    add-poll-option/poll-vote and `[prefix, poll_type, option_count, question]`
+    for create-poll; the combined form is logged as `invalid reply push data
+    count 2` and dropped (and memo.cash does not display it). The shared
+    browser-safe adapter is `psf-memo-client/src/services/memo-multipush.js`
+    (`attachMultiPushOpReturn`/`broadcastMultiPush`), which swaps
+    `bchjs.Script.encode2` to expand a pushes array and restores it in the same
+    tick. When adding any future action with more than one payload field, use
+    that adapter and assert the push count in acceptance, not just the prefix.
+36. **Node `Buffer` struck again in the multi-push adapter (gotcha #19
+    repeat).** The first `memo-multipush.js` used the Node global `Buffer` to
+    build the script; CRA 5 does not polyfill it and the external wallet script
+    does not define `window.Buffer`, so every real-browser multi-push broadcast
+    would have thrown `Buffer is not defined` while Node tests passed. Fix:
+    import `{ Buffer } from 'buffer'` and declare `buffer` as a direct
+    dependency. `@psf/bitcoincashjs-lib`'s `compile2` requires genuine Buffers
+    (`Buffer.isBuffer` + `.copy`), so a `Uint8Array` is not a substitute here.
+37. **Soft Gherkin mutation survivors for `memo-multipush-encoding.feature` are
+    intrinsic.** 20 executed / 8 killed / 12 survived; every survivor is a
+    single-character case mutation of a `text`/`topic`/`question` example value
+    used on both the setup and assertion sides (gotcha #12 class). The
+    structural assertions — push count, little-endian txid, poll type, and
+    option count — killed all 8 non-text mutations. `gherkin-mutator` wrote an
+    empty `scenarios` manifest because every scenario has an intrinsic
+    survivor; that is expected and committed as tool-written.
+
 ---
 
 ## 10. Run / verify the app
@@ -544,15 +574,16 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `8f24ac0` (`txid-wire-encoding` merged from
-`swarmforge-architect`). Two verification records name the review commit
-`a2229f7dd4`: `docs/reviews/txid-wire-encoding-verification.json` (client,
-417 unit / 80 property / 30 acceptance suites / lint / build) and
-`docs/reviews/txid-wire-encoding-db-verification.json` (db, 371 unit / 54
-property / 13 acceptance suites / lint); the architect tip added only `docs/`.
-This task fixed the client big-endian txid bug for likes/replies/polls and
-added the DB repair utility. Run `swarmforge/scripts/state.sh` to refresh these
-HEAD lines.
+Current `master` HEAD: `4dedc51` (`memo-multipush-encoding` merged from
+`swarmforge-architect`). One verification record names the review commit
+`fac01730c4`: `docs/reviews/memo-multipush-encoding-verification.json`
+(client, 425 unit / 85 property / 31 acceptance suites / lint / build); the
+commits after the review commit added only `docs/` (summary, record, architect
+process note). This task fixed the multi-field payload layout for reply, topic
+message, add-poll-option, poll vote, and create-poll. The specifier merged the
+branch and ran only the merged feature's acceptance suite (10/10 executions
+passed) as the independent check. Run `swarmforge/scripts/state.sh` to refresh
+these HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
 performance, responsiveness, state handling, error surfacing). See
