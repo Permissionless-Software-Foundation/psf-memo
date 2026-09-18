@@ -95,3 +95,7 @@ function NotificationEntry ({ entry, onViewPost, onProfileClick }) {
 
 module.exports = NotificationEntry
 module.exports.NotificationAvatar = NotificationAvatar
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T19:39:02.274Z","module_hash":"98bffd92542fbbee866abbc2775b60736c2ea8ba6fe36ec38690b22035fdd306","functions":[{"id":"func/NotificationAvatar","name":"NotificationAvatar","line":23,"end_line":39,"hash":"eaae01344873b8451a42943bd87478a7b4e8dc3fa5021efd2811c932950e40bf"},{"id":"func/NotificationEntry","name":"NotificationEntry","line":41,"end_line":94,"hash":"c17002fa1ff4602c2785990a95100f4ff782ebb1a5dc7c5573190d85a5bdfe4f"}]}
+// mutate4javascript-manifest-end

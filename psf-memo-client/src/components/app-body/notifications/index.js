@@ -10,6 +10,7 @@
 
 // Global npm libraries
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Container, Row, Col, Spinner, Button } from 'react-bootstrap'
 
 // Local libraries
@@ -24,6 +25,7 @@ const PAGE_SIZE = 50
 function Notifications (props) {
   const { appData } = props
   const wallet = appData?.wallet
+  const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -127,6 +129,7 @@ function Notifications (props) {
                   key={entry.txid}
                   entry={entry}
                   onViewPost={openThread}
+                  onProfileClick={navigate}
                 />
               ))}
             </div>

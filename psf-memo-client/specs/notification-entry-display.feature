@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T19:43:11.863411027Z","feature_name":"Notification Entry Display","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/notification-entry-display.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Notification Entry Display - 2 the avatar and display name link to the actor's profile","scenario_hash":"6eac4433d642f99b7538085e60169c835655026202b1abee6b2264fe01d52711","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-09-18T19:43:11.863411027Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Notification Entry Display - 1, Notification Entry Display - 2, Notification Entry Display - 3, Notification Entry Display - 4, Notification Entry Display - 5, Notification Entry Display - 6, Notification Entry Display - 7, Notification Entry Display - 8
 #
 # Each Notifications entry names its actor with the actor's Memo display name

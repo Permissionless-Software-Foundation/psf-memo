@@ -61,3 +61,7 @@ module.exports = {
   notificationMessage,
   buildNotificationEntry
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T19:33:01.460Z","module_hash":"8043c8e67b2834a2e0667b5e9d528ef96bb0f25ac2d45cf87ecc00505e89171e","functions":[{"id":"func/profilePath","name":"profilePath","line":18,"end_line":20,"hash":"600b1f8066ecb8274c17a26c6ac2c753471c3ee4efc2de69558c6811a070a82c"},{"id":"func/displayName","name":"displayName","line":24,"end_line":26,"hash":"4c3a77ba28e6e2e1ec50c7bf6854a51f3fe6ed85f23faa8d48745898c1ee580a"},{"id":"func/notificationMessage","name":"notificationMessage","line":29,"end_line":40,"hash":"5dd8314d32ab92867f655414252398c224e804a71b83a0bd96a18fb32595297f"},{"id":"func/buildNotificationEntry","name":"buildNotificationEntry","line":44,"end_line":53,"hash":"4707908e71b73429351a2a283aaf4e68093be66dd0e06ee0af7188fe65bcea7d"}]}
+// mutate4javascript-manifest-end

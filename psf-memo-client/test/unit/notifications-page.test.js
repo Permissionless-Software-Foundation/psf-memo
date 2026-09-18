@@ -24,6 +24,15 @@ function makeMemoDb (notifications, pagination) {
   }
 }
 
+test('a fresh page starts with unloaded defaults', () => {
+  const page = new NotificationsPage({})
+
+  assert.equal(page.empty, false)
+  assert.equal(page.pagination, null)
+  assert.deepEqual(page.notifications, [])
+  assert.deepEqual(page.profiles, {})
+})
+
 test('load returns notifications', async () => {
   const notifications = [
     { type: 'reply', txid: 'a'.repeat(64), addr: 'bitcoincash:other', text: 'hi' },
