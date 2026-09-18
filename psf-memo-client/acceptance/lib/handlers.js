@@ -1686,36 +1686,21 @@ const handlers = [
     name: 'like/tip modal shows a broadcast success message',
     pattern: /^the like\/tip modal shows a broadcast success message$/,
     run (m, example, world) {
-      const { message, html } = renderLikeBroadcastResult(world)
-      if (!html.includes(message)) {
-        throw new Error(`The rendered like result does not show the message "${message}".`)
-      }
+      assertBroadcastResultMessage(world, 'like')
     }
   },
   {
     name: 'like/tip modal shows the like transaction id',
     pattern: /^the like\/tip modal shows the like transaction id$/,
     run (m, example, world) {
-      const { txid, html } = renderLikeBroadcastResult(world)
-      if (!html.includes(txid)) {
-        throw new Error(`The rendered like result does not show the transaction id ${txid}.`)
-      }
+      assertBroadcastResultTxid(world, 'like')
     }
   },
   {
     name: 'like/tip modal shows a block explorer link',
     pattern: /^the like\/tip modal shows a link to the block explorer for the like transaction$/,
     run (m, example, world) {
-      const { url, html } = renderLikeBroadcastResult(world)
-      if (!url.startsWith('https://bch.loping.net/tx/')) {
-        throw new Error(`Expected a bch.loping.net explorer link, got "${url}".`)
-      }
-      if (!html.includes(`href="${url}"`)) {
-        throw new Error(`The rendered like result does not link to ${url}.`)
-      }
-      if (!html.includes('target="_blank"')) {
-        throw new Error('The rendered like explorer link does not open in a new tab.')
-      }
+      assertBroadcastResultExplorerLink(world, 'like')
     }
   },
   {
@@ -1977,38 +1962,14 @@ const handlers = [
     name: 'broadcasts OP_RETURN with Memo follow prefix for address',
     pattern: /^the app broadcasts an OP_RETURN transaction with the Memo follow prefix for the address (.+)$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
-      const broadcasts = world.wallet.broadcasts
-      if (!broadcasts.length) {
-        throw new Error('No OP_RETURN transaction was broadcast.')
-      }
-      const last = broadcasts[broadcasts.length - 1]
-      if (last.prefix !== MEMO_FOLLOW_PREFIX) {
-        throw new Error(`Expected Memo follow prefix ${MEMO_FOLLOW_PREFIX}, got "${last.prefix}".`)
-      }
-      if (last.msg.toString('hex') !== hash160) {
-        throw new Error(`Broadcast follow hash160 did not match ${addr}.`)
-      }
+      assertMemoBroadcastPrefix(world, resolveParam(m[1], example), MEMO_FOLLOW_PREFIX, 'follow')
     }
   },
   {
     name: 'broadcasts OP_RETURN with Memo unfollow prefix for address',
     pattern: /^the app broadcasts an OP_RETURN transaction with the Memo unfollow prefix for the address (.+)$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
-      const broadcasts = world.wallet.broadcasts
-      if (!broadcasts.length) {
-        throw new Error('No OP_RETURN transaction was broadcast.')
-      }
-      const last = broadcasts[broadcasts.length - 1]
-      if (last.prefix !== MEMO_UNFOLLOW_PREFIX) {
-        throw new Error(`Expected Memo unfollow prefix ${MEMO_UNFOLLOW_PREFIX}, got "${last.prefix}".`)
-      }
-      if (last.msg.toString('hex') !== hash160) {
-        throw new Error(`Broadcast unfollow hash160 did not match ${addr}.`)
-      }
+      assertMemoBroadcastPrefix(world, resolveParam(m[1], example), MEMO_UNFOLLOW_PREFIX, 'unfollow')
     }
   },
   {
@@ -2089,38 +2050,14 @@ const handlers = [
     name: 'broadcasts or attempts Memo mute prefix for address',
     pattern: /^the app (?:broadcasts|attempts to broadcast) an OP_RETURN transaction with the Memo mute prefix for the address (.+)$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
-      const broadcasts = world.wallet.broadcasts
-      if (!broadcasts.length) {
-        throw new Error('No OP_RETURN transaction was broadcast.')
-      }
-      const last = broadcasts[broadcasts.length - 1]
-      if (last.prefix !== MEMO_MUTE_PREFIX) {
-        throw new Error(`Expected Memo mute prefix ${MEMO_MUTE_PREFIX}, got "${last.prefix}".`)
-      }
-      if (last.msg.toString('hex') !== hash160) {
-        throw new Error(`Broadcast mute hash160 did not match ${addr}.`)
-      }
+      assertMemoBroadcastPrefix(world, resolveParam(m[1], example), MEMO_MUTE_PREFIX, 'mute')
     }
   },
   {
     name: 'broadcasts OP_RETURN with Memo unmute prefix for address',
     pattern: /^the app broadcasts an OP_RETURN transaction with the Memo unmute prefix for the address (.+)$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const hash160 = world.wallet.bchjs.Address.toHash160(addr)
-      const broadcasts = world.wallet.broadcasts
-      if (!broadcasts.length) {
-        throw new Error('No OP_RETURN transaction was broadcast.')
-      }
-      const last = broadcasts[broadcasts.length - 1]
-      if (last.prefix !== MEMO_UNMUTE_PREFIX) {
-        throw new Error(`Expected Memo unmute prefix ${MEMO_UNMUTE_PREFIX}, got "${last.prefix}".`)
-      }
-      if (last.msg.toString('hex') !== hash160) {
-        throw new Error(`Broadcast unmute hash160 did not match ${addr}.`)
-      }
+      assertMemoBroadcastPrefix(world, resolveParam(m[1], example), MEMO_UNMUTE_PREFIX, 'unmute')
     }
   },
   {
@@ -2139,36 +2076,21 @@ const handlers = [
     name: 'mute result modal shows a broadcast success message',
     pattern: /^the mute result modal shows a broadcast success message$/,
     run (m, example, world) {
-      const { message, html } = renderMuteBroadcastResult(world)
-      if (!html.includes(message)) {
-        throw new Error(`The rendered mute result does not show the message "${message}".`)
-      }
+      assertBroadcastResultMessage(world, 'mute')
     }
   },
   {
     name: 'mute result modal shows the mute transaction id',
     pattern: /^the mute result modal shows the mute transaction id$/,
     run (m, example, world) {
-      const { txid, html } = renderMuteBroadcastResult(world)
-      if (!html.includes(txid)) {
-        throw new Error(`The rendered mute result does not show the transaction id ${txid}.`)
-      }
+      assertBroadcastResultTxid(world, 'mute')
     }
   },
   {
     name: 'mute result modal shows a block explorer link',
     pattern: /^the mute result modal shows a link to the block explorer for the mute transaction$/,
     run (m, example, world) {
-      const { url, html } = renderMuteBroadcastResult(world)
-      if (!url.startsWith(`${ProfilePage.EXPLORER_TX_BASE}/`)) {
-        throw new Error(`Expected a bch.loping.net explorer link, got "${url}".`)
-      }
-      if (!html.includes(`href="${url}"`)) {
-        throw new Error(`The rendered mute result does not link to ${url}.`)
-      }
-      if (!html.includes('target="_blank"')) {
-        throw new Error('The rendered mute explorer link does not open in a new tab.')
-      }
+      assertBroadcastResultExplorerLink(world, 'mute')
     }
   },
   {
@@ -4027,44 +3949,93 @@ function togglePostOptionsMenu (world, txid) {
   world.activeMenuTxid = txid
 }
 
-// Require a successful like broadcast result and render it to static HTML for
-// the like/tip acceptance assertions. The caller inspects the returned fields.
-function renderLikeBroadcastResult (world) {
-  const page = world.likeTipPage
-  if (!page.showResultModal || !page.lastResult || !page.lastResult.ok) {
-    throw new Error('Expected a successful like broadcast result.')
+// Broadcast result plumbing shared by the like/tip and mute acceptance
+// assertions. Each feature names the world field holding its page, the page
+// fields/getters for the visible result, and the component renderer.
+const BROADCAST_RESULTS = {
+  like: {
+    page: (world) => world.likeTipPage,
+    showField: 'showResultModal',
+    resultField: 'lastResult',
+    getMessage: (page) => page.getBroadcastMessage(),
+    render: renderLikeResult
+  },
+  mute: {
+    page: (world) => world.profilePage,
+    showField: 'showMuteResultModal',
+    resultField: 'lastMuteResult',
+    getMessage: (page) => page.getMuteBroadcastMessage(),
+    render: renderMuteResult
   }
-  const txid = page.lastResult.txid
+}
+
+// Require a successful broadcast result for `feature` and render it to static
+// HTML for the acceptance assertions. The caller inspects the returned fields.
+function renderBroadcastResult (world, feature) {
+  const spec = BROADCAST_RESULTS[feature]
+  const page = spec.page(world)
+  if (!page || !page[spec.showField] || !page[spec.resultField] || !page[spec.resultField].ok) {
+    throw new Error(`Expected a successful ${feature} broadcast result.`)
+  }
+  const txid = page[spec.resultField].txid
   if (!txid) {
-    throw new Error('Expected the like result to include a transaction id.')
+    throw new Error(`Expected the ${feature} result to include a transaction id.`)
   }
-  const message = page.getBroadcastMessage()
+  const message = spec.getMessage(page)
   if (!message) {
-    throw new Error('Expected a like broadcast success message.')
+    throw new Error(`Expected a ${feature} broadcast success message.`)
   }
   const url = page.explorerUrl(txid)
-  const html = renderLikeResult({ txid, message, explorerUrl: url })
+  const html = spec.render({ txid, message, explorerUrl: url })
   return { txid, message, url, html }
 }
 
-// Require a successful mute broadcast result and render it to static HTML for
-// the mute acceptance assertions. The caller inspects the returned fields.
-function renderMuteBroadcastResult (world) {
-  const page = world.profilePage
-  if (!page || !page.showMuteResultModal || !page.lastMuteResult || !page.lastMuteResult.ok) {
-    throw new Error('Expected a successful mute broadcast result.')
+// Assert the rendered broadcast result shows its success message.
+function assertBroadcastResultMessage (world, feature) {
+  const { message, html } = renderBroadcastResult(world, feature)
+  if (!html.includes(message)) {
+    throw new Error(`The rendered ${feature} result does not show the message "${message}".`)
   }
-  const txid = page.lastMuteResult.txid
-  if (!txid) {
-    throw new Error('Expected the mute result to include a transaction id.')
+}
+
+// Assert the rendered broadcast result shows its transaction id.
+function assertBroadcastResultTxid (world, feature) {
+  const { txid, html } = renderBroadcastResult(world, feature)
+  if (!html.includes(txid)) {
+    throw new Error(`The rendered ${feature} result does not show the transaction id ${txid}.`)
   }
-  const message = page.getMuteBroadcastMessage()
-  if (!message) {
-    throw new Error('Expected a mute broadcast success message.')
+}
+
+// Assert the rendered broadcast result links to the block explorer in a new
+// tab.
+function assertBroadcastResultExplorerLink (world, feature) {
+  const { url, html } = renderBroadcastResult(world, feature)
+  if (!url.startsWith(`${ProfilePage.EXPLORER_TX_BASE}/`)) {
+    throw new Error(`Expected a bch.loping.net explorer link, got "${url}".`)
   }
-  const url = page.explorerUrl(txid)
-  const html = renderMuteResult({ txid, message, explorerUrl: url })
-  return { txid, message, url, html }
+  if (!html.includes(`href="${url}"`)) {
+    throw new Error(`The rendered ${feature} result does not link to ${url}.`)
+  }
+  if (!html.includes('target="_blank"')) {
+    throw new Error(`The rendered ${feature} explorer link does not open in a new tab.`)
+  }
+}
+
+// Assert that the wallet's most recent broadcast carries the Memo `label`
+// prefix and the 20-byte hash160 payload for `addr`.
+function assertMemoBroadcastPrefix (world, addr, prefix, label) {
+  const hash160 = world.wallet.bchjs.Address.toHash160(addr)
+  const broadcasts = world.wallet.broadcasts
+  if (!broadcasts.length) {
+    throw new Error('No OP_RETURN transaction was broadcast.')
+  }
+  const last = broadcasts[broadcasts.length - 1]
+  if (last.prefix !== prefix) {
+    throw new Error(`Expected Memo ${label} prefix ${prefix}, got "${last.prefix}".`)
+  }
+  if (last.msg.toString('hex') !== hash160) {
+    throw new Error(`Broadcast ${label} hash160 did not match ${addr}.`)
+  }
 }
 
 // The posts currently rendered by the page the scenario has opened.

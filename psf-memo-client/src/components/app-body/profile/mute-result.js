@@ -12,6 +12,7 @@
 */
 
 const React = require('react')
+const ExplorerTxLink = require('../../explorer-tx-link')
 
 function MuteResult ({ txid = '', message = '', error = '', explorerUrl = '' }) {
   return React.createElement(
@@ -23,23 +24,11 @@ function MuteResult ({ txid = '', message = '', error = '', explorerUrl = '' }) 
         React.Fragment,
         null,
         React.createElement('p', { className: 'mute-result-message' }, message),
-        txid
-          ? React.createElement(
-            'p',
-            { className: 'mute-result-txid mb-0' },
-            'Transaction ID: ',
-            React.createElement(
-              'a',
-              {
-                href: explorerUrl,
-                target: '_blank',
-                rel: 'noopener noreferrer',
-                style: { wordBreak: 'break-all' }
-              },
-              txid
-            )
-          )
-          : null
+        React.createElement(ExplorerTxLink, {
+          txid,
+          explorerUrl,
+          className: 'mute-result-txid'
+        })
       )
   )
 }

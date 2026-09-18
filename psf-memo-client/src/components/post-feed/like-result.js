@@ -11,29 +11,18 @@
 */
 
 const React = require('react')
+const ExplorerTxLink = require('../explorer-tx-link')
 
 function LikeResult ({ txid = '', message = '', explorerUrl = '' }) {
   return React.createElement(
     'div',
     { className: 'like-result' },
     React.createElement('p', { className: 'like-result-message' }, message),
-    txid
-      ? React.createElement(
-        'p',
-        { className: 'like-result-txid mb-0' },
-        'Transaction ID: ',
-        React.createElement(
-          'a',
-          {
-            href: explorerUrl,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            style: { wordBreak: 'break-all' }
-          },
-          txid
-        )
-      )
-      : null
+    React.createElement(ExplorerTxLink, {
+      txid,
+      explorerUrl,
+      className: 'like-result-txid'
+    })
   )
 }
 
