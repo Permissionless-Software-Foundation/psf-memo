@@ -4,13 +4,13 @@
 
 // Global npm libraries
 import React, { useState, useEffect } from 'react'
-import { Container, Row, Col, Spinner, ListGroup, Button } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Table, Button } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import TopicDiscoveryPage from '../../../services/topic-discovery-page'
-import { relativeTime } from '../../../services/relative-time'
+import { buildTopicsTable } from '../../../services/topics-table'
 import '../../../App.css'
 
 const PAGE_SIZE = 50
@@ -52,6 +52,7 @@ function Topics (props) {
 
   const canGoBack = offset > 0
   const canGoNext = pagination?.hasMore ?? false
+  const table = buildTopicsTable(topics)
 
   const handlePrevious = () => {
     setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
@@ -96,21 +97,37 @@ function Topics (props) {
           )}
 
           {!loading && !error && topics.length > 0 && (
-            <ListGroup>
-              {topics.map((topic) => (
-                <ListGroup.Item
-                  key={topic.room}
-                  action
-                  onClick={() => handleClick(topic.room)}
-                  className='d-flex justify-content-between align-items-center'
-                >
-                  <span className='topic-name'>#{topic.room}</span>
-                  <span className='topic-last-seen text-muted'>{relativeTime(topic.lastSeen, Date.now())}</span>
-                  <span className='topic-post-count text-muted'>{topic.postCount} posts</span>
-                  <span className='topic-follower-count text-muted'>{topic.followerCount} followers</span>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
+            <div className={table.wrapperClass}>
+              <Table hover className='topics-table align-middle'>
+                <thead>
+                  <tr>
+                    {table.headers.map((header) => (
+                      <th key={header} scope='col'>{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.rows.map((row) => (
+                    <tr key={row.room}>
+                      <td className='topic-name'>
+                        <a
+                          href={row.href}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            handleClick(row.room)
+                          }}
+                        >
+                          {row.cells[0]}
+                        </a>
+                      </td>
+                      <td className='topic-last-seen text-muted'>{row.cells[1]}</td>
+                      <td className='topic-post-count text-muted'>{row.cells[2]}</td>
+                      <td className='topic-follower-count text-muted'>{row.cells[3]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
           )}
 
           {!loading && !error && (pagination || offset > 0) && (

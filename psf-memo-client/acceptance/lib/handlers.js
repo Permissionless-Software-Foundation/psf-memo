@@ -39,6 +39,7 @@ const FollowingFeedPage = require('../../src/services/following-feed-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
+const { buildTopicsTable } = require('../../src/services/topics-table')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
 const SearchPage = require('../../src/services/search-page')
 const NotificationsPage = require('../../src/services/notifications-page')
@@ -643,6 +644,17 @@ function resolveText (value, example) {
     return trimmed.slice(1, -1)
   }
   return resolveParam(value, example)
+}
+
+// Resolve a step value that may contain one or more <parameter> placeholders
+// embedded in literal text, e.g. "<displayPostCount> posts".
+function resolveTemplate (value, example) {
+  return String(value).replace(/<([A-Za-z0-9_]+)>/g, (match, param) => {
+    if (!(param in example)) {
+      throw new Error(`Missing example value for "${param}"`)
+    }
+    return example[param]
+  })
 }
 
 // Look up a post that has been loaded onto one of the read-only pages.
@@ -2278,6 +2290,59 @@ const handlers = [
       const actual = world.topicDiscoveryPage.getLastSeenLabel(room, now)
       if (actual !== expected) {
         throw new Error(`Expected ${room} most recent post "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
+    name: 'topics table has column headers',
+    pattern: /^the topics table has the column headers "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)"$/,
+    run (m, example, world) {
+      const expected = [m[1], m[2], m[3], m[4]].map((value) => resolveTemplate(value, example))
+      const table = buildTopicsTable(world.topicDiscoveryPage.topics, { now: world.currentTime ?? Date.now() })
+      if (table.headers.join('|') !== expected.join('|')) {
+        throw new Error(`Expected headers ${expected.join(', ')}, got ${table.headers.join(', ')}.`)
+      }
+    }
+  },
+  {
+    name: 'topics table row has cells',
+    pattern: /^the topics table row for "([^"]+)" has the cells "([^"]*)", "([^"]*)", "([^"]*)" and "([^"]*)"$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = [m[2], m[3], m[4], m[5]].map((value) => resolveTemplate(value, example))
+      const table = buildTopicsTable(world.topicDiscoveryPage.topics, { now: world.currentTime ?? Date.now() })
+      const row = table.rows.find((candidate) => candidate.room === room)
+      if (!row) {
+        throw new Error(`Topic ${room} is not shown in the topics table.`)
+      }
+      if (row.cells.join('|') !== expected.join('|')) {
+        throw new Error(`Expected cells ${expected.join(', ')}, got ${row.cells.join(', ')}.`)
+      }
+    }
+  },
+  {
+    name: 'topics table links topic',
+    pattern: /^the topics table links the topic "([^"]+)" to "([^"]+)"$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = resolveTemplate(m[2], example)
+      const table = buildTopicsTable(world.topicDiscoveryPage.topics, { now: world.currentTime ?? Date.now() })
+      const row = table.rows.find((candidate) => candidate.room === room)
+      if (!row) {
+        throw new Error(`Topic ${room} is not shown in the topics table.`)
+      }
+      if (row.href !== expected) {
+        throw new Error(`Expected ${room} link "${expected}", got "${row.href}".`)
+      }
+    }
+  },
+  {
+    name: 'topics table scrolls horizontally',
+    pattern: /^the topics table scrolls horizontally on narrow screens$/,
+    run (m, example, world) {
+      const table = buildTopicsTable(world.topicDiscoveryPage.topics, { now: world.currentTime ?? Date.now() })
+      if (!String(table.wrapperClass).includes('table-responsive')) {
+        throw new Error(`Expected a horizontal-scroll wrapper, got "${table.wrapperClass}".`)
       }
     }
   },
