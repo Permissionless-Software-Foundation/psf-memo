@@ -188,6 +188,19 @@ test('a failed mute records the error, opens the failure modal, and keeps the Mu
   assert.equal(page.getMuteBroadcastMessage(), '')
 })
 
+test('getMuteResultError returns an empty string when there is no result', () => {
+  const page = new ProfilePage({ memoDb: makeMemoDb({}) })
+
+  assert.equal(page.getMuteResultError(), '')
+})
+
+test('getMuteResultError returns an empty string for a failure with no message', () => {
+  const page = new ProfilePage({ memoDb: makeMemoDb({}) })
+  page.lastMuteResult = { ok: false, action: 'mute' }
+
+  assert.equal(page.getMuteResultError(), '')
+})
+
 test('dismissing the mute result closes the modal without changing the button state', async () => {
   const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
   const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'

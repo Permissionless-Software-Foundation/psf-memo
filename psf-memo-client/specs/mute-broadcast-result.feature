@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T22:26:11.305882913Z","feature_name":"Mute Broadcast Result","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/mute-broadcast-result.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Mute Broadcast Result - 1, Mute Broadcast Result - 2, Mute Broadcast Result - 3, Mute Broadcast Result - 4
 #
 # Clicking the Mute button on another user's profile broadcasts a Memo mute
