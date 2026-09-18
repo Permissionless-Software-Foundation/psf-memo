@@ -12,5 +12,10 @@ export default {
   useIpfs: false,
   version: pkgInfo.version,
   backupQty: process.env.BACKUP_QTY ? parseInt(process.env.BACKUP_QTY) : 3,
-  exitOnMissingBackup: process.env.EXIT_ON_MISSING_BACKUP === 'true'
+  exitOnMissingBackup: process.env.EXIT_ON_MISSING_BACKUP === 'true',
+  // Number of blocks before the chain tip that still count as a notification.
+  // GET /posts/notifications/:addr uses cutoff = chainBlockHeight - window.
+  notificationBlockWindow: process.env.NOTIFICATION_BLOCK_WINDOW
+    ? parseInt(process.env.NOTIFICATION_BLOCK_WINDOW, 10)
+    : 25000
 }

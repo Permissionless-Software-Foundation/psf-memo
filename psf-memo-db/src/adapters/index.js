@@ -14,7 +14,8 @@ import SearchQuery from './search-query.js'
 import NotificationsQuery from './notifications-query.js'
 
 class Adapters {
-  constructor () {
+  constructor (localConfig = {}) {
+    this.notificationBlockWindow = localConfig.notificationBlockWindow
     this.levelDb = new LevelDb()
     this.openDatabases = this.openDatabases.bind(this)
     this.start = this.start.bind(this)
@@ -68,12 +69,14 @@ class Adapters {
     })
     this.notificationsQuery = new NotificationsQuery({
       postsDb: level.postsDb,
-      postParentsDb: level.postParentsDb,
+      addrPostHeightsDb: level.addrPostHeightsDb,
       postChildrenDb: level.postChildrenDb,
-      likesDb: level.likesDb,
       postLikesDb: level.postLikesDb,
-      followsDb: level.followsDb,
-      muteQuery: this.muteQuery
+      likesDb: level.likesDb,
+      followeeHeightsDb: level.followeeHeightsDb,
+      statusDb: level.statusDb,
+      muteQuery: this.muteQuery,
+      notificationBlockWindow: this.notificationBlockWindow
     })
     return true
   }

@@ -5,10 +5,11 @@
 import Adapters from '../adapters/index.js'
 import UseCases from '../use-cases/index.js'
 import RESTControllers from './rest-api/index.js'
+import config from '../../config/index.js'
 
 class Controllers {
   constructor () {
-    this.adapters = new Adapters()
+    this.adapters = new Adapters({ notificationBlockWindow: config.notificationBlockWindow })
     this.useCases = new UseCases({ adapters: this.adapters })
     this.initAdapters = this.initAdapters.bind(this)
     this.initUseCases = this.initUseCases.bind(this)

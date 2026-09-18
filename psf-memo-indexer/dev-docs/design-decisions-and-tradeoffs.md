@@ -166,6 +166,37 @@ This document records **why** the Memo indexer stack looks the way it does, incl
 
 **Recommended e2e smoke:** Index block ≥ 525000 containing a known Memo post from [memo-protocol.md](../../memo-protocol.md) explorer links; verify `GET /level/post/:txid`.
 
+## 16. Bounded notification reads (per-object scans + block window)
+
+**Decision:** `GET /posts/notifications/:addr` no longer full-scans the global
+`likes`, `postChildren`, and `follows` stores. Instead it bounds the work to the
+viewer's activity inside a configurable block window (`NOTIFICATION_BLOCK_WINDOW`,
+default 25000; cutoff = `status.chainBlockHeight - window`):
+
+- the viewer's posts come from the `addrPostHeights` index, range-limited to the
+  window;
+- likes and replies are prefix-scanned from `postLikes` and `postChildren` for
+  those posts only;
+- follows come from a new followee-keyed, height-ordered `followeeHeights` index
+  maintained by the indexer, range-limited to the window.
+
+**Reason:** The original request cost `O(all likes + all replies + all follows)`
+and loaded a post for every candidate, so the `/notifications` page blocked on a
+scan proportional to the whole database rather than the viewer's activity.
+
+**Tradeoff:** A notification is drawn from the viewer's content inside the
+window, so an interaction with a post older than the window is not returned even
+when the interaction itself is recent. This is acceptable for a social inbox:
+the window bounds staleness and keeps the read proportional to recent activity.
+The `followeeHeights` index is an append-only event log per followee; the read
+side takes the newest entry per follower and ignores unfollows, so an unfollow
+removes the notification without deleting event history. The `follows` store
+remains the source of truth for the current follow graph.
+
+**Backfill:** Databases populated before this feature need a one-time
+`util/follow/backfill-followee-index.js` run, which projects every `follows`
+record into a `followeeHeights` entry at its block height and is idempotent.
+
 ## Decision log (quick reference)
 
 | Topic | Choice |

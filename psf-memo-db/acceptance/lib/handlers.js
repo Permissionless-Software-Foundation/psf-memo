@@ -24,11 +24,24 @@ import TopicFollowState from '../../src/use-cases/topic-follow-state.js'
 import ListTopicFollowers from '../../src/use-cases/list-topic-followers.js'
 import MuteState from '../../src/use-cases/mute-state.js'
 import ListMuted from '../../src/use-cases/list-muted.js'
+import ListNotifications from '../../src/use-cases/list-notifications.js'
 import GetPoll from '../../src/use-cases/get-poll.js'
 import GetPollOptions from '../../src/use-cases/get-poll-options.js'
 import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
 import { repairTxidEncoding } from '../../src/lib/repair-txid-encoding.js'
 import { backfillTopicIndexes, topicRecencyKey } from '../../src/lib/backfill-topic-indexes.js'
+import { backfillFolloweeIndex, followeeHeightKey } from '../../src/lib/backfill-followee-index.js'
+import BCHJS from '@psf/bch-js'
+
+const bchjs = new BCHJS({ restURL: process.env.RESTURL || 'https://api.fullstack.cash/v5/' })
+
+function hash160 (addr) {
+  return bchjs.Address.toHash160(addr)
+}
+
+function padHeight (blockHeight) {
+  return String(blockHeight ?? 0).padStart(12, '0')
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
@@ -98,6 +111,8 @@ async function createWorld () {
   const postsGetCounter = { calls: 0 }
   const likesIteratorCounter = { calls: 0 }
   const postLikesIteratorCounter = { calls: 0 }
+  const followsIteratorCounter = { calls: 0 }
+  const followeeHeightsIteratorCounter = { calls: 0, entries: 0 }
   const roomsIteratorCounter = { calls: 0, entries: 0 }
   const topicRecencyIteratorCounter = { calls: 0, entries: 0 }
   wrapIterator(adapters.level.postHeightsDb, postHeightsIteratorCounter)
@@ -106,6 +121,8 @@ async function createWorld () {
   wrapGet(adapters.level.postsDb, postsGetCounter)
   wrapIterator(adapters.level.likesDb, likesIteratorCounter)
   wrapIterator(adapters.level.postLikesDb, postLikesIteratorCounter)
+  wrapIterator(adapters.level.followsDb, followsIteratorCounter)
+  wrapIterator(adapters.level.followeeHeightsDb, followeeHeightsIteratorCounter)
   wrapIterator(adapters.level.roomsDb, roomsIteratorCounter)
   wrapIterator(adapters.level.topicRecencyDb, topicRecencyIteratorCounter)
 
@@ -121,6 +138,7 @@ async function createWorld () {
   const listTopicFollowers = new ListTopicFollowers({ adapters })
   const muteState = new MuteState({ adapters })
   const listMuted = new ListMuted({ adapters })
+  const listNotifications = new ListNotifications({ adapters })
   const getPoll = new GetPoll({ adapters })
   const getPollOptions = new GetPollOptions({ adapters })
   const getPollVotes = new GetPollVotes({ adapters })
@@ -141,6 +159,7 @@ async function createWorld () {
     listTopicFollowers,
     muteState,
     listMuted,
+    listNotifications,
     getPoll,
     getPollOptions,
     getPollVotes,
@@ -150,6 +169,8 @@ async function createWorld () {
     postsGetCounter,
     likesIteratorCounter,
     postLikesIteratorCounter,
+    followsIteratorCounter,
+    followeeHeightsIteratorCounter,
     roomsIteratorCounter,
     topicRecencyIteratorCounter,
     getLastResponse: () => lastResponse,
@@ -234,6 +255,16 @@ async function loadFixture (world, name) {
 
   if (name === 'db-with-reversed-txid-references') {
     await loadReversedTxidFixture(world)
+    return
+  }
+
+  if (name === 'follows-by-followee') {
+    await loadFollowsByFollowee(world)
+    return
+  }
+
+  if (name === 'notifications-window') {
+    await loadNotificationsWindow(world)
     return
   }
 
@@ -495,6 +526,169 @@ async function loadFollows (world) {
       seen: Date.now(),
       blockHeight: 600000
     })
+  }
+}
+
+// Fixture "follows-by-followee" from backfill-followee-index.feature: raw
+// follows records the backfill projects into followeeHeights.
+async function loadFollowsByFollowee (world) {
+  const viewer = 'bitcoincash:qqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zye3kwllue'
+  const followerA = 'bitcoincash:qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygrg4dtdzf'
+  const followerB = 'bitcoincash:qqenxvenxvenxvenxvenxvenxvenxvenxvn254yg3p'
+  const followerC = 'bitcoincash:qpzyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs7fn3s6pt'
+  const other = 'bitcoincash:qp24242424242424242424242424242425wtjflljr'
+
+  const records = [
+    { follower: followerA, followee: viewer, unfollow: false, height: 690400 },
+    { follower: followerB, followee: viewer, unfollow: true, height: 690600 },
+    // The Examples table lists followee qpzyg... and follower qp2424... for this
+    // record, so store it that orientation to match the asserted index key.
+    { follower: other, followee: followerC, unfollow: false, height: 690200 }
+  ]
+
+  for (const record of records) {
+    const followeePkHash = hash160(record.followee)
+    await world.adapters.level.followsDb.put(`${record.follower}:${followeePkHash}`, {
+      followerAddr: record.follower,
+      followeePkHash,
+      unfollow: record.unfollow,
+      txid: `follow-${record.follower.slice(-8)}`,
+      seen: 1,
+      blockHeight: record.height
+    })
+  }
+}
+
+// Fixture "notifications-window" from notifications-query-performance.feature.
+async function loadNotificationsWindow (world) {
+  const viewer = 'bitcoincash:qqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zye3kwllue'
+  const followerA = 'bitcoincash:qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygrg4dtdzf'
+  const followerB = 'bitcoincash:qqenxvenxvenxvenxvenxvenxvenxvenxvn254yg3p'
+  const oldActor = 'bitcoincash:qpzyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs7fn3s6pt'
+  const liker = 'bitcoincash:qp24242424242424242424242424242425wtjflljr'
+  const replier = 'bitcoincash:qpnxvenxvenxvenxvenxvenxvenxvenxvc5j32tdvn'
+
+  // The feature identifies the viewer by the fixture name rather than an
+  // example column, so expose it for step resolution.
+  world.fixtureViewer = viewer
+
+  await world.adapters.level.statusDb.put('status', {
+    startBlockHeight: 0,
+    syncedBlockHeight: 700000,
+    chainBlockHeight: 700000
+  })
+
+  const posts = [
+    { txid: 'post-recent', addr: viewer, blockHeight: 690000, text: 'recent' },
+    { txid: 'post-old', addr: viewer, blockHeight: 600000, text: 'old' },
+    { txid: 'post-other', addr: followerA, blockHeight: 690000, text: 'other' }
+  ]
+  for (const post of posts) {
+    await world.adapters.level.postsDb.put(post.txid, {
+      addr: post.addr,
+      text: post.text,
+      seen: post.blockHeight,
+      blockHeight: post.blockHeight
+    })
+    await world.adapters.level.postHeightsDb.put(`${padHeight(post.blockHeight)}:${post.txid}`, {
+      txid: post.txid,
+      blockHeight: post.blockHeight
+    })
+    await world.adapters.level.addrPostHeightsDb.put(
+      `${post.addr}:${padHeight(post.blockHeight)}:${post.txid}`,
+      { txid: post.txid, addr: post.addr, blockHeight: post.blockHeight }
+    )
+  }
+
+  const likes = [
+    { txid: 'like-recent', postTxid: 'post-recent', addr: liker, blockHeight: 690100 },
+    { txid: 'like-old', postTxid: 'post-old', addr: oldActor, blockHeight: 690200 },
+    { txid: 'like-other', postTxid: 'post-other', addr: followerA, blockHeight: 690300 }
+  ]
+  for (const like of likes) {
+    await world.adapters.level.likesDb.put(like.txid, {
+      addr: like.addr,
+      postTxid: like.postTxid,
+      seen: like.blockHeight,
+      tip: 0,
+      blockHeight: like.blockHeight
+    })
+    await world.adapters.level.postLikesDb.put(
+      `${like.postTxid}:${like.txid}`,
+      { postTxid: like.postTxid, txid: like.txid }
+    )
+  }
+
+  const replies = [
+    { parent: 'post-recent', child: 'reply-recent', addr: replier, blockHeight: 690150 },
+    { parent: 'post-old', child: 'reply-old', addr: oldActor, blockHeight: 690250 },
+    { parent: 'post-other', child: 'reply-other', addr: followerA, blockHeight: 690300 }
+  ]
+  for (const reply of replies) {
+    await world.adapters.level.postsDb.put(reply.child, {
+      addr: reply.addr,
+      text: 'reply',
+      seen: reply.blockHeight,
+      blockHeight: reply.blockHeight
+    })
+    await world.adapters.level.postChildrenDb.put(
+      `${reply.parent}:${reply.child}`,
+      { parentTxid: reply.parent, childTxid: reply.child, blockHeight: reply.blockHeight }
+    )
+  }
+
+  const viewerHash = hash160(viewer)
+  const followEvents = [
+    { follower: followerA, height: 690400, unfollow: false },
+    { follower: followerB, height: 690550, unfollow: false },
+    { follower: followerB, height: 690600, unfollow: true },
+    { follower: oldActor, height: 600000, unfollow: false }
+  ]
+  for (const event of followEvents) {
+    const record = {
+      followerAddr: event.follower,
+      followeePkHash: viewerHash,
+      unfollow: event.unfollow,
+      txid: `follow-${event.follower.slice(-6)}-${event.height}`,
+      seen: event.height,
+      blockHeight: event.height
+    }
+    await world.adapters.level.followeeHeightsDb.put(
+      followeeHeightKey(viewerHash, event.height, event.follower),
+      record
+    )
+    // Mirror the event in the follows store; the query must ignore it.
+    await world.adapters.level.followsDb.put(`${event.follower}:${viewerHash}`, record)
+  }
+
+  // Filler so an accidental full-store scan is observable.
+  for (let i = 0; i < 100; i++) {
+    await world.adapters.level.likesDb.put(`filler-like-${i}`, {
+      addr: 'bitcoincash:filler',
+      postTxid: `filler-post-${i}`,
+      seen: i,
+      tip: 0,
+      blockHeight: 1
+    })
+    await world.adapters.level.postLikesDb.put(
+      `filler-post-${i}:filler-like-${i}`,
+      { postTxid: `filler-post-${i}`, txid: `filler-like-${i}` }
+    )
+    await world.adapters.level.postChildrenDb.put(
+      `filler-parent-${i}:filler-child-${i}`,
+      { parentTxid: `filler-parent-${i}`, childTxid: `filler-child-${i}`, blockHeight: 1 }
+    )
+    await world.adapters.level.followeeHeightsDb.put(
+      followeeHeightKey(`fillerhash-${i}`, 690000, `filler-follower-${i}`),
+      {
+        followerAddr: `filler-follower-${i}`,
+        followeePkHash: `fillerhash-${i}`,
+        unfollow: false,
+        txid: `filler-${i}`,
+        seen: i,
+        blockHeight: 690000
+      }
+    )
   }
 }
 
@@ -872,7 +1066,7 @@ const handlers = [
   },
   {
     name: 'bounded postChildren entries read',
-    pattern: /^the postChildren store was read at most (<max_entries>) entries$/,
+    pattern: /^the postChildren store was read at most (<[A-Za-z0-9_]+>) entries$/,
     run (m, example, world) {
       const max = parseInt(resolveParam(m[1], example), 10)
       const reads = world.postChildrenIteratorCounter.entries || 0
@@ -1730,6 +1924,156 @@ const handlers = [
       const actualSet = new Set(actual)
       if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
         throw new Error(`Expected muted ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with follows and followeeHeights stores',
+    pattern: /^a psf-memo-db instance with follows and followeeHeights stores$/,
+    async run () {
+      // World is already created with both stores.
+    }
+  },
+  {
+    name: 'run followee index backfill utility',
+    pattern: /^the followee index backfill utility is run$/,
+    async run (m, example, world) {
+      await backfillFolloweeIndex({
+        followsDb: world.adapters.level.followsDb,
+        followeeHeightsDb: world.adapters.level.followeeHeightsDb
+      })
+    }
+  },
+  {
+    name: 'run followee index backfill utility again',
+    pattern: /^the followee index backfill utility is run again$/,
+    async run (m, example, world) {
+      await backfillFolloweeIndex({
+        followsDb: world.adapters.level.followsDb,
+        followeeHeightsDb: world.adapters.level.followeeHeightsDb
+      })
+    }
+  },
+  {
+    name: 'followeeHeights store contains entry',
+    pattern: /^the followeeHeights store contains (<[A-Za-z0-9_]+>) entr(?:y|ies) for followee (<[A-Za-z0-9_]+>) from (<[A-Za-z0-9_]+>) at block height (<[A-Za-z0-9_]+>) marked unfollow (<[A-Za-z0-9_]+>|true|false)$/,
+    async run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const followee = resolveParam(m[2], example)
+      const follower = resolveParam(m[3], example)
+      const height = parseInt(resolveParam(m[4], example), 10)
+      const expectedUnfollow = resolveParam(m[5], example) === 'true'
+      const key = followeeHeightKey(hash160(followee), height, follower)
+      let count = 0
+      for await (const [k, value] of world.adapters.level.followeeHeightsDb.iterator()) {
+        if (k === key && value?.unfollow === expectedUnfollow) count++
+      }
+      if (count !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} followeeHeights entry/entries for ${key} marked unfollow ${expectedUnfollow}, got ${count}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with notification stores',
+    pattern: /^a psf-memo-db instance with posts, postHeights, addrPostHeights, postChildren, likes, postLikes, follows, followeeHeights, and status stores$/,
+    async run () {
+      // World is already created with all stores.
+    }
+  },
+  {
+    name: 'set notification window',
+    pattern: /^a notification window of (\S+) blocks$/,
+    run (m, example, world) {
+      const window = parseInt(resolveParam(m[1], example), 10)
+      world.adapters.notificationsQuery.notificationBlockWindow = window
+    }
+  },
+  {
+    name: 'request notifications',
+    pattern: /^the client requests \/posts\/notifications\/(<[A-Za-z0-9_]+>) with limit (<[A-Za-z0-9_]+>) and offset (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const addr = m[1] === '<viewer>' ? world.fixtureViewer : resolveParam(m[1], example)
+      const limit = parseInt(resolveParam(m[2], example), 10)
+      const offset = parseInt(resolveParam(m[3], example), 10)
+      const resp = await world.listNotifications.execute({ addr, limit, offset })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'response contains N notifications',
+    pattern: /^the response contains (<[A-Za-z0-9_]+>) notifications$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const notifications = world.getLastResponse().notifications
+      if (notifications.length !== expected) {
+        throw new Error(`Expected ${expected} notifications, got ${notifications.length}`)
+      }
+    }
+  },
+  {
+    name: 'notification at index',
+    pattern: /^the response notification at index (<[A-Za-z0-9_]+>) has type (<[A-Za-z0-9_]+>) from (<[A-Za-z0-9_]+>)$/,
+    run (m, example, world) {
+      const index = parseInt(resolveParam(m[1], example), 10)
+      const type = resolveParam(m[2], example)
+      const actor = resolveParam(m[3], example)
+      const notification = world.getLastResponse().notifications[index]
+      if (!notification) {
+        throw new Error(`No notification at index ${index}`)
+      }
+      if (notification.type !== type || notification.addr !== actor) {
+        throw new Error(`Expected ${type} from ${actor} at index ${index}, got ${notification.type} from ${notification.addr}`)
+      }
+    }
+  },
+  {
+    name: 'contains no notification from actor',
+    pattern: /^the response contains no notification from (<[A-Za-z0-9_]+>)$/,
+    run (m, example, world) {
+      const actor = resolveParam(m[1], example)
+      const found = world.getLastResponse().notifications.find((n) => n.addr === actor)
+      if (found) {
+        throw new Error(`Expected no notification from ${actor}, got ${JSON.stringify(found)}`)
+      }
+    }
+  },
+  {
+    name: 'bounded postLikes entries read',
+    pattern: /^the postLikes store was read at most (<[A-Za-z0-9_]+>) entries$/,
+    run (m, example, world) {
+      const max = parseInt(resolveParam(m[1], example), 10)
+      const reads = world.postLikesIteratorCounter.entries || 0
+      if (reads > max) {
+        throw new Error(`Read ${reads} postLikes entries, expected at most ${max}`)
+      }
+    }
+  },
+  {
+    name: 'bounded followeeHeights entries read',
+    pattern: /^the followeeHeights store was read at most (<[A-Za-z0-9_]+>) entries$/,
+    run (m, example, world) {
+      const max = parseInt(resolveParam(m[1], example), 10)
+      const reads = world.followeeHeightsIteratorCounter.entries || 0
+      if (reads > max) {
+        throw new Error(`Read ${reads} followeeHeights entries, expected at most ${max}`)
+      }
+    }
+  },
+  {
+    name: 'likes store was not iterated',
+    pattern: /^the likes store was not iterated$/,
+    run (m, example, world) {
+      if (world.likesIteratorCounter.calls !== 0) {
+        throw new Error(`Expected likes store not to be iterated, got ${world.likesIteratorCounter.calls} call(s)`)
+      }
+    }
+  },
+  {
+    name: 'follows store was not iterated',
+    pattern: /^the follows store was not iterated$/,
+    run (m, example, world) {
+      if (world.followsIteratorCounter.calls !== 0) {
+        throw new Error(`Expected follows store not to be iterated, got ${world.followsIteratorCounter.calls} call(s)`)
       }
     }
   }

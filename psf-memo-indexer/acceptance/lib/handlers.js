@@ -14,6 +14,7 @@ import { handleCreatePoll } from '../../src/use-cases/action-types/poll-create.j
 import { handleAddPollOption } from '../../src/use-cases/action-types/poll-option.js'
 import { handlePollVote } from '../../src/use-cases/action-types/poll-vote.js'
 import { handleMute } from '../../src/use-cases/action-types/mute.js'
+import { handleFollow } from '../../src/use-cases/action-types/follow.js'
 import { handleTopicMessage } from '../../src/use-cases/action-types/topic-message.js'
 import { handleTopicFollow } from '../../src/use-cases/action-types/topic-follow.js'
 import { topicRecencyKey } from '../../src/use-cases/action-types/helpers.js'
@@ -66,6 +67,13 @@ function deriveTxid (symbolic) {
   return crypto.createHash('sha256').update(symbolic).digest().toString('hex')
 }
 
+// Derive a deterministic 20-byte pkHash hex for a symbolic test address. The
+// follow action payload carries a pkHash, not an address, so the acceptance
+// step and its assertion must derive the same value from the address.
+function derivePkHash (addr) {
+  return crypto.createHash('sha256').update(addr).digest().slice(0, 20).toString('hex')
+}
+
 function resolveTxid (value, example, world) {
   const resolved = resolveParam(value, example)
   if (!world.txidMap) world.txidMap = new Map()
@@ -88,6 +96,8 @@ async function createWorld () {
   const pollOptionDb = makeInMemoryDb()
   const pollVoteDb = makeInMemoryDb()
   const muteDb = makeInMemoryDb()
+  const followDb = makeInMemoryDb()
+  const followeeHeightsDb = makeInMemoryDb()
   const roomDb = makeInMemoryDb()
   const topicSummaryDb = makeInMemoryDb()
   const topicRecencyDb = makeInMemoryDb()
@@ -104,6 +114,8 @@ async function createWorld () {
     pollOptionDb,
     pollVoteDb,
     muteDb,
+    followDb,
+    followeeHeightDb: followeeHeightsDb,
     roomDb,
     topicSummaryDb,
     topicRecencyDb,
@@ -130,6 +142,8 @@ async function createWorld () {
     pollOptionsDb: pollOptionDb,
     pollVotesDb: pollVoteDb,
     mutesDb: muteDb,
+    followsDb: followDb,
+    followeeHeightsDb,
     roomsDb: roomDb,
     topicSummariesDb: topicSummaryDb,
     topicRecencyDb,
@@ -586,6 +600,90 @@ const handlers = [
       })
       if (matching.length !== expectedCount) {
         throw new Error(`Expected ${expectedCount} postLikes entry/entries for ${postTxid}/${likeTxid}, got ${matching.length}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with follows and followeeHeights stores',
+    pattern: /^a psf-memo-db instance with follows and followeeHeights stores$/,
+    async run () {
+      // World is already created with both stores.
+    }
+  },
+  {
+    name: 'process a Memo follow',
+    pattern: /^the indexer processes a Memo follow of (.+) from (.+) at block height (.+)$/,
+    async run (m, example, world) {
+      const followee = resolveParam(m[1], example)
+      const follower = resolveParam(m[2], example)
+      const height = parseInt(resolveParam(m[3], example), 10)
+      const txid = deriveTxid(`follow-${follower}-${followee}-${height}`)
+
+      const prefix = Buffer.from('6d06', 'hex')
+      const hashBuf = Buffer.from(derivePkHash(followee), 'hex')
+      const ctx = {
+        adapters: world.adapters,
+        txid,
+        signerAddr: follower,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: { action: 'follow', prefix, pushDatas: [prefix, hashBuf] }
+      }
+      world.lastFollow = { followee, follower, height, ctx }
+
+      await handleFollow(ctx)
+    }
+  },
+  {
+    name: 'process a Memo unfollow',
+    pattern: /^the indexer processes a Memo unfollow of (.+) from (.+) at block height (.+)$/,
+    async run (m, example, world) {
+      const followee = resolveParam(m[1], example)
+      const follower = resolveParam(m[2], example)
+      const height = parseInt(resolveParam(m[3], example), 10)
+      const txid = deriveTxid(`unfollow-${follower}-${followee}-${height}`)
+
+      const prefix = Buffer.from('6d07', 'hex')
+      const hashBuf = Buffer.from(derivePkHash(followee), 'hex')
+      const ctx = {
+        adapters: world.adapters,
+        txid,
+        signerAddr: follower,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: { action: 'unfollow', prefix, pushDatas: [prefix, hashBuf] }
+      }
+      world.lastFollow = { followee, follower, height, ctx }
+
+      await handleFollow(ctx)
+    }
+  },
+  {
+    name: 'process the same Memo follow again',
+    pattern: /^the indexer processes the same Memo follow of (.+) from (.+) again$/,
+    async run (m, example, world) {
+      if (!world.lastFollow) {
+        throw new Error('No previous follow to reprocess')
+      }
+      await handleFollow(world.lastFollow.ctx)
+    }
+  },
+  {
+    name: 'followeeHeights store contains entry',
+    pattern: /^the followeeHeights store contains (.+) entr(?:y|ies) for followee (.+) from (.+) at block height (.+) marked unfollow (true|false)$/,
+    run (m, example, world) {
+      const expectedCount = parseInt(resolveParam(m[1], example), 10)
+      const followee = resolveParam(m[2], example)
+      const follower = resolveParam(m[3], example)
+      const height = parseInt(resolveParam(m[4], example), 10)
+      const expectedUnfollow = m[5] === 'true'
+      const pkHash = derivePkHash(followee)
+      const key = `${pkHash}:${String(height).padStart(12, '0')}:${follower}`
+      const matching = world.followeeHeightsDb.entries().filter(([k, value]) => {
+        return k === key && value?.unfollow === expectedUnfollow
+      })
+      if (matching.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} followeeHeights entry/entries for ${key} unfollow ${expectedUnfollow}, got ${matching.length}`)
       }
     }
   }

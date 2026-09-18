@@ -30,6 +30,7 @@ class Adapters {
     this.profileDb = createEntityDb('profile', 'addr', 'profileData')
     this.profilePicDb = createEntityDb('profilepic', 'addr', 'profilePicData')
     this.followDb = createEntityDb('follow', 'key', 'followData')
+    this.followeeHeightDb = createEntityDb('followeeheight', 'key', 'followeeHeightData')
     this.muteDb = createEntityDb('mute', 'key', 'muteData')
     this.roomDb = createEntityDb('room', 'key', 'roomData')
     this.topicSummaryDb = createEntityDb('topicsummary', 'key', 'topicSummaryData')

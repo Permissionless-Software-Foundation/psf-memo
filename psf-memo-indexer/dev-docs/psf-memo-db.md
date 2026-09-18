@@ -48,6 +48,9 @@ leveldb/current/{name}  // valueEncoding: 'json'
 | `profiles` | 64 MB | Profile text |
 | `profilePics` | 64 MB | Avatar URLs |
 | `follows` | 64 MB | Follow graph edges |
+| `addrPostHeights` | 64 MB | Posts by address ordered by height |
+| `postLikes` | 64 MB | Like txids grouped by liked post |
+| `followeeHeights` | 64 MB | Follow/unfollow events keyed by followee and height |
 | `rooms` | 64 MB | Topic posts and follows |
 | `processErrors` | 64 MB | Skipped / invalid txs |
 | `ptxs` | 64 MB | Processed tx markers |
@@ -77,6 +80,7 @@ All routes are under `/level` with a consistent CRUD pattern generated from `ENT
 | `profile` | `addr` | `profileData` | cash address |
 | `profilepic` | `addr` | `profilePicData` | cash address |
 | `follow` | `key` | `followData` | `follower:followeePkHash` |
+| `followeeheight` | `key` | `followeeHeightData` | `followeePkHash:paddedHeight:followerAddr` |
 | `room` | `key` | `roomData` | composite |
 | `processerror` | `txid` | `errorData` | txid |
 | `ptx` | `txid` | `ptxData` | txid |
@@ -87,6 +91,7 @@ All routes are under `/level` with a consistent CRUD pattern generated from `ENT
 |--------|------|----------------|
 | `GET` | `/profile/recent` | `limit` (default 100, max 100), `offset` (default 0) |
 | `GET` | `/posts/recent` | `limit` (default 100, max 100), `offset` (default 0) |
+| `GET` | `/posts/notifications/:addr` | `limit` (default 100, max 100), `offset` (default 0) |
 
 Returns profiles or posts sorted by **block height** (newest first), using the `blockHeight` field stored on each entity document at indexing time. Tie-breaker: `seen` timestamp descending.
 
@@ -129,6 +134,29 @@ Response shape (`/posts/recent`):
 Implementation: `profile-query` / `post-query` adapter (LevelDB scan) → `list-recent-profiles` / `list-recent-posts` use case → REST controller.
 
 **Tradeoff:** Full scan of `profiles` on each request; suitable for moderate corpus sizes. A height-indexed store would be needed for very large archives.
+
+#### Notifications
+
+`GET /posts/notifications/:addr` returns likes on the viewer's posts, replies to
+the viewer's posts, and follows of the viewer, newest first. Work is bounded to
+the viewer's activity inside a configurable block window
+(`NOTIFICATION_BLOCK_WINDOW`, default `25000`; cutoff =
+`status.chainBlockHeight - window`):
+
+- the viewer's posts are read from `addrPostHeights`, range-limited to the
+  window;
+- likes and replies are prefix-scanned from `postLikes` and `postChildren` for
+  those posts only (the global `likes` and `postChildren` stores are never
+  iterated);
+- follows are read from `followeeHeights`, range-limited to the window, keeping
+  the newest entry per follower and ignoring unfollows (the `follows` store is
+  never iterated).
+
+`pagination.total` counts only in-window notifications. Because a notification
+is drawn from the viewer's content inside the window, an interaction with a
+post older than the window is not returned even when the interaction itself is
+recent. The indexer writes `followeeHeights` on every follow/unfollow; existing
+databases need the one-time `util/follow/backfill-followee-index.js` backfill.
 
 ### Status (special case)
 
@@ -187,6 +215,7 @@ Common fields on indexed documents:
 | profilePic | addr | `url`, `txid`, `seen`, `addr`, `blockHeight` |
 | like | txid | `addr`, `postTxid`, `seen`, `tip`, `blockHeight` |
 | follow | composite key | `followerAddr`, `followeePkHash`, `unfollow`, `txid`, `seen`, `blockHeight` |
+| followeeHeights | `followeePkHash:paddedHeight:followerAddr` | `followerAddr`, `followeePkHash`, `unfollow`, `txid`, `seen`, `blockHeight` |
 | postParent / postChild | txid / `parentTxid:childTxid` | `parentTxid`, `childTxid`, `blockHeight` |
 | room | composite key | `room`, `txid`, `seen`, `type`, `blockHeight` (+ `addr` for follows) |
 | processError | txid | `error`, `ts`, `blockHeight` |
@@ -203,6 +232,7 @@ Common fields on indexed documents:
 | `SVC_ENV` | `development` | Config profile |
 | `BACKUP_QTY` | `3` | Retained zip backups |
 | `EXIT_ON_MISSING_BACKUP` | `false` | Fail restore if zip missing |
+| `NOTIFICATION_BLOCK_WINDOW` | `25000` | Blocks before the chain tip that still count as a notification |
 
 ## Testing
 

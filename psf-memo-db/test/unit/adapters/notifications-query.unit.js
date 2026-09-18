@@ -1,526 +1,350 @@
 import { assert } from 'chai'
 import sinon from 'sinon'
 import NotificationsQuery from '../../../src/adapters/notifications-query.js'
-import { getPostOrNull } from '../../../src/adapters/lib/get-post-or-null.js'
 
 describe('#NotificationsQuery', () => {
   let sandbox
-  let postsDb
-  let postChildrenDb
-  let likesDb
-  let followsDb
-  let bchjs
-  let uut
 
-  const MY_ADDR = 'bitcoincash:qqlrzp23w08434twtmvr4fxw672whkjy0py26r63g3d'
-  const THEIR_ADDR = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
-  const MY_HASH160 = 'myhash160'
-  const THEIR_HASH160 = 'theirhash160'
+  const VIEWER = 'bitcoincash:viewer'
+  const VIEWER_HASH = 'hash-viewer'
+  const FOLLOWER = 'bitcoincash:follower'
+  const OTHER = 'bitcoincash:other'
+  const LIKER = 'bitcoincash:liker'
+  const REPLIER = 'bitcoincash:replier'
 
-  function makeIterator (items) {
-    return (async function * () {
-      for (const item of items) yield item
-    }())
+  const HEIGHT_PAD = 12
+  const pad = (h) => String(h).padStart(HEIGHT_PAD, '0')
+
+  // A minimal LevelDB double that honors gte/lte range options and records
+  // iteration calls so tests can assert that a store was never scanned.
+  function makeDb (entries = []) {
+    const map = new Map(entries)
+    const iteratorCalls = []
+    return {
+      map,
+      iteratorCalls,
+      async get (key) {
+        if (!map.has(key)) {
+          const err = new Error('not found')
+          err.notFound = true
+          throw err
+        }
+        return map.get(key)
+      },
+      iterator (opts = {}) {
+        iteratorCalls.push(opts)
+        let keys = [...map.keys()].sort()
+        if (opts.gte !== undefined) keys = keys.filter((key) => key >= opts.gte)
+        if (opts.lte !== undefined) keys = keys.filter((key) => key <= opts.lte)
+        return (async function * () {
+          for (const key of keys) yield [key, map.get(key)]
+        }())
+      }
+    }
+  }
+
+  function addrPostHeight (addr, height, txid) {
+    return [`${addr}:${pad(height)}:${txid}`, { txid, addr, blockHeight: height }]
+  }
+
+  function postLike (postTxid, likeTxid) {
+    return [`${postTxid}:${likeTxid}`, { postTxid, txid: likeTxid }]
+  }
+
+  function child (parentTxid, childTxid, blockHeight) {
+    return [`${parentTxid}:${childTxid}`, { parentTxid, childTxid, blockHeight }]
+  }
+
+  function followeeHeight (followeeHash, height, follower, unfollow = false) {
+    return [
+      `${followeeHash}:${pad(height)}:${follower}`,
+      { followerAddr: follower, followeePkHash: followeeHash, unfollow, txid: `follow-${height}`, seen: height, blockHeight: height }
+    ]
+  }
+
+  function buildQuery (overrides = {}) {
+    const postsDb = overrides.postsDb || makeDb()
+    const addrPostHeightsDb = overrides.addrPostHeightsDb || makeDb()
+    const postChildrenDb = overrides.postChildrenDb || makeDb()
+    const postLikesDb = overrides.postLikesDb || makeDb()
+    const likesDb = overrides.likesDb || makeDb()
+    const followeeHeightsDb = overrides.followeeHeightsDb || makeDb()
+    const statusDb = 'statusDb' in overrides
+      ? overrides.statusDb
+      : makeDb([['status', { chainBlockHeight: 700000 }]])
+
+    const bchjs = {
+      Address: {
+        toHash160: (addr) => (addr === VIEWER ? VIEWER_HASH : `hash-${addr}`)
+      }
+    }
+
+    return new NotificationsQuery({
+      postsDb,
+      addrPostHeightsDb,
+      postChildrenDb,
+      postLikesDb,
+      likesDb,
+      followeeHeightsDb,
+      statusDb,
+      notificationBlockWindow: overrides.notificationBlockWindow,
+      muteQuery: overrides.muteQuery,
+      bchjs
+    })
   }
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-
-    postsDb = { get: sandbox.stub() }
-    postChildrenDb = { iterator: sandbox.stub() }
-    likesDb = { iterator: sandbox.stub() }
-    followsDb = { iterator: sandbox.stub() }
-
-    bchjs = {
-      Address: {
-        toHash160: sandbox.stub()
-      }
-    }
-
-    bchjs.Address.toHash160.withArgs(MY_ADDR).returns(MY_HASH160)
-    bchjs.Address.toHash160.withArgs(THEIR_ADDR).returns(THEIR_HASH160)
-
-    uut = new NotificationsQuery({
-      postsDb,
-      postParentsDb: {},
-      postChildrenDb,
-      likesDb,
-      postLikesDb: {},
-      followsDb,
-      bchjs
-    })
   })
 
   afterEach(() => sandbox.restore())
 
-  it('should throw when postsDb is missing', () => {
-    try {
-      // eslint-disable-next-line no-new
-      new NotificationsQuery({ postChildrenDb, likesDb, followsDb, bchjs })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'postsDb required')
+  it('should throw when required stores are missing', () => {
+    const cases = [
+      ['postsDb', /postsDb required/],
+      ['addrPostHeightsDb', /addrPostHeightsDb required/],
+      ['postChildrenDb', /postChildrenDb required/],
+      ['postLikesDb', /postLikesDb required/],
+      ['likesDb', /likesDb required/],
+      ['followeeHeightsDb', /followeeHeightsDb required/]
+    ]
+
+    for (const [omit, expected] of cases) {
+      const config = {
+        postsDb: makeDb(),
+        addrPostHeightsDb: makeDb(),
+        postChildrenDb: makeDb(),
+        postLikesDb: makeDb(),
+        likesDb: makeDb(),
+        followeeHeightsDb: makeDb()
+      }
+      delete config[omit]
+
+      try {
+        // eslint-disable-next-line no-new
+        new NotificationsQuery(config)
+        assert.fail(`Expected error for missing ${omit}`)
+      } catch (err) {
+        assert.match(err.message, expected)
+      }
     }
   })
 
-  it('should throw when postChildrenDb is missing', () => {
-    try {
-      // eslint-disable-next-line no-new
-      new NotificationsQuery({ postsDb, postParentsDb: {}, likesDb, postLikesDb: {}, followsDb, bchjs })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'postChildrenDb required')
-    }
-  })
+  it('should include an in-window follow, reply, and like sorted newest-first', async () => {
+    const postsDb = makeDb([
+      ['post-recent', { addr: VIEWER, text: 'hi' }],
+      ['reply-recent', { addr: REPLIER, text: 'reply', blockHeight: 690150, seen: 1 }]
+    ])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-recent')])
+    const likesDb = makeDb([['like-recent', { addr: LIKER, postTxid: 'post-recent', blockHeight: 690100, seen: 2 }]])
+    const postChildrenDb = makeDb([child('post-recent', 'reply-recent', 690150)])
+    const followeeHeightsDb = makeDb([followeeHeight(VIEWER_HASH, 690400, FOLLOWER)])
 
-  it('should throw when likesDb is missing', () => {
-    try {
-      // eslint-disable-next-line no-new
-      new NotificationsQuery({ postsDb, postParentsDb: {}, postChildrenDb, postLikesDb: {}, followsDb, bchjs })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'likesDb required')
-    }
-  })
-
-  it('should throw when followsDb is missing', () => {
-    try {
-      // eslint-disable-next-line no-new
-      new NotificationsQuery({ postsDb, postParentsDb: {}, postChildrenDb, likesDb, postLikesDb: {}, bchjs })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'followsDb required')
-    }
-  })
-
-  it('should throw when postParentsDb is missing', () => {
-    try {
-      // eslint-disable-next-line no-new
-      new NotificationsQuery({ postsDb, postChildrenDb, likesDb, postLikesDb: {}, followsDb, bchjs })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'postParentsDb required')
-    }
-  })
-
-  it('should throw when postLikesDb is missing', () => {
-    try {
-      // eslint-disable-next-line no-new
-      new NotificationsQuery({ postsDb, postParentsDb: {}, postChildrenDb, likesDb, followsDb, bchjs })
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.include(err.message, 'postLikesDb required')
-    }
-  })
-
-  it('should exclude notifications from muted addresses when a mute query is provided', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-    const likeTxid = 'c'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 100 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
-    ]))
-    followsDb.iterator.returns(makeIterator([]))
-
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply' })
-
-    const muteQuery = {
-      listMuted: sandbox.stub().resolves([THEIR_ADDR])
-    }
-    uut = new NotificationsQuery({
-      postsDb,
-      postParentsDb: {},
-      postChildrenDb,
-      likesDb,
-      postLikesDb: {},
-      followsDb,
-      muteQuery,
-      bchjs
-    })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 0)
-    assert.isTrue(muteQuery.listMuted.calledOnceWith(MY_ADDR))
-  })
-
-  it('should return null from getPostOrNull when the post is not found', async () => {
-    const missingTxid = 'c'.repeat(64)
-    const notFound = new Error('not found')
-    notFound.notFound = true
-    postsDb.get.withArgs(missingTxid).rejects(notFound)
-
-    const result = await getPostOrNull(postsDb, missingTxid)
-    assert.equal(result, null)
-  })
-
-  it('should rethrow non-notFound errors from getPostOrNull', async () => {
-    const txid = 'd'.repeat(64)
-    const boom = new Error('boom')
-    postsDb.get.withArgs(txid).rejects(boom)
-
-    try {
-      await getPostOrNull(postsDb, txid)
-      assert.fail('Expected error')
-    } catch (err) {
-      assert.equal(err, boom)
-    }
-  })
-
-  it('should include a reply to my post', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 200 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'nice post', blockHeight: 200 })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 1)
-    assert.equal(result.notifications.length, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'reply')
-    assert.equal(n.txid, replyTxid)
-    assert.equal(n.addr, THEIR_ADDR)
-    assert.equal(n.postTxid, myPostTxid)
-    assert.equal(n.text, 'nice post')
-  })
-
-  it('should include a like on my post', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const likeTxid = 'b'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
-    ]))
-
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'like')
-    assert.equal(n.txid, likeTxid)
-    assert.equal(n.addr, THEIR_ADDR)
-    assert.equal(n.postTxid, myPostTxid)
-  })
-
-  it('should include a follow of me', async () => {
-    postChildrenDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([
-      [`${THEIR_ADDR}:${MY_HASH160}`, { followerAddr: THEIR_ADDR, followeePkHash: MY_HASH160, unfollow: false, txid: 'c'.repeat(64), blockHeight: 150 }]
-    ]))
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'follow')
-    assert.equal(n.txid, 'c'.repeat(64))
-    assert.equal(n.addr, THEIR_ADDR)
-  })
-
-  it('should fall back to the follow key first component when followerAddr is missing', async () => {
-    postChildrenDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([]))
-    // A follow record can omit followerAddr; the address must be derived from
-    // the first component of the `addr:<followeePkHash>` key.
-    followsDb.iterator.returns(makeIterator([
-      [`${THEIR_ADDR}:${MY_HASH160}`, { followeePkHash: MY_HASH160, unfollow: false, txid: 'c'.repeat(64), blockHeight: 150 }]
-    ]))
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'follow')
-    assert.equal(n.addr, THEIR_ADDR)
-  })
-
-  it('should exclude my own replies', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 100 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: MY_ADDR, text: 'my own reply' })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 0)
-  })
-
-  it('should exclude replies to posts by other people', async () => {
-    const theirPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${theirPostTxid}:${replyTxid}`, { parentTxid: theirPostTxid, childTxid: replyTxid, blockHeight: 100 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-
-    postsDb.get.withArgs(theirPostTxid).resolves({ addr: THEIR_ADDR, text: 'alice post' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: 'bitcoincash:other', text: 'reply' })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 0)
-  })
-
-  it('should exclude follows of other people', async () => {
-    postChildrenDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([
-      [`${THEIR_ADDR}:${'otherhash'}`, { followerAddr: THEIR_ADDR, followeePkHash: 'otherhash', unfollow: false, txid: 'c'.repeat(64), blockHeight: 150 }]
-    ]))
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 0)
-  })
-
-  it('should exclude unfollows', async () => {
-    postChildrenDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([
-      [`${THEIR_ADDR}:${MY_HASH160}`, { followerAddr: THEIR_ADDR, followeePkHash: MY_HASH160, unfollow: true, txid: 'c'.repeat(64), blockHeight: 150 }]
-    ]))
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 0)
-  })
-
-  it('should sort notifications by block height descending', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-    const likeTxid = 'c'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 100 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
-    ]))
-    followsDb.iterator.returns(makeIterator([]))
-
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply' })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 2)
-    assert.equal(result.notifications[0].type, 'like')
-    assert.equal(result.notifications[1].type, 'reply')
-  })
-
-  it('should sort three notifications by block height descending', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-    const likeTxid = 'c'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 200 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
-    ]))
-    followsDb.iterator.returns(makeIterator([
-      [`${THEIR_ADDR}:${MY_HASH160}`, { followerAddr: THEIR_ADDR, followeePkHash: MY_HASH160, unfollow: false, txid: 'd'.repeat(64), blockHeight: 100 }]
-    ]))
-
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply' })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb, postChildrenDb, followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
     assert.equal(result.total, 3)
-    assert.equal(result.notifications[0].type, 'like')
-    assert.equal(result.notifications[0].blockHeight, 300)
-    assert.equal(result.notifications[1].type, 'reply')
-    assert.equal(result.notifications[1].blockHeight, 200)
-    assert.equal(result.notifications[2].type, 'follow')
-    assert.equal(result.notifications[2].blockHeight, 100)
+    assert.deepEqual(result.notifications.map((n) => n.type), ['follow', 'reply', 'like'])
+    assert.equal(result.notifications[0].addr, FOLLOWER)
+    assert.equal(result.notifications[0].blockHeight, 690400)
+    assert.equal(result.notifications[1].addr, REPLIER)
+    assert.equal(result.notifications[2].addr, LIKER)
   })
 
-  it('should paginate notifications', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
-    const likeTxid = 'c'.repeat(64)
+  it('should exclude interactions with posts older than the window', async () => {
+    const postsDb = makeDb([
+      ['post-old', { addr: VIEWER, text: 'old' }],
+      ['reply-old', { addr: REPLIER, text: 'reply', blockHeight: 690250, seen: 1 }]
+    ])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 600000, 'post-old')])
+    const postLikesDb = makeDb([postLike('post-old', 'like-old')])
+    const likesDb = makeDb([['like-old', { addr: LIKER, postTxid: 'post-old', blockHeight: 690200, seen: 1 }]])
+    const postChildrenDb = makeDb([child('post-old', 'reply-old', 690250)])
+    const followeeHeightsDb = makeDb([followeeHeight(VIEWER_HASH, 690400, FOLLOWER)])
 
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid, blockHeight: 100 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
-    ]))
-    followsDb.iterator.returns(makeIterator([]))
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb, postChildrenDb, followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply' })
+    // The old post's like and reply are excluded; only the in-window follow remains.
+    assert.equal(result.total, 1)
+    assert.deepEqual(result.notifications.map((n) => n.type), ['follow'])
+  })
 
-    const result = await uut.listNotifications(MY_ADDR, { limit: 1, offset: 0 })
+  it('should include an out-of-window post when the window reaches it', async () => {
+    const postsDb = makeDb([['post-old', { addr: VIEWER, text: 'old' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 600000, 'post-old')])
+    const postLikesDb = makeDb([postLike('post-old', 'like-old')])
+    const likesDb = makeDb([['like-old', { addr: LIKER, postTxid: 'post-old', blockHeight: 690200, seen: 1 }]])
+
+    const uut = buildQuery({
+      postsDb,
+      addrPostHeightsDb,
+      postLikesDb,
+      likesDb,
+      postChildrenDb: makeDb(),
+      followeeHeightsDb: makeDb(),
+      notificationBlockWindow: 100000
+    })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 1)
+    assert.equal(result.notifications[0].blockHeight, 690200)
+  })
+
+  it('should drop a follower whose newest entry is an unfollow', async () => {
+    const followeeHeightsDb = makeDb([
+      followeeHeight(VIEWER_HASH, 690550, FOLLOWER, false),
+      followeeHeight(VIEWER_HASH, 690600, FOLLOWER, true)
+    ])
+
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 0)
+  })
+
+  it('should keep a follower whose newest entry is a follow after an older unfollow', async () => {
+    const followeeHeightsDb = makeDb([
+      followeeHeight(VIEWER_HASH, 690550, FOLLOWER, true),
+      followeeHeight(VIEWER_HASH, 690600, FOLLOWER, false)
+    ])
+
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 1)
+    assert.equal(result.notifications[0].addr, FOLLOWER)
+  })
+
+  it('should exclude self-likes, self-replies, and self-follows', async () => {
+    const postsDb = makeDb([
+      ['post-recent', { addr: VIEWER, text: 'hi' }],
+      ['reply-self', { addr: VIEWER, text: 'mine', blockHeight: 690150 }]
+    ])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-self')])
+    const likesDb = makeDb([['like-self', { addr: VIEWER, postTxid: 'post-recent', blockHeight: 690100 }]])
+    const postChildrenDb = makeDb([child('post-recent', 'reply-self', 690150)])
+    const followeeHeightsDb = makeDb([followeeHeight(VIEWER_HASH, 690400, VIEWER)])
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb, postChildrenDb, followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 0)
+  })
+
+  it('should exclude notifications from muted addresses', async () => {
+    const postsDb = makeDb([['reply-recent', { addr: OTHER, text: 'reply', blockHeight: 690150 }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postChildrenDb = makeDb([child('post-recent', 'reply-recent', 690150)])
+    const muteQuery = { listMuted: sandbox.stub().resolves([OTHER]) }
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postChildrenDb, muteQuery })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 0)
+    assert.isTrue(muteQuery.listMuted.calledOnceWith(VIEWER))
+  })
+
+  it('should break sort ties by seen descending', async () => {
+    const postsDb = makeDb([
+      ['reply-a', { addr: REPLIER, text: 'a', blockHeight: 690150, seen: 1 }],
+      ['reply-b', { addr: OTHER, text: 'b', blockHeight: 690150, seen: 2 }]
+    ])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postChildrenDb = makeDb([
+      child('post-recent', 'reply-a', 690150),
+      child('post-recent', 'reply-b', 690150)
+    ])
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postChildrenDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 2)
+    assert.equal(result.notifications[0].seen, 2)
+    assert.equal(result.notifications[1].seen, 1)
+  })
+
+  it('should paginate and report the exact in-window total', async () => {
+    const followeeHeightsDb = makeDb([
+      followeeHeight(VIEWER_HASH, 690400, FOLLOWER),
+      followeeHeight(VIEWER_HASH, 690300, OTHER)
+    ])
+
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 1, offset: 1 })
 
     assert.equal(result.total, 2)
     assert.equal(result.notifications.length, 1)
-    assert.equal(result.notifications[0].type, 'like')
+    assert.equal(result.notifications[0].blockHeight, 690300)
   })
 
-  it('should default follow blockHeight and seen to 0 when missing', async () => {
-    postChildrenDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([
-      [`${THEIR_ADDR}:${MY_HASH160}`, { followerAddr: THEIR_ADDR, followeePkHash: MY_HASH160, unfollow: false, txid: 'c'.repeat(64) }]
-    ]))
+  it('should never iterate the likes store', async () => {
+    const postsDb = makeDb([['post-recent', { addr: VIEWER, text: 'hi' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-recent')])
+    const likesDb = makeDb([['like-recent', { addr: LIKER, postTxid: 'post-recent', blockHeight: 690100 }]])
+    const followeeHeightsDb = makeDb([followeeHeight(VIEWER_HASH, 690400, FOLLOWER)])
+    likesDb.iterator = sandbox.stub().throws(new Error('likes store must not be iterated'))
 
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb, postChildrenDb: makeDb(), followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
-    assert.equal(result.notifications.length, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'follow')
-    assert.equal(n.blockHeight, 0)
-    assert.equal(n.seen, 0)
+    assert.equal(result.total, 2)
+    assert.equal(likesDb.iterator.callCount, 0)
   })
 
-  it('should default like blockHeight and seen to 0 when missing', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const likeTxid = 'b'.repeat(64)
+  it('should treat the whole history as in-window when status is missing', async () => {
+    const postsDb = makeDb([['post-old', { addr: VIEWER, text: 'old' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 1, 'post-old')])
+    const postLikesDb = makeDb([postLike('post-old', 'like-old')])
+    const likesDb = makeDb([['like-old', { addr: LIKER, postTxid: 'post-old', blockHeight: 2 }]])
 
-    postChildrenDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid }]
-    ]))
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
+    const uut = buildQuery({
+      postsDb,
+      addrPostHeightsDb,
+      postLikesDb,
+      likesDb,
+      postChildrenDb: makeDb(),
+      followeeHeightsDb: makeDb(),
+      statusDb: null
+    })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.notifications.length, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'like')
-    assert.equal(n.blockHeight, 0)
-    assert.equal(n.seen, 0)
+    assert.equal(result.total, 1)
   })
 
-  it('should default reply blockHeight and seen to 0 when missing', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
+  it('should recover the follower from the followeeHeights key when the record lacks it', async () => {
+    const followeeHeightsDb = makeDb([
+      [`${VIEWER_HASH}:${pad(690400)}:${FOLLOWER}`, { unfollow: false, txid: 't', blockHeight: 690400 }]
+    ])
 
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid }]
-    ]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply' })
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.notifications.length, 1)
-    const n = result.notifications[0]
-    assert.equal(n.type, 'reply')
-    assert.equal(n.blockHeight, 0)
-    assert.equal(n.seen, 0)
+    assert.equal(result.total, 1)
+    assert.equal(result.notifications[0].addr, FOLLOWER)
   })
 
-  it('should use the child post blockHeight when the child record lacks one', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const replyTxid = 'b'.repeat(64)
+  it('should skip a missing like record', async () => {
+    const postsDb = makeDb([['post-recent', { addr: VIEWER, text: 'hi' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-missing')])
 
-    postChildrenDb.iterator.returns(makeIterator([
-      [`${myPostTxid}:${replyTxid}`, { parentTxid: myPostTxid, childTxid: replyTxid }]
-    ]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-    postsDb.get.withArgs(replyTxid).resolves({ addr: THEIR_ADDR, text: 'reply', blockHeight: 500, seen: 7 })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.notifications.length, 1)
-    const n = result.notifications[0]
-    assert.equal(n.blockHeight, 500)
-    assert.equal(n.seen, 7)
-  })
-
-  it('should break sort ties by seen descending when blockHeight is equal', async () => {
-    const myPostTxid = 'a'.repeat(64)
-
-    postChildrenDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([
-      ['b1'.repeat(32), { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300, seen: 100 }],
-      ['b2'.repeat(32), { addr: 'bitcoincash:qother2', postTxid: myPostTxid, blockHeight: 300, seen: 200 }]
-    ]))
-    postsDb.get.withArgs(myPostTxid).resolves({ addr: MY_ADDR, text: 'hello' })
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.notifications.length, 2)
-    assert.equal(result.notifications[0].seen, 200)
-    assert.equal(result.notifications[1].seen, 100)
-  })
-
-  it('should skip a like whose post is missing', async () => {
-    const myPostTxid = 'a'.repeat(64)
-    const likeTxid = 'b'.repeat(64)
-    const missingPost = new Error('not found')
-    missingPost.notFound = true
-
-    postChildrenDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([
-      [likeTxid, { addr: THEIR_ADDR, postTxid: myPostTxid, blockHeight: 300 }]
-    ]))
-    postsDb.get.withArgs(myPostTxid).rejects(missingPost)
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
     assert.equal(result.total, 0)
   })
 
-  it('should skip a null like record without throwing', async () => {
-    postChildrenDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-    likesDb.iterator.returns(makeIterator([
-      [null, null]
-    ]))
+  it('should default notificationBlockWindow to 25000', async () => {
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 1, 'post-old')])
+    const uut = buildQuery({ addrPostHeightsDb, statusDb: makeDb([['status', { chainBlockHeight: 700000 }]]) })
 
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
+    // cutoff 675000: a post at height 1 is out of window.
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
     assert.equal(result.total, 0)
-  })
-
-  it('should skip a reply child record missing parentTxid or childTxid', async () => {
-    postChildrenDb.iterator.returns(makeIterator([
-      ['missing:child', { parentTxid: undefined, childTxid: 'b'.repeat(64), blockHeight: 100 }]
-    ]))
-    likesDb.iterator.returns(makeIterator([]))
-    followsDb.iterator.returns(makeIterator([]))
-
-    const result = await uut.listNotifications(MY_ADDR, { limit: 100, offset: 0 })
-
-    assert.equal(result.total, 0)
+    assert.equal(uut.notificationBlockWindow, 25000)
   })
 })

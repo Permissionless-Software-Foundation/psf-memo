@@ -3,180 +3,196 @@
 
   The unit suite probes listNotifications at a handful of fixed fixtures.
   These properties pin down invariants that should hold over broad random
-  notification records:
+  notification records when every interaction is inside the window:
 
+    - membership: every returned notification originated from an active follow,
+      a like on one of the viewer's posts, or a reply to one of the viewer's
+      posts;
     - newest-first ordering: notifications are returned sorted by blockHeight
-      descending.
-    - tie-break ordering: when blockHeights tie, notifications are ordered by
-      seen descending.
+      descending, with seen descending as the tie-break;
     - pagination conservation: applying offset/limit returns exactly the full
       matching set sliced to the page, and reports an exact total.
-    - membership: every returned notification originated from an active follow,
-      a like on one of my posts, or a reply to one of my posts.
 
-  The reference implementation below mirrors the adapter's aggregation and
-  sort logic so the two can be cross-checked.
+  The reference implementation below mirrors the adapter's window-free
+  aggregation and sort logic so the two can be cross-checked.
 */
 
 import test from 'node:test'
 import { seededRandom, forAll, intGen } from './harness.js'
 import NotificationsQuery from '../../src/adapters/notifications-query.js'
 
-const rng = seededRandom(20260903)
+const rng = seededRandom(20260918)
 
 const VIEWER = 'bitcoincash:viewer'
 const MY_HASH = 'hash-viewer'
 const OTHERS = ['bitcoincash:a', 'bitcoincash:b', 'bitcoincash:c']
 const VIEWER_POSTS = ['vp1', 'vp2', 'vp3', 'vp4']
 
-function makeIterator (items) {
-  return (async function * () {
-    for (const item of items) yield item
-  }())
-}
+const PAD = 12
+const pad = (h) => String(h).padStart(PAD, '0')
 
-function buildQuery ({ posts, follows, likes, children }) {
-  const postsDb = {
-    async get (txid) {
-      const post = posts.get(txid)
-      if (!post) {
+function makeDb (entries = []) {
+  const map = new Map(entries)
+  return {
+    map,
+    async get (key) {
+      if (!map.has(key)) {
         const err = new Error('not found')
         err.notFound = true
         throw err
       }
-      return post
+      return map.get(key)
+    },
+    iterator (opts = {}) {
+      let keys = [...map.keys()].sort()
+      if (opts.gte !== undefined) keys = keys.filter((key) => key >= opts.gte)
+      if (opts.lte !== undefined) keys = keys.filter((key) => key <= opts.lte)
+      return (async function * () {
+        for (const key of keys) yield [key, map.get(key)]
+      }())
     }
   }
-  const bchjs = {
-    Address: {
-      toHash160: (addr) => (addr === VIEWER ? MY_HASH : 'hash-' + addr)
-    }
-  }
+}
+
+function buildQuery () {
+  // statusDb null => no window; every generated interaction is in scope.
   return new NotificationsQuery({
-    postsDb,
-    postParentsDb: {},
-    postChildrenDb: { iterator: () => makeIterator(children) },
-    likesDb: { iterator: () => makeIterator(likes) },
-    postLikesDb: {},
-    followsDb: { iterator: () => makeIterator(follows) },
-    bchjs
+    postsDb: makeDb(),
+    addrPostHeightsDb: makeDb(),
+    postChildrenDb: makeDb(),
+    postLikesDb: makeDb(),
+    likesDb: makeDb(),
+    followeeHeightsDb: makeDb(),
+    statusDb: null,
+    bchjs: { Address: { toHash160: (addr) => (addr === VIEWER ? MY_HASH : `hash-${addr}`) } }
   })
+}
+
+function randomNotification () {
+  return {
+    blockHeight: intGen(rng, 0, 5000)(),
+    seen: intGen(rng, 0, 1000)()
+  }
 }
 
 function fixtureGen () {
   return () => {
-    const posts = new Map(VIEWER_POSTS.map((txid) => [txid, { addr: VIEWER }]))
-    const follows = []
-    const likeKeys = []
-    const danglingLikes = []
-    const children = []
-    const childPosts = []
+    const postsDbEntries = []
+    const addrPostHeightEntries = []
+    const postLikesEntries = []
+    const likesEntries = []
+    const postChildrenEntries = []
+    const followeeHeightEntries = []
 
-    // Active follow records of me by other addresses.
-    const nFollows = intGen(rng, 0, 6)()
+    for (const txid of VIEWER_POSTS) {
+      postsDbEntries.push([txid, { addr: VIEWER }])
+      addrPostHeightEntries.push([`${VIEWER}:${pad(0)}:${txid}`, { txid, addr: VIEWER, blockHeight: 0 }])
+    }
+
+    // Follows: random events, including repeated followers so the newest-wins
+    // rule is exercised. Recorded in the expected order.
+    const events = []
+    const nFollows = intGen(rng, 0, 8)()
     for (let i = 0; i < nFollows; i++) {
       const follower = OTHERS[Math.floor(rng() * OTHERS.length)]
-      const toMe = rng() < 0.7
-      follows.push([
-        `${follower}:${toMe ? MY_HASH : 'hash-other'}`,
-        {
-          followerAddr: follower,
-          followeePkHash: toMe ? MY_HASH : 'hash-other',
-          unfollow: rng() < 0.2,
-          txid: 'follow' + i,
-          // a fraction omit blockHeight/seen to exercise the ?? 0 defaults
-          blockHeight: rng() < 0.2 ? undefined : intGen(rng, 0, 5000)(),
-          seen: rng() < 0.2 ? undefined : intGen(rng, 0, 1000)()
-        }
+      const n = randomNotification()
+      const unfollow = rng() < 0.25
+      events.push({ follower, ...n, unfollow })
+      followeeHeightEntries.push([
+        `${MY_HASH}:${pad(n.blockHeight)}:${follower}`,
+        { followerAddr: follower, followeePkHash: MY_HASH, unfollow, txid: `follow${i}`, seen: n.seen, blockHeight: n.blockHeight }
       ])
     }
 
-    // Likes on my posts by other addresses.
-    const nLikes = intGen(rng, 0, 6)()
+    // Likes on the viewer's posts by other addresses.
+    const likeRecords = []
+    const nLikes = intGen(rng, 0, 8)()
     for (let i = 0; i < nLikes; i++) {
       const postTxid = VIEWER_POSTS[Math.floor(rng() * VIEWER_POSTS.length)]
-      likeKeys.push(['like' + i, {
-        addr: OTHERS[Math.floor(rng() * OTHERS.length)],
-        postTxid,
-        blockHeight: intGen(rng, 0, 5000)(),
-        seen: intGen(rng, 0, 1000)()
-      }])
+      const actor = OTHERS[Math.floor(rng() * OTHERS.length)]
+      const n = randomNotification()
+      const likeTxid = `like${i}`
+      likeRecords.push({ likeTxid, addr: actor, ...n })
+      postLikesEntries.push([`${postTxid}:${likeTxid}`, { postTxid, txid: likeTxid }])
+      likesEntries.push([likeTxid, { addr: actor, postTxid, blockHeight: n.blockHeight, seen: n.seen }])
     }
 
-    // Likes whose target post is missing, to exercise the exclusion path.
-    const nDangling = intGen(rng, 0, 3)()
-    for (let i = 0; i < nDangling; i++) {
-      danglingLikes.push(['dl' + i, { addr: OTHERS[0], postTxid: 'missing-post', blockHeight: 1, seen: 1 }])
-    }
-    const allLikes = likeKeys.concat(danglingLikes)
-
-    // Replies to my posts by other addresses.
-    const nReplies = intGen(rng, 0, 6)()
+    // Replies to the viewer's posts by other addresses.
+    const replyRecords = []
+    const nReplies = intGen(rng, 0, 8)()
     for (let i = 0; i < nReplies; i++) {
       const parentTxid = VIEWER_POSTS[Math.floor(rng() * VIEWER_POSTS.length)]
-      const childTxid = 'child' + i
-      const childPost = {
-        addr: OTHERS[Math.floor(rng() * OTHERS.length)],
-        blockHeight: intGen(rng, 0, 5000)(),
-        seen: intGen(rng, 0, 1000)()
-      }
-      childPosts.push(childTxid)
-      posts.set(childTxid, childPost)
-      children.push([`${parentTxid}:${childTxid}`, { parentTxid, childTxid }])
+      const childTxid = `child${i}`
+      const actor = OTHERS[Math.floor(rng() * OTHERS.length)]
+      const n = randomNotification()
+      replyRecords.push({ childTxid, addr: actor, ...n })
+      postChildrenEntries.push([`${parentTxid}:${childTxid}`, { parentTxid, childTxid, blockHeight: n.blockHeight }])
+      postsDbEntries.push([childTxid, { addr: actor, text: 'reply', blockHeight: n.blockHeight, seen: n.seen }])
     }
 
     return {
-      query: buildQuery({ posts, follows, likes: allLikes, children }),
-      follows,
-      likeKeys,
-      childPosts,
-      posts,
+      events,
+      likeRecords,
+      replyRecords,
+      postsDbEntries,
+      addrPostHeightEntries,
+      postLikesEntries,
+      likesEntries,
+      postChildrenEntries,
+      followeeHeightEntries,
       limit: intGen(rng, 1, 8)(),
       offset: intGen(rng, 0, 10)()
     }
   }
 }
 
-function buildExpected ({ follows, likeKeys, childPosts, posts, limit, offset }) {
+// Build the adapter with the generated stores populated.
+function populate (input) {
+  const query = buildQuery()
+  input.postsDbEntries.forEach(([key, value]) => query.postsDb.map.set(key, value))
+  input.addrPostHeightEntries.forEach(([key, value]) => query.addrPostHeightsDb.map.set(key, value))
+  input.postLikesEntries.forEach(([key, value]) => query.postLikesDb.map.set(key, value))
+  input.likesEntries.forEach(([key, value]) => query.likesDb.map.set(key, value))
+  input.postChildrenEntries.forEach(([key, value]) => query.postChildrenDb.map.set(key, value))
+  input.followeeHeightEntries.forEach(([key, value]) => query.followeeHeightsDb.map.set(key, value))
+  return query
+}
+
+// Mirror the adapter's window-free aggregation without using the adapter.
+function buildExpected ({ events, likeRecords, replyRecords, limit, offset }) {
   const out = []
 
-  for (const [, record] of follows) {
-    if (record.unfollow === true) continue
-    if (record.followeePkHash !== MY_HASH) continue
-    if (record.followerAddr === VIEWER) continue
-    out.push({ blockHeight: record.blockHeight ?? 0, seen: record.seen ?? 0 })
+  // Newest follow event per follower wins.
+  const newestByFollower = new Map()
+  for (const event of [...events].sort((a, b) => a.blockHeight - b.blockHeight)) {
+    newestByFollower.set(event.follower, event)
+  }
+  for (const event of newestByFollower.values()) {
+    if (event.unfollow) continue
+    out.push({ blockHeight: event.blockHeight, seen: event.seen })
   }
 
-  for (const [, like] of likeKeys) {
-    if (!like || like.addr === VIEWER) continue
-    const post = posts.get(like.postTxid)
-    if (!post || post.addr !== VIEWER) continue
-    out.push({ blockHeight: like.blockHeight ?? 0, seen: like.seen ?? 0 })
-  }
-
-  for (const childTxid of childPosts) {
-    // Parent and child both exist in the fixture; child is always authored by
-    // a non-viewer, parent by the viewer, so every child here qualifies.
-    out.push({ blockHeight: posts.get(childTxid).blockHeight ?? 0, seen: posts.get(childTxid).seen ?? 0 })
-  }
+  for (const like of likeRecords) out.push({ blockHeight: like.blockHeight, seen: like.seen })
+  for (const reply of replyRecords) out.push({ blockHeight: reply.blockHeight, seen: reply.seen })
 
   out.sort((a, b) => {
     if (b.blockHeight !== a.blockHeight) return b.blockHeight - a.blockHeight
     return (b.seen ?? 0) - (a.seen ?? 0)
   })
 
-  return {
-    total: out.length,
-    page: out.slice(offset, offset + limit)
-  }
+  return { total: out.length, page: out.slice(offset, offset + limit) }
 }
 
 test('notifications are sorted newest-first with seen tie-break and exact pagination', async () => {
   await forAll(
     fixtureGen(),
-    async ({ query, follows, likeKeys, childPosts, posts, limit, offset }) => {
-      const { notifications, total } = await query.listNotifications(VIEWER, { limit, offset })
-      const expected = buildExpected({ follows, likeKeys, childPosts, posts, limit, offset })
+    async (input) => {
+      const query = populate(input)
+      const { notifications, total } = await query.listNotifications(VIEWER, {
+        limit: input.limit,
+        offset: input.offset
+      })
+      const expected = buildExpected(input)
 
       if (total !== expected.total) return false
       if (notifications.length !== expected.page.length) return false
@@ -193,8 +209,12 @@ test('notifications are sorted newest-first with seen tie-break and exact pagina
 test('the returned page is globally ordered by blockHeight then seen descending', async () => {
   await forAll(
     fixtureGen(),
-    async ({ query, limit, offset }) => {
-      const { notifications } = await query.listNotifications(VIEWER, { limit, offset })
+    async (input) => {
+      const query = populate(input)
+      const { notifications } = await query.listNotifications(VIEWER, {
+        limit: input.limit,
+        offset: input.offset
+      })
       for (let i = 1; i < notifications.length; i++) {
         const prev = notifications[i - 1]
         const cur = notifications[i]

@@ -1,74 +1,150 @@
 /*
   Adapter for aggregating the viewer's notifications.
 
-  Notifications are read-only: the DB collects replies to the viewer's posts,
-  likes on the viewer's posts, and new follows of the viewer, then returns them
-  sorted newest-first with limit/offset pagination.
+  Notifications are read-only: the DB collects likes on the viewer's posts,
+  replies to the viewer's posts, and new follows of the viewer, then returns
+  them sorted newest-first with limit/offset pagination.
+
+  The work is bounded to the viewer's activity inside a configurable block
+  window (notificationBlockWindow, default 25000; cutoff =
+  status.chainBlockHeight - window):
+
+    - the viewer's own posts come from the addrPostHeights index, range-limited
+      to the window;
+    - likes and replies come from prefix-scanning postLikes and postChildren
+      for those posts only; the global likes store is never iterated and
+      postChildren is only scanned per viewer post;
+    - follows come from the followeeHeights index, range-limited to the window;
+      the follows store is never iterated.
+
+  A notification is drawn from the viewer's content inside the window, so an
+  interaction with a post older than the window is not returned even when the
+  interaction itself is recent.
 */
 
 import BCHJS from '@psf/bch-js'
 import { getPostOrNull } from './lib/get-post-or-null.js'
 import { loadMutedAddrs } from './lib/muted-posts.js'
 
+const HEIGHT_PAD = 12
+const DEFAULT_NOTIFICATION_BLOCK_WINDOW = 25000
+
+function padHeight (blockHeight) {
+  return String(blockHeight ?? 0).padStart(HEIGHT_PAD, '0')
+}
+
+// Read a record by key, returning null when it does not exist.
+async function getRecordOrNull (db, key) {
+  try {
+    return await db.get(key)
+  } catch (err) {
+    if (err.notFound || err.code === 'LEVEL_NOT_FOUND' || err.response?.status === 404) return null
+    throw err
+  }
+}
+
 class NotificationsQuery {
   constructor (localConfig = {}) {
     const {
       postsDb,
-      postParentsDb,
+      addrPostHeightsDb,
       postChildrenDb,
-      likesDb,
       postLikesDb,
-      followsDb,
+      likesDb,
+      followeeHeightsDb,
+      statusDb = null,
       muteQuery,
+      notificationBlockWindow,
       bchjs = new BCHJS({ restURL: process.env.RESTURL || 'https://api.fullstack.cash/v5/' })
     } = localConfig
 
     if (!postsDb) {
       throw new Error('postsDb required when instantiating NotificationsQuery adapter.')
     }
-    if (!postParentsDb) {
-      throw new Error('postParentsDb required when instantiating NotificationsQuery adapter.')
+    if (!addrPostHeightsDb) {
+      throw new Error('addrPostHeightsDb required when instantiating NotificationsQuery adapter.')
     }
     if (!postChildrenDb) {
       throw new Error('postChildrenDb required when instantiating NotificationsQuery adapter.')
     }
-    if (!likesDb) {
-      throw new Error('likesDb required when instantiating NotificationsQuery adapter.')
-    }
     if (!postLikesDb) {
       throw new Error('postLikesDb required when instantiating NotificationsQuery adapter.')
     }
-    if (!followsDb) {
-      throw new Error('followsDb required when instantiating NotificationsQuery adapter.')
+    if (!likesDb) {
+      throw new Error('likesDb required when instantiating NotificationsQuery adapter.')
+    }
+    if (!followeeHeightsDb) {
+      throw new Error('followeeHeightsDb required when instantiating NotificationsQuery adapter.')
     }
 
     this.postsDb = postsDb
-    this.postParentsDb = postParentsDb
+    this.addrPostHeightsDb = addrPostHeightsDb
     this.postChildrenDb = postChildrenDb
-    this.likesDb = likesDb
     this.postLikesDb = postLikesDb
-    this.followsDb = followsDb
+    this.likesDb = likesDb
+    this.followeeHeightsDb = followeeHeightsDb
+    this.statusDb = statusDb
     this.muteQuery = muteQuery || null
+    this.notificationBlockWindow = notificationBlockWindow ?? DEFAULT_NOTIFICATION_BLOCK_WINDOW
     this.bchjs = bchjs
 
     this.listNotifications = this.listNotifications.bind(this)
+    this._windowCutoff = this._windowCutoff.bind(this)
+    this._scanViewerPosts = this._scanViewerPosts.bind(this)
     this._collectFollowNotifications = this._collectFollowNotifications.bind(this)
     this._collectLikeNotifications = this._collectLikeNotifications.bind(this)
     this._collectReplyNotifications = this._collectReplyNotifications.bind(this)
-    this._replyNotificationChild = this._replyNotificationChild.bind(this)
-    this._followNotificationAddr = this._followNotificationAddr.bind(this)
-    this._likeNotificationPost = this._likeNotificationPost.bind(this)
+    this._followerFromKey = this._followerFromKey.bind(this)
     this._sortNotifications = this._sortNotifications.bind(this)
   }
 
-  // Collect active follows where this address is the followee.
-  async _collectFollowNotifications (addr, mutedAddrs) {
-    const myHash160 = this.bchjs.Address.toHash160(addr)
-    const notifications = []
+  // The lowest block height that counts as inside the notification window, or
+  // null when no status is available (treat the whole history as in-window).
+  async _windowCutoff () {
+    if (!this.statusDb) return null
+    const status = await getRecordOrNull(this.statusDb, 'status')
+    if (!status) return null
+    const chainBlockHeight = status.chainBlockHeight ?? 0
+    return chainBlockHeight - this.notificationBlockWindow
+  }
 
-    for await (const [key, record] of this.followsDb.iterator()) {
-      const followerAddr = this._followNotificationAddr(key, record, addr, myHash160, mutedAddrs)
-      if (followerAddr === null) continue
+  // Prefix-scan the viewer's posts within the window from addrPostHeights,
+  // newest-first is not required because likes/replies are scanned per txid.
+  async _scanViewerPosts (addr, cutoff) {
+    const prefix = `${addr}:`
+    const start = cutoff === null ? prefix : `${addr}:${padHeight(cutoff)}`
+    const end = `${addr}:\uffff`
+    const posts = []
+
+    for await (const [key, value] of this.addrPostHeightsDb.iterator({ gte: start, lte: end })) {
+      const txid = value?.txid || key.slice(key.lastIndexOf(':') + 1)
+      if (!txid) continue
+      posts.push({ txid, blockHeight: value?.blockHeight ?? 0 })
+    }
+
+    return posts
+  }
+
+  // Collect the viewer's follows from the followeeHeights index within the
+  // window, keeping the newest entry per follower and ignoring unfollows.
+  async _collectFollowNotifications (addr, cutoff, mutedAddrs) {
+    const myHash160 = this.bchjs.Address.toHash160(addr)
+    const start = cutoff === null ? `${myHash160}:` : `${myHash160}:${padHeight(cutoff)}`
+    const end = `${myHash160}:\uffff`
+    const newestByFollower = new Map()
+
+    for await (const [key, record] of this.followeeHeightsDb.iterator({ gte: start, lte: end })) {
+      const followerAddr = record?.followerAddr || this._followerFromKey(key)
+      if (!followerAddr) continue
+      // Ascending height order means the last entry for a follower wins.
+      newestByFollower.set(followerAddr, record)
+    }
+
+    const notifications = []
+    for (const [followerAddr, record] of newestByFollower) {
+      if (record.unfollow === true) continue
+      if (followerAddr === addr) continue
+      if (mutedAddrs.has(followerAddr)) continue
 
       notifications.push({
         type: 'follow',
@@ -82,89 +158,75 @@ class NotificationsQuery {
     return notifications
   }
 
-  // Return the follower address when a follow record is a valid follow
-  // notification for addr, else null. Filters out unfollow records, follows of
-  // other addresses, self-follows, and follows from muted addresses.
-  _followNotificationAddr (key, record, addr, myHash160, mutedAddrs) {
-    if (record.unfollow === true) return null
-    if (record.followeePkHash !== myHash160) return null
-    const followerAddr = record.followerAddr || key.slice(0, key.lastIndexOf(':'))
-    if (followerAddr === addr) return null
-    if (mutedAddrs.has(followerAddr)) return null
-    return followerAddr
-  }
-
-  // Collect likes on posts authored by this address, excluding self-likes.
-  async _collectLikeNotifications (addr, mutedAddrs) {
+  // Prefix-scan postLikes for each viewer post and load the like record to get
+  // the actor and height. The global likes store is never iterated.
+  async _collectLikeNotifications (posts, addr, mutedAddrs) {
     const notifications = []
 
-    for await (const [likeTxid, like] of this.likesDb.iterator()) {
-      const post = await this._likeNotificationPost(like, addr, mutedAddrs)
-      if (!post) continue
+    for (const post of posts) {
+      const prefix = `${post.txid}:`
+      for await (const [key, value] of this.postLikesDb.iterator({ gte: prefix, lte: `${post.txid}:\uffff` })) {
+        const likeTxid = value?.txid || key.slice(key.lastIndexOf(':') + 1)
+        if (!likeTxid) continue
 
-      notifications.push({
-        type: 'like',
-        txid: likeTxid,
-        addr: like.addr,
-        postTxid: like.postTxid,
-        blockHeight: like.blockHeight ?? 0,
-        seen: like.seen ?? 0
-      })
+        const like = await getRecordOrNull(this.likesDb, likeTxid)
+        if (!like) continue
+        if (like.addr === addr) continue
+        if (mutedAddrs.has(like.addr)) continue
+
+        notifications.push({
+          type: 'like',
+          txid: likeTxid,
+          addr: like.addr,
+          postTxid: post.txid,
+          blockHeight: like.blockHeight ?? post.blockHeight ?? 0,
+          seen: like.seen ?? 0
+        })
+      }
     }
 
     return notifications
   }
 
-  // Return the liked post when a like is a valid like notification for addr,
-  // else null. Filters out missing likes, self-likes, likes from muted
-  // addresses, and likes on posts not authored by addr.
-  async _likeNotificationPost (like, addr, mutedAddrs) {
-    if (!like || like.addr === addr || mutedAddrs.has(like.addr)) return null
-    const post = await getPostOrNull(this.postsDb, like.postTxid)
-    if (!post || post.addr !== addr) return null
-    return post
-  }
-
-  // Collect replies to posts authored by this address, excluding own replies.
-  async _collectReplyNotifications (addr, mutedAddrs) {
+  // Prefix-scan postChildren for each viewer post and load the child post for
+  // the actor and text. postChildren is only read per viewer post, never
+  // full-scanned.
+  async _collectReplyNotifications (posts, addr, mutedAddrs) {
     const notifications = []
 
-    for await (const [, child] of this.postChildrenDb.iterator()) {
-      const parentTxid = child?.parentTxid
-      const childTxid = child?.childTxid
-      if (!parentTxid || !childTxid) continue
+    for (const post of posts) {
+      const prefix = `${post.txid}:`
+      for await (const [key, child] of this.postChildrenDb.iterator({ gte: prefix, lte: `${post.txid}:\uffff` })) {
+        const childTxid = child?.childTxid || key.slice(key.lastIndexOf(':') + 1)
+        if (!childTxid) continue
+        if (child?.parentTxid && child.parentTxid !== post.txid) continue
 
-      const childPost = await this._replyNotificationChild(child, addr)
-      if (!childPost) continue
-      if (mutedAddrs.has(childPost.addr)) continue
+        const childPost = await getPostOrNull(this.postsDb, childTxid)
+        if (!childPost) continue
+        if (childPost.addr === addr) continue
+        if (mutedAddrs.has(childPost.addr)) continue
 
-      notifications.push({
-        type: 'reply',
-        txid: childTxid,
-        addr: childPost.addr,
-        postTxid: parentTxid,
-        text: childPost.text,
-        blockHeight: child.blockHeight ?? childPost.blockHeight ?? 0,
-        seen: childPost.seen ?? 0
-      })
+        notifications.push({
+          type: 'reply',
+          txid: childTxid,
+          addr: childPost.addr,
+          postTxid: post.txid,
+          text: childPost.text,
+          blockHeight: child?.blockHeight ?? childPost.blockHeight ?? post.blockHeight ?? 0,
+          seen: childPost.seen ?? 0
+        })
+      }
     }
 
     return notifications
   }
 
-  // Return the child post when a child record is a valid reply notification
-  // for addr: it links a parent authored by addr to a child authored by someone
-  // else. Returns null when the parent is missing or not authored by addr, or
-  // the child is missing or authored by addr. Callers must have already
-  // verified the record carries parentTxid and childTxid.
-  async _replyNotificationChild (child, addr) {
-    const parent = await getPostOrNull(this.postsDb, child.parentTxid)
-    if (!parent || parent.addr !== addr) return null
-
-    const childPost = await getPostOrNull(this.postsDb, child.childTxid)
-    if (!childPost || childPost.addr === addr) return null
-
-    return childPost
+  // Recover the follower address from a followeeHeights key of the form
+  // `${followeePkHash}:${paddedHeight}:${followerAddr}`. Cash addresses contain
+  // a colon, so the follower is everything after the second colon.
+  _followerFromKey (key) {
+    const parts = String(key).split(':')
+    return parts.slice(2).join(':')
   }
 
   _sortNotifications (notifications) {
@@ -178,9 +240,11 @@ class NotificationsQuery {
   async listNotifications (addr, { limit, offset } = {}) {
     const mutedAddrs = await loadMutedAddrs(this.muteQuery, addr)
 
-    const follows = await this._collectFollowNotifications(addr, mutedAddrs)
-    const likes = await this._collectLikeNotifications(addr, mutedAddrs)
-    const replies = await this._collectReplyNotifications(addr, mutedAddrs)
+    const cutoff = await this._windowCutoff()
+    const viewerPosts = await this._scanViewerPosts(addr, cutoff)
+    const follows = await this._collectFollowNotifications(addr, cutoff, mutedAddrs)
+    const likes = await this._collectLikeNotifications(viewerPosts, addr, mutedAddrs)
+    const replies = await this._collectReplyNotifications(viewerPosts, addr, mutedAddrs)
 
     const all = this._sortNotifications(follows.concat(likes).concat(replies))
     const total = all.length
@@ -191,7 +255,3 @@ class NotificationsQuery {
 }
 
 export default NotificationsQuery
-
-// mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-04T20:09:09.555Z","module_hash":"5ba9ad53d1edc8797d7922446cb19e75a4158f8822eea588d9e94bb1fb2fa971","functions":[{"id":"func/NotificationsQuery.constructor","name":"NotificationsQuery.constructor","line":14,"end_line":62,"hash":"87579ac7d3e764ab30e21e73d9780aaa4c6d562c610b5e13b4ede182b694845e"},{"id":"func/NotificationsQuery._collectFollowNotifications","name":"NotificationsQuery._collectFollowNotifications","line":65,"end_line":83,"hash":"a4b9f141ee0de921232efff0aaf73503c0c4313fedac4c37b79894cd74f29877"},{"id":"func/NotificationsQuery._followNotificationAddr","name":"NotificationsQuery._followNotificationAddr","line":88,"end_line":95,"hash":"814bf4e51edac65108806f012ed3f0c12dc5e9dbe09dfb83af95e8292aab1669"},{"id":"func/NotificationsQuery._collectLikeNotifications","name":"NotificationsQuery._collectLikeNotifications","line":98,"end_line":116,"hash":"e3ab4911550211f3bd9f8f85139d69392433bb95d824b0fd8ac628eb9fe755cf"},{"id":"func/NotificationsQuery._likeNotificationPost","name":"NotificationsQuery._likeNotificationPost","line":121,"end_line":126,"hash":"c72690ed0975ca35ec00f1fb22a602c7301a327e8d36b17032e8e9a36a89adcb"},{"id":"func/NotificationsQuery._collectReplyNotifications","name":"NotificationsQuery._collectReplyNotifications","line":129,"end_line":153,"hash":"270ba026b18025bcef2c92776bbf8143f5f56da0c565285708d5196cf777ba83"},{"id":"func/NotificationsQuery._replyNotificationChild","name":"NotificationsQuery._replyNotificationChild","line":160,"end_line":168,"hash":"7ed6bf9d9f5147ba189c99304b76a1a0d77bc9c7909e194f9b74545c84227ed0"},{"id":"func/NotificationsQuery._sortNotifications","name":"NotificationsQuery._sortNotifications","line":170,"end_line":175,"hash":"61b4ae0b6d450e172db3e59240a3c2ccd5fdf0e6ea1e31023df7bb3d52fdbd5c"},{"id":"func/NotificationsQuery.listNotifications","name":"NotificationsQuery.listNotifications","line":178,"end_line":190,"hash":"3507c459f6dc22482aa693a92fe13da16af05d65dd4e37366a9b8db98654ec14"}]}
-// mutate4javascript-manifest-end
