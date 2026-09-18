@@ -31,7 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-_(none)_
+- **Topics table layout (spec approved):** replace the topics page's flexbox
+  list rows with a react-bootstrap `Table` so the four columns line up. The
+  header labels the columns (`Topic`, `Most recent post`, `Posts`, `Followers`),
+  each row's cells carry the topic name (`#room`), relative-time label, post
+  count, and follower count in that order, rows link to the topic feed, and the
+  table scrolls horizontally on narrow screens. Client-only rendering. Spec:
+  `psf-memo-client/specs/topics-table-layout.feature`. Task
+  `topics-table-layout`; spec committed, handed off to coder.
 
 ## Recently completed
 
