@@ -138,15 +138,6 @@ function PostFeedItem ({
 
       <div className='posts-feed-item-content'>
         <div className='posts-feed-item-text'>
-          <Link
-            to={`/profile/${encodeURIComponent(post.addr)}`}
-            className='posts-feed-item-inline-author'
-          >
-            {displayName}
-          </Link>
-
-          {' '}
-
           <PostContent text={post.text} />
         </div>
       </div>

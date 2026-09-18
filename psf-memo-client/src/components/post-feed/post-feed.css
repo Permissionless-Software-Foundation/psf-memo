@@ -513,16 +513,6 @@
   overflow-wrap: anywhere;
 }
 
-.posts-feed-item-inline-author {
-  color: #262626;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.posts-feed-item-inline-author:hover {
-  text-decoration: underline;
-}
-
 .posts-feed-item-txid {
   padding: 0;
   color: #737373;
