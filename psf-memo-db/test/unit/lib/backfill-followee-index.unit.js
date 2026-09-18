@@ -80,6 +80,28 @@ describe('#backfillFolloweeIndex', () => {
     assert.deepEqual(db.store, before)
   })
 
+  it('should pad a missing height to zero', () => {
+    assert.equal(
+      followeeHeightKey(VIEWER_HASH, undefined, FOLLOWER_A),
+      `${VIEWER_HASH}:${'0'.repeat(12)}:${FOLLOWER_A}`
+    )
+  })
+
+  it('should skip records that cannot yield a follower and default missing fields', async () => {
+    const db = new FakeDb([
+      [':deadbeef', {}],
+      [`${FOLLOWER_A}:${VIEWER_HASH}`, { txid: 'follow-a' }]
+    ])
+    const followeeHeightsDb = new FakeDb()
+
+    const result = await backfillFolloweeIndex({ followsDb: db, followeeHeightsDb })
+
+    assert.equal(result.follows, 1)
+    const stored = followeeHeightsDb.store.get(followeeHeightKey(VIEWER_HASH, 0, FOLLOWER_A))
+    assert.equal(stored.unfollow, false)
+    assert.equal(stored.blockHeight, 0)
+  })
+
   it('should recover the follower and followee from the key when fields are missing', async () => {
     const db = new FakeDb([
       [`${FOLLOWER_A}:${VIEWER_HASH}`, { unfollow: false, blockHeight: 690400 }]

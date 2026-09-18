@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 import sinon from 'sinon'
 import NotificationsQuery from '../../../src/adapters/notifications-query.js'
+import { FakeDb } from '../../support/level-double.js'
 
 describe('#NotificationsQuery', () => {
   let sandbox
@@ -15,33 +16,9 @@ describe('#NotificationsQuery', () => {
   const HEIGHT_PAD = 12
   const pad = (h) => String(h).padStart(HEIGHT_PAD, '0')
 
-  // A minimal LevelDB double that honors gte/lte range options and records
-  // iteration calls so tests can assert that a store was never scanned.
-  function makeDb (entries = []) {
-    const map = new Map(entries)
-    const iteratorCalls = []
-    return {
-      map,
-      iteratorCalls,
-      async get (key) {
-        if (!map.has(key)) {
-          const err = new Error('not found')
-          err.notFound = true
-          throw err
-        }
-        return map.get(key)
-      },
-      iterator (opts = {}) {
-        iteratorCalls.push(opts)
-        let keys = [...map.keys()].sort()
-        if (opts.gte !== undefined) keys = keys.filter((key) => key >= opts.gte)
-        if (opts.lte !== undefined) keys = keys.filter((key) => key <= opts.lte)
-        return (async function * () {
-          for (const key of keys) yield [key, map.get(key)]
-        }())
-      }
-    }
-  }
+  // The adapter only needs get and range iteration, both provided by the
+  // shared in-memory LevelDB double.
+  const makeDb = (entries = []) => new FakeDb(entries)
 
   function addrPostHeight (addr, height, txid) {
     return [`${addr}:${pad(height)}:${txid}`, { txid, addr, blockHeight: height }]
@@ -327,6 +304,52 @@ describe('#NotificationsQuery', () => {
     assert.equal(result.notifications[0].addr, FOLLOWER)
   })
 
+  it('should recover per-post index txids from keys when values omit them', async () => {
+    const postsDb = makeDb([
+      ['reply-keyed', { addr: REPLIER, text: 'reply' }]
+    ])
+    // addrPostHeights value omits txid; the key's final segment supplies it.
+    const addrPostHeightsDb = makeDb([
+      [`${VIEWER}:${pad(690000)}:post-recent`, { addr: VIEWER, blockHeight: 690000 }]
+    ])
+    // postLikes value omits txid and postChildren value omits childTxid.
+    const postLikesDb = makeDb([
+      ['post-recent:like-keyed', { postTxid: 'post-recent' }]
+    ])
+    const likesDb = makeDb([
+      ['like-keyed', { addr: LIKER, postTxid: 'post-recent', blockHeight: 690100 }]
+    ])
+    const postChildrenDb = makeDb([
+      ['post-recent:reply-keyed', { parentTxid: 'post-recent' }]
+    ])
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb, postChildrenDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 2)
+    assert.deepEqual(result.notifications.map((n) => n.type).sort(), ['like', 'reply'])
+  })
+
+  it('should default a notification height to 0 when no source records one', async () => {
+    const postsDb = makeDb([
+      ['reply-bare', { addr: REPLIER, text: 'reply' }]
+    ])
+    const addrPostHeightsDb = makeDb([
+      [`${VIEWER}:${pad(690000)}:post-recent`, { txid: 'post-recent', addr: VIEWER }]
+    ])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-bare')])
+    const likesDb = makeDb([['like-bare', { addr: LIKER, postTxid: 'post-recent' }]])
+    const postChildrenDb = makeDb([
+      ['post-recent:reply-bare', { childTxid: 'reply-bare' }]
+    ])
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb, postChildrenDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 2)
+    assert.deepEqual(result.notifications.map((n) => n.blockHeight), [0, 0])
+  })
+
   it('should skip a missing like record', async () => {
     const postsDb = makeDb([['post-recent', { addr: VIEWER, text: 'hi' }]])
     const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
@@ -336,6 +359,58 @@ describe('#NotificationsQuery', () => {
     const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
 
     assert.equal(result.total, 0)
+  })
+
+  it('should skip a like whose record reports LEVEL_NOT_FOUND', async () => {
+    const postsDb = makeDb([['post-recent', { addr: VIEWER, text: 'hi' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-missing')])
+    const likesDb = makeDb()
+    likesDb.get = async () => {
+      const err = new Error('level not found')
+      err.code = 'LEVEL_NOT_FOUND'
+      throw err
+    }
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 0)
+  })
+
+  it('should skip a like whose record reports an HTTP 404', async () => {
+    const postsDb = makeDb([['post-recent', { addr: VIEWER, text: 'hi' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-missing')])
+    const likesDb = makeDb()
+    likesDb.get = async () => {
+      const err = new Error('not found')
+      err.response = { status: 404 }
+      throw err
+    }
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 0)
+  })
+
+  it('should rethrow a non-not-found error from the likes store', async () => {
+    const postsDb = makeDb([['post-recent', { addr: VIEWER, text: 'hi' }]])
+    const addrPostHeightsDb = makeDb([addrPostHeight(VIEWER, 690000, 'post-recent')])
+    const postLikesDb = makeDb([postLike('post-recent', 'like-recent')])
+    const likesDb = makeDb()
+    likesDb.get = async () => { throw new Error('boom') }
+
+    const uut = buildQuery({ postsDb, addrPostHeightsDb, postLikesDb, likesDb })
+    let error
+    try {
+      await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+    } catch (err) {
+      error = err
+    }
+
+    assert.equal(error?.message, 'boom')
   })
 
   it('should default notificationBlockWindow to 25000', async () => {

@@ -33,12 +33,48 @@ function padHeight (blockHeight) {
   return String(blockHeight ?? 0).padStart(HEIGHT_PAD, '0')
 }
 
+// The half-open key range covering one prefix's records at or above cutoff:
+// `${prefix}<paddedCutoff>` .. `${prefix}\uffff`. A null cutoff starts at the
+// prefix itself, so the whole history is in range.
+function prefixRange (prefix, cutoff) {
+  const start = cutoff === null ? prefix : `${prefix}${padHeight(cutoff)}`
+  return { start, end: `${prefix}\uffff` }
+}
+
+// The txid carried by a per-post index entry, falling back to the final
+// colon-delimited key segment when the value omits it.
+function txidFromKey (key) {
+  return String(key).slice(String(key).lastIndexOf(':') + 1)
+}
+
+// The first value that is neither null nor undefined, else 0. Used to pick the
+// most specific block height across a record, its parent, and the post.
+function firstDefined (...values) {
+  for (const value of values) {
+    if (value !== null && value !== undefined) return value
+  }
+  return 0
+}
+
+// An actor never notifies themselves, and muted actors never notify.
+function isSuppressedActor (actorAddr, addr, mutedAddrs) {
+  return actorAddr === addr || mutedAddrs.has(actorAddr)
+}
+
+function isNotFoundError (err) {
+  return Boolean(
+    err?.notFound ||
+    err?.code === 'LEVEL_NOT_FOUND' ||
+    err?.response?.status === 404
+  )
+}
+
 // Read a record by key, returning null when it does not exist.
 async function getRecordOrNull (db, key) {
   try {
     return await db.get(key)
   } catch (err) {
-    if (err.notFound || err.code === 'LEVEL_NOT_FOUND' || err.response?.status === 404) return null
+    if (isNotFoundError(err)) return null
     throw err
   }
 }
@@ -91,7 +127,9 @@ class NotificationsQuery {
     this.listNotifications = this.listNotifications.bind(this)
     this._windowCutoff = this._windowCutoff.bind(this)
     this._scanViewerPosts = this._scanViewerPosts.bind(this)
+    this._scanPostIndex = this._scanPostIndex.bind(this)
     this._collectFollowNotifications = this._collectFollowNotifications.bind(this)
+    this._followNotifications = this._followNotifications.bind(this)
     this._collectLikeNotifications = this._collectLikeNotifications.bind(this)
     this._collectReplyNotifications = this._collectReplyNotifications.bind(this)
     this._followerFromKey = this._followerFromKey.bind(this)
@@ -111,40 +149,58 @@ class NotificationsQuery {
   // Prefix-scan the viewer's posts within the window from addrPostHeights,
   // newest-first is not required because likes/replies are scanned per txid.
   async _scanViewerPosts (addr, cutoff) {
-    const prefix = `${addr}:`
-    const start = cutoff === null ? prefix : `${addr}:${padHeight(cutoff)}`
-    const end = `${addr}:\uffff`
+    const { start, end } = prefixRange(`${addr}:`, cutoff)
     const posts = []
 
     for await (const [key, value] of this.addrPostHeightsDb.iterator({ gte: start, lte: end })) {
-      const txid = value?.txid || key.slice(key.lastIndexOf(':') + 1)
+      const txid = value?.txid || txidFromKey(key)
       if (!txid) continue
-      posts.push({ txid, blockHeight: value?.blockHeight ?? 0 })
+      posts.push({ txid, blockHeight: value?.blockHeight })
     }
 
     return posts
+  }
+
+  // Walk a per-post index keyed `${postTxid}:${childKey}` for the viewer's
+  // posts only, resolving each entry's txid. The index is never scanned
+  // globally, so this bounds likes and replies to the viewer's content.
+  async _scanPostIndex (db, posts, txidField) {
+    const entries = []
+
+    for (const post of posts) {
+      const prefix = `${post.txid}:`
+      for await (const [key, value] of db.iterator({ gte: prefix, lte: `${prefix}\uffff` })) {
+        const txid = value?.[txidField] || txidFromKey(key)
+        if (txid) entries.push({ txid, value, post })
+      }
+    }
+
+    return entries
   }
 
   // Collect the viewer's follows from the followeeHeights index within the
   // window, keeping the newest entry per follower and ignoring unfollows.
   async _collectFollowNotifications (addr, cutoff, mutedAddrs) {
     const myHash160 = this.bchjs.Address.toHash160(addr)
-    const start = cutoff === null ? `${myHash160}:` : `${myHash160}:${padHeight(cutoff)}`
-    const end = `${myHash160}:\uffff`
+    const { start, end } = prefixRange(`${myHash160}:`, cutoff)
     const newestByFollower = new Map()
 
     for await (const [key, record] of this.followeeHeightsDb.iterator({ gte: start, lte: end })) {
       const followerAddr = record?.followerAddr || this._followerFromKey(key)
-      if (!followerAddr) continue
-      // Ascending height order means the last entry for a follower wins.
-      newestByFollower.set(followerAddr, record)
+      if (followerAddr) newestByFollower.set(followerAddr, record)
     }
 
+    return this._followNotifications(newestByFollower, addr, mutedAddrs)
+  }
+
+  // Turn the newest follow entry per follower into follow notifications,
+  // dropping unfollows, self-follows, and muted followers.
+  _followNotifications (newestByFollower, addr, mutedAddrs) {
     const notifications = []
+
     for (const [followerAddr, record] of newestByFollower) {
       if (record.unfollow === true) continue
-      if (followerAddr === addr) continue
-      if (mutedAddrs.has(followerAddr)) continue
+      if (isSuppressedActor(followerAddr, addr, mutedAddrs)) continue
 
       notifications.push({
         type: 'follow',
@@ -161,28 +217,22 @@ class NotificationsQuery {
   // Prefix-scan postLikes for each viewer post and load the like record to get
   // the actor and height. The global likes store is never iterated.
   async _collectLikeNotifications (posts, addr, mutedAddrs) {
+    const entries = await this._scanPostIndex(this.postLikesDb, posts, 'txid')
     const notifications = []
 
-    for (const post of posts) {
-      const prefix = `${post.txid}:`
-      for await (const [key, value] of this.postLikesDb.iterator({ gte: prefix, lte: `${post.txid}:\uffff` })) {
-        const likeTxid = value?.txid || key.slice(key.lastIndexOf(':') + 1)
-        if (!likeTxid) continue
+    for (const { txid, post } of entries) {
+      const like = await getRecordOrNull(this.likesDb, txid)
+      if (!like) continue
+      if (isSuppressedActor(like.addr, addr, mutedAddrs)) continue
 
-        const like = await getRecordOrNull(this.likesDb, likeTxid)
-        if (!like) continue
-        if (like.addr === addr) continue
-        if (mutedAddrs.has(like.addr)) continue
-
-        notifications.push({
-          type: 'like',
-          txid: likeTxid,
-          addr: like.addr,
-          postTxid: post.txid,
-          blockHeight: like.blockHeight ?? post.blockHeight ?? 0,
-          seen: like.seen ?? 0
-        })
-      }
+      notifications.push({
+        type: 'like',
+        txid,
+        addr: like.addr,
+        postTxid: post.txid,
+        blockHeight: firstDefined(like.blockHeight, post.blockHeight),
+        seen: like.seen ?? 0
+      })
     }
 
     return notifications
@@ -192,30 +242,25 @@ class NotificationsQuery {
   // the actor and text. postChildren is only read per viewer post, never
   // full-scanned.
   async _collectReplyNotifications (posts, addr, mutedAddrs) {
+    const entries = await this._scanPostIndex(this.postChildrenDb, posts, 'childTxid')
     const notifications = []
 
-    for (const post of posts) {
-      const prefix = `${post.txid}:`
-      for await (const [key, child] of this.postChildrenDb.iterator({ gte: prefix, lte: `${post.txid}:\uffff` })) {
-        const childTxid = child?.childTxid || key.slice(key.lastIndexOf(':') + 1)
-        if (!childTxid) continue
-        if (child?.parentTxid && child.parentTxid !== post.txid) continue
+    for (const { txid: childTxid, value: child, post } of entries) {
+      if (child?.parentTxid && child.parentTxid !== post.txid) continue
 
-        const childPost = await getPostOrNull(this.postsDb, childTxid)
-        if (!childPost) continue
-        if (childPost.addr === addr) continue
-        if (mutedAddrs.has(childPost.addr)) continue
+      const childPost = await getPostOrNull(this.postsDb, childTxid)
+      if (!childPost) continue
+      if (isSuppressedActor(childPost.addr, addr, mutedAddrs)) continue
 
-        notifications.push({
-          type: 'reply',
-          txid: childTxid,
-          addr: childPost.addr,
-          postTxid: post.txid,
-          text: childPost.text,
-          blockHeight: child?.blockHeight ?? childPost.blockHeight ?? post.blockHeight ?? 0,
-          seen: childPost.seen ?? 0
-        })
-      }
+      notifications.push({
+        type: 'reply',
+        txid: childTxid,
+        addr: childPost.addr,
+        postTxid: post.txid,
+        text: childPost.text,
+        blockHeight: firstDefined(child?.blockHeight, childPost.blockHeight, post.blockHeight),
+        seen: childPost.seen ?? 0
+      })
     }
 
     return notifications

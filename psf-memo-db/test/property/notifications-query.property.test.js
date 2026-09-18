@@ -20,6 +20,7 @@
 import test from 'node:test'
 import { seededRandom, forAll, intGen } from './harness.js'
 import NotificationsQuery from '../../src/adapters/notifications-query.js'
+import { FakeDb } from '../support/level-double.js'
 
 const rng = seededRandom(20260918)
 
@@ -31,28 +32,7 @@ const VIEWER_POSTS = ['vp1', 'vp2', 'vp3', 'vp4']
 const PAD = 12
 const pad = (h) => String(h).padStart(PAD, '0')
 
-function makeDb (entries = []) {
-  const map = new Map(entries)
-  return {
-    map,
-    async get (key) {
-      if (!map.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return map.get(key)
-    },
-    iterator (opts = {}) {
-      let keys = [...map.keys()].sort()
-      if (opts.gte !== undefined) keys = keys.filter((key) => key >= opts.gte)
-      if (opts.lte !== undefined) keys = keys.filter((key) => key <= opts.lte)
-      return (async function * () {
-        for (const key of keys) yield [key, map.get(key)]
-      }())
-    }
-  }
-}
+const makeDb = (entries = []) => new FakeDb(entries)
 
 function buildQuery () {
   // statusDb null => no window; every generated interaction is in scope.
@@ -97,10 +77,11 @@ function fixtureGen () {
       const follower = OTHERS[Math.floor(rng() * OTHERS.length)]
       const n = randomNotification()
       const unfollow = rng() < 0.25
-      events.push({ follower, ...n, unfollow })
+      const followTxid = `follow${i}`
+      events.push({ follower, txid: followTxid, ...n, unfollow })
       followeeHeightEntries.push([
         `${MY_HASH}:${pad(n.blockHeight)}:${follower}`,
-        { followerAddr: follower, followeePkHash: MY_HASH, unfollow, txid: `follow${i}`, seen: n.seen, blockHeight: n.blockHeight }
+        { followerAddr: follower, followeePkHash: MY_HASH, unfollow, txid: followTxid, seen: n.seen, blockHeight: n.blockHeight }
       ])
     }
 
@@ -112,7 +93,7 @@ function fixtureGen () {
       const actor = OTHERS[Math.floor(rng() * OTHERS.length)]
       const n = randomNotification()
       const likeTxid = `like${i}`
-      likeRecords.push({ likeTxid, addr: actor, ...n })
+      likeRecords.push({ likeTxid, txid: likeTxid, addr: actor, postTxid, ...n })
       postLikesEntries.push([`${postTxid}:${likeTxid}`, { postTxid, txid: likeTxid }])
       likesEntries.push([likeTxid, { addr: actor, postTxid, blockHeight: n.blockHeight, seen: n.seen }])
     }
@@ -125,7 +106,7 @@ function fixtureGen () {
       const childTxid = `child${i}`
       const actor = OTHERS[Math.floor(rng() * OTHERS.length)]
       const n = randomNotification()
-      replyRecords.push({ childTxid, addr: actor, ...n })
+      replyRecords.push({ childTxid, txid: childTxid, addr: actor, parentTxid, ...n })
       postChildrenEntries.push([`${parentTxid}:${childTxid}`, { parentTxid, childTxid, blockHeight: n.blockHeight }])
       postsDbEntries.push([childTxid, { addr: actor, text: 'reply', blockHeight: n.blockHeight, seen: n.seen }])
     }
@@ -183,6 +164,29 @@ function buildExpected ({ events, likeRecords, replyRecords, limit, offset }) {
   return { total: out.length, page: out.slice(offset, offset + limit) }
 }
 
+// The identity of a notification: the txid of the active follow, like, or
+// reply that produced it. Two notifications with the same identity cannot be
+// distinct.
+function identityOf (notification) {
+  return notification.txid
+}
+
+// The set of txids the adapter is allowed to return, derived directly from the
+// generated input. It mirrors the newest-follow-wins rule.
+function expectedIdentities ({ events, likeRecords, replyRecords }) {
+  const ids = new Set()
+  const newestByFollower = new Map()
+  for (const event of [...events].sort((a, b) => a.blockHeight - b.blockHeight)) {
+    newestByFollower.set(event.follower, event)
+  }
+  for (const event of newestByFollower.values()) {
+    if (!event.unfollow) ids.add(event.txid)
+  }
+  for (const like of likeRecords) ids.add(like.txid)
+  for (const reply of replyRecords) ids.add(reply.txid)
+  return ids
+}
+
 test('notifications are sorted newest-first with seen tie-break and exact pagination', async () => {
   await forAll(
     fixtureGen(),
@@ -224,5 +228,26 @@ test('the returned page is globally ordered by blockHeight then seen descending'
       return true
     },
     { label: 'notifications global ordering invariant' }
+  )
+})
+
+test('every returned notification maps to exactly one generated interaction', async () => {
+  await forAll(
+    fixtureGen(),
+    async (input) => {
+      const query = populate(input)
+      const { notifications } = await query.listNotifications(VIEWER, { limit: 1000, offset: 0 })
+      const expected = expectedIdentities(input)
+      const actual = new Set(notifications.map(identityOf))
+
+      // No duplicate identities and no missing or spurious notifications.
+      if (actual.size !== notifications.length) return false
+      if (actual.size !== expected.size) return false
+      for (const id of actual) {
+        if (!expected.has(id)) return false
+      }
+      return true
+    },
+    { label: 'notification membership matches generated interactions' }
   )
 })
