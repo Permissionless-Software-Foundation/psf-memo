@@ -31,7 +31,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-_(none)_
+- **Notifications query performance (2026-09-18):** `GET /posts/notifications/:addr`
+  is slow because it full-scans the `likes`, `postChildren`, and `follows`
+  stores and loads a post for every candidate. The fix bounds the work to the
+  viewer's activity inside a configurable block window
+  (`NOTIFICATION_BLOCK_WINDOW`, default 25000; cutoff =
+  `status.chainBlockHeight - window`): the viewer's posts are read from
+  `addrPostHeights` within the window, likes and replies are prefix-scanned
+  from `postLikes`/`postChildren` per post, and follows are read from a new
+  followee-keyed, height-ordered `followeeHeights` index maintained by the
+  indexer. `pagination.total` counts only in-window notifications. Affected
+  components: `psf-memo-indexer` (index writes) and `psf-memo-db` (read path,
+  config). Specs:
+  `psf-memo-indexer/specs/followee-heights-indexing.feature`,
+  `psf-memo-db/specs/backfill-followee-index.feature`,
+  `psf-memo-db/specs/notifications-query-performance.feature`.
+  **Developer documentation:** update
+  `psf-memo-indexer/dev-docs/psf-memo-db.md` (new `followeeHeights` store,
+  `NOTIFICATION_BLOCK_WINDOW` config, read-route notes) and
+  `psf-memo-indexer/dev-docs/design-decisions-and-tradeoffs.md` (why per-object
+  scans plus a block window replace the full-store scans), and let the architect
+  record the per-task what/why summary under `docs/reviews/`.
 
 ## Recently completed
 
@@ -324,10 +344,14 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
   small; handoffs are blocked on a dirty tree. See `docs/process-improvements.md`
   for the what/why, commits, and verification evidence.
 
-## Next up: TBD
+## Next up: Notifications query performance
 
-Current direction is front-end improvements to `psf-memo-client` (UI/UX polish,
-accessibility, performance, responsiveness, state handling, error surfacing).
+Specification complete and awaiting coder handoff. Make
+`GET /posts/notifications/:addr` bounded to the viewer's activity in a
+configurable block window instead of full-scanning `likes`, `postChildren`, and
+`follows`. See **In progress** above for the specs and the developer
+documentation deliverable. Current direction otherwise remains front-end
+improvements to `psf-memo-client`.
 
 ## Notes for future cycles
 
