@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T13:25:07.835747327Z","feature_name":"Topic Metadata Indexing","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/topic-metadata-indexing.feature","background_hash":"0639f3e7176ddd178bf266b5f62c66fcfff9acda7487916f3496de2a3dd86e3f","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topic Metadata Indexing - 1, Topic Metadata Indexing - 2, Topic Metadata Indexing - 3, Topic Metadata Indexing - 4, Topic Metadata Indexing - 5, Topic Metadata Indexing - 6
 #
 # The indexer maintains lastSeen and followerCount on each room's

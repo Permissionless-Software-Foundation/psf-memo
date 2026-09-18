@@ -168,6 +168,47 @@ describe('#TopicQuery', () => {
       ])
     })
 
+    it('should default a missing postCount to zero for a summary that omits it', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb([
+          ['memo', { room: 'memo', lastHeight: 600500, lastSeen: 1700020000000, followerCount: 2 }]
+        ]),
+        topicRecencyDb: makeIteratorDb([
+          [topicRecencyKey(600500, 'memo'), { room: 'memo', blockHeight: 600500 }]
+        ])
+      })
+
+      const result = await uut.listTopics({ limit: 100, offset: 0 })
+
+      assert.deepEqual(result.topics, [
+        { room: 'memo', postCount: 0, lastSeen: 1700020000000, followerCount: 2 }
+      ])
+    })
+
+    it('should default limit and offset when called with no arguments', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb(summaries),
+        topicRecencyDb: makeIteratorDb(recency)
+      })
+
+      const result = await uut.listTopics()
+
+      assert.equal(result.pagination.limit, 100)
+      assert.equal(result.pagination.offset, 0)
+      assert.deepEqual(result.topics.map((t) => t.room), [
+        'memo',
+        'cash',
+        'dance',
+        'anime',
+        'lone',
+        'quiet'
+      ])
+    })
+
     for (const { name, limit, offset, expectedRooms, hasMore } of [
       { name: 'should paginate using recency order and report total and hasMore', limit: 2, offset: 2, expectedRooms: ['dance', 'anime'], hasMore: true },
       { name: 'should report hasMore false on the last page', limit: 2, offset: 4, expectedRooms: ['lone', 'quiet'], hasMore: false }
@@ -277,6 +318,24 @@ describe('#TopicQuery', () => {
 
       assert.deepEqual(result.txids, ['post-300'])
       assert.equal(result.total, 1)
+    })
+
+    it('should default a missing post block height to zero when ordering', async () => {
+      async function * mockRooms () {
+        // Yield the height-less post first: with a zero default it sorts after
+        // the height-1 post, while a one default would leave it first (stable
+        // tie), so the asserted order distinguishes the default.
+        yield ['bitcoin:post-missing', { room: 'bitcoin', txid: 'post-missing', type: 'post' }]
+        yield ['bitcoin:post-1', { room: 'bitcoin', txid: 'post-1', type: 'post', blockHeight: 1 }]
+      }
+      roomsDb.iterator
+        .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
+        .returns(mockRooms())
+
+      const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 0 })
+
+      assert.deepEqual(result.txids, ['post-1', 'post-missing'])
+      assert.equal(result.total, 2)
     })
 
     it('should exclude posts from muted addresses when a viewer is provided', async () => {

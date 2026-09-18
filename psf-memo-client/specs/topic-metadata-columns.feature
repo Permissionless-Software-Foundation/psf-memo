@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T13:25:09.808780081Z","feature_name":"Topic Metadata Columns","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/topic-metadata-columns.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topic Metadata Columns - 1, Topic Metadata Columns - 2, Topic Metadata Columns - 3
 #
 # The topics page renders one row per topic with four columns: the topic name,

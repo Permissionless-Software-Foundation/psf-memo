@@ -38,5 +38,5 @@ export async function handleTopicMessage (ctx) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-17T16:35:45.388Z","module_hash":"3bf8a10d51b15167c500fd9d0586eedffb4b6f2191b6f563e9f9b15c75e850c0","functions":[{"id":"func/handleTopicMessage","name":"handleTopicMessage","line":6,"end_line":38,"hash":"d58559b106ed4f846feabd05070886a2962d95bbe55f2438e8d3f42b0f26a5ed"}]}
+// {"version":1,"tested_at":"2026-09-18T13:06:18.562Z","module_hash":"b991a1ddf77b69bb3751a9e92e2531c50ed0aa980988a7d901d4eb0df891ff75","functions":[{"id":"func/handleTopicMessage","name":"handleTopicMessage","line":6,"end_line":38,"hash":"5de80e5dbb72e58d371e9c7382347171083bec81db141a186a222df4499b5499"}]}
 // mutate4javascript-manifest-end

@@ -127,4 +127,24 @@ describe('#backfillTopicIndexes', () => {
     })
     assert.deepEqual(topicRecencyDb.store.get(topicRecencyKey(500, 'cash')), { room: 'cash', blockHeight: 500 })
   })
+
+  it('should default a missing post block height to zero', async () => {
+    const roomsDb = new FakeDb([
+      ['bitcoin:post-1', { room: 'bitcoin', txid: 'post-1', type: 'post', seen: 1700000000000 }]
+    ])
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb()
+
+    await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
+
+    assert.equal(topicSummariesDb.store.get('bitcoin').lastHeight, 0)
+    assert.deepEqual(topicRecencyDb.store.get(topicRecencyKey(0, 'bitcoin')), { room: 'bitcoin', blockHeight: 0 })
+  })
+})
+
+describe('#topicRecencyKey', () => {
+  it('should treat a missing or null height as height zero', () => {
+    assert.equal(topicRecencyKey(undefined, 'bitcoin'), topicRecencyKey(0, 'bitcoin'))
+    assert.equal(topicRecencyKey(null, 'bitcoin'), topicRecencyKey(0, 'bitcoin'))
+  })
 })

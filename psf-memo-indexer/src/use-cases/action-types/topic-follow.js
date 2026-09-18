@@ -26,5 +26,5 @@ export async function handleTopicFollow (ctx) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-17T16:34:56.427Z","module_hash":"98bbf2e83e9afae81b2a25b3b03d66a32c9af7864e8eace4aec99b16dfe773b5","functions":[{"id":"func/handleTopicFollow","name":"handleTopicFollow","line":5,"end_line":30,"hash":"6137b8d03c0bcf24ddd08824e462565407677303981b1a376b94e449897e217a"}]}
+// {"version":1,"tested_at":"2026-09-18T13:05:43.531Z","module_hash":"365e587ffaac43d371c7d389cb00a00cc7d0e0eee37130a001f8b40daba856ec","functions":[{"id":"func/handleTopicFollow","name":"handleTopicFollow","line":5,"end_line":26,"hash":"b2ce7138ed40e5c618d55fad85b2324861330efb66b150fb7ed296a46de3abfc"}]}
 // mutate4javascript-manifest-end

@@ -89,5 +89,5 @@ export async function recordTopicFollow (adapters, record) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-17T16:22:46.190Z","module_hash":"cdd90074000f9eddb01ce298351d75ae8afdecc8fe34711a0a415099d64a7e70","functions":[{"id":"func/recordTopicPost","name":"recordTopicPost","line":19,"end_line":40,"hash":"91b542cddca534356bcaf15426ec2abccd04d610cf8db4c21de7deb216b250d8"},{"id":"func/ensureTopicRoom","name":"ensureTopicRoom","line":44,"end_line":50,"hash":"ca3cb6538d16deea7546a5bbf1a24a752f803a8929b7da8c3b8ba9582a20816a"}]}
+// {"version":1,"tested_at":"2026-09-18T13:03:40.448Z","module_hash":"e9af75f22787ded23bf9ff7e714409eab94c48ef8f5b860daf0d51959912b213","functions":[{"id":"func/recordTopicPost","name":"recordTopicPost","line":21,"end_line":46,"hash":"21d57fd91bb1c043f1c20012f7a3f1c0ea5704d1c0bf1c39f2b2d1300ae23097"},{"id":"func/ensureTopicRoom","name":"ensureTopicRoom","line":51,"end_line":59,"hash":"d8e7974e36399709da6e6e9b5d4193cc81cf99feb4f2da839bd9911e600b4ebd"},{"id":"func/recordTopicFollow","name":"recordTopicFollow","line":65,"end_line":89,"hash":"1538d50df786da982e65e306812ee41045ca2ac5a9869e9a6c639de413b0e678"}]}
 // mutate4javascript-manifest-end

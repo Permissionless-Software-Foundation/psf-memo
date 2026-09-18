@@ -29,3 +29,7 @@ function relativeTime (lastSeen, now = Date.now()) {
 }
 
 module.exports = { relativeTime }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T13:14:01.486Z","module_hash":"6634036bb8540c472635da18b1a0932b5eb83a7454bb48ba25f6b323fdd1d69d","functions":[{"id":"func/relativeTime","name":"relativeTime","line":16,"end_line":29,"hash":"ee4cb814f0fb308d2a7d2c8cccaf2369b0fc84462569f0db0668f647ad2b4980"}]}
+// mutate4javascript-manifest-end
