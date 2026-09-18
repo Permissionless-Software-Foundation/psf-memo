@@ -33,7 +33,7 @@ export async function handleTopicMessage (ctx) {
   await adapters.roomDb.create(key, { room, txid, seen, type: 'post', blockHeight })
 
   if (!alreadyIndexed) {
-    await recordTopicPost(adapters, room, blockHeight)
+    await recordTopicPost(adapters, room, blockHeight, seen)
   }
 }
 

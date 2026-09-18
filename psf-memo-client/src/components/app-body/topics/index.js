@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom'
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import TopicDiscoveryPage from '../../../services/topic-discovery-page'
+import { relativeTime } from '../../../services/relative-time'
 import '../../../App.css'
 
 const PAGE_SIZE = 50
@@ -101,9 +102,12 @@ function Topics (props) {
                   key={topic.room}
                   action
                   onClick={() => handleClick(topic.room)}
+                  className='d-flex justify-content-between align-items-center'
                 >
-                  #{topic.room}{' '}
-                  <span className='text-muted'>({topic.postCount} posts)</span>
+                  <span className='topic-name'>#{topic.room}</span>
+                  <span className='topic-last-seen text-muted'>{relativeTime(topic.lastSeen, Date.now())}</span>
+                  <span className='topic-post-count text-muted'>{topic.postCount} posts</span>
+                  <span className='topic-follower-count text-muted'>{topic.followerCount} followers</span>
                 </ListGroup.Item>
               ))}
             </ListGroup>

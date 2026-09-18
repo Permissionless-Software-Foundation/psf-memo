@@ -45,13 +45,13 @@ function makeAdapters () {
   }
 }
 
-async function processTopicMessage (adapters, { txid, room, addr, height, text }) {
+async function processTopicMessage (adapters, { txid, room, addr, height, text, seen = 1 }) {
   const prefix = Buffer.from('6d0c', 'hex')
   await handleTopicMessage({
     adapters,
     txid,
     signerAddr: addr,
-    seen: 1,
+    seen,
     blockHeight: height,
     decoded: {
       action: 'topic-message',
@@ -76,12 +76,29 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
       room: 'bitcoin',
       postCount: 1,
-      lastHeight: 600100
+      lastHeight: 600100,
+      lastSeen: 1,
+      followerCount: 0
     })
     assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(600100, 'bitcoin')), {
       room: 'bitcoin',
       blockHeight: 600100
     })
+  })
+
+  it('should record the post seen time as lastSeen', async () => {
+    const adapters = makeAdapters()
+
+    await processTopicMessage(adapters, {
+      txid: 'topic-a1',
+      room: 'bitcoin',
+      addr: 'bitcoincash:qaddr-a',
+      height: 600100,
+      text: 'hello',
+      seen: 1700000000000
+    })
+
+    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').lastSeen, 1700000000000)
   })
 
   it('should accumulate postCount and keep the newest height', async () => {
@@ -93,7 +110,9 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
       room: 'bitcoin',
       postCount: 2,
-      lastHeight: 600200
+      lastHeight: 600200,
+      lastSeen: 1,
+      followerCount: 0
     })
     assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(600200, 'bitcoin')), {
       room: 'bitcoin',
@@ -111,7 +130,9 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
       room: 'bitcoin',
       postCount: 2,
-      lastHeight: 600200
+      lastHeight: 600200,
+      lastSeen: 1,
+      followerCount: 0
     })
     assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(600200, 'bitcoin')), {
       room: 'bitcoin',
@@ -129,7 +150,9 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
       room: 'bitcoin',
       postCount: 1,
-      lastHeight: 600300
+      lastHeight: 600300,
+      lastSeen: 1,
+      followerCount: 0
     })
     assert.equal(adapters.topicRecencyDb.store.size, 1)
   })
@@ -173,7 +196,9 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get(room), {
       room,
       postCount: 1,
-      lastHeight: 600100
+      lastHeight: 600100,
+      lastSeen: 1,
+      followerCount: 0
     })
   })
 

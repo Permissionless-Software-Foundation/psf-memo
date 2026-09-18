@@ -217,6 +217,7 @@ function makeMemoDb () {
   const topicPosts = {}
   const topicCounts = new Map()
   const topicFollow = new Map()
+  const topicMetadata = new Map()
 
   return {
     posts,
@@ -228,6 +229,7 @@ function makeMemoDb () {
     topics,
     topicPosts,
     topicCounts,
+    topicMetadata,
     addPost (post) {
       posts.push(post)
     },
@@ -274,6 +276,7 @@ function makeMemoDb () {
     },
     addTopic (room, postCount) {
       topicCounts.set(room, postCount)
+      topicMetadata.set(room, { followerCount: 0, lastSeen: 0 })
       topicPosts[room] = []
       for (let i = 0; i < postCount; i++) {
         const txid = `${room}-post-${i + 1}`.padEnd(64, '0')
@@ -284,6 +287,16 @@ function makeMemoDb () {
           blockHeight: 100 + i
         })
       }
+    },
+    setTopicFollowerCount (room, followerCount) {
+      const meta = topicMetadata.get(room) || {}
+      meta.followerCount = followerCount
+      topicMetadata.set(room, meta)
+    },
+    setTopicLastSeen (room, lastSeen) {
+      const meta = topicMetadata.get(room) || {}
+      meta.lastSeen = lastSeen
+      topicMetadata.set(room, meta)
     },
     addTopicPost (room, post) {
       if (!topicPosts[room]) topicPosts[room] = []
@@ -364,7 +377,13 @@ function makeMemoDb () {
     async getTopics ({ limit = 50, offset = 0 } = {}) {
       const list = []
       for (const [room, postCount] of topicCounts.entries()) {
-        list.push({ room, postCount })
+        const meta = topicMetadata.get(room) || {}
+        list.push({
+          room,
+          postCount,
+          lastSeen: meta.lastSeen ?? 0,
+          followerCount: meta.followerCount ?? 0
+        })
       }
       list.sort((a, b) => a.room.localeCompare(b.room))
       const total = list.length
@@ -2101,11 +2120,36 @@ const handlers = [
   },
   {
     name: 'API serves topic with post count',
-    pattern: /^the psf-memo-db API serves a topic named "([^"]+)" with (\d+) posts?$/,
+    pattern: /^the psf-memo-db API serves a topic named "([^"]+)" with (\S+) posts?$/,
     run (m, example, world) {
-      const room = m[1]
-      const count = parseInt(m[2], 10)
+      const room = resolveParam(m[1], example)
+      const count = parseInt(resolveParam(m[2], example), 10)
       world.memoDb.addTopic(room, count)
+    }
+  },
+  {
+    name: 'topic has follower count',
+    pattern: /^the topic "([^"]+)" has (\S+) followers?$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const followerCount = parseInt(resolveParam(m[2], example), 10)
+      world.memoDb.setTopicFollowerCount(room, followerCount)
+    }
+  },
+  {
+    name: 'topic was last posted at',
+    pattern: /^the topic "([^"]+)" was last posted at (\S+)$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const lastSeen = parseInt(resolveParam(m[2], example), 10)
+      world.memoDb.setTopicLastSeen(room, lastSeen)
+    }
+  },
+  {
+    name: 'set current time',
+    pattern: /^the current time is (\S+)$/,
+    run (m, example, world) {
+      world.currentTime = parseInt(resolveParam(m[1], example), 10)
     }
   },
   {
@@ -2196,7 +2240,7 @@ const handlers = [
   },
   {
     name: 'topics page shows topic count',
-    pattern: /^the topics page shows the topic (<topic>) with (<count>) posts$/,
+    pattern: /^the topics page shows the topic "?([^"]+?)"? with (\S+) posts$/,
     run (m, example, world) {
       const room = resolveParam(m[1], example)
       const expected = parseInt(resolveParam(m[2], example), 10)
@@ -2206,6 +2250,34 @@ const handlers = [
       }
       if (topic.postCount !== expected) {
         throw new Error(`Expected ${room} to have ${expected} posts, got ${topic.postCount}.`)
+      }
+    }
+  },
+  {
+    name: 'topics page shows topic follower count',
+    pattern: /^the topics page shows the topic "?([^"]+?)"? with (\S+) followers?$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const topic = world.topicDiscoveryPage.getTopic(room)
+      if (!topic) {
+        throw new Error(`Topic ${room} is not shown on the topics page.`)
+      }
+      if (topic.followerCount !== expected) {
+        throw new Error(`Expected ${room} to have ${expected} followers, got ${topic.followerCount}.`)
+      }
+    }
+  },
+  {
+    name: 'topics page shows most recent post label',
+    pattern: /^the topics page shows the most recent post for the topic "([^"]+)" as "(.+)"$/,
+    run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const now = world.currentTime ?? Date.now()
+      const actual = world.topicDiscoveryPage.getLastSeenLabel(room, now)
+      if (actual !== expected) {
+        throw new Error(`Expected ${room} most recent post "${expected}", got "${actual}".`)
       }
     }
   },

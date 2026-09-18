@@ -4,7 +4,7 @@
 
   The read side serves GET /topics from these two indexes:
     - topicSummaries: one record per room keyed by room, value
-      { room, postCount, lastHeight }.
+      { room, postCount, lastHeight, lastSeen, followerCount }.
     - topicRecency: one record per room keyed `${invertedHeight}:${room}`,
       value { room, blockHeight }. Follow-only rooms live at height 0. The
       height is inverted so an ascending scan yields newest-first.
@@ -35,11 +35,21 @@ function roomFromEntry (key, value) {
   return String(key).split(':')[0]
 }
 
-// Fold one post entry into its room summary, tracking the newest height.
+// Fold one post entry into its room summary, tracking the newest height and
+// newest seen time.
 function applyPost (summary, value) {
   summary.postCount++
   const height = value.blockHeight ?? 0
   if (height > summary.lastHeight) summary.lastHeight = height
+  const seen = value.seen ?? 0
+  if (seen > summary.lastSeen) summary.lastSeen = seen
+}
+
+// Count one active follow. Each address has at most one follow record per
+// room, so the number of active follow records is the follower count.
+function applyFollow (summary, value) {
+  if (value?.unfollow === true) return
+  summary.followerCount++
 }
 
 async function collectSummaries (roomsDb) {
@@ -49,11 +59,13 @@ async function collectSummaries (roomsDb) {
     const room = roomFromEntry(key, value)
     if (!room) continue
     if (!summaries.has(room)) {
-      summaries.set(room, { room, postCount: 0, lastHeight: 0 })
+      summaries.set(room, { room, postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 0 })
     }
 
     if (value?.type === 'post') {
       applyPost(summaries.get(room), value)
+    } else if (value?.type === 'follow') {
+      applyFollow(summaries.get(room), value)
     }
   }
 

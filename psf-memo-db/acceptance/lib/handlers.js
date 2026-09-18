@@ -207,6 +207,16 @@ async function loadFixture (world, name) {
     return
   }
 
+  if (name === 'topic-metadata-indexes') {
+    await loadTopicMetadataIndexes(world)
+    return
+  }
+
+  if (name === 'rooms-with-topic-metadata') {
+    await loadRoomsWithTopicMetadata(world)
+    return
+  }
+
   if (name === 'rooms-with-topics-and-follows') {
     await loadRoomsWithTopicsAndFollows(world)
     return
@@ -553,6 +563,42 @@ async function loadTopicIndexes (world) {
       topicRecencyKey(summary.lastHeight, summary.room),
       { room: summary.room, blockHeight: summary.lastHeight }
     )
+  }
+}
+
+// Fixture "topic-metadata-indexes" from topic-metadata.feature: topic index
+// stores with lastSeen and followerCount already populated.
+async function loadTopicMetadataIndexes (world) {
+  const summaries = [
+    { room: 'memo', postCount: 5, lastHeight: 600500, lastSeen: 1700020000000, followerCount: 12 },
+    { room: 'cash', postCount: 2, lastHeight: 600400, lastSeen: 1700010000000, followerCount: 4 },
+    { room: 'lone', postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 7 }
+  ]
+
+  for (const summary of summaries) {
+    await world.adapters.level.topicSummariesDb.put(summary.room, summary)
+    await world.adapters.level.topicRecencyDb.put(
+      topicRecencyKey(summary.lastHeight, summary.room),
+      { room: summary.room, blockHeight: summary.lastHeight }
+    )
+  }
+}
+
+// Fixture "rooms-with-topic-metadata" from topic-metadata.feature: raw rooms
+// store entries the backfill summarizes into lastSeen and followerCount.
+async function loadRoomsWithTopicMetadata (world) {
+  const entries = [
+    { key: 'bitcoin:post-100', room: 'bitcoin', txid: 'post-100', type: 'post', blockHeight: 600100, seen: 1700000000000 },
+    { key: 'bitcoin:post-200', room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 600200, seen: 1700009999000 },
+    { key: 'bitcoin:addr-f', room: 'bitcoin', addr: 'bitcoincash:qaddr-f', type: 'follow', unfollow: false },
+    { key: 'bitcoin:addr-g', room: 'bitcoin', addr: 'bitcoincash:qaddr-g', type: 'follow', unfollow: false },
+    { key: 'cash:post-250', room: 'cash', txid: 'post-250', type: 'post', blockHeight: 600250, seen: 1700012345000 },
+    { key: 'cash:addr-f', room: 'cash', addr: 'bitcoincash:qaddr-f', type: 'follow', unfollow: true },
+    { key: 'lone:addr-f', room: 'lone', addr: 'bitcoincash:qaddr-f', type: 'follow', unfollow: false }
+  ]
+
+  for (const entry of entries) {
+    await world.adapters.level.roomsDb.put(entry.key, entry)
   }
 }
 
@@ -1185,6 +1231,36 @@ const handlers = [
     }
   },
   {
+    name: 'response contains topic last seen',
+    pattern: /^the response contains the topic "(<topic>)" last seen at (<lastSeen>)$/,
+    run (m, example, world) {
+      const topic = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const found = world.getLastResponse().topics.find((t) => t.room === topic)
+      if (!found) {
+        throw new Error(`Topic ${topic} not found in response`)
+      }
+      if (found.lastSeen !== expected) {
+        throw new Error(`Expected lastSeen ${expected} for ${topic}, got ${found.lastSeen}`)
+      }
+    }
+  },
+  {
+    name: 'response contains topic follower count',
+    pattern: /^the response contains the topic "(<topic>)" with (<followerCount>) followers?$/,
+    run (m, example, world) {
+      const topic = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const found = world.getLastResponse().topics.find((t) => t.room === topic)
+      if (!found) {
+        throw new Error(`Topic ${topic} not found in response`)
+      }
+      if (found.followerCount !== expected) {
+        throw new Error(`Expected followerCount ${expected} for ${topic}, got ${found.followerCount}`)
+      }
+    }
+  },
+  {
     name: 'response lists topics in order',
     pattern: /^the response lists topics in order (<[A-Za-z0-9_]+>)$/,
     run (m, example, world) {
@@ -1363,6 +1439,36 @@ const handlers = [
       }
       if (record.room !== room || record.postCount !== postCount || record.lastHeight !== lastHeight) {
         throw new Error(`Expected ${room} postCount ${postCount} lastHeight ${lastHeight}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'topicSummaries records room last seen',
+    pattern: /^the topicSummaries store records the room "(<room>)" last seen at (<lastSeen>)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const record = await world.adapters.level.topicSummariesDb.get(room)
+      if (!record) {
+        throw new Error(`No topicSummaries record for ${room}`)
+      }
+      if (record.lastSeen !== expected) {
+        throw new Error(`Expected ${room} lastSeen ${expected}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'topicSummaries records room follower count',
+    pattern: /^the topicSummaries store records the room "(<room>)" with (<followerCount>) followers?$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const expected = parseInt(resolveParam(m[2], example), 10)
+      const record = await world.adapters.level.topicSummariesDb.get(room)
+      if (!record) {
+        throw new Error(`No topicSummaries record for ${room}`)
+      }
+      if (record.followerCount !== expected) {
+        throw new Error(`Expected ${room} followerCount ${expected}, got ${JSON.stringify(record)}`)
       }
     }
   },

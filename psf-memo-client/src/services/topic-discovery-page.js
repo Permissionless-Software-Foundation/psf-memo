@@ -7,6 +7,7 @@
 */
 
 const PaginatedPage = require('./paginated-page')
+const { relativeTime } = require('./relative-time')
 
 const TOPICS_PATH = '/topics'
 
@@ -22,6 +23,15 @@ class TopicDiscoveryPage extends PaginatedPage {
 
   getTopic (room) {
     return this.topics.find((topic) => topic.room === room) || null
+  }
+
+  // Label describing how long ago the room's most recent post was, computed
+  // from the API's lastSeen timestamp. Returns null when the topic is not
+  // loaded. `now` is injectable so the label is deterministic in tests.
+  getLastSeenLabel (room, now = Date.now()) {
+    const topic = this.getTopic(room)
+    if (!topic) return null
+    return relativeTime(topic.lastSeen, now)
   }
 
   openTopic (room) {

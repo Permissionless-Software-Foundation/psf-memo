@@ -719,13 +719,14 @@ const muteHandlers = [
   },
   {
     name: 'process a Memo topic message',
-    pattern: /^the indexer processes a Memo topic message (.+) in room "(.+)" from (.+) at block height (.+) with text "(.+)"$/,
+    pattern: /^the indexer processes a Memo topic message (.+) in room "(.+)" from (.+) at block height (.+) with text "(.+)"(?: seen at (.+))?$/,
     async run (m, example, world) {
       const txid = resolveTxid(m[1], example, world)
-      const room = m[2]
+      const room = resolveParam(m[2], example)
       const addr = resolveParam(m[3], example)
       const height = parseInt(resolveParam(m[4], example), 10)
       const text = m[5]
+      const seen = m[6] ? parseInt(resolveParam(m[6], example), 10) : Date.now()
 
       world.lastTxid = txid
       world.lastHeight = height
@@ -736,7 +737,7 @@ const muteHandlers = [
         adapters: world.adapters,
         txid,
         signerAddr: addr,
-        seen: Date.now(),
+        seen,
         blockHeight: height,
         decoded: {
           action: 'topicMessage',
@@ -763,7 +764,7 @@ const muteHandlers = [
     name: 'process a Memo topic follow',
     pattern: /^the indexer processes a Memo topic follow for room "(.+)" from (.+)$/,
     async run (m, example, world) {
-      const room = m[1]
+      const room = resolveParam(m[1], example)
       const addr = resolveParam(m[2], example)
       const txid = deriveTxid(`topic-follow-${room}-${addr}`)
 
@@ -771,7 +772,7 @@ const muteHandlers = [
       world.lastAddr = addr
 
       const prefix = Buffer.from('6d0d', 'hex')
-      await handleTopicFollow({
+      const ctx = {
         adapters: world.adapters,
         txid,
         signerAddr: addr,
@@ -782,14 +783,56 @@ const muteHandlers = [
           prefix,
           pushDatas: [prefix, Buffer.from(room, 'utf8')]
         }
-      })
+      }
+      world.lastTopicFollow = ctx
+
+      await handleTopicFollow(ctx)
+    }
+  },
+  {
+    name: 'process a Memo topic unfollow',
+    pattern: /^the indexer processes a Memo topic unfollow for room "(.+)" from (.+)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      const txid = deriveTxid(`topic-unfollow-${room}-${addr}`)
+
+      world.lastTxid = txid
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d0e', 'hex')
+      const ctx = {
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: 600000,
+        decoded: {
+          action: 'topicUnfollow',
+          prefix,
+          pushDatas: [prefix, Buffer.from(room, 'utf8')]
+        }
+      }
+      world.lastTopicFollow = ctx
+
+      await handleTopicFollow(ctx)
+    }
+  },
+  {
+    name: 'reprocess the last Memo topic follow',
+    pattern: /^the indexer processes the same Memo topic follow for room "(.+)" from (.+) again$/,
+    async run (m, example, world) {
+      if (!world.lastTopicFollow) {
+        throw new Error('No previous topic follow to reprocess')
+      }
+      await handleTopicFollow(world.lastTopicFollow)
     }
   },
   {
     name: 'topicSummaries contains room with postCount and lastHeight',
     pattern: /^the topicSummaries store contains the room "(.+)" with postCount (.+) and lastHeight (.+)$/,
     async run (m, example, world) {
-      const room = m[1]
+      const room = resolveParam(m[1], example)
       const postCount = parseInt(resolveParam(m[2], example), 10)
       const lastHeight = parseInt(resolveParam(m[3], example), 10)
       const record = await world.topicSummariesDb.get(room)
@@ -802,10 +845,40 @@ const muteHandlers = [
     }
   },
   {
+    name: 'topicSummaries records room last seen',
+    pattern: /^the topicSummaries store records the room "(.+)" last seen at (.+)$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const lastSeen = parseInt(resolveParam(m[2], example), 10)
+      const record = await world.topicSummariesDb.get(room)
+      if (!record) {
+        throw new Error(`No topicSummaries record for ${room}`)
+      }
+      if (record.lastSeen !== lastSeen) {
+        throw new Error(`Expected ${room} lastSeen ${lastSeen}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'topicSummaries records room follower count',
+    pattern: /^the topicSummaries store records the room "(.+)" with (.+?) followers?$/,
+    async run (m, example, world) {
+      const room = resolveParam(m[1], example)
+      const followerCount = parseInt(resolveParam(m[2], example), 10)
+      const record = await world.topicSummariesDb.get(room)
+      if (!record) {
+        throw new Error(`No topicSummaries record for ${room}`)
+      }
+      if (record.followerCount !== followerCount) {
+        throw new Error(`Expected ${room} followerCount ${followerCount}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
     name: 'topicRecency records room at height',
     pattern: /^the topicRecency store records the room "(.+)" at block height (.+)$/,
     async run (m, example, world) {
-      const room = m[1]
+      const room = resolveParam(m[1], example)
       const height = parseInt(resolveParam(m[2], example), 10)
       const record = await world.topicRecencyDb.get(topicRecencyKey(height, room))
       if (!record) {

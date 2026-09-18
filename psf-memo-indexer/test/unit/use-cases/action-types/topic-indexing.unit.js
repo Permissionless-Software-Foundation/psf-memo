@@ -42,7 +42,9 @@ describe('#recordTopicPost height fallbacks', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
       room: 'bitcoin',
       postCount: 1,
-      lastHeight: 0
+      lastHeight: 0,
+      lastSeen: 0,
+      followerCount: 0
     })
     assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(0, 'bitcoin')), {
       room: 'bitcoin',
@@ -65,7 +67,9 @@ describe('#recordTopicPost height fallbacks', () => {
     assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
       room: 'bitcoin',
       postCount: 3,
-      lastHeight: 600100
+      lastHeight: 600100,
+      lastSeen: 0,
+      followerCount: 0
     })
   })
 
@@ -81,5 +85,50 @@ describe('#recordTopicPost height fallbacks', () => {
       room: 'bitcoin',
       blockHeight: 1
     })
+  })
+})
+
+describe('#recordTopicPost lastSeen', () => {
+  it('should record the post seen time as lastSeen', async () => {
+    const adapters = makeAdapters()
+
+    await recordTopicPost(adapters, 'bitcoin', 600100, 1700000000000)
+
+    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').lastSeen, 1700000000000)
+  })
+
+  it('should keep the newest lastSeen when a later post has an earlier seen time', async () => {
+    const adapters = makeAdapters()
+
+    await recordTopicPost(adapters, 'bitcoin', 600200, 1700009999000)
+    await recordTopicPost(adapters, 'bitcoin', 600100, 1700000000000)
+
+    const summary = adapters.topicSummaryDb.store.get('bitcoin')
+    assert.equal(summary.lastSeen, 1700009999000)
+    assert.equal(summary.lastHeight, 600200)
+    assert.equal(summary.postCount, 2)
+  })
+
+  it('should default lastSeen to zero when seen is missing', async () => {
+    const adapters = makeAdapters()
+
+    await recordTopicPost(adapters, 'bitcoin', 600100)
+
+    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').lastSeen, 0)
+  })
+
+  it('should preserve an existing followerCount when recording a post', async () => {
+    const adapters = makeAdapters()
+    adapters.topicSummaryDb.store.set('bitcoin', {
+      room: 'bitcoin',
+      postCount: 0,
+      lastHeight: 0,
+      lastSeen: 0,
+      followerCount: 4
+    })
+
+    await recordTopicPost(adapters, 'bitcoin', 600100, 1700000000000)
+
+    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 4)
   })
 })

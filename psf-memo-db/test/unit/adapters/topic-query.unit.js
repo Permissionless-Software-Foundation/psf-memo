@@ -166,12 +166,12 @@ describe('#TopicQuery', () => {
 
   describe('#listTopics', () => {
     const summaries = [
-      ['memo', { room: 'memo', postCount: 5, lastHeight: 600500 }],
-      ['cash', { room: 'cash', postCount: 2, lastHeight: 600400 }],
-      ['dance', { room: 'dance', postCount: 3, lastHeight: 600400 }],
-      ['anime', { room: 'anime', postCount: 1, lastHeight: 600300 }],
-      ['lone', { room: 'lone', postCount: 0, lastHeight: 0 }],
-      ['quiet', { room: 'quiet', postCount: 0, lastHeight: 0 }]
+      ['memo', { room: 'memo', postCount: 5, lastHeight: 600500, lastSeen: 1700020000000, followerCount: 12 }],
+      ['cash', { room: 'cash', postCount: 2, lastHeight: 600400, lastSeen: 1700010000000, followerCount: 4 }],
+      ['dance', { room: 'dance', postCount: 3, lastHeight: 600400, lastSeen: 1700008000000, followerCount: 1 }],
+      ['anime', { room: 'anime', postCount: 1, lastHeight: 600300, lastSeen: 1700006000000, followerCount: 0 }],
+      ['lone', { room: 'lone', postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 7 }],
+      ['quiet', { room: 'quiet', postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 0 }]
     ]
     const recency = [
       [topicRecencyKey(600500, 'memo'), { room: 'memo', blockHeight: 600500 }],
@@ -193,14 +193,33 @@ describe('#TopicQuery', () => {
       const result = await uut.listTopics({ limit: 100, offset: 0 })
 
       assert.deepEqual(result.topics, [
-        { room: 'memo', postCount: 5 },
-        { room: 'cash', postCount: 2 },
-        { room: 'dance', postCount: 3 },
-        { room: 'anime', postCount: 1 },
-        { room: 'lone', postCount: 0 },
-        { room: 'quiet', postCount: 0 }
+        { room: 'memo', postCount: 5, lastSeen: 1700020000000, followerCount: 12 },
+        { room: 'cash', postCount: 2, lastSeen: 1700010000000, followerCount: 4 },
+        { room: 'dance', postCount: 3, lastSeen: 1700008000000, followerCount: 1 },
+        { room: 'anime', postCount: 1, lastSeen: 1700006000000, followerCount: 0 },
+        { room: 'lone', postCount: 0, lastSeen: 0, followerCount: 7 },
+        { room: 'quiet', postCount: 0, lastSeen: 0, followerCount: 0 }
       ])
       assert.deepEqual(result.pagination, { limit: 100, offset: 0, total: 6, hasMore: false })
+    })
+
+    it('should default missing metadata fields to zero for legacy summaries', async () => {
+      uut = new TopicQuery({
+        roomsDb,
+        postsDb,
+        topicSummariesDb: makeIteratorDb([
+          ['memo', { room: 'memo', postCount: 5, lastHeight: 600500 }]
+        ]),
+        topicRecencyDb: makeIteratorDb([
+          [topicRecencyKey(600500, 'memo'), { room: 'memo', blockHeight: 600500 }]
+        ])
+      })
+
+      const result = await uut.listTopics({ limit: 100, offset: 0 })
+
+      assert.deepEqual(result.topics, [
+        { room: 'memo', postCount: 5, lastSeen: 0, followerCount: 0 }
+      ])
     })
 
     it('should paginate using recency order and report total and hasMore', async () => {

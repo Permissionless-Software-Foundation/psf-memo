@@ -110,6 +110,34 @@ test('getTopic returns null when the topic is not loaded', async () => {
   assert.equal(page.getTopic('bitcoin'), null)
 })
 
+test('getLastSeenLabel formats the topic last-seen time', async () => {
+  const page = new TopicDiscoveryPage({
+    memoDb: makeMemoDb({ topics: [{ room: 'bitcoin', postCount: 1, lastSeen: 1799998200000 }] })
+  })
+
+  await page.load()
+
+  assert.equal(page.getLastSeenLabel('bitcoin', 1800000000000), 'Less than an hour ago')
+})
+
+test('getLastSeenLabel returns "No posts" for a topic with no posts', async () => {
+  const page = new TopicDiscoveryPage({
+    memoDb: makeMemoDb({ topics: [{ room: 'lone', postCount: 0, lastSeen: 0 }] })
+  })
+
+  await page.load()
+
+  assert.equal(page.getLastSeenLabel('lone', 1800000000000), 'No posts')
+})
+
+test('getLastSeenLabel returns null for an unknown topic', async () => {
+  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics: [] }) })
+
+  await page.load()
+
+  assert.equal(page.getLastSeenLabel('missing', 1800000000000), null)
+})
+
 test('openTopic navigates to the encoded topic feed path', () => {
   const calls = []
   const page = new TopicDiscoveryPage({

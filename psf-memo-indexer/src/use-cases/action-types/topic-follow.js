@@ -1,6 +1,6 @@
-import { utf8FromPush, logProcessError, roomKey } from './helpers.js'
+import { utf8FromPush, logProcessError } from './helpers.js'
 import { PREFIX_TOPIC_UNFOLLOW } from '../../lib/memo-codes.js'
-import { ensureTopicRoom } from './topic-indexing.js'
+import { recordTopicFollow } from './topic-indexing.js'
 
 export async function handleTopicFollow (ctx) {
   const { adapters, txid, signerAddr, decoded, seen, blockHeight } = ctx
@@ -14,7 +14,7 @@ export async function handleTopicFollow (ctx) {
   const room = utf8FromPush(pushDatas[1])
   const unfollow = prefix[1] === PREFIX_TOPIC_UNFOLLOW[1]
 
-  await adapters.roomDb.create(roomKey(room, signerAddr), {
+  await recordTopicFollow(adapters, {
     room,
     addr: signerAddr,
     unfollow,
@@ -23,10 +23,6 @@ export async function handleTopicFollow (ctx) {
     type: 'follow',
     blockHeight
   })
-
-  if (!unfollow) {
-    await ensureTopicRoom(adapters, room)
-  }
 }
 
 // mutate4javascript-manifest-begin

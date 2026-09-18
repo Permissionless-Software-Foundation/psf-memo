@@ -8,7 +8,7 @@
   Topic listing is served from two indexes so it can order and paginate
   without iterating the rooms store:
     - topicSummaries: one record per room keyed by room, value
-      { room, postCount, lastHeight }.
+      { room, postCount, lastHeight, lastSeen, followerCount }.
     - topicRecency: one record per room keyed `${invertedHeight}:${room}`, value
       { room, blockHeight }. Follow-only rooms live at height 0. The height is
       inverted so an ascending scan yields newest-first.
@@ -84,15 +84,16 @@ class TopicQuery {
   }
 
   // Return a page of topics ordered by their most recent post, descending,
-  // with rooms at the same height ordered by name ascending. Counts and the
-  // total come from topicSummaries; ordering and pagination come from
-  // topicRecency, which is read only through offset + limit records.
+  // with rooms at the same height ordered by name ascending. Post count,
+  // last-seen time, follower count, and the total come from topicSummaries;
+  // ordering and pagination come from topicRecency, which is read only
+  // through offset + limit records.
   async listTopics ({ limit = 100, offset = 0 } = {}) {
-    const postCounts = new Map()
+    const summaries = new Map()
     for await (const [key, value] of this.topicSummariesDb.iterator()) {
-      postCounts.set(this.summaryRoom(key, value), value?.postCount ?? 0)
+      summaries.set(this.summaryRoom(key, value), value)
     }
-    const total = postCounts.size
+    const total = summaries.size
 
     const recencyRooms = []
     for await (const [key, value] of this.topicRecencyDb.iterator({ limit: offset + limit })) {
@@ -100,10 +101,15 @@ class TopicQuery {
     }
 
     const pageRooms = recencyRooms.slice(offset, offset + limit)
-    const topics = pageRooms.map((room) => ({
-      room,
-      postCount: postCounts.get(room) ?? 0
-    }))
+    const topics = pageRooms.map((room) => {
+      const summary = summaries.get(room)
+      return {
+        room,
+        postCount: summary?.postCount ?? 0,
+        lastSeen: summary?.lastSeen ?? 0,
+        followerCount: summary?.followerCount ?? 0
+      }
+    })
 
     return {
       topics,
