@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task": "notifications-query-performance",
+  "component": "psf-memo-indexer",
+  "git_sha": "c9728cc301e792580ecc2f4f96e19bc34720ee63",
+  "branch": "swarmforge-architect",
+  "timestamp": "2026-09-18T17:50:21.451Z",
+  "commands": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "exit": 0,
+      "duration_ms": 7399,
+      "summary": "120 passing"
+    },
+    {
+      "name": "property",
+      "command": "npm run property",
+      "exit": 0,
+      "duration_ms": 5334,
+      "summary": "12 pass / 0 fail"
+    },
+    {
+      "name": "acceptance",
+      "command": "npm run acceptance",
+      "exit": 0,
+      "duration_ms": 2067,
+      "summary": "all 8 acceptance suites passed"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit": 0,
+      "duration_ms": 29948,
+      "summary": "ok"
+    }
+  ],
+  "result": "pass"
+}
