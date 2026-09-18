@@ -580,6 +580,27 @@ that a single user-facing feature may require specs in more than one component.
     cross-module client-consistency follow-up (`dry4javascript` found no
     duplicate candidates in the changed set).
 
+44. **Explorer links are rendered by a shared component.** The mute result
+    modal extracted `src/components/explorer-tx-link.js` (`ExplorerTxLink`,
+    plain `React.createElement`), now used by both `LikeResult` and the new
+    `MuteResult`. URL construction stays in the pure
+    `src/services/block-explorer.js` util. Reuse `ExplorerTxLink` for new
+    result modals instead of inlining an explorer `<a>` (extends gotcha #30).
+    `ExplorerTxLink`, `MuteResult`, and `LikeResult` scan as 0 language
+    mutation sites (structural markup), so their behavior is pinned by unit and
+    property tests instead.
+
+45. **Mute-broadcast-result soft Gherkin survivors are all intrinsic.** The
+    soft mutation run on `mute-broadcast-result.feature` was 5 total / 0 killed
+    / 5 survived, 0 errors. Every survivor is a single-character case mutation
+    of an example value (`addr` in scenarios 1–4, `broadcast_error` in
+    scenario 4) used on both the Given setup and the Then assertion side, so
+    the mutated value still matches (gotcha #12 class). `gherkin-mutator` wrote
+    a manifest with `"scenarios":[]` because every scenario has an intrinsic
+    survivor; commit it as tool-written. The structural assertions (mute/unmute
+    prefix, hash160, success message, txid, explorer href/`target=_blank`)
+    carried the language and unit/property kills.
+
 ---
 
 ## 10. Run / verify the app
@@ -630,22 +651,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `a1e4a4f95f` (`notification-entry-display` merged from
+Current `master` HEAD: `eaaed8e5ea` (`mute-broadcast-result` merged from
 `swarmforge-architect`). The verification record names the architect code
-review commit `bbbf4adcd7`; the only later commit (`a1e4a4f`) added `docs/`
+review commit `a7d9ca6299`; the only later commit (`eaaed8e`) added `docs/`
 (record and summary), so the record is valid for the merged tree. This task
-renders each Notifications entry with the actor's resolved Memo display name
-and avatar (truncated-address / identicon fallbacks), router profile links on
-the avatar and name, the full address as small plain text, and a "View Post"
-link for like/reply entries that opens the referenced post's thread. Pure view
-model `psf-memo-client/src/services/notification-entry.js`; record
-`docs/reviews/notification-entry-display-verification.json` (client). The
-specifier merged the branch and ran only the merged feature's acceptance test
-(client 16/16) as the independent check; soft Gherkin mutation was 36/11 (all
-survivors intrinsic example-value case mutations; scenario 2 killed 4/4) and
-language mutation 20/20 killed. Run `swarmforge/scripts/state.sh` to refresh
-these HEAD lines.
+shows a broadcast result modal on the `/profile/:address` page after a
+mute/unmute: on success the success message, the mute txid, and a
+`bch.loping.net` explorer link in a new tab; on failure the broadcast error.
+Pure result state lives in `psf-memo-client/src/services/profile-page.js`;
+shared presentational `MuteResult`/`ExplorerTxLink` components; record
+`docs/reviews/mute-broadcast-result-verification.json` (client). The specifier
+merged the branch and ran only the merged feature's acceptance test (client
+4/4) as the independent check; soft Gherkin mutation was 5/5 (all survivors
+intrinsic example-value case mutations) and language mutation 31/31 killed.
+
+Note: `master` also contains two earlier human commits made outside the swarm
+pipeline — `ea67979` (removed the redundant inline author name from feed posts)
+and `8eab46d` (Notifications entry CSS/layout tweaks). Neither is covered by a
+Gherkin spec yet; they are unspecified working-tree behavior to reconcile if a
+future feature touches those surfaces.
+
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
 performance, responsiveness, state handling, error surfacing). See
-`specs/feature-backlog.md`.
+`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
+HEAD lines.

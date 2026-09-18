@@ -35,6 +35,27 @@ _(none)_
 
 ## Recently completed
 
+- **Mute broadcast result (2026-09-18):** the profile page now shows a
+  broadcast result modal after a mute (`0x6d16`) or unmute (`0x6d17`) is
+  broadcast. On success the modal shows a broadcast success message, the mute
+  transaction id, and a `bch.loping.net` block-explorer link that opens in a
+  new tab; on failure it shows the real broadcast error message. A successful
+  mute still flips the button to Unmute and a successful unmute flips it back
+  to Mute; a failed broadcast leaves the button unchanged. The modal stays open
+  until dismissed, and dismissing it closes the modal without navigating. Pure
+  result state lives in `ProfilePage` (`lastMuteResult`,
+  `getMuteBroadcastMessage`, `getMuteResultError`, `dismissMuteResult`); the
+  presentational `MuteResult` and shared `ExplorerTxLink` components are plain
+  `React.createElement`, shared with the Node acceptance adapter
+  (`acceptance/lib/render-mute-result.js`). Client-only. Spec:
+  `psf-memo-client/specs/mute-broadcast-result.feature`. Merged to `master` at
+  `eaaed8e5ea` (review commit `a7d9ca6299`; record
+  `docs/reviews/mute-broadcast-result-verification.json`; the later `eaaed8e`
+  commit is docs-only, so the record is valid for the merged tree). Independent
+  acceptance check: client 4/4. Soft Gherkin mutation 5/5 intrinsic survivors;
+  language mutation 31/31 killed. Architect summary:
+  `docs/reviews/mute-broadcast-result-summary.md`.
+
 - **Notification entry display (2026-09-18):** each `/notifications` entry now
   shows the actor's Memo display name and avatar instead of only the raw BCH
   address, resolved client-side from the name and profile-picture records. The
