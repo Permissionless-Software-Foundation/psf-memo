@@ -8,7 +8,7 @@
 // Global npm libraries
 import React, { useState } from 'react'
 import { Nav, Navbar, Image } from 'react-bootstrap' // Used for Navbar Style and Layouts .
-import { NavLink } from 'react-router-dom' // Used to navigate between routes
+import { NavLink, Link } from 'react-router-dom' // Used to navigate between routes
 
 // Assets
 import Logo from './psf-logo.png'
@@ -29,7 +29,7 @@ function NavMenu (props) {
   return (
     <>
       <Navbar expanded={expanded} onToggle={setExpanded} expand='xxxl' bg='dark' variant='dark' style={{ paddingRight: '20px' }}>
-        <Navbar.Brand href='#home' style={{ paddingLeft: '20px' }}>
+        <Navbar.Brand as={Link} to='/posts/recent' style={{ paddingLeft: '20px' }} onClick={handleClickEvent}>
           <Image src={Logo} thumbnail width='50' />{' '}
           Memo BCH
         </Navbar.Brand>

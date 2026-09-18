@@ -12,6 +12,7 @@ import MemoDb from '../../../services/memo-db'
 import TopicDiscoveryPage from '../../../services/topic-discovery-page'
 import { buildTopicsTable } from '../../../services/topics-table'
 import '../../../App.css'
+import './topics.css'
 
 const PAGE_SIZE = 50
 
@@ -65,7 +66,7 @@ function Topics (props) {
   return (
     <Container className='topics-page'>
       <Row className='justify-content-center'>
-        <Col lg={8} md={10} xs={12}>
+        <Col lg={10} md={10} xs={12}>
           <header className='topics-heading'>
             <h1>Topics</h1>
             <p>Discover Memo conversations organized by topic.</p>

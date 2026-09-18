@@ -1,0 +1,12 @@
+/*
+  Keep topic metadata on one line once the table has enough width.
+  The 1% + nowrap trick shrink-wraps those columns so the topic name
+  can use the remaining space.
+*/
+@media (min-width: 992px) {
+  .topics-page .topics-table th:nth-child(n+2),
+  .topics-page .topics-table td:nth-child(n+2) {
+    width: 1%;
+    white-space: nowrap;
+  }
+}
