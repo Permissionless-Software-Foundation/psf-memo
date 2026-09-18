@@ -35,6 +35,23 @@ _(none)_
 
 ## Recently completed
 
+- **Notification entry display (2026-09-18):** each `/notifications` entry now
+  shows the actor's Memo display name and avatar instead of only the raw BCH
+  address, resolved client-side from the name and profile-picture records. The
+  avatar and display name link to `/profile/<addr>`, the full address renders as
+  small non-emphasised plain text, and like/reply entries carry a "View Post"
+  link that opens the referenced original post's thread modal. Follow entries
+  have no post link. Fallbacks: no display name shows the truncated address, no
+  avatar (or a failed profile lookup) shows an identicon. Client-only. Spec:
+  `psf-memo-client/specs/notification-entry-display.feature`. Merged to `master`
+  at `a1e4a4f95f` (review commit `bbbf4adcd7`; record
+  `docs/reviews/notification-entry-display-verification.json`; the later
+  `a1e4a4f` commit is docs-only, so the record is valid for the merged tree).
+  Independent acceptance check: client 16/16. Soft Gherkin mutation 36/11 (all
+  survivors intrinsic example-value case mutations); language mutation 20/20
+  killed. Architect summary:
+  `docs/reviews/notification-entry-display-summary.md`.
+
 - **Notifications query performance (2026-09-18):** `GET /posts/notifications/:addr`
   is now bounded to the viewer's activity inside a configurable block window
   (`NOTIFICATION_BLOCK_WINDOW`, default 25000; cutoff

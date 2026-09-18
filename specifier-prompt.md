@@ -553,6 +553,33 @@ that a single user-facing feature may require specs in more than one component.
     inside the same relative-time bucket survive. Tighten only if a future spec
     needs those fields asserted independently.
 
+41. **Notification entry display: most soft Gherkin survivors are intrinsic.**
+    For `psf-memo-client/specs/notification-entry-display.feature` the soft
+    mutation run was 36 total / 11 killed / 25 survived, 0 errors. Every
+    survivor is a single-character case mutation of an example value (`addr`,
+    `name`, `avatar`, `my_post`, `reply_text`, `follower`) used on both the
+    Given setup and the Then assertion side, so the mutated value still matches
+    (gotcha #12 class). The independently-tied scenarios carried all kills:
+    scenario 2 compares the avatar/display-name link to an independent
+    `profile_path`, and scenarios 6/8 compare the fallback name to an
+    independent truncated-address literal, which pins profile-link encoding and
+    address truncation. The tool-written manifest contains only scenario 2
+    because the others each have an intrinsic survivor; commit it as-is.
+42. **Client internal links must navigate via the router.** The architect found
+    the new `NotificationEntry` rendered profile links as bare anchors; a
+    bare-anchor click does a full page reload, which breaks the GitHub Pages
+    deployment (no `404.html` fallback). The wrapper now passes
+    `onProfileClick={navigate}` (from `useNavigate()`) and the component calls
+    `event.preventDefault()`. Use `Link`/`useNavigate` for any new internal
+    client navigation.
+43. **Profile-path construction is duplicated across the client.**
+    `notification-entry.js` exports `PROFILE_PATH_PREFIX`/`profilePath`, while
+    `profile-page.js` already exports `PROFILE_PATH_PREFIX` and several
+    components inline `` `/profile/${encodeURIComponent(addr)}` ``. The architect
+    accepted this as-is and logged a shared `profile-path` module as a
+    cross-module client-consistency follow-up (`dry4javascript` found no
+    duplicate candidates in the changed set).
+
 ---
 
 ## 10. Run / verify the app
@@ -603,17 +630,20 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `1e58b5b` (`topics-table-layout` merged from
+Current `master` HEAD: `a1e4a4f95f` (`notification-entry-display` merged from
 `swarmforge-architect`). The verification record names the architect code
-review commit `d1f0f76`; the only later commit (`1e58b5b`) added `docs/`
+review commit `bbbf4adcd7`; the only later commit (`a1e4a4f`) added `docs/`
 (record and summary), so the record is valid for the merged tree. This task
-replaced the topics page flexbox rows with a react-bootstrap `Table` driven by
-a pure `buildTopicsTable` view model
-(`psf-memo-client/src/services/topics-table.js`). Record:
-`docs/reviews/topics-table-layout-verification.json` (client). The specifier
-merged the branch and ran only the merged feature's acceptance test (client
-5/5) as the independent check; soft Gherkin mutation was 16/16 killed and
-language mutation 2/2 killed. Run `swarmforge/scripts/state.sh` to refresh
+renders each Notifications entry with the actor's resolved Memo display name
+and avatar (truncated-address / identicon fallbacks), router profile links on
+the avatar and name, the full address as small plain text, and a "View Post"
+link for like/reply entries that opens the referenced post's thread. Pure view
+model `psf-memo-client/src/services/notification-entry.js`; record
+`docs/reviews/notification-entry-display-verification.json` (client). The
+specifier merged the branch and ran only the merged feature's acceptance test
+(client 16/16) as the independent check; soft Gherkin mutation was 36/11 (all
+survivors intrinsic example-value case mutations; scenario 2 killed 4/4) and
+language mutation 20/20 killed. Run `swarmforge/scripts/state.sh` to refresh
 these HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
