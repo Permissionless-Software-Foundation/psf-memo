@@ -603,18 +603,18 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `af54b0e` (`topic-metadata` merged from
-`swarmforge-architect`). The three verification records name the architect code
-review commit `3f05488`; the only later commit (`af54b0e`) added `docs/`
-(records and summary), so the records are valid for the merged tree. This task
-added `lastSeen` and `followerCount` to `topicSummaries`, exposed them from
-`GET /topics`, rebuilt them in the backfill, and rendered four columns on the
-client topics page. Records:
-`docs/reviews/topic-metadata-verification.json` (indexer),
-`-db-verification.json`, `-client-verification.json`. The specifier merged the
-branch and ran only the merged features' acceptance suites (indexer 12/12, db
-14/14, client 9/9) as the independent check. Run `swarmforge/scripts/state.sh`
-to refresh these HEAD lines.
+Current `master` HEAD: `1e58b5b` (`topics-table-layout` merged from
+`swarmforge-architect`). The verification record names the architect code
+review commit `d1f0f76`; the only later commit (`1e58b5b`) added `docs/`
+(record and summary), so the record is valid for the merged tree. This task
+replaced the topics page flexbox rows with a react-bootstrap `Table` driven by
+a pure `buildTopicsTable` view model
+(`psf-memo-client/src/services/topics-table.js`). Record:
+`docs/reviews/topics-table-layout-verification.json` (client). The specifier
+merged the branch and ran only the merged feature's acceptance test (client
+5/5) as the independent check; soft Gherkin mutation was 16/16 killed and
+language mutation 2/2 killed. Run `swarmforge/scripts/state.sh` to refresh
+these HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
 performance, responsiveness, state handling, error surfacing). See

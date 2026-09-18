@@ -31,16 +31,23 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Topics table layout (spec approved):** replace the topics page's flexbox
-  list rows with a react-bootstrap `Table` so the four columns line up. The
-  header labels the columns (`Topic`, `Most recent post`, `Posts`, `Followers`),
-  each row's cells carry the topic name (`#room`), relative-time label, post
-  count, and follower count in that order, rows link to the topic feed, and the
-  table scrolls horizontally on narrow screens. Client-only rendering. Spec:
-  `psf-memo-client/specs/topics-table-layout.feature`. Task
-  `topics-table-layout`; spec committed, handed off to coder.
+_(none)_
 
 ## Recently completed
+
+- **Topics table layout (2026-09-18):** the topics page now renders topics in
+  a react-bootstrap `Table`, so the four columns line up. A pure
+  `buildTopicsTable` view model (`psf-memo-client/src/services/topics-table.js`)
+  supplies the header labels (`Topic`, `Most recent post`, `Posts`,
+  `Followers`), each row's cells in fixed order (`#room`, relative time,
+  `N posts`, `N followers`), the topic-feed link, and the `table-responsive`
+  horizontal-scroll wrapper; the React `Topics` component is a thin shell over
+  it. Client-only rendering. Spec:
+  `psf-memo-client/specs/topics-table-layout.feature`. Merged to `master` at
+  `1e58b5b` (review commit `d1f0f76`; record
+  `docs/reviews/topics-table-layout-verification.json`). Independent acceptance
+  check: client 5/5. Soft Gherkin mutation 16/16 killed; language mutation 2/2
+  killed.
 
 - **Topic metadata columns (2026-09-18):** the `/topics` page now shows four
   columns — topic name, time since the most recent post, post count, and
