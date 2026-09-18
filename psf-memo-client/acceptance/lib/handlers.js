@@ -3282,80 +3282,39 @@ const handlers = [
     name: 'notification entry shows display name',
     pattern: /^the notification entry from the address (.+) shows the display name "([^"]*)"$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const entry = notificationEntryFor(world, addr)
-      if (entry.displayName !== expected) {
-        throw new Error(`Expected the notification entry from ${addr} to show the display name "${expected}", got "${entry.displayName}".`)
-      }
-      const html = renderNotificationEntry(entry)
-      if (!html.includes(expected)) {
-        throw new Error(`Rendered notification entry does not show the display name "${expected}".`)
-      }
+      assertEntryShows(world, resolveParam(m[1], example), 'displayName', resolveParam(m[2], example))
     }
   },
   {
     name: 'notification entry shows avatar',
     pattern: /^the notification entry from the address (.+) shows the avatar "([^"]*)"$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
       const expected = resolveParam(m[2], example)
-      const entry = notificationEntryFor(world, addr)
-      if (entry.avatarUrl !== expected) {
-        throw new Error(`Expected the notification entry from ${addr} to show the avatar "${expected}", got "${entry.avatarUrl}".`)
-      }
-      const html = renderNotificationEntry(entry)
-      if (!html.includes(`src="${expected}"`)) {
-        throw new Error(`Rendered notification entry does not show the avatar "${expected}".`)
-      }
+      assertEntryShows(world, resolveParam(m[1], example), 'avatarUrl', expected, `src="${expected}"`)
     }
   },
   {
     name: 'notification entry shows address as plain text',
     pattern: /^the notification entry from the address (.+) shows the address (.+) as plain text$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
       const shown = resolveParam(m[2], example)
-      const entry = notificationEntryFor(world, addr)
-      if (entry.addr !== shown) {
-        throw new Error(`Expected the notification entry from ${addr} to show the address ${shown}.`)
-      }
-      const html = renderNotificationEntry(entry)
-      if (!html.includes(`notification-entry-address">${shown}<`)) {
-        throw new Error(`Rendered notification entry does not show the address ${shown} as plain text.`)
-      }
+      assertEntryShows(world, resolveParam(m[1], example), 'addr', shown, `notification-entry-address">${shown}<`)
     }
   },
   {
     name: 'notification entry links avatar to profile',
     pattern: /^the notification entry from the address (.+) links the avatar to "([^"]*)"$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const entry = notificationEntryFor(world, addr)
-      if (entry.profilePath !== expected) {
-        throw new Error(`Expected the notification entry from ${addr} to link the avatar to "${expected}", got "${entry.profilePath}".`)
-      }
-      const href = anchorHref(renderNotificationEntry(entry), 'notification-entry-avatar-link')
-      if (href !== expected) {
-        throw new Error(`Rendered notification avatar does not link to ${expected}.`)
-      }
+      assertEntryProfileLink(world, resolveParam(m[1], example), resolveParam(m[2], example),
+        'notification-entry-avatar-link', 'avatar')
     }
   },
   {
     name: 'notification entry links display name to profile',
     pattern: /^the notification entry from the address (.+) links the display name to "([^"]*)"$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const entry = notificationEntryFor(world, addr)
-      if (entry.profilePath !== expected) {
-        throw new Error(`Expected the notification entry from ${addr} to link the display name to "${expected}", got "${entry.profilePath}".`)
-      }
-      const href = anchorHref(renderNotificationEntry(entry), 'notification-entry-name-link')
-      if (href !== expected) {
-        throw new Error(`Rendered notification display name does not link to ${expected}.`)
-      }
+      assertEntryProfileLink(world, resolveParam(m[1], example), resolveParam(m[2], example),
+        'notification-entry-name-link', 'display name')
     }
   },
   {
@@ -3392,15 +3351,7 @@ const handlers = [
     name: 'notification entry shows reply text',
     pattern: /^the notification entry from the address (.+) shows the reply text "([^"]*)"$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const entry = notificationEntryFor(world, addr)
-      if (entry.text !== expected) {
-        throw new Error(`Expected the notification entry from ${addr} to show the reply text "${expected}", got "${entry.text}".`)
-      }
-      if (!renderNotificationEntry(entry).includes(expected)) {
-        throw new Error(`Rendered notification entry does not show the reply text "${expected}".`)
-      }
+      assertEntryShows(world, resolveParam(m[1], example), 'text', resolveParam(m[2], example))
     }
   },
   {
@@ -4061,6 +4012,32 @@ function notificationEntryFor (world, addr) {
     throw new Error(`No notification entry from the address ${addr}.`)
   }
   return entry
+}
+
+// Assert that a notification entry exposes `field` as `expected` in its view
+// model and that the rendered markup contains `rendered` (defaulting to the
+// expected value itself).
+function assertEntryShows (world, addr, field, expected, rendered = expected) {
+  const entry = notificationEntryFor(world, addr)
+  if (entry[field] !== expected) {
+    throw new Error(`Expected the notification entry from ${addr} to show ${field} "${expected}", got "${entry[field]}".`)
+  }
+  if (!renderNotificationEntry(entry).includes(rendered)) {
+    throw new Error(`Rendered notification entry does not show ${field} "${expected}".`)
+  }
+}
+
+// Assert that a notification entry links the anchor carrying `className` to the
+// expected profile path, both in the view model and the rendered markup.
+function assertEntryProfileLink (world, addr, expected, className, label) {
+  const entry = notificationEntryFor(world, addr)
+  if (entry.profilePath !== expected) {
+    throw new Error(`Expected the notification entry from ${addr} to link the ${label} to "${expected}", got "${entry.profilePath}".`)
+  }
+  const href = anchorHref(renderNotificationEntry(entry), className)
+  if (href !== expected) {
+    throw new Error(`Rendered notification ${label} does not link to ${expected}.`)
+  }
 }
 
 // Extract the image tags from a rendered HTML string. The acceptance adapter

@@ -82,6 +82,8 @@ function Notifications (props) {
     setOffset((prev) => prev + PAGE_SIZE)
   }
 
+  const ready = !loading && !error
+
   return (
     <Container className='notifications-page'>
       <Row className='justify-content-center'>
@@ -114,11 +116,11 @@ function Notifications (props) {
             </div>
           )}
 
-          {!loading && !error && entries.length === 0 && (
+          {ready && entries.length === 0 && (
             <p className='notifications-empty'>You have no notifications.</p>
           )}
 
-          {!loading && !error && entries.length > 0 && (
+          {ready && entries.length > 0 && (
             <div className='notifications-list'>
               {entries.map((entry) => (
                 <NotificationEntry
@@ -130,7 +132,7 @@ function Notifications (props) {
             </div>
           )}
 
-          {!loading && !error && (pagination || offset > 0) && (
+          {ready && (pagination || offset > 0) && (
             <div className='notifications-pagination'>
               <Button
                 variant='outline-dark'
