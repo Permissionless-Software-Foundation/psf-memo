@@ -2,40 +2,14 @@ import { assert } from 'chai'
 import { handleTopicFollow } from '../../../../src/use-cases/action-types/topic-follow.js'
 import { PREFIX_TOPIC_FOLLOW, PREFIX_TOPIC_UNFOLLOW } from '../../../../src/lib/memo-codes.js'
 import { topicRecencyKey } from '../../../../src/use-cases/action-types/helpers.js'
-
-function makeDb () {
-  const store = new Map()
-  return {
-    store,
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async create (key, value) {
-      store.set(key, value)
-      return { success: true }
-    },
-    async update (key, value) {
-      store.set(key, value)
-      return { success: true }
-    },
-    async delete (key) {
-      store.delete(key)
-      return { success: true }
-    }
-  }
-}
+import { makeMemoryDb } from '../../../support/memory-db.js'
 
 function makeAdapters () {
   return {
-    roomDb: makeDb(),
-    topicSummaryDb: makeDb(),
-    topicRecencyDb: makeDb(),
-    processErrorDb: makeDb()
+    roomDb: makeMemoryDb(),
+    topicSummaryDb: makeMemoryDb(),
+    topicRecencyDb: makeMemoryDb(),
+    processErrorDb: makeMemoryDb()
   }
 }
 
@@ -114,70 +88,63 @@ describe('#handleTopicFollow topic indexes', () => {
     assert.equal(adapters.topicRecencyDb.store.size, 0)
   })
 
-  it('should count two distinct followers', async () => {
-    const adapters = makeAdapters()
+  const followerAddrA = 'bitcoincash:qaddr-a'
+  const followerAddrB = 'bitcoincash:qaddr-b'
+  const followStep = (txid, addr) => ({ txid, room: 'bitcoin', addr, prefix: PREFIX_TOPIC_FOLLOW })
+  const unfollowStep = (txid, addr) => ({ txid, room: 'bitcoin', addr, prefix: PREFIX_TOPIC_UNFOLLOW })
 
-    await processFollow(adapters, { txid: 'follow-3', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-    await processFollow(adapters, { txid: 'follow-4', room: 'bitcoin', addr: 'bitcoincash:qaddr-b' })
-
-    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 2)
-  })
-
-  it('should decrease the follower count on an unfollow', async () => {
-    const adapters = makeAdapters()
-
-    await processFollow(adapters, { txid: 'follow-5', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-    await processFollow(adapters, { txid: 'follow-6', room: 'bitcoin', addr: 'bitcoincash:qaddr-b' })
-    await processFollow(adapters, {
-      txid: 'unfollow-2',
-      room: 'bitcoin',
-      addr: 'bitcoincash:qaddr-a',
-      prefix: PREFIX_TOPIC_UNFOLLOW
-    })
-
-    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 1)
-  })
-
-  it('should not change the follower count when a follow is reprocessed', async () => {
-    const adapters = makeAdapters()
-
-    await processFollow(adapters, { txid: 'follow-7', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-    await processFollow(adapters, { txid: 'follow-7', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-
-    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 1)
-  })
-
-  it('should not double-decrement when an unfollow is reprocessed', async () => {
-    const adapters = makeAdapters()
-
-    await processFollow(adapters, { txid: 'follow-8', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-    await processFollow(adapters, { txid: 'follow-9', room: 'bitcoin', addr: 'bitcoincash:qaddr-b' })
-    const unfollow = {
-      txid: 'unfollow-3',
-      room: 'bitcoin',
-      addr: 'bitcoincash:qaddr-a',
-      prefix: PREFIX_TOPIC_UNFOLLOW
+  const followerCases = [
+    {
+      name: 'should count two distinct followers',
+      steps: [followStep('follow-3', followerAddrA), followStep('follow-4', followerAddrB)],
+      expected: 2
+    },
+    {
+      name: 'should decrease the follower count on an unfollow',
+      steps: [
+        followStep('follow-5', followerAddrA),
+        followStep('follow-6', followerAddrB),
+        unfollowStep('unfollow-2', followerAddrA)
+      ],
+      expected: 1
+    },
+    {
+      name: 'should not change the follower count when a follow is reprocessed',
+      steps: [followStep('follow-7', followerAddrA), followStep('follow-7', followerAddrA)],
+      expected: 1
+    },
+    {
+      name: 'should not double-decrement when an unfollow is reprocessed',
+      steps: [
+        followStep('follow-8', followerAddrA),
+        followStep('follow-9', followerAddrB),
+        unfollowStep('unfollow-3', followerAddrA),
+        unfollowStep('unfollow-3', followerAddrA)
+      ],
+      expected: 1
+    },
+    {
+      name: 'should let a re-follow increase the count after an unfollow',
+      steps: [
+        followStep('follow-10', followerAddrA),
+        unfollowStep('unfollow-4', followerAddrA),
+        followStep('follow-11', followerAddrA)
+      ],
+      expected: 1
     }
-    await processFollow(adapters, unfollow)
-    await processFollow(adapters, unfollow)
+  ]
 
-    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 1)
-  })
+  for (const { name, steps, expected } of followerCases) {
+    it(name, async () => {
+      const adapters = makeAdapters()
 
-  it('should let a re-follow increase the count after an unfollow', async () => {
-    const adapters = makeAdapters()
+      for (const step of steps) {
+        await processFollow(adapters, step)
+      }
 
-    await processFollow(adapters, { txid: 'follow-10', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-    await processFollow(adapters, {
-      txid: 'unfollow-4',
-      room: 'bitcoin',
-      addr: 'bitcoincash:qaddr-a',
-      prefix: PREFIX_TOPIC_UNFOLLOW
+      assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, expected)
     })
-    await processFollow(adapters, { txid: 'follow-11', room: 'bitcoin', addr: 'bitcoincash:qaddr-a' })
-
-    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 1)
-  })
+  }
 
   it('should log a process error and write nothing when the push data count is invalid', async () => {
     const adapters = makeAdapters()

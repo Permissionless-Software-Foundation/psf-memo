@@ -7,8 +7,10 @@
   follows, and unfollows:
 
     - Conservation: each room's summary postCount equals the number of distinct
-      topic-message txids seen for that room, and lastHeight equals the newest
-      post height (0 when the room has no posts).
+      topic-message txids seen for that room, lastHeight equals the newest
+      post height and lastSeen the newest post time (both 0 when the room has
+      no posts), and followerCount equals the number of addresses whose final
+      follow state for the room is active.
     - Recency shape: topicRecency holds exactly one record per summarized room,
       keyed at that room's lastHeight, with the matching value.
     - Idempotence: replaying the whole action sequence leaves every index
@@ -24,48 +26,22 @@ import { handleTopicMessage } from '../../src/use-cases/action-types/topic-messa
 import { handleTopicFollow } from '../../src/use-cases/action-types/topic-follow.js'
 import { topicRecencyKey } from '../../src/use-cases/action-types/helpers.js'
 import { PREFIX_TOPIC_FOLLOW, PREFIX_TOPIC_UNFOLLOW } from '../../src/lib/memo-codes.js'
+import { makeMemoryDb } from '../support/memory-db.js'
 
 const rng = seededRandom(20260917)
 
 const ROOMS = ['room-0', 'room-1', 'room-2', 'room-3']
 const FOLLOW_ADDRS = ['bitcoincash:qaddr-0', 'bitcoincash:qaddr-1', 'bitcoincash:qaddr-2']
 
-function makeDb () {
-  const store = new Map()
-  return {
-    store,
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async create (key, value) {
-      if (!store.has(key)) store.set(key, value)
-      return { success: true }
-    },
-    async update (key, value) {
-      store.set(key, value)
-      return { success: true }
-    },
-    async delete (key) {
-      store.delete(key)
-      return { success: true }
-    }
-  }
-}
-
 function makeAdapters () {
   return {
-    postDb: makeDb(),
-    postHeightDb: makeDb(),
-    addrPostHeightDb: makeDb(),
-    roomDb: makeDb(),
-    topicSummaryDb: makeDb(),
-    topicRecencyDb: makeDb(),
-    processErrorDb: makeDb()
+    postDb: makeMemoryDb(),
+    postHeightDb: makeMemoryDb(),
+    addrPostHeightDb: makeMemoryDb(),
+    roomDb: makeMemoryDb(),
+    topicSummaryDb: makeMemoryDb(),
+    topicRecencyDb: makeMemoryDb(),
+    processErrorDb: makeMemoryDb()
   }
 }
 
@@ -76,7 +52,7 @@ async function processEvent (adapters, event) {
       adapters,
       txid: event.txid,
       signerAddr: 'bitcoincash:qauthor',
-      seen: 1,
+      seen: event.seen,
       blockHeight: event.height,
       decoded: {
         action: 'topic-message',
@@ -117,6 +93,7 @@ function eventSequenceGen () {
           txid: `txid-${i}`,
           room,
           height: intGen(rng, 0, 9000000)(),
+          seen: intGen(rng, 0, 5000000)(),
           text: `text-${i}`
         })
       } else {
@@ -135,11 +112,15 @@ function eventSequenceGen () {
 }
 
 // Expected summaries derived straight from the event list, independent of the
-// implementation under test.
+// implementation under test. Follower counts use each address's final
+// follow/unfollow state per room.
 function expectedSummaries (events) {
   const summaries = new Map()
+  const followState = new Map()
   const ensure = (room) => {
-    if (!summaries.has(room)) summaries.set(room, { room, postCount: 0, lastHeight: 0 })
+    if (!summaries.has(room)) {
+      summaries.set(room, { room, postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 0 })
+    }
     return summaries.get(room)
   }
 
@@ -148,10 +129,16 @@ function expectedSummaries (events) {
       const summary = ensure(event.room)
       summary.postCount++
       if (event.height > summary.lastHeight) summary.lastHeight = event.height
-    } else if (!event.unfollow) {
+      if (event.seen > summary.lastSeen) summary.lastSeen = event.seen
+    } else {
+      followState.set(`${event.room}:${event.addr}`, { room: event.room, unfollow: event.unfollow })
       // Only an active follow creates a zero-post room; unfollows do not.
-      ensure(event.room)
+      if (!event.unfollow) ensure(event.room)
     }
+  }
+
+  for (const { room, unfollow } of followState.values()) {
+    if (!unfollow && summaries.has(room)) summaries.get(room).followerCount++
   }
 
   return summaries
@@ -175,13 +162,15 @@ test('topic indexes conserve counts and heights over arbitrary action sequences'
 
       const expected = expectedSummaries(events)
 
-      // Conservation: one summary per room with the exact count and height.
+      // Conservation: one summary per room with the exact counts and times.
       if (adapters.topicSummaryDb.store.size !== expected.size) return false
       for (const [room, summary] of expected) {
         const stored = adapters.topicSummaryDb.store.get(room)
         if (!stored) return false
         if (stored.postCount !== summary.postCount) return false
         if (stored.lastHeight !== summary.lastHeight) return false
+        if (stored.lastSeen !== summary.lastSeen) return false
+        if (stored.followerCount !== summary.followerCount) return false
       }
 
       // Recency shape: exactly one record per room, at its lastHeight.

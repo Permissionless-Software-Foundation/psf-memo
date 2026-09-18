@@ -1,32 +1,13 @@
 import { assert } from 'chai'
-import { recordTopicPost } from '../../../../src/use-cases/action-types/topic-indexing.js'
+import { recordTopicPost, ensureTopicRoom, recordTopicFollow } from '../../../../src/use-cases/action-types/topic-indexing.js'
 import { topicRecencyKey } from '../../../../src/use-cases/action-types/helpers.js'
-
-function makeDb () {
-  const store = new Map()
-  return {
-    store,
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async update (key, value) {
-      store.set(key, value)
-    },
-    async delete (key) {
-      store.delete(key)
-    }
-  }
-}
+import { makeMemoryDb } from '../../../support/memory-db.js'
 
 function makeAdapters () {
   return {
-    topicSummaryDb: makeDb(),
-    topicRecencyDb: makeDb()
+    roomDb: makeMemoryDb(),
+    topicSummaryDb: makeMemoryDb(),
+    topicRecencyDb: makeMemoryDb()
   }
 }
 
@@ -130,5 +111,48 @@ describe('#recordTopicPost lastSeen', () => {
     await recordTopicPost(adapters, 'bitcoin', 600100, 1700000000000)
 
     assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 4)
+  })
+})
+
+describe('#ensureTopicRoom', () => {
+  it('should return an existing summary unchanged', async () => {
+    const adapters = makeAdapters()
+    const existing = {
+      room: 'bitcoin',
+      postCount: 2,
+      lastHeight: 600100,
+      lastSeen: 1700000000000,
+      followerCount: 3
+    }
+    adapters.topicSummaryDb.store.set('bitcoin', existing)
+
+    const result = await ensureTopicRoom(adapters, 'bitcoin')
+
+    assert.deepEqual(result, existing)
+    assert.equal(adapters.topicRecencyDb.store.size, 0)
+  })
+})
+
+describe('#recordTopicFollow legacy summaries', () => {
+  it('should default a missing follower count to zero', async () => {
+    const adapters = makeAdapters()
+    adapters.topicSummaryDb.store.set('bitcoin', {
+      room: 'bitcoin',
+      postCount: 2,
+      lastHeight: 600100,
+      lastSeen: 1700000000000
+    })
+
+    await recordTopicFollow(adapters, {
+      room: 'bitcoin',
+      addr: 'bitcoincash:qaddr-a',
+      unfollow: false,
+      txid: 'follow-1',
+      seen: 1,
+      type: 'follow',
+      blockHeight: 600100
+    })
+
+    assert.equal(adapters.topicSummaryDb.store.get('bitcoin').followerCount, 1)
   })
 })

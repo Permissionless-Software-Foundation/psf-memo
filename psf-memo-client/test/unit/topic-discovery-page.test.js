@@ -19,6 +19,13 @@ function makeMemoDb ({ topics = [], pagination = null } = {}) {
   }
 }
 
+// Build a controller over a fixed topic list and run its initial load.
+async function loadPage (topics) {
+  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics }) })
+  await page.load()
+  return page
+}
+
 test('load returns topics with post counts', async () => {
   const topics = [
     { room: 'bitcoin', postCount: 2 },
@@ -95,45 +102,31 @@ test('getTopic returns the matching topic', async () => {
     { room: 'bitcoin', postCount: 2 },
     { room: 'cash', postCount: 1 }
   ]
-  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics }) })
-
-  await page.load()
+  const page = await loadPage(topics)
 
   assert.deepEqual(page.getTopic('bitcoin'), { room: 'bitcoin', postCount: 2 })
 })
 
 test('getTopic returns null when the topic is not loaded', async () => {
-  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics: [] }) })
-
-  await page.load()
+  const page = await loadPage([])
 
   assert.equal(page.getTopic('bitcoin'), null)
 })
 
 test('getLastSeenLabel formats the topic last-seen time', async () => {
-  const page = new TopicDiscoveryPage({
-    memoDb: makeMemoDb({ topics: [{ room: 'bitcoin', postCount: 1, lastSeen: 1799998200000 }] })
-  })
-
-  await page.load()
+  const page = await loadPage([{ room: 'bitcoin', postCount: 1, lastSeen: 1799998200000 }])
 
   assert.equal(page.getLastSeenLabel('bitcoin', 1800000000000), 'Less than an hour ago')
 })
 
 test('getLastSeenLabel returns "No posts" for a topic with no posts', async () => {
-  const page = new TopicDiscoveryPage({
-    memoDb: makeMemoDb({ topics: [{ room: 'lone', postCount: 0, lastSeen: 0 }] })
-  })
-
-  await page.load()
+  const page = await loadPage([{ room: 'lone', postCount: 0, lastSeen: 0 }])
 
   assert.equal(page.getLastSeenLabel('lone', 1800000000000), 'No posts')
 })
 
 test('getLastSeenLabel returns null for an unknown topic', async () => {
-  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics: [] }) })
-
-  await page.load()
+  const page = await loadPage([])
 
   assert.equal(page.getLastSeenLabel('missing', 1800000000000), null)
 })

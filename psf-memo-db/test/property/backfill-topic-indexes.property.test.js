@@ -6,8 +6,9 @@
   contents:
 
     - Conservation: every room in the rooms store gets a summary whose
-      postCount equals its number of post entries and whose lastHeight is the
-      newest post height (0 for follow-only rooms).
+      postCount equals its number of post entries, whose lastHeight is the
+      newest post height and lastSeen the newest post time (0 for follow-only
+      rooms), and whose followerCount equals its number of active follows.
     - Recency shape: topicRecency holds exactly one record per summarized room,
       keyed at that room's lastHeight, with the matching value.
     - Idempotence: running the backfill twice produces identical indexes, and
@@ -20,39 +21,12 @@ import test from 'node:test'
 
 import { seededRandom, forAll, intGen } from './harness.js'
 import { backfillTopicIndexes, topicRecencyKey } from '../../src/lib/backfill-topic-indexes.js'
+import { FakeDb } from '../support/level-double.js'
 
 const rng = seededRandom(20260917)
 
 const ROOMS = ['room-0', 'room-1', 'room-2', 'room-3']
 const FOLLOW_ADDRS = ['addr-0', 'addr-1', 'addr-2']
-
-// In-memory LevelDB-shaped store supporting the iterator/get/put/del surface
-// the backfill uses.
-function makeDb (records = []) {
-  const store = new Map(records)
-  return {
-    store,
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async put (key, value) {
-      store.set(key, value)
-    },
-    async del (key) {
-      store.delete(key)
-    },
-    async * iterator () {
-      for (const key of Array.from(store.keys()).sort()) {
-        yield [key, store.get(key)]
-      }
-    }
-  }
-}
 
 // Random rooms-store contents: each room gets a random number of posts and
 // follow records, including unfollows and follows with no posts.
@@ -65,7 +39,7 @@ function roomsGen () {
       for (let i = 0; i < postCount; i++) {
         entries.push([
           `${room}:post-${seq}`,
-          { room, txid: `post-${seq}`, type: 'post', blockHeight: intGen(rng, 0, 9000000)() }
+          { room, txid: `post-${seq}`, type: 'post', blockHeight: intGen(rng, 0, 9000000)(), seen: intGen(rng, 0, 5000000)() }
         ])
         seq++
       }
@@ -88,12 +62,18 @@ function expectedSummaries (entries) {
   const summaries = new Map()
   for (const [, value] of entries) {
     const room = value.room
-    if (!summaries.has(room)) summaries.set(room, { room, postCount: 0, lastHeight: 0 })
+    if (!summaries.has(room)) {
+      summaries.set(room, { room, postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 0 })
+    }
+    const summary = summaries.get(room)
     if (value.type === 'post') {
-      const summary = summaries.get(room)
       summary.postCount++
       const height = value.blockHeight ?? 0
       if (height > summary.lastHeight) summary.lastHeight = height
+      const seen = value.seen ?? 0
+      if (seen > summary.lastSeen) summary.lastSeen = seen
+    } else if (value.type === 'follow' && value.unfollow !== true) {
+      summary.followerCount++
     }
   }
   return summaries
@@ -107,9 +87,9 @@ test('backfill conserves every room summary and builds the recency index', async
   await forAll(
     roomsGen(),
     async (entries) => {
-      const roomsDb = makeDb(entries)
-      const topicSummariesDb = makeDb()
-      const topicRecencyDb = makeDb()
+      const roomsDb = new FakeDb(entries)
+      const topicSummariesDb = new FakeDb()
+      const topicRecencyDb = new FakeDb()
 
       const result = await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
 
@@ -122,6 +102,8 @@ test('backfill conserves every room summary and builds the recency index', async
         if (!stored) return false
         if (stored.postCount !== summary.postCount) return false
         if (stored.lastHeight !== summary.lastHeight) return false
+        if (stored.lastSeen !== summary.lastSeen) return false
+        if (stored.followerCount !== summary.followerCount) return false
 
         const key = topicRecencyKey(summary.lastHeight, room)
         const recency = topicRecencyDb.store.get(key)
@@ -150,11 +132,11 @@ test('backfill drops stale recency and summary records from earlier runs', async
   await forAll(
     roomsGen(),
     async (entries) => {
-      const roomsDb = makeDb(entries)
-      const topicSummariesDb = makeDb([
+      const roomsDb = new FakeDb(entries)
+      const topicSummariesDb = new FakeDb([
         ['stale-room', { room: 'stale-room', postCount: 9, lastHeight: 999999 }]
       ])
-      const topicRecencyDb = makeDb([
+      const topicRecencyDb = new FakeDb([
         [topicRecencyKey(999999, 'stale-room'), { room: 'stale-room', blockHeight: 999999 }],
         [topicRecencyKey(123456, 'another-stale'), { room: 'another-stale', blockHeight: 123456 }]
       ])

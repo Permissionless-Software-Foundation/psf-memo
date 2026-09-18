@@ -1,15 +1,21 @@
 /*
-  In-memory LevelDB double shared by the txid repair unit and property tests.
+  In-memory LevelDB double shared by the txid repair and topic index unit and
+  property tests.
 
-  FakeDb implements just the get/put/del/iterator surface the repair library
-  uses, plus keys() for assertions. makeLevel() wires the same store names the
-  real psf-memo-db exposes so the repair library can be driven without opening
-  any real LevelDB files.
+  FakeDb implements the get/put/del/iterator surface the libraries use, honors
+  the `gte`/`lte`/`limit` iterator options the topic read path relies on, and
+  exposes the backing Map as `store` for assertions. makeLevel() wires the same
+  store names the real psf-memo-db exposes so the repair library can be driven
+  without opening any real LevelDB files.
 */
 
 export class FakeDb {
-  constructor () {
-    this.map = new Map()
+  constructor (records = []) {
+    this.map = new Map(records)
+  }
+
+  get store () {
+    return this.map
   }
 
   async get (key) {
@@ -29,9 +35,13 @@ export class FakeDb {
     this.map.delete(key)
   }
 
-  async * iterator () {
-    for (const [key, value] of this.map) {
-      yield [key, value]
+  async * iterator (opts = {}) {
+    let keys = [...this.map.keys()].sort()
+    if (opts.gte !== undefined) keys = keys.filter((key) => key >= opts.gte)
+    if (opts.lte !== undefined) keys = keys.filter((key) => key <= opts.lte)
+    const limit = opts.limit === undefined ? keys.length : opts.limit
+    for (const key of keys.slice(0, limit)) {
+      yield [key, this.map.get(key)]
     }
   }
 

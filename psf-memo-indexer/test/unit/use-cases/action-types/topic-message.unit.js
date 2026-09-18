@@ -2,46 +2,17 @@ import { assert } from 'chai'
 import { handleTopicMessage } from '../../../../src/use-cases/action-types/topic-message.js'
 import { topicRecencyKey } from '../../../../src/use-cases/action-types/helpers.js'
 import { MAX_POST_SIZE } from '../../../../src/lib/memo-codes.js'
-
-function makeDb () {
-  const store = new Map()
-  return {
-    store,
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async create (key, value) {
-      store.set(key, value)
-      return { success: true }
-    },
-    async update (key, value) {
-      store.set(key, value)
-      return { success: true }
-    },
-    async delete (key) {
-      store.delete(key)
-      return { success: true }
-    },
-    entries () {
-      return Array.from(store.entries())
-    }
-  }
-}
+import { makeMemoryDb } from '../../../support/memory-db.js'
 
 function makeAdapters () {
   return {
-    postDb: makeDb(),
-    postHeightDb: makeDb(),
-    addrPostHeightDb: makeDb(),
-    roomDb: makeDb(),
-    topicSummaryDb: makeDb(),
-    topicRecencyDb: makeDb(),
-    processErrorDb: makeDb()
+    postDb: makeMemoryDb(),
+    postHeightDb: makeMemoryDb(),
+    addrPostHeightDb: makeMemoryDb(),
+    roomDb: makeMemoryDb(),
+    topicSummaryDb: makeMemoryDb(),
+    topicRecencyDb: makeMemoryDb(),
+    processErrorDb: makeMemoryDb()
   }
 }
 
@@ -59,6 +30,23 @@ async function processTopicMessage (adapters, { txid, room, addr, height, text, 
       pushDatas: [prefix, Buffer.from(room, 'utf8'), Buffer.from(text, 'utf8')]
     }
   })
+}
+
+// Process a batch of messages for the bitcoin room.
+async function processMessages (adapters, messages) {
+  for (const message of messages) {
+    await processTopicMessage(adapters, { room: 'bitcoin', addr: 'bitcoincash:qaddr-a', ...message })
+  }
+}
+
+// Assert the room summary and its matching single recency record.
+function assertAccumulatedSummary (adapters, expected) {
+  assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), { room: 'bitcoin', ...expected })
+  assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(expected.lastHeight, 'bitcoin')), {
+    room: 'bitcoin',
+    blockHeight: expected.lastHeight
+  })
+  assert.equal(adapters.topicRecencyDb.store.size, 1)
 }
 
 describe('#handleTopicMessage topic indexes', () => {
@@ -101,45 +89,32 @@ describe('#handleTopicMessage topic indexes', () => {
     assert.equal(adapters.topicSummaryDb.store.get('bitcoin').lastSeen, 1700000000000)
   })
 
-  it('should accumulate postCount and keep the newest height', async () => {
-    const adapters = makeAdapters()
+  const accumulationCases = [
+    {
+      name: 'should accumulate postCount and keep the newest height',
+      messages: [
+        { txid: 'topic-a1', height: 600100, text: 'hello' },
+        { txid: 'topic-a2', height: 600200, text: 'again' }
+      ]
+    },
+    {
+      name: 'should keep the newest height when a later message has an earlier height',
+      messages: [
+        { txid: 'topic-a3', height: 600200, text: 'later' },
+        { txid: 'topic-a4', height: 600100, text: 'earlier' }
+      ]
+    }
+  ]
 
-    await processTopicMessage(adapters, { txid: 'topic-a1', room: 'bitcoin', addr: 'bitcoincash:qaddr-a', height: 600100, text: 'hello' })
-    await processTopicMessage(adapters, { txid: 'topic-a2', room: 'bitcoin', addr: 'bitcoincash:qaddr-a', height: 600200, text: 'again' })
+  for (const { name, messages } of accumulationCases) {
+    it(name, async () => {
+      const adapters = makeAdapters()
 
-    assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
-      room: 'bitcoin',
-      postCount: 2,
-      lastHeight: 600200,
-      lastSeen: 1,
-      followerCount: 0
+      await processMessages(adapters, messages)
+
+      assertAccumulatedSummary(adapters, { postCount: 2, lastHeight: 600200, lastSeen: 1, followerCount: 0 })
     })
-    assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(600200, 'bitcoin')), {
-      room: 'bitcoin',
-      blockHeight: 600200
-    })
-    assert.equal(adapters.topicRecencyDb.store.size, 1)
-  })
-
-  it('should keep the newest height when a later message has an earlier height', async () => {
-    const adapters = makeAdapters()
-
-    await processTopicMessage(adapters, { txid: 'topic-a3', room: 'bitcoin', addr: 'bitcoincash:qaddr-a', height: 600200, text: 'later' })
-    await processTopicMessage(adapters, { txid: 'topic-a4', room: 'bitcoin', addr: 'bitcoincash:qaddr-a', height: 600100, text: 'earlier' })
-
-    assert.deepEqual(adapters.topicSummaryDb.store.get('bitcoin'), {
-      room: 'bitcoin',
-      postCount: 2,
-      lastHeight: 600200,
-      lastSeen: 1,
-      followerCount: 0
-    })
-    assert.deepEqual(adapters.topicRecencyDb.store.get(topicRecencyKey(600200, 'bitcoin')), {
-      room: 'bitcoin',
-      blockHeight: 600200
-    })
-    assert.equal(adapters.topicRecencyDb.store.size, 1)
-  })
+  }
 
   it('should not double-count a reprocessed topic message', async () => {
     const adapters = makeAdapters()

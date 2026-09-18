@@ -2,65 +2,16 @@ import { assert } from 'chai'
 import sinon from 'sinon'
 import TopicQuery from '../../../src/adapters/topic-query.js'
 import { topicRecencyKey } from '../../../src/lib/backfill-topic-indexes.js'
+import { FakeDb } from '../../support/level-double.js'
 
 function makeRoomsDb (records = {}) {
-  const store = new Map(Object.entries(records))
-  return {
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    iterator (opts = {}) {
-      const entries = Array.from(store.entries()).sort((a, b) => a[0].localeCompare(b[0]))
-      const { gte, lte } = opts
-      const filtered = entries.filter(([key]) => {
-        if (gte && key < gte) return false
-        if (lte && key > lte) return false
-        return true
-      })
-      let i = 0
-      return {
-        [Symbol.asyncIterator] () {
-          return this
-        },
-        async next () {
-          if (i >= filtered.length) return { value: undefined, done: true }
-          const entry = filtered[i++]
-          return { value: entry, done: false }
-        },
-        async close () {}
-      }
-    }
-  }
+  return new FakeDb(Object.entries(records))
 }
 
 // In-memory index store whose iterator honors the LevelDB `limit` option, so
 // the read path's bounded recency reads can be asserted.
 function makeIteratorDb (records = []) {
-  const store = new Map(records)
-  return {
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async * iterator (opts = {}) {
-      let keys = Array.from(store.keys()).sort()
-      if (opts.gte !== undefined) keys = keys.filter((k) => k >= opts.gte)
-      if (opts.lte !== undefined) keys = keys.filter((k) => k <= opts.lte)
-      const limit = opts.limit === undefined ? keys.length : opts.limit
-      for (const key of keys.slice(0, limit)) {
-        yield [key, store.get(key)]
-      }
-    }
-  }
+  return new FakeDb(records)
 }
 
 describe('#TopicQuery', () => {
@@ -128,29 +79,24 @@ describe('#TopicQuery', () => {
     }
   })
 
-  describe('#roomFromKey', () => {
-    it('should return the room from the value when present', () => {
-      assert.equal(uut.roomFromKey('ignored:post-1', { room: 'bitcoin' }), 'bitcoin')
-    })
+  for (const { method, presentKey, fallbackKey } of [
+    { method: 'roomFromKey', presentKey: 'ignored:post-1', fallbackKey: 'cash:post-1' },
+    { method: 'summaryRoom', presentKey: 'ignored', fallbackKey: 'cash' }
+  ]) {
+    describe(`#${method}`, () => {
+      it('should return the room from the value when present', () => {
+        assert.equal(uut[method](presentKey, { room: 'bitcoin' }), 'bitcoin')
+      })
 
-    it('should fall back to the first segment of the key', () => {
-      assert.equal(uut.roomFromKey('cash:post-1', {}), 'cash')
+      it('should fall back to the key when the value omits the room', () => {
+        assert.equal(uut[method](fallbackKey, {}), 'cash')
+      })
     })
-  })
+  }
 
   describe('#txidFromKey', () => {
     it('should return the last segment of the key', () => {
       assert.equal(uut.txidFromKey('bitcoin:post-300'), 'post-300')
-    })
-  })
-
-  describe('#summaryRoom', () => {
-    it('should return the room from the value when present', () => {
-      assert.equal(uut.summaryRoom('ignored', { room: 'bitcoin' }), 'bitcoin')
-    })
-
-    it('should fall back to the key when the value omits the room', () => {
-      assert.equal(uut.summaryRoom('cash', {}), 'cash')
     })
   })
 
@@ -222,35 +168,25 @@ describe('#TopicQuery', () => {
       ])
     })
 
-    it('should paginate using recency order and report total and hasMore', async () => {
-      uut = new TopicQuery({
-        roomsDb,
-        postsDb,
-        topicSummariesDb: makeIteratorDb(summaries),
-        topicRecencyDb: makeIteratorDb(recency)
+    for (const { name, limit, offset, expectedRooms, hasMore } of [
+      { name: 'should paginate using recency order and report total and hasMore', limit: 2, offset: 2, expectedRooms: ['dance', 'anime'], hasMore: true },
+      { name: 'should report hasMore false on the last page', limit: 2, offset: 4, expectedRooms: ['lone', 'quiet'], hasMore: false }
+    ]) {
+      it(name, async () => {
+        uut = new TopicQuery({
+          roomsDb,
+          postsDb,
+          topicSummariesDb: makeIteratorDb(summaries),
+          topicRecencyDb: makeIteratorDb(recency)
+        })
+
+        const result = await uut.listTopics({ limit, offset })
+
+        assert.deepEqual(result.topics.map((t) => t.room), expectedRooms)
+        assert.equal(result.pagination.total, 6)
+        assert.equal(result.pagination.hasMore, hasMore)
       })
-
-      const result = await uut.listTopics({ limit: 2, offset: 2 })
-
-      assert.deepEqual(result.topics.map((t) => t.room), ['dance', 'anime'])
-      assert.equal(result.pagination.total, 6)
-      assert.equal(result.pagination.hasMore, true)
-    })
-
-    it('should report hasMore false on the last page', async () => {
-      uut = new TopicQuery({
-        roomsDb,
-        postsDb,
-        topicSummariesDb: makeIteratorDb(summaries),
-        topicRecencyDb: makeIteratorDb(recency)
-      })
-
-      const result = await uut.listTopics({ limit: 2, offset: 4 })
-
-      assert.deepEqual(result.topics.map((t) => t.room), ['lone', 'quiet'])
-      assert.equal(result.pagination.total, 6)
-      assert.equal(result.pagination.hasMore, false)
-    })
+    }
 
     it('should read the recency index without iterating the rooms store', async () => {
       uut = new TopicQuery({
@@ -283,35 +219,25 @@ describe('#TopicQuery', () => {
       assert.equal(result.total, 2)
     })
 
-    it('should paginate topic posts', async () => {
-      async function * mockRooms () {
-        yield ['bitcoin:post-300', { room: 'bitcoin', txid: 'post-300', type: 'post', blockHeight: 300 }]
-        yield ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 }]
-      }
-      roomsDb.iterator
-        .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
-        .returns(mockRooms())
+    for (const { name, limit, offset, txids } of [
+      { name: 'should paginate topic posts', limit: 1, offset: 0, txids: ['post-300'] },
+      { name: 'should apply offset', limit: 100, offset: 1, txids: ['post-200'] }
+    ]) {
+      it(name, async () => {
+        async function * mockRooms () {
+          yield ['bitcoin:post-300', { room: 'bitcoin', txid: 'post-300', type: 'post', blockHeight: 300 }]
+          yield ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 }]
+        }
+        roomsDb.iterator
+          .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
+          .returns(mockRooms())
 
-      const result = await uut.getTopicPostTxids('bitcoin', { limit: 1, offset: 0 })
+        const result = await uut.getTopicPostTxids('bitcoin', { limit, offset })
 
-      assert.deepEqual(result.txids, ['post-300'])
-      assert.equal(result.total, 2)
-    })
-
-    it('should apply offset', async () => {
-      async function * mockRooms () {
-        yield ['bitcoin:post-300', { room: 'bitcoin', txid: 'post-300', type: 'post', blockHeight: 300 }]
-        yield ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 200 }]
-      }
-      roomsDb.iterator
-        .withArgs(sinon.match({ gte: 'bitcoin:', lte: 'bitcoin:\uffff' }))
-        .returns(mockRooms())
-
-      const result = await uut.getTopicPostTxids('bitcoin', { limit: 100, offset: 1 })
-
-      assert.deepEqual(result.txids, ['post-200'])
-      assert.equal(result.total, 2)
-    })
+        assert.deepEqual(result.txids, txids)
+        assert.equal(result.total, 2)
+      })
+    }
 
     it('should return empty result for a topic with no posts', async () => {
       async function * empty () {}
@@ -392,19 +318,17 @@ describe('#TopicQuery', () => {
       assert.equal(result, false)
     })
 
-    it('should return true for an active follow record', async () => {
-      roomsDb.get.withArgs('bitcoin:addr-a').resolves({ room: 'bitcoin', addr: 'addr-a', type: 'follow', unfollow: false })
+    for (const { addr, unfollow, expected } of [
+      { addr: 'addr-a', unfollow: false, expected: true },
+      { addr: 'addr-c', unfollow: true, expected: false }
+    ]) {
+      it(`should return ${expected} for a follow record with unfollow ${unfollow}`, async () => {
+        roomsDb.get.withArgs(`bitcoin:${addr}`).resolves({ room: 'bitcoin', addr, type: 'follow', unfollow })
 
-      const result = await uut.isFollowingRoom('addr-a', 'bitcoin')
-      assert.equal(result, true)
-    })
-
-    it('should return false for an unfollow record', async () => {
-      roomsDb.get.withArgs('bitcoin:addr-c').resolves({ room: 'bitcoin', addr: 'addr-c', type: 'follow', unfollow: true })
-
-      const result = await uut.isFollowingRoom('addr-c', 'bitcoin')
-      assert.equal(result, false)
-    })
+        const result = await uut.isFollowingRoom(addr, 'bitcoin')
+        assert.equal(result, expected)
+      })
+    }
 
     it('should return false for a non-follow record', async () => {
       roomsDb.get.withArgs('bitcoin:addr-a').resolves({ room: 'bitcoin', txid: 'post-1', type: 'post' })

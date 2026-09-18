@@ -77,7 +77,7 @@ export async function recordTopicFollow (adapters, record) {
   if (!existing && !isActive) return null
 
   const summary = existing || await ensureTopicRoom(adapters, room)
-  const delta = (isActive ? 1 : 0) - (wasActive ? 1 : 0)
+  const delta = Number(isActive) - Number(wasActive)
   if (delta === 0) return summary
 
   const updated = {

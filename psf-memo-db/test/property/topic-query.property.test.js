@@ -7,7 +7,8 @@
 
     - listTopics conservation: the sum of postCounts equals the number of
       post entries in the rooms store, each room's count matches its own post
-      entries, and the topics are returned sorted by most recent post.
+      entries, each room's lastSeen and followerCount match its post times and
+      active follows, and the topics are returned sorted by most recent post.
     - getTopicPostTxids ordering + pagination: posts are returned newest-first
       by block height, the total matches the room's post entries, and the
       offset/limit slice is exact.
@@ -72,12 +73,18 @@ function indexDbsFromEntries (entries) {
   const summaries = new Map()
   for (const e of entries) {
     const room = e.value.room
-    if (!summaries.has(room)) summaries.set(room, { room, postCount: 0, lastHeight: 0 })
+    if (!summaries.has(room)) {
+      summaries.set(room, { room, postCount: 0, lastHeight: 0, lastSeen: 0, followerCount: 0 })
+    }
+    const summary = summaries.get(room)
     if (e.value.type === 'post') {
-      const summary = summaries.get(room)
       summary.postCount++
       const height = e.value.blockHeight ?? 0
       if (height > summary.lastHeight) summary.lastHeight = height
+      const seen = e.value.seen ?? 0
+      if (seen > summary.lastSeen) summary.lastSeen = seen
+    } else if (e.value.type === 'follow' && e.value.unfollow !== true) {
+      summary.followerCount++
     }
   }
 
@@ -132,6 +139,7 @@ function fixtureGen () {
             txid: txidGen(rng),
             addr: ADDRESSES[intGen(rng, 0, ADDRESSES.length - 1)()],
             blockHeight: intGen(rng, 0, 9000000)(),
+            seen: intGen(rng, 0, 5000000)(),
             room
           }
         })
@@ -141,7 +149,7 @@ function fixtureGen () {
       for (let j = 0; j < followCount; j++) {
         entries.push({
           key: `${room}:${txidGen(rng)}`,
-          value: { type: 'follow', room }
+          value: { type: 'follow', room, unfollow: rng() < 0.4 }
         })
       }
     }
@@ -169,10 +177,18 @@ test('listTopics conserves post counts and returns rooms sorted by most recent p
       const postEntries = entries.filter((e) => e.value.type === 'post')
       const expectedTopics = [...new Set(entries.map((e) => e.value.room))]
         .map((room) => {
-          const heights = entries
-            .filter((e) => e.value.room === room && e.value.type === 'post')
-            .map((e) => e.value.blockHeight ?? 0)
-          return { room, lastHeight: heights.length ? Math.max(...heights) : 0 }
+          const roomPosts = entries.filter((e) => e.value.room === room && e.value.type === 'post')
+          const heights = roomPosts.map((e) => e.value.blockHeight ?? 0)
+          const seens = roomPosts.map((e) => e.value.seen ?? 0)
+          const followerCount = entries.filter(
+            (e) => e.value.room === room && e.value.type === 'follow' && e.value.unfollow !== true
+          ).length
+          return {
+            room,
+            lastHeight: heights.length ? Math.max(...heights) : 0,
+            lastSeen: seens.length ? Math.max(...seens) : 0,
+            followerCount
+          }
         })
         .sort((a, b) => {
           if (b.lastHeight !== a.lastHeight) return b.lastHeight - a.lastHeight
@@ -186,8 +202,12 @@ test('listTopics conserves post counts and returns rooms sorted by most recent p
       if (pagination.hasMore !== (offset + topics.length < pagination.total)) return false
 
       for (const topic of topics) {
+        const expectedTopic = expectedTopics.find((t) => t.room === topic.room)
+        if (!expectedTopic) return false
         const roomPosts = postEntries.filter((e) => e.value.room === topic.room).length
         if (topic.postCount !== roomPosts) return false
+        if (topic.lastSeen !== expectedTopic.lastSeen) return false
+        if (topic.followerCount !== expectedTopic.followerCount) return false
       }
       return true
     },

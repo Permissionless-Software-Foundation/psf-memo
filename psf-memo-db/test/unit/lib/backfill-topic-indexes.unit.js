@@ -1,43 +1,18 @@
 import { assert } from 'chai'
 import { backfillTopicIndexes, topicRecencyKey } from '../../../src/lib/backfill-topic-indexes.js'
-
-function makeDb (records = []) {
-  const store = new Map(records)
-  return {
-    store,
-    async get (key) {
-      if (!store.has(key)) {
-        const err = new Error('not found')
-        err.notFound = true
-        throw err
-      }
-      return store.get(key)
-    },
-    async put (key, value) {
-      store.set(key, value)
-    },
-    async del (key) {
-      store.delete(key)
-    },
-    async * iterator () {
-      for (const key of Array.from(store.keys()).sort()) {
-        yield [key, store.get(key)]
-      }
-    }
-  }
-}
+import { FakeDb } from '../../support/level-double.js'
 
 describe('#backfillTopicIndexes', () => {
   it('should summarize rooms with posts and follow-only rooms', async () => {
-    const roomsDb = makeDb([
+    const roomsDb = new FakeDb([
       ['bitcoin:post-100', { room: 'bitcoin', txid: 'post-100', type: 'post', blockHeight: 600100, seen: 1700000000000 }],
       ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 600200, seen: 1700000999000 }],
       ['bitcoin:addr-f', { room: 'bitcoin', addr: 'addr-f', type: 'follow', unfollow: false }],
       ['cash:post-250', { room: 'cash', txid: 'post-250', type: 'post', blockHeight: 600250, seen: 1700002000000 }],
       ['lone:addr-f', { room: 'lone', addr: 'addr-f', type: 'follow', unfollow: false }]
     ])
-    const topicSummariesDb = makeDb()
-    const topicRecencyDb = makeDb()
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb()
 
     const result = await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
 
@@ -71,13 +46,13 @@ describe('#backfillTopicIndexes', () => {
   })
 
   it('should count only active follows and ignore unfollowed addresses', async () => {
-    const roomsDb = makeDb([
+    const roomsDb = new FakeDb([
       ['bitcoin:addr-a', { room: 'bitcoin', addr: 'addr-a', type: 'follow', unfollow: false }],
       ['bitcoin:addr-b', { room: 'bitcoin', addr: 'addr-b', type: 'follow', unfollow: true }],
       ['bitcoin:addr-c', { room: 'bitcoin', addr: 'addr-c', type: 'follow', unfollow: false }]
     ])
-    const topicSummariesDb = makeDb()
-    const topicRecencyDb = makeDb()
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb()
 
     await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
 
@@ -85,12 +60,12 @@ describe('#backfillTopicIndexes', () => {
   })
 
   it('should keep the newest lastSeen when post heights and seen times disagree', async () => {
-    const roomsDb = makeDb([
+    const roomsDb = new FakeDb([
       ['bitcoin:post-100', { room: 'bitcoin', txid: 'post-100', type: 'post', blockHeight: 600100, seen: 1700009999000 }],
       ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 600200, seen: 1700000000000 }]
     ])
-    const topicSummariesDb = makeDb()
-    const topicRecencyDb = makeDb()
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb()
 
     await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
 
@@ -100,12 +75,12 @@ describe('#backfillTopicIndexes', () => {
   })
 
   it('should be idempotent across repeated runs', async () => {
-    const roomsDb = makeDb([
+    const roomsDb = new FakeDb([
       ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 600200, seen: 1700003000000 }],
       ['lone:addr-f', { room: 'lone', addr: 'addr-f', type: 'follow', unfollow: false }]
     ])
-    const topicSummariesDb = makeDb()
-    const topicRecencyDb = makeDb()
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb()
 
     await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
     const firstSummaries = new Map(topicSummariesDb.store)
@@ -118,11 +93,11 @@ describe('#backfillTopicIndexes', () => {
   })
 
   it('should remove stale recency records from a previous run', async () => {
-    const roomsDb = makeDb([
+    const roomsDb = new FakeDb([
       ['bitcoin:post-200', { room: 'bitcoin', txid: 'post-200', type: 'post', blockHeight: 600200, seen: 1700000000000 }]
     ])
-    const topicSummariesDb = makeDb()
-    const topicRecencyDb = makeDb([
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb([
       [topicRecencyKey(600100, 'bitcoin'), { room: 'bitcoin', blockHeight: 600100 }],
       [topicRecencyKey(0, 'stale'), { room: 'stale', blockHeight: 0 }]
     ])
@@ -135,11 +110,11 @@ describe('#backfillTopicIndexes', () => {
   })
 
   it('should fall back to the key room segment when a record omits the room', async () => {
-    const roomsDb = makeDb([
+    const roomsDb = new FakeDb([
       ['cash:post-1', { type: 'post', blockHeight: 500 }]
     ])
-    const topicSummariesDb = makeDb()
-    const topicRecencyDb = makeDb()
+    const topicSummariesDb = new FakeDb()
+    const topicRecencyDb = new FakeDb()
 
     await backfillTopicIndexes({ roomsDb, topicSummariesDb, topicRecencyDb })
 
