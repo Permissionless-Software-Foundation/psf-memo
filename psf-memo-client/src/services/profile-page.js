@@ -11,7 +11,11 @@
   I/O lives behind those small adapter boundaries.
 */
 
+const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
+
 const PROFILE_PATH_PREFIX = '/profile'
+const MUTE_SUCCESS_MESSAGE = 'Your mute was broadcast to the Bitcoin Cash network.'
+const UNMUTE_SUCCESS_MESSAGE = 'Your unmute was broadcast to the Bitcoin Cash network.'
 
 class ProfilePage {
   constructor (deps = {}) {
@@ -24,6 +28,8 @@ class ProfilePage {
     this.pagination = null
     this.followState = null
     this.muteState = null
+    this.showMuteResultModal = false
+    this.lastMuteResult = null
   }
 
   async load ({ limit = 50, offset = 0 } = {}) {
@@ -97,16 +103,59 @@ class ProfilePage {
   }
 
   async mute () {
-    return this._setMuteState('mute', true)
+    return this._broadcastMute('mute', true)
   }
 
   async unmute () {
-    return this._setMuteState('unmute', false)
+    return this._broadcastMute('unmute', false)
   }
 
   // Delegate mute/unmute to the injected handler and reflect the new state.
   async _setMuteState (method, nextState) {
     return this._setState(this.memoMute, 'mute', 'muteState', method, nextState)
+  }
+
+  // Broadcast a mute/unmute and record the result for the profile page's
+  // result modal. A missing handler is a programming error and still throws;
+  // a broadcast failure is recorded so the page can show a failure modal and
+  // leave the button state unchanged.
+  async _broadcastMute (method, nextState) {
+    if (!this.memoMute) {
+      throw new Error('Profile page requires a memo mute handler.')
+    }
+    this.showMuteResultModal = false
+    this.lastMuteResult = null
+    try {
+      const { txid } = await this._setMuteState(method, nextState)
+      this.lastMuteResult = { ok: true, action: method, txid }
+    } catch (err) {
+      this.lastMuteResult = { ok: false, action: method, message: err.message || String(err) }
+    }
+    this.showMuteResultModal = true
+    return this.lastMuteResult
+  }
+
+  // The broadcast success message for the visible mute result, or ''.
+  getMuteBroadcastMessage () {
+    if (!this.lastMuteResult || !this.lastMuteResult.ok) return ''
+    return this.lastMuteResult.action === 'unmute' ? UNMUTE_SUCCESS_MESSAGE : MUTE_SUCCESS_MESSAGE
+  }
+
+  // The broadcast error message for the visible mute result, or ''.
+  getMuteResultError () {
+    if (!this.lastMuteResult || this.lastMuteResult.ok) return ''
+    return this.lastMuteResult.message || ''
+  }
+
+  // Block explorer URL for a mute/unmute transaction.
+  explorerUrl (txid) {
+    return ProfilePage.explorerUrl(txid)
+  }
+
+  // Dismiss the mute result. This closes the modal without navigating.
+  dismissMuteResult () {
+    this.showMuteResultModal = false
+    return this
   }
 
   // Delegate a follow/mute action to the injected handler and reflect the new
@@ -115,9 +164,9 @@ class ProfilePage {
     if (!handler) {
       throw new Error(`Profile page requires a memo ${label} handler.`)
     }
-    await handler[method](this.addr)
+    const txid = await handler[method](this.addr)
     this[stateField] = nextState
-    return { ok: true }
+    return { ok: true, txid }
   }
 
   getPost (txid) {
@@ -130,6 +179,10 @@ class ProfilePage {
 }
 
 ProfilePage.PROFILE_PATH_PREFIX = PROFILE_PATH_PREFIX
+ProfilePage.EXPLORER_TX_BASE = BLOCK_EXPLORER_TX_BASE
+ProfilePage.MUTE_SUCCESS_MESSAGE = MUTE_SUCCESS_MESSAGE
+ProfilePage.UNMUTE_SUCCESS_MESSAGE = UNMUTE_SUCCESS_MESSAGE
+ProfilePage.explorerUrl = blockExplorerTxUrl
 
 module.exports = ProfilePage
 

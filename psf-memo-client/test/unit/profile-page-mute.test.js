@@ -114,3 +114,89 @@ test('mute throws when no memo mute handler is injected', async () => {
     /requires a memo mute handler/
   )
 })
+
+const SUCCESS_TXID = 'aa'.repeat(32)
+
+function makeResultMemoMute (txid = SUCCESS_TXID) {
+  return {
+    async mute () {
+      return txid
+    },
+    async unmute () {
+      return txid
+    }
+  }
+}
+
+test('the mute result modal starts hidden', () => {
+  const page = new ProfilePage({ memoDb: makeMemoDb({}) })
+
+  assert.equal(page.showMuteResultModal, false)
+  assert.equal(page.lastMuteResult, null)
+})
+
+test('a successful mute records a broadcast result and opens the result modal', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const page = new ProfilePage({ memoDb: makeMemoDb({}), addr, myAddr })
+  page.memoMute = makeResultMemoMute()
+
+  const result = await page.mute()
+
+  assert.equal(result.ok, true)
+  assert.equal(result.txid, SUCCESS_TXID)
+  assert.equal(page.isMuting(), true)
+  assert.equal(page.showMuteResultModal, true)
+  assert.equal(page.getMuteBroadcastMessage(), 'Your mute was broadcast to the Bitcoin Cash network.')
+  assert.equal(page.explorerUrl(SUCCESS_TXID), `https://bch.loping.net/tx/${SUCCESS_TXID}`)
+})
+
+test('a successful unmute shows the unmute broadcast message', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const page = new ProfilePage({ memoDb: makeMemoDb({}), addr, myAddr })
+  page.memoMute = makeResultMemoMute()
+  page.muteState = true
+
+  const result = await page.unmute()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.isMuting(), false)
+  assert.equal(page.showMuteResultModal, true)
+  assert.equal(page.getMuteBroadcastMessage(), 'Your unmute was broadcast to the Bitcoin Cash network.')
+})
+
+test('a failed mute records the error, opens the failure modal, and keeps the Mute button', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const page = new ProfilePage({ memoDb: makeMemoDb({}), addr, myAddr })
+  page.memoMute = {
+    async mute () {
+      throw new Error('Insufficient balance')
+    },
+    async unmute () {
+      return SUCCESS_TXID
+    }
+  }
+
+  const result = await page.mute()
+
+  assert.equal(result.ok, false)
+  assert.equal(page.isMuting(), false)
+  assert.equal(page.showMuteResultModal, true)
+  assert.equal(page.getMuteResultError(), 'Insufficient balance')
+  assert.equal(page.getMuteBroadcastMessage(), '')
+})
+
+test('dismissing the mute result closes the modal without changing the button state', async () => {
+  const myAddr = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const page = new ProfilePage({ memoDb: makeMemoDb({}), addr, myAddr })
+  page.memoMute = makeResultMemoMute()
+
+  await page.mute()
+  page.dismissMuteResult()
+
+  assert.equal(page.showMuteResultModal, false)
+  assert.equal(page.isMuting(), true)
+})

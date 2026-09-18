@@ -57,6 +57,7 @@ const { renderPostText } = require('./render-post')
 const { renderAccountAvatar } = require('./render-account-avatar')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
+const { renderMuteResult } = require('./render-mute-result')
 const { renderNotificationEntry } = require('./render-notification-entry')
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
@@ -2085,8 +2086,8 @@ const handlers = [
     }
   },
   {
-    name: 'broadcasts OP_RETURN with Memo mute prefix for address',
-    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo mute prefix for the address (.+)$/,
+    name: 'broadcasts or attempts Memo mute prefix for address',
+    pattern: /^the app (?:broadcasts|attempts to broadcast) an OP_RETURN transaction with the Memo mute prefix for the address (.+)$/,
     run (m, example, world) {
       const addr = resolveParam(m[1], example)
       const hash160 = world.wallet.bchjs.Address.toHash160(addr)
@@ -2119,6 +2120,98 @@ const handlers = [
       }
       if (last.msg.toString('hex') !== hash160) {
         throw new Error(`Broadcast unmute hash160 did not match ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows a mute result modal',
+    pattern: /^the profile page shows a mute result modal$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.showMuteResultModal) {
+        throw new Error('Expected the mute result modal to be visible.')
+      }
+    }
+  },
+  {
+    name: 'mute result modal shows a broadcast success message',
+    pattern: /^the mute result modal shows a broadcast success message$/,
+    run (m, example, world) {
+      const { message, html } = renderMuteBroadcastResult(world)
+      if (!html.includes(message)) {
+        throw new Error(`The rendered mute result does not show the message "${message}".`)
+      }
+    }
+  },
+  {
+    name: 'mute result modal shows the mute transaction id',
+    pattern: /^the mute result modal shows the mute transaction id$/,
+    run (m, example, world) {
+      const { txid, html } = renderMuteBroadcastResult(world)
+      if (!html.includes(txid)) {
+        throw new Error(`The rendered mute result does not show the transaction id ${txid}.`)
+      }
+    }
+  },
+  {
+    name: 'mute result modal shows a block explorer link',
+    pattern: /^the mute result modal shows a link to the block explorer for the mute transaction$/,
+    run (m, example, world) {
+      const { url, html } = renderMuteBroadcastResult(world)
+      if (!url.startsWith(`${ProfilePage.EXPLORER_TX_BASE}/`)) {
+        throw new Error(`Expected a bch.loping.net explorer link, got "${url}".`)
+      }
+      if (!html.includes(`href="${url}"`)) {
+        throw new Error(`The rendered mute result does not link to ${url}.`)
+      }
+      if (!html.includes('target="_blank"')) {
+        throw new Error('The rendered mute explorer link does not open in a new tab.')
+      }
+    }
+  },
+  {
+    name: 'dismiss mute result',
+    pattern: /^I dismiss the mute result$/,
+    run (m, example, world) {
+      world.profilePage.dismissMuteResult()
+    }
+  },
+  {
+    name: 'mute result modal closes',
+    pattern: /^the mute result modal closes$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (world.profilePage.showMuteResultModal) {
+        throw new Error('Expected the mute result modal to be closed.')
+      }
+    }
+  },
+  {
+    name: 'profile page shows a failure modal containing text',
+    pattern: /^the profile page shows a failure modal containing "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      const expected = example[param]
+      const page = world.profilePage
+      if (!page) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!page.showMuteResultModal) {
+        throw new Error('Expected the mute failure modal to be visible.')
+      }
+      const actual = page.getMuteResultError()
+      if (!actual.includes(expected)) {
+        throw new Error(`Expected a failure modal containing "${expected}", got "${actual}".`)
+      }
+      if (!renderMuteResult({ error: actual }).includes(expected)) {
+        throw new Error(`The rendered mute failure modal does not show "${expected}".`)
       }
     }
   },
@@ -3951,6 +4044,26 @@ function renderLikeBroadcastResult (world) {
   }
   const url = page.explorerUrl(txid)
   const html = renderLikeResult({ txid, message, explorerUrl: url })
+  return { txid, message, url, html }
+}
+
+// Require a successful mute broadcast result and render it to static HTML for
+// the mute acceptance assertions. The caller inspects the returned fields.
+function renderMuteBroadcastResult (world) {
+  const page = world.profilePage
+  if (!page || !page.showMuteResultModal || !page.lastMuteResult || !page.lastMuteResult.ok) {
+    throw new Error('Expected a successful mute broadcast result.')
+  }
+  const txid = page.lastMuteResult.txid
+  if (!txid) {
+    throw new Error('Expected the mute result to include a transaction id.')
+  }
+  const message = page.getMuteBroadcastMessage()
+  if (!message) {
+    throw new Error('Expected a mute broadcast success message.')
+  }
+  const url = page.explorerUrl(txid)
+  const html = renderMuteResult({ txid, message, explorerUrl: url })
   return { txid, message, url, html }
 }
 

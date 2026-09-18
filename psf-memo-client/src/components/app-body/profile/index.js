@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Container, Row, Col, Spinner, Card, Button } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Card, Button, Modal } from 'react-bootstrap'
 import Jdenticon from '@chris.troutner/react-jdenticon'
 
 import MemoDb from '../../../services/memo-db'
@@ -16,6 +16,7 @@ import PostReplyCount from '../../post-reply-count'
 import LikeButton from '../../post-feed/like-button'
 import PostOptionsMenu from '../../post-feed/post-options-menu'
 import PostThreadModal from '../../post-thread-modal'
+import MuteResult from './mute-result'
 import '../../../App.css'
 import './profile.css'
 
@@ -69,6 +70,8 @@ function Profile (props) {
   const [profilePage, setProfilePage] = useState(null)
   const [offset, setOffset] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [showMuteResultModal, setShowMuteResultModal] = useState(false)
+  const [muteResult, setMuteResult] = useState(null)
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -95,10 +98,32 @@ function Profile (props) {
     setBusy(false)
   }
 
+  // Mute/unmute keep the page open and show a broadcast result modal instead
+  // of navigating, so capture the result before rendering the modal.
+  const runMuteAction = async (method, failMsg) => {
+    if (!profilePage || busy) return
+    setBusy(true)
+    try {
+      const result = await profilePage[method]()
+      setMuteResult(result)
+      setShowMuteResultModal(Boolean(profilePage.showMuteResultModal))
+    } catch (err) {
+      setError(err.message || failMsg)
+    }
+    setBusy(false)
+  }
+
   const handleFollow = () => runAction('follow', 'Failed to follow')
   const handleUnfollow = () => runAction('unfollow', 'Failed to unfollow')
-  const handleMute = () => runAction('mute', 'Failed to mute')
-  const handleUnmute = () => runAction('unmute', 'Failed to unmute')
+  const handleMute = () => runMuteAction('mute', 'Failed to mute')
+  const handleUnmute = () => runMuteAction('unmute', 'Failed to unmute')
+
+  const handleDismissMuteResult = () => {
+    if (profilePage) profilePage.dismissMuteResult()
+    setShowMuteResultModal(false)
+  }
+
+  const muteSucceeded = Boolean(muteResult && muteResult.ok)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -298,6 +323,27 @@ function Profile (props) {
         wallet={appData?.wallet}
         profiles={profiles}
       />
+
+      <Modal show={showMuteResultModal} onHide={handleDismissMuteResult} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {muteSucceeded ? 'Mute broadcast' : 'Mute failed'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <MuteResult
+            txid={muteSucceeded ? muteResult.txid : ''}
+            message={profilePage ? profilePage.getMuteBroadcastMessage() : ''}
+            error={profilePage ? profilePage.getMuteResultError() : ''}
+            explorerUrl={muteSucceeded ? profilePage.explorerUrl(muteResult.txid) : ''}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant='primary' onClick={handleDismissMuteResult}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   )
 }
