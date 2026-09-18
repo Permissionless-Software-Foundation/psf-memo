@@ -97,3 +97,14 @@ test('renders an empty message when the notification has no text', () => {
 
   assert.match(html, /class="notification-entry-text"[^>]*><\/p>/)
 })
+
+test('keeps the actor name in the card header instead of the body', () => {
+  const html = render(makeEntry())
+  const body = html.match(/class="notification-entry-body"[^>]*>([\s\S]*?)<\/div>/)
+
+  assert.ok(html.includes('class="notification-entry-header"'))
+  assert.ok(body)
+  assert.ok(body[1].includes('liked your post'))
+  assert.ok(!body[1].includes('alice'))
+  assert.ok(!body[1].includes(ALICE))
+})

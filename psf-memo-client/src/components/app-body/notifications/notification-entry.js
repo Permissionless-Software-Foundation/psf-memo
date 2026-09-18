@@ -8,6 +8,9 @@
   shows the truncated address as the name, and when the actor has no avatar (or
   the profile lookup failed) it falls back to an identicon.
 
+  Laid out as a post-style card: avatar and name in the header, the
+  notification message in the body, and "View Post" in the actions row.
+
   Written in plain React.createElement style so the same module can be used by
   the JSX components in the browser build and by the acceptance adapter that
   renders HTML under Node.
@@ -53,33 +56,57 @@ function NotificationEntry ({ entry, onViewPost, onProfileClick }) {
   }
 
   return React.createElement(
-    'div',
+    'article',
     { className: 'notification-item' },
     React.createElement(
-      'a',
-      {
-        className: 'notification-entry-avatar-link',
-        href: entry.profilePath,
-        onClick: handleProfileClick,
-        'aria-label': `View ${entry.displayName}'s profile`
-      },
-      React.createElement(NotificationAvatar, { addr: entry.addr, avatarUrl: entry.avatarUrl })
+      'header',
+      { className: 'notification-entry-header' },
+      React.createElement(
+        'a',
+        {
+          className: 'notification-entry-avatar-link',
+          href: entry.profilePath,
+          onClick: handleProfileClick,
+          'aria-label': `View ${entry.displayName}'s profile`
+        },
+        React.createElement(NotificationAvatar, {
+          addr: entry.addr,
+          avatarUrl: entry.avatarUrl
+        })
+      ),
+      React.createElement(
+        'div',
+        { className: 'notification-entry-meta' },
+        React.createElement(
+          'a',
+          {
+            className: 'notification-entry-name-link',
+            href: entry.profilePath,
+            onClick: handleProfileClick,
+            title: entry.addr
+          },
+          entry.displayName
+        ),
+        React.createElement(
+          'span',
+          { className: 'notification-entry-address' },
+          entry.addr
+        )
+      )
     ),
     React.createElement(
       'div',
       { className: 'notification-entry-body' },
       React.createElement(
-        'a',
-        {
-          className: 'notification-entry-name-link',
-          href: entry.profilePath,
-          onClick: handleProfileClick
-        },
-        entry.displayName
-      ),
-      React.createElement('span', { className: 'notification-entry-address' }, entry.addr),
-      React.createElement('p', { className: 'notification-entry-text' }, entry.message || ''),
-      entry.showViewPost &&
+        'p',
+        { className: 'notification-entry-text' },
+        entry.message || ''
+      )
+    ),
+    entry.showViewPost &&
+      React.createElement(
+        'div',
+        { className: 'notification-entry-actions' },
         React.createElement(
           'a',
           {
@@ -89,13 +116,9 @@ function NotificationEntry ({ entry, onViewPost, onProfileClick }) {
           },
           VIEW_POST_LABEL
         )
-    )
+      )
   )
 }
 
 module.exports = NotificationEntry
 module.exports.NotificationAvatar = NotificationAvatar
-
-// mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-18T19:39:02.274Z","module_hash":"98bffd92542fbbee866abbc2775b60736c2ea8ba6fe36ec38690b22035fdd306","functions":[{"id":"func/NotificationAvatar","name":"NotificationAvatar","line":23,"end_line":39,"hash":"eaae01344873b8451a42943bd87478a7b4e8dc3fa5021efd2811c932950e40bf"},{"id":"func/NotificationEntry","name":"NotificationEntry","line":41,"end_line":94,"hash":"c17002fa1ff4602c2785990a95100f4ff782ebb1a5dc7c5573190d85a5bdfe4f"}]}
-// mutate4javascript-manifest-end

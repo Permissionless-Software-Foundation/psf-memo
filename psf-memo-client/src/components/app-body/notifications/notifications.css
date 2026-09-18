@@ -1,0 +1,269 @@
+/*
+  Notifications page: post-card layout for each entry.
+*/
+
+.notifications-page {
+  padding-top: 2.5rem;
+  padding-bottom: 4rem;
+}
+
+.notifications-heading {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto 24px;
+  padding: 0;
+  text-align: left;
+}
+
+.notifications-heading h1 {
+  margin: 0;
+  color: #262626;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.notifications-heading p {
+  max-width: 560px;
+  margin: 0.6rem 0 0;
+  color: #737373;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.notifications-count {
+  display: inline-block;
+  margin-top: 0.85rem;
+  color: #8e8e8e;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.notifications-error {
+  padding: 0.85rem 1rem;
+  color: #c62828;
+  background: #fff1f1;
+  border: 1px solid #ffd2d2;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.notifications-empty {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  color: #737373;
+  background: #ffffff;
+  border: 1px solid #dbdbdb;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.notifications-list {
+  width: 100%;
+}
+
+.notification-item {
+  position: relative;
+  width: 100%;
+  margin: 0 0 20px;
+  padding: 0;
+  overflow: hidden;
+
+  color: var(--ig-text, #262626);
+  background: var(--ig-surface, #ffffff);
+
+  border: 1px solid var(--ig-border, #dbdbdb);
+  border-radius: var(--ig-radius, 8px);
+}
+
+.notification-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-height: 60px;
+  margin: 0;
+  padding: 12px 16px;
+
+  border-bottom: 1px solid var(--ig-border-soft, #efefef);
+}
+
+.notification-entry-avatar-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+.notification-entry-avatar,
+.notification-entry-identicon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  overflow: hidden;
+
+  object-fit: cover;
+  background: #efefef;
+  border: 1px solid var(--ig-border, #dbdbdb);
+  border-radius: 50%;
+}
+
+.notification-entry-header img {
+  padding: 2px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(
+      135deg,
+      #f9ce34,
+      #ee2a7b,
+      #6228d7
+    ) border-box;
+  border: 2px solid transparent;
+}
+
+.notification-entry-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.notification-entry-name-link {
+  display: inline-block;
+  max-width: 100%;
+
+  color: var(--ig-text, #262626);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-entry-name-link:hover {
+  color: var(--ig-text, #262626);
+  text-decoration: none;
+  opacity: 0.65;
+}
+
+.notification-entry-address {
+  display: block;
+  max-width: 100%;
+  color: var(--ig-text-secondary, #737373);
+  font-size: 12px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.notification-entry-body {
+  padding: 14px 16px 6px;
+}
+
+.notification-item:not(:has(.notification-entry-actions)) .notification-entry-body {
+  padding-bottom: 14px;
+}
+
+.notification-entry-text {
+  margin: 0;
+  padding: 0;
+  color: #262626;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.notification-entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-height: 46px;
+  margin: 0;
+  padding: 8px 16px;
+
+  border-top: 1px solid var(--ig-border-soft, #efefef);
+}
+
+.notification-entry-view-post {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 32px;
+  padding: 4px 0;
+
+  color: var(--ig-text, #262626);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-decoration: none;
+}
+
+.notification-entry-view-post:hover {
+  color: var(--ig-text, #262626);
+  text-decoration: none;
+  opacity: 0.55;
+}
+
+.notifications-pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.notifications-pagination .btn {
+  min-width: 110px;
+  border-radius: 8px;
+}
+
+@media (max-width: 700px) {
+  .notifications-page {
+    padding-top: 1.5rem;
+  }
+
+  .notifications-heading {
+    padding: 0 0.75rem;
+  }
+
+  .notifications-heading h1 {
+    font-size: 2rem;
+  }
+
+  .notifications-heading p {
+    font-size: 0.9rem;
+  }
+
+  .notification-item {
+    margin-bottom: 10px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .notification-entry-header {
+    padding: 10px 12px;
+  }
+
+  .notification-entry-body {
+    padding: 14px 12px 6px;
+  }
+
+  .notification-entry-actions {
+    padding: 7px 12px;
+  }
+
+  .notifications-pagination {
+    padding: 0 0.75rem;
+  }
+}

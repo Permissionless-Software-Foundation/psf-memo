@@ -19,6 +19,8 @@ import NotificationsPage from '../../../services/notifications-page'
 import PostThreadModal from '../../post-thread-modal'
 import NotificationEntry from './notification-entry'
 import '../../../App.css'
+import '../../post-feed/post-feed.css'
+import './notifications.css'
 
 const PAGE_SIZE = 50
 
@@ -123,7 +125,7 @@ function Notifications (props) {
           )}
 
           {ready && entries.length > 0 && (
-            <div className='notifications-list'>
+            <div className='posts-feed notifications-list'>
               {entries.map((entry) => (
                 <NotificationEntry
                   key={entry.txid}
