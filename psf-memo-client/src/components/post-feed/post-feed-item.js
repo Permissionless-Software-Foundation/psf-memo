@@ -137,7 +137,7 @@ function PostFeedItem ({
       </header>
 
       <div className='posts-feed-item-content'>
-        <p className='posts-feed-item-text'>
+        <div className='posts-feed-item-text'>
           <Link
             to={`/profile/${encodeURIComponent(post.addr)}`}
             className='posts-feed-item-inline-author'
@@ -148,7 +148,7 @@ function PostFeedItem ({
           {' '}
 
           <PostContent text={post.text} />
-        </p>
+        </div>
       </div>
 
       {(showReplyCount || showLikeButton) && (

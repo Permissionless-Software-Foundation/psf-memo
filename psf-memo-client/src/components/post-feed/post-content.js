@@ -71,7 +71,7 @@ function PostContent ({ text = '', initialFailedImages }) {
           React.createElement('iframe', {
             src: `${YOUTUBE_EMBED_BASE_URL}/${segment.videoId}`,
             title: `YouTube video ${segment.videoId}`,
-            allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+            allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
             referrerPolicy: 'strict-origin-when-cross-origin',
             allowFullScreen: true,
             frameBorder: '0'

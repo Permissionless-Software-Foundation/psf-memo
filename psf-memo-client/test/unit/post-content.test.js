@@ -49,6 +49,12 @@ test('renders an embedded YouTube player and a separate link together', () => {
   assert.doesNotMatch(html, /<a[^>]+href="https:\/\/youtu\.be\/dQw4w9WgXcQ"/)
 })
 
+test('YouTube iframe allow list omits unrecognized web-share', () => {
+  const html = render('https://youtu.be/dQw4w9WgXcQ')
+  assert.match(html, /<iframe[^>]+allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"/)
+  assert.doesNotMatch(html, /web-share/)
+})
+
 test('renders an image URL as an inline image inside a new-tab anchor', () => {
   const html = render('https://i.imgur.com/swCI56T.jpeg Anong breed ng basil ito?')
   assert.match(html, /<a[^>]+href="https:\/\/i\.imgur\.com\/swCI56T\.jpeg"[^>]*>[\s\S]*<img/)
