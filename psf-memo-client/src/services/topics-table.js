@@ -38,3 +38,7 @@ module.exports = {
   TOPICS_TABLE_WRAPPER_CLASS,
   buildTopicsTable
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T14:43:18.415Z","module_hash":"34ffd8c2e8cbc5936e9947eb0cb0a50694a0be73e069f57f781aa5a817d703e2","functions":[{"id":"func/buildTopicsTable","name":"buildTopicsTable","line":17,"end_line":34,"hash":"a27426625952c739f34c39d165589f67fcdf71ebd8a1a6bb84e2f0f33668f870"}]}
+// mutate4javascript-manifest-end

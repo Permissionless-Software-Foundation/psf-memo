@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=94681f52139dc67ffd45a1ecf2c1e00204b78fb16fd0c8fa72606db0b32ed491
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T14:44:15.612974379Z","feature_name":"Topics Table Layout","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/topics-table-layout.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Topics Table Layout - 2 each topic's fields appear in the matching columns","scenario_hash":"748c9fa260e4eb12f4aa6250cec2327e6b54483eb2efaa5adc192bd0b321c8ae","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-09-18T14:44:15.612974379Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Topics Table Layout - 1, Topics Table Layout - 2, Topics Table Layout - 3, Topics Table Layout - 4
 #
 # The topics page renders topics in a react-bootstrap Table so the four columns
