@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-17
+**Last updated**: 2026-09-18
 
 ---
 
@@ -31,19 +31,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Topic metadata columns (spec approved):** add the four memo.cash topic
-  columns to the `/topics` page: topic name, time since the most recent post,
-  post count, and follower count. Requires new indexer metadata (`lastSeen`,
-  `followerCount`) on `topicSummaries`, `GET /topics` returning them, a
-  backfill for existing `rooms`, and client rendering with relative-time
-  formatting (`No posts` / `Less than an hour ago` / `N hours ago` /
-  `N days ago`). Client + indexer + DB. Specs:
-  `psf-memo-indexer/specs/topic-metadata-indexing.feature`,
-  `psf-memo-db/specs/topic-metadata.feature`,
-  `psf-memo-client/specs/topic-metadata-columns.feature`. Task
-  `topic-metadata`; spec committed, handed off to coder.
+_(none)_
 
 ## Recently completed
+
+- **Topic metadata columns (2026-09-18):** the `/topics` page now shows four
+  columns — topic name, time since the most recent post, post count, and
+  follower count. The indexer writes `lastSeen` (epoch-ms of the newest room
+  post; 0 for follow-only rooms) and `followerCount` (active follows) into each
+  `topicSummaries` record, idempotently and without disturbing the room's post
+  metadata; `GET /topics` returns both; the room backfill rebuilds both from
+  `rooms`; and the client formats `No posts` / `Less than an hour ago` /
+  `N hours ago` / `N days ago` from `lastSeen`. Client + indexer + DB. Specs:
+  `psf-memo-indexer/specs/topic-metadata-indexing.feature`,
+  `psf-memo-db/specs/topic-metadata.feature`,
+  `psf-memo-client/specs/topic-metadata-columns.feature`. Merged to `master`
+  at `af54b0e` (review commit `3f05488`; records
+  `docs/reviews/topic-metadata-verification.json` (indexer),
+  `-db-verification.json`, `-client-verification.json`). Independent acceptance
+  check: indexer 12/12, db 14/14, client 9/9.
 
 - **Topic recency ordering and pagination (2026-09-17):** `GET /topics` now
   orders topics by each room's most recent post and paginates without scanning

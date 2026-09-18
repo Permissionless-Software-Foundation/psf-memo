@@ -542,6 +542,17 @@ that a single user-facing feature may require specs in more than one component.
     `bb gherkin-parser`, generate with `acceptance/lib/generate.js`, then run
     the generated test) instead of the full suite.
 
+40. **Tool-written mutation manifests land in the feature files.** The
+    architect's soft Gherkin mutation run wrote `# mutation-stamp` and
+    `# acceptance-mutation-manifest-*` blocks into the three topic-metadata
+    feature files. These are tool-owned; commit them as-is and never hand-edit
+    them. The run's survivors are specifier-side weak-assertion equivalents:
+    indexer `height`/`firstHeight`/`secondHeight` mutations feed scenarios that
+    do not assert height, `firstSeen`/`secondSeen` mutations that do not cross
+    the asserted `max(seen)` survive, and client `lastSeen` mutations that stay
+    inside the same relative-time bucket survive. Tighten only if a future spec
+    needs those fields asserted independently.
+
 ---
 
 ## 10. Run / verify the app
@@ -592,17 +603,17 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `090f41f` (`topic-recency-pagination` merged from
+Current `master` HEAD: `af54b0e` (`topic-metadata` merged from
 `swarmforge-architect`). The three verification records name the architect code
-review commit `0e8f8f0`; the commits after it (`090f41f`) added only `docs/`
+review commit `3f05488`; the only later commit (`af54b0e`) added `docs/`
 (records and summary), so the records are valid for the merged tree. This task
-made `GET /topics` order by most recent post and paginate using two new indexes
-(`topicSummaries`, `topicRecency`) plus an idempotent backfill and client
-topics-page pagination. Records:
-`docs/reviews/topic-recency-pagination-verification.json` (indexer),
-`-client-verification.json`, `-db-verification.json`. The specifier merged the
-branch and ran only the merged features' acceptance suites (indexer 8/8, db
-31/31, client 4/4) as the independent check. Run `swarmforge/scripts/state.sh`
+added `lastSeen` and `followerCount` to `topicSummaries`, exposed them from
+`GET /topics`, rebuilt them in the backfill, and rendered four columns on the
+client topics page. Records:
+`docs/reviews/topic-metadata-verification.json` (indexer),
+`-db-verification.json`, `-client-verification.json`. The specifier merged the
+branch and ran only the merged features' acceptance suites (indexer 12/12, db
+14/14, client 9/9) as the independent check. Run `swarmforge/scripts/state.sh`
 to refresh these HEAD lines.
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,
