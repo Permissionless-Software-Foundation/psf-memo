@@ -58,3 +58,7 @@ export async function backfillFolloweeIndex ({ followsDb, followeeHeightsDb }) {
 
   return { follows }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T17:30:00.947Z","module_hash":"5cd1b81bb834e1f6ecf5090b41188b4e11d4afcca1663e8327c0c0ceb0d13669","functions":[{"id":"func/followeeHeightKey","name":"followeeHeightKey","line":21,"end_line":24,"hash":"10d2c8d5b02bc6dcfd351dea804cf1bcd4d5665217a88e6c9409f2dce4389f6c"},{"id":"func/partsFromKey","name":"partsFromKey","line":29,"end_line":36,"hash":"dc48c7f65097b2d27f48a5ddd213c99b39ad25116335289b67579539f162b720"},{"id":"func/backfillFolloweeIndex","name":"backfillFolloweeIndex","line":38,"end_line":60,"hash":"b38782b219da6a05fb2257fbeed1417561a1de746586fdd4fce472680daf4514"}]}
+// mutate4javascript-manifest-end

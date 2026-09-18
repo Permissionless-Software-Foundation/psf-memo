@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T17:46:08.065872032Z","feature_name":"Followee Heights Indexing","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/followee-heights-indexing.feature","background_hash":"0e27f59e6c58a7ab6e2ed4bddb0aa2546262d29a4486edae02633b8a48a62c48","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Followee Heights Indexing - 1, Followee Heights Indexing - 2, Followee Heights Indexing - 3
 #
 # GET /posts/notifications/:addr lists the follows of the viewer. The follows

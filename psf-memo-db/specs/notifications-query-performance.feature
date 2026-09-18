@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T17:45:20.151551845Z","feature_name":"Notifications Query Performance","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/notifications-query-performance.feature","background_hash":"d14f28ccb762afff816948e50b028cf8e783f835b45526f00b6a23c15e803e97","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Notifications Query Performance - 1, Notifications Query Performance - 2, Notifications Query Performance - 3, Notifications Query Performance - 4
 #
 # GET /posts/notifications/:addr originally scanned the ENTIRE likes,

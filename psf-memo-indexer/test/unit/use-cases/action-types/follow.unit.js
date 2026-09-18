@@ -97,6 +97,15 @@ describe('#handleFollow', () => {
     )
   })
 
+  it('should default the followeeHeights key height to zero when blockHeight is missing', async () => {
+    await handleFollow(baseCtx({ blockHeight: undefined }))
+
+    assert.equal(
+      followeeHeightCreate.firstCall.args[0],
+      `${FOLLOWEE_HASH}:000000000000:${FOLLOWER}`
+    )
+  })
+
   it('should log a process error when push data count is not 2', async () => {
     await handleFollow(baseCtx({
       decoded: { pushDatas: [Buffer.from('6d06', 'hex'), Buffer.alloc(20, 1), Buffer.alloc(20, 2)] }

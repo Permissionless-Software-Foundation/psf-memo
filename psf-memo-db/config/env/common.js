@@ -19,3 +19,7 @@ export default {
     ? parseInt(process.env.NOTIFICATION_BLOCK_WINDOW, 10)
     : 25000
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T17:43:31.901Z","module_hash":"6fe85b8d6a9d6d98e30421730a4c0ec82c89167573cc77ce433a715bc8a06382","functions":[]}
+// mutate4javascript-manifest-end

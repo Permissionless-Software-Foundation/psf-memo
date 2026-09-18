@@ -36,3 +36,7 @@ export async function handleFollow (ctx) {
     record
   )
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-18T17:31:18.968Z","module_hash":"563df8124fbda3c6f6315fd21eba3f8803ec21ed2478a091dbe8e2d604e2ee79","functions":[{"id":"func/handleFollow","name":"handleFollow","line":4,"end_line":38,"hash":"8aafdee7c2131fda4f783ad131c98c7c0a5265606a6730baa7786c7c0450121a"}]}
+// mutate4javascript-manifest-end

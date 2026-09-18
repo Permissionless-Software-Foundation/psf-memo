@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=e4975e801aef2d680b216193bd14f8f719343cb7cf525518c49683acaae271a3
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-18T17:46:01.076189292Z","feature_name":"Backfill Followee Index","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/backfill-followee-index.feature","background_hash":"86bc340dd67bafdfccd84ee0e6abb21c72432d6bf3290a717227beffaeb06ab9","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Backfill Followee Index - 1 backfill indexes every follow record at its height","scenario_hash":"d66467adef27e9f41639f94cf6ddc0f4f3948dc8031dc0f9484dd6b9cd5300eb","mutation_count":15,"result":{"Total":15,"Killed":15,"Survived":0,"Errors":0},"tested_at":"2026-09-18T17:46:01.076189292Z"},{"index":1,"name":"Backfill Followee Index - 2 backfill is idempotent","scenario_hash":"17d3d2c5e211167141fc6d9fb3b087cdd71ed1ba1aaee5e279b75c628e53abc7","mutation_count":5,"result":{"Total":5,"Killed":5,"Survived":0,"Errors":0},"tested_at":"2026-09-18T17:46:01.076189292Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Backfill Followee Index - 1, Backfill Followee Index - 2
 #
 # followeeHeights is a new notification read index. Existing follows store

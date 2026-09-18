@@ -330,7 +330,7 @@ describe('#NotificationsQuery', () => {
     assert.deepEqual(result.notifications.map((n) => n.type).sort(), ['like', 'reply'])
   })
 
-  it('should default a notification height to 0 when no source records one', async () => {
+  it('should default a notification height and seen to 0 when no source records one', async () => {
     const postsDb = makeDb([
       ['reply-bare', { addr: REPLIER, text: 'reply' }]
     ])
@@ -348,6 +348,7 @@ describe('#NotificationsQuery', () => {
 
     assert.equal(result.total, 2)
     assert.deepEqual(result.notifications.map((n) => n.blockHeight), [0, 0])
+    assert.deepEqual(result.notifications.map((n) => n.seen), [0, 0])
   })
 
   it('should skip a missing like record', async () => {
@@ -411,6 +412,63 @@ describe('#NotificationsQuery', () => {
     }
 
     assert.equal(error?.message, 'boom')
+  })
+
+  it('should default a follow height and seen to 0 when the record omits them', async () => {
+    const followeeHeightsDb = makeDb([
+      [`${VIEWER_HASH}:${pad(690400)}:${FOLLOWER}`, { followerAddr: FOLLOWER, followeePkHash: VIEWER_HASH, unfollow: false }]
+    ])
+
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 1)
+    assert.equal(result.notifications[0].blockHeight, 0)
+    assert.equal(result.notifications[0].seen, 0)
+  })
+
+  it('should treat a missing seen as 0 when it is the comparator first argument', async () => {
+    // Two follows at the same height: the first has no seen, the second seen 1,
+    // so the higher seen must sort first.
+    const followeeHeightsDb = makeDb([
+      [`${VIEWER_HASH}:${pad(690400)}:bitcoincash:aaa`, { followerAddr: 'bitcoincash:aaa', followeePkHash: VIEWER_HASH, unfollow: false, blockHeight: 690400 }],
+      [`${VIEWER_HASH}:${pad(690400)}:bitcoincash:bbb`, { followerAddr: 'bitcoincash:bbb', followeePkHash: VIEWER_HASH, unfollow: false, blockHeight: 690400, seen: 1 }]
+    ])
+
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.notifications[0].addr, 'bitcoincash:bbb')
+  })
+
+  it('should treat a missing seen as 0 when it is the comparator second argument', async () => {
+    // Equal seen (0 vs defaulted 0) keeps insertion order; a defaulted 1 would
+    // wrongly promote the second entry.
+    const followeeHeightsDb = makeDb([
+      [`${VIEWER_HASH}:${pad(690400)}:bitcoincash:aaa`, { followerAddr: 'bitcoincash:aaa', followeePkHash: VIEWER_HASH, unfollow: false, blockHeight: 690400, seen: 0 }],
+      [`${VIEWER_HASH}:${pad(690400)}:bitcoincash:bbb`, { followerAddr: 'bitcoincash:bbb', followeePkHash: VIEWER_HASH, unfollow: false, blockHeight: 690400 }]
+    ])
+
+    const uut = buildQuery({ followeeHeightsDb })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.notifications[0].addr, 'bitcoincash:aaa')
+  })
+
+  it('should use a zero cutoff when status lacks a chain height and the window is 0', async () => {
+    const followeeHeightsDb = makeDb([
+      [`${VIEWER_HASH}:${pad(0)}:bitcoincash:aaa`, { followerAddr: 'bitcoincash:aaa', followeePkHash: VIEWER_HASH, unfollow: false, blockHeight: 0 }]
+    ])
+
+    const uut = buildQuery({
+      followeeHeightsDb,
+      statusDb: makeDb([['status', {}]]),
+      notificationBlockWindow: 0
+    })
+    const result = await uut.listNotifications(VIEWER, { limit: 100, offset: 0 })
+
+    assert.equal(result.total, 1)
+    assert.equal(result.notifications[0].blockHeight, 0)
   })
 
   it('should default notificationBlockWindow to 25000', async () => {
