@@ -159,3 +159,80 @@ test('getNotification returns a loaded notification by txid', async () => {
 test('exposes the notifications path', () => {
   assert.equal(NotificationsPage.NOTIFICATIONS_PATH, '/notifications')
 })
+
+function makeProfileMemoDb (notifications, pagination, profiles = {}) {
+  return {
+    async getNotifications () {
+      return { notifications, pagination }
+    },
+    async getName (addr) {
+      const profile = profiles[addr]
+      if (profile?.throws) throw new Error('profile lookup failed')
+      return profile?.name ? { name: profile.name } : null
+    },
+    async getProfilePic (addr) {
+      const profile = profiles[addr]
+      if (profile?.throws) throw new Error('profile lookup failed')
+      return profile?.profilePicUrl ? { url: profile.profilePicUrl } : null
+    }
+  }
+}
+
+test('load resolves each actor profile and reports it', async () => {
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const notifications = [{ type: 'like', txid: 'a'.repeat(64), addr }]
+  const profileDb = makeProfileMemoDb(notifications, { total: 1 }, {
+    [addr]: { name: 'alice', profilePicUrl: 'https://example.com/alice.png' }
+  })
+  const page = new NotificationsPage({ memoDb: profileDb, wallet: makeWallet() })
+
+  const result = await page.load()
+
+  assert.equal(result.profiles[addr].name, 'alice')
+  assert.equal(result.profiles[addr].profilePicUrl, 'https://example.com/alice.png')
+})
+
+test('load falls back to an empty profile when the lookup fails', async () => {
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const notifications = [{ type: 'like', txid: 'a'.repeat(64), addr }]
+  const profileDb = makeProfileMemoDb(notifications, { total: 1 }, { [addr]: { throws: true } })
+  const page = new NotificationsPage({ memoDb: profileDb, wallet: makeWallet() })
+
+  const result = await page.load()
+
+  assert.deepEqual(result.profiles[addr], { name: null, profilePicUrl: null })
+})
+
+test('getEntries builds view models for every notification', async () => {
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const notifications = [
+    { type: 'reply', txid: 'a'.repeat(64), addr, postTxid: 'p'.repeat(64), text: 'nice post' },
+    { type: 'follow', txid: 'b'.repeat(64), addr: 'bitcoincash:other' }
+  ]
+  const profileDb = makeProfileMemoDb(notifications, { total: 2 }, {
+    [addr]: { name: 'alice', profilePicUrl: 'https://example.com/alice.png' }
+  })
+  const page = new NotificationsPage({ memoDb: profileDb, wallet: makeWallet() })
+
+  await page.load()
+  const entries = page.getEntries()
+
+  assert.equal(entries.length, 2)
+  assert.equal(entries[0].displayName, 'alice')
+  assert.equal(entries[0].avatarUrl, 'https://example.com/alice.png')
+  assert.equal(entries[0].showViewPost, true)
+  assert.equal(entries[1].displayName, 'bitcoincash:other')
+  assert.equal(entries[1].showViewPost, false)
+})
+
+test('getEntryByAddr returns the entry for an actor', async () => {
+  const addr = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const notifications = [{ type: 'like', txid: 'a'.repeat(64), addr }]
+  const profileDb = makeProfileMemoDb(notifications, { total: 1 }, { [addr]: { name: 'alice' } })
+  const page = new NotificationsPage({ memoDb: profileDb, wallet: makeWallet() })
+
+  await page.load()
+
+  assert.equal(page.getEntryByAddr(addr).displayName, 'alice')
+  assert.equal(page.getEntryByAddr('bitcoincash:missing'), null)
+})

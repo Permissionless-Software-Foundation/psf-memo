@@ -57,6 +57,8 @@ const { renderPostText } = require('./render-post')
 const { renderAccountAvatar } = require('./render-account-avatar')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
+const { renderNotificationEntry } = require('./render-notification-entry')
+const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
 const { toPushBuffer } = require('../../src/services/memo-multipush')
@@ -219,6 +221,9 @@ function makeMemoDb () {
   const topicCounts = new Map()
   const topicFollow = new Map()
   const topicMetadata = new Map()
+  const profileNames = new Map()
+  const profilePics = new Map()
+  const profileFailures = new Set()
 
   return {
     posts,
@@ -256,6 +261,25 @@ function makeMemoDb () {
     },
     addSearchProfile (profile) {
       searchProfiles.push(profile)
+    },
+    addProfileName (addr, name) {
+      profileNames.set(addr, name)
+    },
+    addProfilePic (addr, url) {
+      profilePics.set(addr, url)
+    },
+    addProfileFailure (addr) {
+      profileFailures.add(addr)
+    },
+    async getName (addr) {
+      if (profileFailures.has(addr)) throw new Error('profile lookup failed')
+      const name = profileNames.get(addr)
+      return name ? { name } : null
+    },
+    async getProfilePic (addr) {
+      if (profileFailures.has(addr)) throw new Error('profile lookup failed')
+      const url = profilePics.get(addr)
+      return url ? { url } : null
     },
     addLike (like) {
       likes.push({
@@ -641,7 +665,7 @@ function resolveParam (value, example) {
 function resolveText (value, example) {
   const trimmed = String(value).trim()
   if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return trimmed.slice(1, -1)
+    return resolveParam(trimmed.slice(1, -1), example)
   }
   return resolveParam(value, example)
 }
@@ -845,7 +869,7 @@ const handlers = [
     name: 'thread modal opens for post',
     pattern: /^the thread modal opens for the post with txid (.+)$/,
     run (m, example, world) {
-      const txid = m[1].trim()
+      const txid = resolveParam(m[1], example)
       if (world.thread.rootTxid !== txid) {
         throw new Error(`Expected thread modal to open for ${txid}, but current thread is ${world.thread.rootTxid}.`)
       }
@@ -3229,6 +3253,188 @@ const handlers = [
     }
   },
   {
+    name: 'API serves display name for address',
+    pattern: /^the psf-memo-db API serves the display name "([^"]*)" for the address (.+)$/,
+    run (m, example, world) {
+      const name = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      world.memoDb.addProfileName(addr, name)
+    }
+  },
+  {
+    name: 'API serves avatar for address',
+    pattern: /^the psf-memo-db API serves the avatar "([^"]*)" for the address (.+)$/,
+    run (m, example, world) {
+      const avatar = resolveParam(m[1], example)
+      const addr = resolveParam(m[2], example)
+      world.memoDb.addProfilePic(addr, avatar)
+    }
+  },
+  {
+    name: 'API fails to serve profile for address',
+    pattern: /^the psf-memo-db API fails to serve the profile for the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      world.memoDb.addProfileFailure(addr)
+    }
+  },
+  {
+    name: 'notification entry shows display name',
+    pattern: /^the notification entry from the address (.+) shows the display name "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.displayName !== expected) {
+        throw new Error(`Expected the notification entry from ${addr} to show the display name "${expected}", got "${entry.displayName}".`)
+      }
+      const html = renderNotificationEntry(entry)
+      if (!html.includes(expected)) {
+        throw new Error(`Rendered notification entry does not show the display name "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'notification entry shows avatar',
+    pattern: /^the notification entry from the address (.+) shows the avatar "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.avatarUrl !== expected) {
+        throw new Error(`Expected the notification entry from ${addr} to show the avatar "${expected}", got "${entry.avatarUrl}".`)
+      }
+      const html = renderNotificationEntry(entry)
+      if (!html.includes(`src="${expected}"`)) {
+        throw new Error(`Rendered notification entry does not show the avatar "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'notification entry shows address as plain text',
+    pattern: /^the notification entry from the address (.+) shows the address (.+) as plain text$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const shown = resolveParam(m[2], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.addr !== shown) {
+        throw new Error(`Expected the notification entry from ${addr} to show the address ${shown}.`)
+      }
+      const html = renderNotificationEntry(entry)
+      if (!html.includes(`notification-entry-address">${shown}<`)) {
+        throw new Error(`Rendered notification entry does not show the address ${shown} as plain text.`)
+      }
+    }
+  },
+  {
+    name: 'notification entry links avatar to profile',
+    pattern: /^the notification entry from the address (.+) links the avatar to "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.profilePath !== expected) {
+        throw new Error(`Expected the notification entry from ${addr} to link the avatar to "${expected}", got "${entry.profilePath}".`)
+      }
+      const href = anchorHref(renderNotificationEntry(entry), 'notification-entry-avatar-link')
+      if (href !== expected) {
+        throw new Error(`Rendered notification avatar does not link to ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'notification entry links display name to profile',
+    pattern: /^the notification entry from the address (.+) links the display name to "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.profilePath !== expected) {
+        throw new Error(`Expected the notification entry from ${addr} to link the display name to "${expected}", got "${entry.profilePath}".`)
+      }
+      const href = anchorHref(renderNotificationEntry(entry), 'notification-entry-name-link')
+      if (href !== expected) {
+        throw new Error(`Rendered notification display name does not link to ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'notification entry offers View Post link',
+    pattern: /^the notification entry from the address (.+) offers a "View Post" link$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const entry = notificationEntryFor(world, addr)
+      if (!entry.showViewPost) {
+        throw new Error(`Expected the notification entry from ${addr} to offer a View Post link.`)
+      }
+      const html = renderNotificationEntry(entry)
+      const anchor = anchorsIn(html).find((a) => a.attrs.includes('notification-entry-view-post'))
+      if (!anchor || !anchor.text.includes(VIEW_POST_LABEL)) {
+        throw new Error('Rendered notification entry does not offer a View Post link.')
+      }
+    }
+  },
+  {
+    name: 'notification entry does not offer View Post link',
+    pattern: /^the notification entry from the address (.+) does not offer a "View Post" link$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.showViewPost) {
+        throw new Error(`Expected the notification entry from ${addr} not to offer a View Post link.`)
+      }
+      if (renderNotificationEntry(entry).includes(VIEW_POST_LABEL)) {
+        throw new Error('Rendered notification entry unexpectedly offers a View Post link.')
+      }
+    }
+  },
+  {
+    name: 'notification entry shows reply text',
+    pattern: /^the notification entry from the address (.+) shows the reply text "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.text !== expected) {
+        throw new Error(`Expected the notification entry from ${addr} to show the reply text "${expected}", got "${entry.text}".`)
+      }
+      if (!renderNotificationEntry(entry).includes(expected)) {
+        throw new Error(`Rendered notification entry does not show the reply text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'notification entry shows identicon avatar',
+    pattern: /^the notification entry from the address (.+) shows an identicon avatar$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const entry = notificationEntryFor(world, addr)
+      if (entry.avatarUrl) {
+        throw new Error(`Expected the notification entry from ${addr} to fall back to an identicon, got avatar "${entry.avatarUrl}".`)
+      }
+      const html = renderNotificationEntry(entry)
+      if (!html.includes('notification-entry-identicon') || !html.includes('data-jdenticon-value')) {
+        throw new Error('Rendered notification entry does not show an identicon avatar.')
+      }
+    }
+  },
+  {
+    name: 'click View Post link in notification',
+    pattern: /^I click the "View Post" link in the notification from the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const entry = notificationEntryFor(world, addr)
+      if (!entry.showViewPost) {
+        throw new Error(`The notification entry from ${addr} does not offer a View Post link.`)
+      }
+      if (!entry.postTxid) {
+        throw new Error(`The notification entry from ${addr} has no referenced post txid.`)
+      }
+      world.thread.rootTxid = entry.postTxid
+      world.replyPage.setParent(entry.postTxid)
+    }
+  },
+  {
     name: 'API serves N recent posts',
     pattern: /^the psf-memo-db API serves (<[A-Za-z0-9_]+>) recent posts$/,
     run (m, example, world) {
@@ -3838,6 +4044,23 @@ function anchorsIn (html) {
     anchors.push({ attrs: match[1], text: match[2] })
   }
   return anchors
+}
+
+// The href of the first rendered anchor carrying the given class, or null.
+function anchorHref (html, className) {
+  const anchor = anchorsIn(html).find((a) => a.attrs.includes(className))
+  if (!anchor) return null
+  const match = /href="([^"]*)"/.exec(anchor.attrs)
+  return match ? match[1] : null
+}
+
+// The built view model for the notification whose actor is `addr`.
+function notificationEntryFor (world, addr) {
+  const entry = world.notificationsPage.getEntryByAddr(addr)
+  if (!entry) {
+    throw new Error(`No notification entry from the address ${addr}.`)
+  }
+  return entry
 }
 
 // Extract the image tags from a rendered HTML string. The acceptance adapter

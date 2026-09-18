@@ -1,6 +1,11 @@
 /*
   Display the Notifications page: replies to my posts, likes on my posts,
   and new follows, newest first.
+
+  Each entry names its actor with the actor's Memo display name and avatar,
+  links both to the actor's profile, shows the full address as small plain
+  text, and offers a "View Post" link for like and reply notifications that
+  opens the referenced post's thread.
 */
 
 // Global npm libraries
@@ -10,22 +15,11 @@ import { Container, Row, Col, Spinner, Button } from 'react-bootstrap'
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import NotificationsPage from '../../../services/notifications-page'
+import PostThreadModal from '../../post-thread-modal'
+import NotificationEntry from './notification-entry'
 import '../../../App.css'
 
 const PAGE_SIZE = 50
-
-function notificationText (n) {
-  if (n.type === 'reply') {
-    return `replied to your post: ${n.text || ''}`
-  }
-  if (n.type === 'like') {
-    return 'liked your post'
-  }
-  if (n.type === 'follow') {
-    return 'followed you'
-  }
-  return ''
-}
 
 function Notifications (props) {
   const { appData } = props
@@ -33,9 +27,12 @@ function Notifications (props) {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [notifications, setNotifications] = useState([])
+  const [entries, setEntries] = useState([])
+  const [profiles, setProfiles] = useState({})
   const [pagination, setPagination] = useState(null)
   const [offset, setOffset] = useState(0)
+  const [threadTxid, setThreadTxid] = useState(null)
+  const [showThreadModal, setShowThreadModal] = useState(false)
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -47,11 +44,13 @@ function Notifications (props) {
         const page = new NotificationsPage({ memoDb, wallet })
         const data = await page.load({ limit: PAGE_SIZE, offset })
 
-        setNotifications(data.notifications || [])
+        setEntries(page.getEntries())
+        setProfiles(data.profiles || {})
         setPagination(data.pagination || null)
       } catch (err) {
         setError(err.message || 'Failed to load notifications')
-        setNotifications([])
+        setEntries([])
+        setProfiles({})
         setPagination(null)
       }
 
@@ -60,6 +59,17 @@ function Notifications (props) {
 
     loadNotifications()
   }, [offset, wallet])
+
+  const openThread = (txid) => {
+    if (!txid) return
+    setThreadTxid(txid)
+    setShowThreadModal(true)
+  }
+
+  const closeThread = () => {
+    setShowThreadModal(false)
+    setThreadTxid(null)
+  }
 
   const canGoBack = offset > 0
   const canGoNext = pagination?.hasMore ?? false
@@ -80,10 +90,10 @@ function Notifications (props) {
             <h1>Notifications</h1>
             <p>Replies, likes, and follows involving you.</p>
 
-            {pagination && notifications.length > 0 && (
+            {pagination && entries.length > 0 && (
               <span className='notifications-count'>
                 Showing {pagination.offset + 1}–
-                {pagination.offset + notifications.length} of {pagination.total}
+                {pagination.offset + entries.length} of {pagination.total}
               </span>
             )}
           </header>
@@ -104,19 +114,18 @@ function Notifications (props) {
             </div>
           )}
 
-          {!loading && !error && notifications.length === 0 && (
+          {!loading && !error && entries.length === 0 && (
             <p className='notifications-empty'>You have no notifications.</p>
           )}
 
-          {!loading && !error && notifications.length > 0 && (
+          {!loading && !error && entries.length > 0 && (
             <div className='notifications-list'>
-              {notifications.map((n) => (
-                <div key={n.txid} className='notification-item' style={{ marginBottom: '1rem', padding: '0.75rem', border: '1px solid #dee2e6', borderRadius: '0.375rem' }}>
-                  <p className='text-muted' style={{ fontFamily: 'monospace', marginBottom: '0.25rem' }}>
-                    {n.addr}
-                  </p>
-                  <p style={{ marginBottom: 0 }}>{notificationText(n)}</p>
-                </div>
+              {entries.map((entry) => (
+                <NotificationEntry
+                  key={entry.txid}
+                  entry={entry}
+                  onViewPost={openThread}
+                />
               ))}
             </div>
           )}
@@ -142,6 +151,14 @@ function Notifications (props) {
           )}
         </Col>
       </Row>
+
+      <PostThreadModal
+        show={showThreadModal}
+        txid={threadTxid}
+        onHide={closeThread}
+        wallet={wallet}
+        profiles={profiles}
+      />
     </Container>
   )
 }

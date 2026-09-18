@@ -9,11 +9,14 @@
 
 const NOTIFICATIONS_PATH = '/notifications'
 
+const { buildNotificationEntry } = require('./notification-entry')
+
 class NotificationsPage {
   constructor (deps = {}) {
     this.memoDb = deps.memoDb || null
     this.wallet = deps.wallet || null
     this.notifications = []
+    this.profiles = {}
     this.pagination = null
     this.empty = false
   }
@@ -34,14 +37,48 @@ class NotificationsPage {
 
     const data = await this.memoDb.getNotifications(myAddr, { limit, offset })
     this.notifications = data.notifications || []
+    this.profiles = await this._loadProfiles(this.notifications)
     this.pagination = data.pagination || null
     this.empty = this.notifications.length === 0 && offset === 0
 
     return {
       notifications: this.notifications,
+      profiles: this.profiles,
       pagination: this.pagination,
       empty: this.empty
     }
+  }
+
+  // Resolve the actor profile for every notification so the view can name and
+  // avatar each entry. A missing actor address is skipped.
+  async _loadProfiles (notifications) {
+    const addresses = [...new Set(notifications.map((n) => n.addr).filter(Boolean))]
+    const entries = await Promise.all(
+      addresses.map(async (addr) => [addr, await this._loadProfile(addr)])
+    )
+    return Object.fromEntries(entries)
+  }
+
+  // Resolve one actor's name and avatar URL, falling back to an empty profile
+  // when the lookup fails or the db client does not expose profile lookups.
+  async _loadProfile (addr) {
+    try {
+      const [nameRecord, picRecord] = await Promise.all([
+        this._loadProfileField('getName', addr),
+        this._loadProfileField('getProfilePic', addr)
+      ])
+      return {
+        name: nameRecord?.name || null,
+        profilePicUrl: picRecord?.url || null
+      }
+    } catch (err) {
+      return { name: null, profilePicUrl: null }
+    }
+  }
+
+  async _loadProfileField (method, addr) {
+    if (typeof this.memoDb[method] !== 'function') return null
+    return this.memoDb[method](addr)
   }
 
   canLoadMore () {
@@ -50,6 +87,25 @@ class NotificationsPage {
 
   getNotification (txid) {
     return this.notifications.find((n) => n.txid === txid) || null
+  }
+
+  // The view models for every loaded notification.
+  getEntries () {
+    return this.notifications.map((n) => this.getEntry(n.txid))
+  }
+
+  // The view model for a loaded notification by txid.
+  getEntry (txid) {
+    const notification = this.getNotification(txid)
+    if (!notification) return null
+    return buildNotificationEntry(notification, this.profiles[notification.addr])
+  }
+
+  // The view model for the notification whose actor is `addr`.
+  getEntryByAddr (addr) {
+    const notification = this.notifications.find((n) => n.addr === addr)
+    if (!notification) return null
+    return this.getEntry(notification.txid)
   }
 }
 
