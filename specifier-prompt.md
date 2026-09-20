@@ -614,6 +614,24 @@ that a single user-facing feature may require specs in more than one component.
     reply-exclusion, and `postParents`-not-iterated mutations were killed
     (language mutation 40/40 on `src/adapters/post-query.js`).
 
+47. **Feed tabs merge the Following feed into the posts page.** `/posts/recent`
+    now hosts a pure `FeedTabsPage` service
+    (`psf-memo-client/src/services/feed-tabs-page.js`) that composes
+    `RecentFeedPage` and `FollowingFeedPage` behind injected `memoDb`/`wallet`;
+    the React shell reads the controller's `getState()` snapshot, not internal
+    fields. First load asks `GET /follow/following/:addr` (via
+    `memoDb.getFollowing`) and selects Following when the viewer follows at
+    least one account, else Recent; switching tabs resets to page one. The
+    `/posts/following` route and navbar item are removed.
+    `FollowingFeedPage.emptyBecauseNoFollows` is retained only because
+    `specs/following-feed.feature` still specifies it; retiring that older
+    feature (and the now-redundant field) is a specifier cleanup. Soft Gherkin
+    mutation of `feed-tabs.feature` was 42 total / 0 killed / 42 survived — every
+    survivor is a single-character case/character substitution of an example
+    value used on both the setup and assertion sides (gotcha #12 class);
+    language mutation on `feed-tabs-page.js` was 22/22 killed. Spec:
+    `psf-memo-client/specs/feed-tabs.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -664,28 +682,35 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `de3f1c8bb6` (`following-feed-cap` merged from
+Current `master` HEAD: `2d1755a03d` (`feed-tabs` merged from
 `swarmforge-architect`). The verification record names the architect code
-review commit `b7c20560c2`; the only later commit (`de3f1c8`) is docs-only
+review commit `e4bda31256`; the only later commit (`2d1755a`) is docs-only
 (record and summary), so the record is valid for the merged tree. This task
-bounds `GET /posts/following/:addr`: the global `postHeights` scan stops after
-`offset + limit + 500` eligible followed posts and reports
-`total = min(eligible, 500)`, and reply detection uses per-candidate `isReply`
-lookups instead of iterating all of `postParents`. The cap counts eligible
-followed posts, not raw index entries (followed posts are sparse). DB-only; the
-client heading now reads "Showing 1–50 of 500". Spec:
-`psf-memo-db/specs/following-feed-performance.feature`; record
-`docs/reviews/following-feed-cap-verification.json` (psf-memo-db). The specifier
-merged the branch and ran only the merged feature's acceptance test (db 3/3) as
-the independent check; soft Gherkin mutation 17/14 (3 intrinsic survivors) and
-language mutation 40/40 killed. Architect summary:
-`docs/reviews/following-feed-cap-summary.md`.
+merges the old `/posts/following` feed into `/posts/recent` as a row of two mode
+buttons ("Recent" / "Following"): first load asks
+`GET /follow/following/:addr` and picks Following when the viewer follows at
+least one account, else Recent; switching tabs resets to page one; the
+`/posts/following` route and navbar item are removed. The pure `FeedTabsPage`
+service composes `RecentFeedPage` and `FollowingFeedPage` behind injected
+`memoDb`/`wallet`, and the React shell reads its `getState()` snapshot.
+Client-only; no DB or indexer change. Spec:
+`psf-memo-client/specs/feed-tabs.feature`; record
+`docs/reviews/feed-tabs-verification.json` (psf-memo-client). The specifier
+merged the branch and ran only the merged feature's acceptance test (feed-tabs
+12/12) as the independent check; soft Gherkin mutation 42/0 (all intrinsic) and
+language mutation 22/22 killed. Architect summary:
+`docs/reviews/feed-tabs-summary.md`.
 
 Note: `master` also contains two earlier human commits made outside the swarm
 pipeline — `ea67979` (removed the redundant inline author name from feed posts)
 and `8eab46d` (Notifications entry CSS/layout tweaks). Neither is covered by a
 Gherkin spec yet; they are unspecified working-tree behavior to reconcile if a
 future feature touches those surfaces.
+
+Also open (specifier cleanup, not blocking): `FollowingFeedPage.emptyBecauseNoFollows`
+and `psf-memo-client/specs/following-feed.feature` now describe the retired
+`/posts/following` surface; retire them when a future feature touches the
+following feed.
 
 Next action: **TBD** — ask the user for the next feature. Current direction is
 front-end improvements to `psf-memo-client` (UI/UX polish, accessibility,

@@ -31,17 +31,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Feed tabs (2026-09-20):** merge the Following feed into the `/posts/recent`
-  posts page as a row of two mode buttons ("Recent" / "Following"). On first
-  load the page selects Following when the viewer's address follows at least one
-  account (resolved via `GET /follow/following/:addr`) and Recent when it
-  follows no one; the viewer can switch tabs at any time and switching resets to
-  the first page. The `/posts/following` route and its navbar item are removed,
-  so the Following feed is reached only through the Following button. Client-only
-  read feature (no DB or indexer change). Spec:
-  `psf-memo-client/specs/feed-tabs.feature`. Task: `feed-tabs`.
+- None.
 
 ## Recently completed
+
+- **Feed tabs (2026-09-20):** the Following feed is merged into the
+  `/posts/recent` posts page as a row of two mode buttons ("Recent" /
+  "Following"). On first load the page asks `GET /follow/following/:addr` and
+  selects Following when the viewer's address follows at least one account,
+  Recent when it follows no one; the viewer can switch tabs at any time and
+  switching resets to the first page. The `/posts/following` route and its
+  navbar item are removed, so the Following feed is reached only through the
+  Following button. A new pure `FeedTabsPage` service
+  (`psf-memo-client/src/services/feed-tabs-page.js`) composes the existing
+  `RecentFeedPage` and `FollowingFeedPage` controllers behind injected
+  `memoDb`/`wallet`; the React shell reads the controller `getState()` snapshot.
+  Client-only read feature. Spec:
+  `psf-memo-client/specs/feed-tabs.feature`. Merged to `master` at `2d1755a03d`
+  (fast-forward; review commit `e4bda31256`; record
+  `docs/reviews/feed-tabs-verification.json`; the later `2d1755a` commit is
+  docs-only, so the record is valid for the merged tree). Independent acceptance
+  check after merge: feed-tabs 12/12 scenario examples. Soft Gherkin mutation
+  42/0 (all intrinsic example-value case substitutions); language mutation 22/22
+  killed; architect summary `docs/reviews/feed-tabs-summary.md`.
 
 - **Following feed cap (2026-09-20):** `GET /posts/following/:addr` no longer
   full-scans the global `postHeights` index to compute `pagination.total` (the
