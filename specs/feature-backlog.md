@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-18
+**Last updated**: 2026-09-20
 
 ---
 
@@ -31,7 +31,15 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-_(none)_
+- **Feed tabs (2026-09-20):** merge the Following feed into the `/posts/recent`
+  posts page as a row of two mode buttons ("Recent" / "Following"). On first
+  load the page selects Following when the viewer's address follows at least one
+  account (resolved via `GET /follow/following/:addr`) and Recent when it
+  follows no one; the viewer can switch tabs at any time and switching resets to
+  the first page. The `/posts/following` route and its navbar item are removed,
+  so the Following feed is reached only through the Following button. Client-only
+  read feature (no DB or indexer change). Spec:
+  `psf-memo-client/specs/feed-tabs.feature`. Task: `feed-tabs`.
 
 ## Recently completed
 
