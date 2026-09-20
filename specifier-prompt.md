@@ -647,6 +647,19 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/recent-profile-display.feature`,
     `psf-memo-db/specs/recent-profile-identity.feature`.
 
+49. **`/profile/recent` now requires a `profileRecency` record.** A profile
+    appears only if the indexer (or the recency backfill) recorded at least one
+    confirmed qualifying post for it. The `recent-profile-identity` fixture had
+    to seed `profileRecency` or its profiles vanished. The store is
+    address-keyed for idempotent upsert, so `ProfileQuery.listRecentProfiles`
+    still scans and sorts the whole recency index in memory (O(P log P)); that
+    is within spec (the spec forbids scanning `addrPostHeights` or sorting every
+    profile, not sorting the recency index), and a bounded-ordered compound key
+    is a documented follow-up. Specs:
+    `psf-memo-indexer/specs/profile-recency-indexing.feature`,
+    `psf-memo-db/specs/recent-profile-ordering.feature`,
+    `psf-memo-db/specs/backfill-profile-recency.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -697,23 +710,36 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `5fce1405d4` (`recent-profile-identity` merged from
-`swarmforge-architect`; fast-forward). The records name the architect code
-review commit `7973e2d`; the only later commit `5fce140` is docs-only (records
-+ summary), so the records are valid for the merged tree. This task adds a DB
-join and a client column: `GET /profile/recent` now returns each profile's
-`name` (newest `0x6d01`, names store) and `profilePicUrl` (newest `0x6d0a`,
-profilePics store), both null when absent, via `ProfileQuery.getProfileIdentity`
-orchestrated by `ListRecentProfiles`; the client `/profile/recent` table gains
-a leftmost Account column showing the name and avatar, both linking to
-`/profile/<addr>`, with truncated-address and jdenticon fallbacks. Client + DB.
-Specs: `psf-memo-client/specs/recent-profile-display.feature` and
-`psf-memo-db/specs/recent-profile-identity.feature`; records
-`docs/reviews/recent-profile-identity-verification.json` (client) and
-`docs/reviews/recent-profile-identity-db-verification.json` (db). The specifier
-merged the branch and ran only the merged features' acceptance tests (client
-7/7, db 3/3) as the independent check; soft Gherkin mutation 9/9 (db) and 10/10
-(client) killed; language mutation 12 killed / 0 survived. Architect summary:
+Current `master` HEAD: `79bb918bd62e9e9b8eab5d2bd1142e77343736e5`
+(`profile-last-post` merged from `swarmforge-architect`; fast-forward). The
+records name the architect code review commit `ace7038`; the only later commit
+`79bb918` adds only the records and summary, so the records are valid for the
+merged tree. This task reorders `/profile/recent` by each profile's most recent
+qualifying post (top-level `0x6d02` or topic message `0x6d0c`; replies `0x6d03`
+and poll creations `0x6d10` do not qualify), drops profiles that have never
+posted, and reports the last post's block/seen in each row. The indexer
+maintains a `profileRecency` store and
+`util/profiles/backfill-profile-recency.js` builds it idempotently,
+confirmed-only. Indexer + DB (no client code change; the client already renders
+the returned `blockHeight`/`seen`). Specs:
+`psf-memo-indexer/specs/profile-recency-indexing.feature`,
+`psf-memo-db/specs/recent-profile-ordering.feature`, and
+`psf-memo-db/specs/backfill-profile-recency.feature`; records
+`docs/reviews/profile-last-post-verification.json` (indexer) and
+`docs/reviews/profile-last-post-db-verification.json` (db). The specifier merged
+the branch and ran only the merged features' acceptance tests (indexer 20/20,
+db recent-profile-ordering 9/9, backfill 5/5, recent-profile-identity 3/3) as
+the independent check. Architect summary:
+`docs/reviews/profile-last-post-summary.md`.
+
+Previous `master` HEAD before this merge: `5fce1405d4`
+(`recent-profile-identity`; records name `7973e2d`, later `5fce140` docs-only).
+That task added the DB display-name/avatar join and the client Account column:
+`GET /profile/recent` returns each profile's `name` (newest `0x6d01`) and
+`profilePicUrl` (newest `0x6d0a`), and the client table shows a leftmost
+Account column linking to `/profile/<addr>`, with truncated-address and
+jdenticon fallbacks. Specs: `psf-memo-client/specs/recent-profile-display.feature`
+and `psf-memo-db/specs/recent-profile-identity.feature`. Architect summary:
 `docs/reviews/recent-profile-identity-summary.md`.
 
 Note: `master` also contains two earlier human commits made outside the swarm
