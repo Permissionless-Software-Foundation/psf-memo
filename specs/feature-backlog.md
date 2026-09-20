@@ -31,7 +31,21 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Profile ordering by last post (2026-09-20):** `/profile/recent` should
+  list only profiles that have posted, ordered by their most recent qualifying
+  post instead of their most recent profile update. A qualifying post is a
+  top-level post (`0x6d02`) or a topic message (`0x6d0c`); replies (`0x6d03`)
+  and poll creations (`0x6d10`) do not qualify. Profiles that have never posted
+  are dropped. Ordering is by last post's block height descending, then seen
+  descending, then address ascending, considering confirmed blocks only. The
+  Block and Seen columns report the last post's block height and timestamp
+  rather than the set-profile transaction's. The indexer maintains a
+  `profileRecency` index (mirroring `topicRecency`) so the read never scans
+  `addrPostHeights` or sorts every profile; a backfill builds it from existing
+  data. Indexer + DB (the client renders the returned block/seen unchanged).
+  Specs: `psf-memo-indexer/specs/profile-recency-indexing.feature`,
+  `psf-memo-db/specs/recent-profile-ordering.feature`,
+  `psf-memo-db/specs/backfill-profile-recency.feature`.
 
 ## Recently completed
 
