@@ -632,6 +632,21 @@ that a single user-facing feature may require specs in more than one component.
     language mutation on `feed-tabs-page.js` was 22/22 killed. Spec:
     `psf-memo-client/specs/feed-tabs.feature`.
 
+48. **DB-join features produce two verification records named at the
+    code-review commit.** For `recent-profile-identity` the client record is
+    `docs/reviews/recent-profile-identity-verification.json` and the DB record
+    is `docs/reviews/recent-profile-identity-db-verification.json`; both name
+    `7973e2d`, while the merged tip `5fce140` added only the records and the
+    summary, so the records are valid for the merged tree (extends #33/#38).
+    Two review caveats worth repeating: the new `namesDb`/`profilePicsDb`
+    wiring lines in `psf-memo-db/src/adapters/index.js` are exercised only by
+    DB acceptance, so `mutate4javascript` (which runs the unit suite) reports
+    them uncovered; and the client JSX page shell
+    `psf-memo-client/src/components/app-body/recent-profiles/index.js` is not
+    parsed by `mutate4javascript`. Specs:
+    `psf-memo-client/specs/recent-profile-display.feature`,
+    `psf-memo-db/specs/recent-profile-identity.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -682,24 +697,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `2d1755a03d` (`feed-tabs` merged from
-`swarmforge-architect`). The verification record names the architect code
-review commit `e4bda31256`; the only later commit (`2d1755a`) is docs-only
-(record and summary), so the record is valid for the merged tree. This task
-merges the old `/posts/following` feed into `/posts/recent` as a row of two mode
-buttons ("Recent" / "Following"): first load asks
-`GET /follow/following/:addr` and picks Following when the viewer follows at
-least one account, else Recent; switching tabs resets to page one; the
-`/posts/following` route and navbar item are removed. The pure `FeedTabsPage`
-service composes `RecentFeedPage` and `FollowingFeedPage` behind injected
-`memoDb`/`wallet`, and the React shell reads its `getState()` snapshot.
-Client-only; no DB or indexer change. Spec:
-`psf-memo-client/specs/feed-tabs.feature`; record
-`docs/reviews/feed-tabs-verification.json` (psf-memo-client). The specifier
-merged the branch and ran only the merged feature's acceptance test (feed-tabs
-12/12) as the independent check; soft Gherkin mutation 42/0 (all intrinsic) and
-language mutation 22/22 killed. Architect summary:
-`docs/reviews/feed-tabs-summary.md`.
+Current `master` HEAD: `5fce1405d4` (`recent-profile-identity` merged from
+`swarmforge-architect`; fast-forward). The records name the architect code
+review commit `7973e2d`; the only later commit `5fce140` is docs-only (records
++ summary), so the records are valid for the merged tree. This task adds a DB
+join and a client column: `GET /profile/recent` now returns each profile's
+`name` (newest `0x6d01`, names store) and `profilePicUrl` (newest `0x6d0a`,
+profilePics store), both null when absent, via `ProfileQuery.getProfileIdentity`
+orchestrated by `ListRecentProfiles`; the client `/profile/recent` table gains
+a leftmost Account column showing the name and avatar, both linking to
+`/profile/<addr>`, with truncated-address and jdenticon fallbacks. Client + DB.
+Specs: `psf-memo-client/specs/recent-profile-display.feature` and
+`psf-memo-db/specs/recent-profile-identity.feature`; records
+`docs/reviews/recent-profile-identity-verification.json` (client) and
+`docs/reviews/recent-profile-identity-db-verification.json` (db). The specifier
+merged the branch and ran only the merged features' acceptance tests (client
+7/7, db 3/3) as the independent check; soft Gherkin mutation 9/9 (db) and 10/10
+(client) killed; language mutation 12 killed / 0 survived. Architect summary:
+`docs/reviews/recent-profile-identity-summary.md`.
 
 Note: `master` also contains two earlier human commits made outside the swarm
 pipeline — `ea67979` (removed the redundant inline author name from feed posts)

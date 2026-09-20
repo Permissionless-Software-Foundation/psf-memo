@@ -35,6 +35,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Recent profile identity (2026-09-20):** `/profile/recent` now shows a
+  leftmost **Account** column with each profile's display name and avatar. The
+  DB joins the `names` (newest `0x6d01`) and `profilePics` (newest `0x6d0a`)
+  stores into each `/profile/recent` record as `name` / `profilePicUrl` (null
+  when absent) without changing order or pagination; the client renders the
+  name and avatar in one cell, both linking to `/profile/<addr>`, falling back
+  to the truncated address (no name) and a jdenticon (no avatar). Client + DB.
+  Specs: `psf-memo-client/specs/recent-profile-display.feature`,
+  `psf-memo-db/specs/recent-profile-identity.feature`. Merged to `master` at
+  `5fce1405d4` (review commit `7973e2d`; records
+  `docs/reviews/recent-profile-identity-verification.json` (client) and
+  `docs/reviews/recent-profile-identity-db-verification.json`; the later
+  `5fce140` commit is docs-only, so the records are valid for the merged tree).
+  Independent acceptance check after merge: client 7/7, db 3/3. Soft Gherkin
+  mutation 9/9 (db) and 10/10 (client) killed; language mutation 12 killed / 0
+  survived; architect summary
+  `docs/reviews/recent-profile-identity-summary.md`.
+
 - **Feed tabs (2026-09-20):** the Following feed is merged into the
   `/posts/recent` posts page as a row of two mode buttons ("Recent" /
   "Following"). On first load the page asks `GET /follow/following/:addr` and
