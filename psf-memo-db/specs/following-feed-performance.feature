@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-20T15:43:36.389566985Z","feature_name":"Following Feed Performance","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/following-feed-performance.feature","background_hash":"ddac8c7374fb5f53e3fab0ba7b510e5a9e43e97adb8e6ad84567ecd254cbd53d","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Following Feed Performance - 1, Following Feed Performance - 2
 #
 # GET /posts/following/:addr is slow because list-following-feed.js does two
