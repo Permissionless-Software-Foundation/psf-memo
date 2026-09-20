@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-20T17:33:46.020711102Z","feature_name":"Feed Tabs","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/feed-tabs.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Feed Tabs - 1, Feed Tabs - 2, Feed Tabs - 3, Feed Tabs - 4, Feed Tabs - 5, Feed Tabs - 6, Feed Tabs - 7, Feed Tabs - 8
 #
 # The posts feed at /posts/recent is the single posts page. It shows a row of

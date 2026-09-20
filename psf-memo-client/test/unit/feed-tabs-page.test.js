@@ -57,31 +57,53 @@ async function openWithOnePost ({ following, feed, key }) {
   return { page, memoDb, post }
 }
 
+// Assert that open selected exactly the feed implied by the follow state and
+// loaded only that feed's single post.
+function assertOnlySelectedFeedLoaded ({ page, memoDb, post, following }) {
+  const follows = following.length > 0
+  assert.equal(page.isFollowing(), follows)
+  assert.equal(page.isRecent(), !follows)
+  assert.deepEqual(page.posts, [post])
+  assert.equal(memoDb.calls.getFollowingFeed.length, follows ? 1 : 0)
+  assert.equal(memoDb.calls.getRecentPosts.length, follows ? 0 : 1)
+}
+
 test('exposes the Recent and Following tabs in order', () => {
   const page = new FeedTabsPage({ memoDb: makeMemoDb(), wallet: makeWallet() })
   assert.deepEqual(page.tabs, ['Recent', 'Following'])
 })
 
-test('open selects Following and loads followed posts when the viewer follows an account', async () => {
-  const { page, memoDb, post } = await openWithOnePost({ following: [ALICE], feed: 'followingFeed', key: 'a' })
+test('constructor starts in a neutral, unloaded state', () => {
+  const page = new FeedTabsPage({ memoDb: makeMemoDb(), wallet: makeWallet() })
 
-  assert.equal(page.isFollowing(), true)
-  assert.equal(page.isRecent(), false)
-  assert.deepEqual(page.posts, [post])
-  assert.equal(memoDb.calls.getFollowing.length, 1)
-  assert.equal(memoDb.calls.getRecentPosts.length, 0)
-  assert.equal(memoDb.calls.getFollowingFeed.length, 1)
+  assert.equal(page.mode, null)
+  assert.equal(page.offset, 0)
+  assert.deepEqual(page.posts, [])
+  assert.equal(page.pagination, null)
+  assert.equal(page.hasFollows, false)
+  assert.equal(page.emptyBecauseNoFollows, false)
 })
 
-test('open selects Recent and loads recent posts when the viewer follows no one', async () => {
-  const { page, memoDb, post } = await openWithOnePost({ following: [], feed: 'recent', key: 'b' })
+test('canLoadMore is false before any page has been loaded', () => {
+  const page = new FeedTabsPage({ memoDb: makeMemoDb(), wallet: makeWallet() })
 
-  assert.equal(page.isRecent(), true)
-  assert.equal(page.isFollowing(), false)
-  assert.deepEqual(page.posts, [post])
-  assert.equal(memoDb.calls.getRecentPosts.length, 1)
-  assert.equal(memoDb.calls.getFollowingFeed.length, 0)
+  assert.equal(page.canLoadMore(), false)
 })
+
+// The two default-mode cases differ only in the follow state and the feed
+// that should be loaded, so they run as one table.
+const DEFAULT_MODE_CASES = [
+  { label: 'the viewer follows an account', following: [ALICE], feed: 'followingFeed', key: 'a' },
+  { label: 'the viewer follows no one', following: [], feed: 'recent', key: 'b' }
+]
+
+for (const testCase of DEFAULT_MODE_CASES) {
+  test(`open selects the default feed and loads its posts when ${testCase.label}`, async () => {
+    const { page, memoDb, post } = await openWithOnePost(testCase)
+
+    assertOnlySelectedFeedLoaded({ page, memoDb, post, following: testCase.following })
+  })
+}
 
 test('open asks the memo db which accounts the viewer follows', async () => {
   const memoDb = makeMemoDb({ following: [ALICE] })

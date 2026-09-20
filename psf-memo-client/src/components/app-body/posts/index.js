@@ -43,16 +43,18 @@ function RecentPosts (props) {
   const pageRef = useRef(null)
 
   // Reflect a loaded controller page into React state, including the author
-  // profiles needed by the post cards.
+  // profiles needed by the post cards. The controller snapshot is the single
+  // source of feed state; the view never reaches into its internal fields.
   const showPage = async (page) => {
-    const addrs = collectPostAddrs(page.posts)
+    const state = page.getState()
+    const addrs = collectPostAddrs(state.posts)
     const profileMap = await loadThreadProfiles(addrs, page.memoDb)
 
-    setPosts(page.posts)
-    setPagination(page.pagination)
-    setMode(page.mode)
-    setEmptyBecauseNoFollows(page.emptyBecauseNoFollows)
-    setOffset(page.offset)
+    setPosts(state.posts)
+    setPagination(state.pagination)
+    setMode(state.mode)
+    setEmptyBecauseNoFollows(state.emptyBecauseNoFollows)
+    setOffset(state.offset)
     setProfiles(profileMap)
   }
 
