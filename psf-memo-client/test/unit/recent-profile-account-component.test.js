@@ -66,3 +66,32 @@ test('links the avatar and display name to the profile', () => {
   assert.ok(html.includes('class="recent-profile-name-link"'))
   assert.equal(html.split(`href="${PROFILE_PATH}"`).length - 1, 2)
 })
+
+// Invoke the component function directly so the anchor click handlers can be
+// exercised without a DOM.
+function tree (props) {
+  return RecentProfileAccount(props)
+}
+
+test('clicking either account link prevents the default and navigates to the profile', () => {
+  const clicked = []
+  const [avatarLink, nameLink] = tree({
+    account: makeAccount(),
+    onProfileClick: (path) => clicked.push(path)
+  }).props.children
+
+  let prevented = 0
+  const event = { preventDefault: () => { prevented += 1 } }
+  avatarLink.props.onClick(event)
+  nameLink.props.onClick(event)
+
+  assert.equal(prevented, 2)
+  assert.deepEqual(clicked, [PROFILE_PATH, PROFILE_PATH])
+})
+
+test('clicking an account link without a navigation handler is a no-op', () => {
+  const [avatarLink, nameLink] = tree({ account: makeAccount() }).props.children
+
+  assert.doesNotThrow(() => avatarLink.props.onClick({ preventDefault: () => {} }))
+  assert.doesNotThrow(() => nameLink.props.onClick({ preventDefault: () => {} }))
+})
