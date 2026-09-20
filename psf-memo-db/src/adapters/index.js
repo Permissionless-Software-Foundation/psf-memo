@@ -27,7 +27,9 @@ class Adapters {
     this.level = level
     this.dbBackup = new DbBackup(level)
     this.profileQuery = new ProfileQuery({
-      profilesDb: level.profilesDb
+      profilesDb: level.profilesDb,
+      namesDb: level.namesDb,
+      profilePicsDb: level.profilePicsDb
     })
     // muteQuery must be constructed before postQuery: downstream adapters read
     // this.muteQuery at construction time, so declaring postQuery first would

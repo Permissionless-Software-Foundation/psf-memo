@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url'
 import { DB_NAMES } from '../../src/adapters/level-db.js'
 import Adapters from '../../src/adapters/index.js'
 import ListRecentPosts from '../../src/use-cases/list-recent-posts.js'
+import ListRecentProfiles from '../../src/use-cases/list-recent-profiles.js'
 import ListPostsByAddr from '../../src/use-cases/list-posts-by-addr.js'
 import GetPostThread from '../../src/use-cases/get-post-thread.js'
 import FollowState from '../../src/use-cases/follow-state.js'
@@ -163,6 +164,7 @@ async function createWorld () {
   wrapIterator(adapters.level.topicRecencyDb, topicRecencyIteratorCounter)
 
   const listRecentPosts = new ListRecentPosts({ adapters })
+  const listRecentProfiles = new ListRecentProfiles({ adapters })
   const listPostsByAddr = new ListPostsByAddr({ adapters })
   const getPostThread = new GetPostThread({ adapters })
   const followState = new FollowState({ adapters })
@@ -185,6 +187,7 @@ async function createWorld () {
   return {
     adapters,
     listRecentPosts,
+    listRecentProfiles,
     listPostsByAddr,
     getPostThread,
     followState,
@@ -324,6 +327,11 @@ async function loadFixture (world, name) {
 
   if (name === 'following-feed-mixed') {
     await loadFollowingFeedMixed(world)
+    return
+  }
+
+  if (name === 'profiles-with-identities') {
+    await loadProfilesWithIdentities(world)
     return
   }
 
@@ -507,6 +515,49 @@ async function loadManyTopLevelPosts (world) {
       seen: i,
       blockHeight: 600000 + i,
       withAddrIndex: true
+    })
+  }
+}
+
+// Fixture "profiles-with-identities" from recent-profile-identity.feature:
+// three profiles plus separate address-keyed name and profile-picture records
+// that the /profile/recent join must fold into each profile.
+async function loadProfilesWithIdentities (world) {
+  const profiles = [
+    { addr: 'bitcoincash:qaddr-alice', text: 'alice bio', txid: 'profile-alice', seen: 3, blockHeight: 600300 },
+    { addr: 'bitcoincash:qaddr-bob', text: 'bob bio', txid: 'profile-bob', seen: 2, blockHeight: 600200 },
+    { addr: 'bitcoincash:qaddr-carol', text: 'carol bio', txid: 'profile-carol', seen: 1, blockHeight: 600100 }
+  ]
+  for (const profile of profiles) {
+    await world.adapters.level.profilesDb.put(profile.addr, {
+      text: profile.text,
+      txid: profile.txid,
+      seen: profile.seen,
+      blockHeight: profile.blockHeight
+    })
+  }
+
+  const names = [
+    { addr: 'bitcoincash:qaddr-alice', name: 'alice', txid: 'name-alice', blockHeight: 600250 },
+    { addr: 'bitcoincash:qaddr-carol', name: 'carol', txid: 'name-carol', blockHeight: 600050 }
+  ]
+  for (const name of names) {
+    await world.adapters.level.namesDb.put(name.addr, {
+      name: name.name,
+      txid: name.txid,
+      blockHeight: name.blockHeight
+    })
+  }
+
+  const pictures = [
+    { addr: 'bitcoincash:qaddr-alice', url: 'https://example.com/alice.png', txid: 'pic-alice', blockHeight: 600260 },
+    { addr: 'bitcoincash:qaddr-bob', url: 'https://example.com/bob.jpg', txid: 'pic-bob', blockHeight: 600150 }
+  ]
+  for (const picture of pictures) {
+    await world.adapters.level.profilePicsDb.put(picture.addr, {
+      url: picture.url,
+      txid: picture.txid,
+      blockHeight: picture.blockHeight
     })
   }
 }
@@ -1091,6 +1142,46 @@ const handlers = [
     pattern: /^the txid repair utility is run again$/,
     async run (m, example, world) {
       await repairTxidEncoding(world.adapters.level)
+    }
+  },
+  {
+    name: 'db instance with profiles, names, and profilePics stores',
+    pattern: /^a psf-memo-db instance with profiles, names, and profilePics stores$/,
+    async run () {
+      // World is already created with all three stores.
+    }
+  },
+  {
+    name: 'load fixture into profiles, names, and profilePics stores',
+    pattern: /^the fixture "(.+)" is loaded into the profiles, names, and profilePics stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'request recent profiles',
+    pattern: /^the client requests \/profile\/recent$/,
+    async run (m, example, world) {
+      const resp = await world.listRecentProfiles.execute({})
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'recent profile identity field',
+    pattern: /^the response profile for (.+) has (display name|avatar) "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const field = m[2] === 'display name' ? 'name' : 'profilePicUrl'
+      const resolved = resolveParam(m[3], example)
+      const expected = resolved === '' ? null : resolved
+      const profile = world.getLastResponse().profiles.find((p) => p.addr === addr)
+      if (!profile) {
+        throw new Error(`No response profile for ${addr}`)
+      }
+      const actual = profile[field] ?? null
+      if (actual !== expected) {
+        throw new Error(`Expected ${field} "${expected}" for ${addr}, got "${actual}"`)
+      }
     }
   },
   {

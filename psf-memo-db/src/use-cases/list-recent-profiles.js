@@ -18,7 +18,13 @@ class ListRecentProfiles extends ListUseCase {
     const allProfiles = await this.adapters.profileQuery.scanProfilesWithBlockHeight()
     const sorted = allProfiles.sort(sortByHeightDesc)
     const total = sorted.length
-    const profiles = sorted.slice(offset, offset + limit)
+    const page = sorted.slice(offset, offset + limit)
+    const profiles = await Promise.all(
+      page.map(async (profile) => ({
+        ...profile,
+        ...(await this.adapters.profileQuery.getProfileIdentity(profile.addr))
+      }))
+    )
 
     return {
       profiles,

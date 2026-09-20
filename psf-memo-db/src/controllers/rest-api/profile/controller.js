@@ -29,7 +29,7 @@ class ProfileRESTControllerLib {
    * @apiName GetRecentProfiles
    * @apiGroup REST Profile
    *
-   * @apiDescription Returns profiles sorted by block height (newest first), with seen timestamp as tie-breaker.
+   * @apiDescription Returns profiles sorted by block height (newest first), with seen timestamp as tie-breaker. Each profile is joined with its address-keyed display name (names store) and avatar URL (profilePics store), reported as null when absent.
    *
    * @apiQuery {Number} [limit=100] Page size (max 100)
    * @apiQuery {Number} [offset=0] Number of profiles to skip after sorting
@@ -40,6 +40,8 @@ class ProfileRESTControllerLib {
    * @apiSuccess {Object[]} profiles Array of profile objects
    * @apiSuccess {String} profiles.addr Cash address
    * @apiSuccess {String} profiles.text Profile message text
+   * @apiSuccess {String} profiles.name Display name from the names store, or null when absent
+   * @apiSuccess {String} profiles.profilePicUrl Avatar URL from the profilePics store, or null when absent
    * @apiSuccess {String} profiles.txid Provenance transaction id
    * @apiSuccess {Number} profiles.seen Unix epoch milliseconds
    * @apiSuccess {Number} profiles.blockHeight Block height when indexed

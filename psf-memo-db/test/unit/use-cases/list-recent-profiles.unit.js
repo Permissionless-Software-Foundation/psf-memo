@@ -17,13 +17,46 @@ describe('#ListRecentProfiles', () => {
     uut = new ListRecentProfiles({
       adapters: {
         profileQuery: {
-          scanProfilesWithBlockHeight: sandbox.stub().resolves([...mockProfiles])
+          scanProfilesWithBlockHeight: sandbox.stub().resolves([...mockProfiles]),
+          getProfileIdentity: sandbox.stub().resolves({ name: null, profilePicUrl: null })
         }
       }
     })
   })
 
   afterEach(() => sandbox.restore())
+
+  it('should join each profile display name and avatar', async () => {
+    uut.adapters.profileQuery.getProfileIdentity.callsFake(async (addr) => {
+      if (addr === 'addr-b') {
+        return { name: 'Bob', profilePicUrl: 'https://example.com/bob.jpg' }
+      }
+      return { name: null, profilePicUrl: null }
+    })
+
+    const result = await uut.execute({ limit: 10, offset: 0 })
+
+    const bob = result.profiles.find((p) => p.addr === 'addr-b')
+    assert.equal(bob.name, 'Bob')
+    assert.equal(bob.profilePicUrl, 'https://example.com/bob.jpg')
+    const alice = result.profiles.find((p) => p.addr === 'addr-a')
+    assert.equal(alice.name, null)
+    assert.equal(alice.profilePicUrl, null)
+  })
+
+  it('should only join identities for the requested page', async () => {
+    await uut.execute({ limit: 1, offset: 1 })
+
+    assert.equal(uut.adapters.profileQuery.getProfileIdentity.callCount, 1)
+    assert.equal(uut.adapters.profileQuery.getProfileIdentity.firstCall.args[0], 'addr-c')
+  })
+
+  it('should not change pagination metadata when joining identities', async () => {
+    const result = await uut.execute({ limit: 2, offset: 0 })
+
+    assert.equal(result.pagination.total, 3)
+    assert.equal(result.pagination.hasMore, true)
+  })
 
   it('should return profiles sorted by block height descending', async () => {
     const result = await uut.execute({ limit: 10, offset: 0 })

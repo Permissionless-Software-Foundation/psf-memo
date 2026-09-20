@@ -45,6 +45,7 @@ const TopicFeedPage = require('../../src/services/topic-feed-page')
 const SearchPage = require('../../src/services/search-page')
 const NotificationsPage = require('../../src/services/notifications-page')
 const RecentProfilesPage = require('../../src/services/recent-profiles-page')
+const { buildRecentProfilesTable } = require('../../src/services/recent-profiles-table')
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
@@ -60,6 +61,7 @@ const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
 const { renderMuteResult } = require('./render-mute-result')
 const { renderNotificationEntry } = require('./render-notification-entry')
+const { renderRecentProfileAccount } = require('./render-recent-profile-account')
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
@@ -712,6 +714,36 @@ function findDisplayedPost (txid, world) {
 // feed page).
 function isTopicFeedActive (world) {
   return Boolean(world.currentPath && String(world.currentPath).startsWith('/topics/'))
+}
+
+// Fixture "recent-profiles-identities" from recent-profile-display.feature:
+// the GET /profile/recent response already carrying each profile's display
+// name (name) and avatar URL (profilePicUrl), null when absent.
+function loadRecentProfilesFixture (world, name) {
+  if (name !== 'recent-profiles-identities') {
+    throw new Error(`Unknown recent profiles fixture: ${name}`)
+  }
+
+  const fixture = [
+    { addr: 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy', text: 'alice bio', name: 'alice', profilePicUrl: 'https://example.com/alice.png' },
+    { addr: 'bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r', text: 'bob bio', name: 'bob', profilePicUrl: 'https://example.com/bob.jpg' },
+    { addr: 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', text: 'carol bio', name: 'carol', profilePicUrl: null },
+    { addr: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d', text: 'dave bio', name: null, profilePicUrl: 'https://example.com/dave.png' }
+  ]
+
+  for (const profile of fixture) {
+    world.memoDb.profiles.push(profile)
+  }
+}
+
+// The account view model for the recent profile with the given address.
+function recentProfileAccountFor (world, addr) {
+  const table = buildRecentProfilesTable(world.recentProfilesPage.profiles)
+  const row = table.rows.find((candidate) => candidate.addr === addr)
+  if (!row) {
+    throw new Error(`No recent profiles account for the address ${addr}.`)
+  }
+  return row.account
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -3762,6 +3794,76 @@ const handlers = [
     async run (m, example, world) {
       await world.recentProfilesPage.load()
       world.currentPath = RecentProfilesPage.RECENT_PROFILES_PATH
+    }
+  },
+  {
+    name: 'API serves recent profiles fixture',
+    pattern: /^the psf-memo-db API serves the recent profiles fixture "([^"]+)"$/,
+    run (m, example, world) {
+      loadRecentProfilesFixture(world, m[1])
+    }
+  },
+  {
+    name: 'recent profiles account shows identity field',
+    pattern: /^the recent profiles account for the address (.+) shows the (display name|avatar) "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const field = m[2] === 'display name' ? 'displayName' : 'avatarUrl'
+      const expected = resolveParam(m[3], example)
+      const account = recentProfileAccountFor(world, addr)
+      const actual = account[field] ?? null
+      if (actual !== expected) {
+        throw new Error(`Expected the recent profiles account for ${addr} to show ${m[2]} "${expected}", got "${actual}".`)
+      }
+      const html = renderRecentProfileAccount(account)
+      const rendered = m[2] === 'avatar' ? `src="${expected}"` : `>${expected}<`
+      if (!html.includes(rendered)) {
+        throw new Error(`Rendered recent profiles account does not show ${m[2]} "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'recent profiles account shows identicon',
+    pattern: /^the recent profiles account for the address (.+) shows an identicon avatar$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const account = recentProfileAccountFor(world, addr)
+      if (account.avatarUrl) {
+        throw new Error(`Expected the recent profiles account for ${addr} to fall back to an identicon, got avatar "${account.avatarUrl}".`)
+      }
+      const html = renderRecentProfileAccount(account)
+      if (!html.includes('recent-profile-identicon') || !html.includes('data-jdenticon-value')) {
+        throw new Error('Rendered recent profiles account does not show an identicon avatar.')
+      }
+    }
+  },
+  {
+    name: 'recent profiles account links identity to profile',
+    pattern: /^the recent profiles account for the address (.+) links the (avatar|display name) to "([^"]*)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const linkField = m[2]
+      const expected = resolveParam(m[3], example)
+      const account = recentProfileAccountFor(world, addr)
+      if (account.profilePath !== expected) {
+        throw new Error(`Expected the recent profiles account for ${addr} to link the ${linkField} to "${expected}", got "${account.profilePath}".`)
+      }
+      const className = linkField === 'avatar' ? 'recent-profile-avatar-link' : 'recent-profile-name-link'
+      const href = anchorHref(renderRecentProfileAccount(account), className)
+      if (href !== expected) {
+        throw new Error(`Rendered recent profiles ${linkField} does not link to ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'recent profiles table has column headers',
+    pattern: /^the recent profiles table has the column headers (.+)$/,
+    run (m, example, world) {
+      const expected = [...m[1].matchAll(/"([^"]*)"/g)].map((match) => match[1])
+      const table = buildRecentProfilesTable(world.recentProfilesPage.profiles)
+      if (table.headers.join('|') !== expected.join('|')) {
+        throw new Error(`Expected recent profiles headers ${expected.join(', ')}, got ${table.headers.join(', ')}.`)
+      }
     }
   },
   {

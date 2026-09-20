@@ -3,12 +3,14 @@
 */
 
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Container, Row, Col, Spinner, Table, Button } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import RecentProfilesPage from '../../../services/recent-profiles-page'
+import { RECENT_PROFILES_TABLE_HEADERS, buildRecentProfileAccount } from '../../../services/recent-profiles-table'
+import RecentProfileAccount from './recent-profile-account'
 import AppUtil, { truncateAddr, truncateTxid } from '../../../util'
 import '../../../App.css'
 
@@ -22,6 +24,7 @@ function formatSeen (seen) {
 }
 
 function RecentProfiles () {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [profiles, setProfiles] = useState([])
@@ -85,16 +88,17 @@ function RecentProfiles () {
             <Table striped bordered hover responsive className='mt-3'>
               <thead>
                 <tr>
-                  <th>Address</th>
-                  <th>Bio</th>
-                  <th>Block</th>
-                  <th>Seen</th>
-                  <th>TXID</th>
+                  {RECENT_PROFILES_TABLE_HEADERS.map((header) => (
+                    <th key={header}>{header}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {profiles.map((profile) => (
                   <tr key={`${profile.addr}-${profile.txid}`}>
+                    <td>
+                      <RecentProfileAccount account={buildRecentProfileAccount(profile)} onProfileClick={navigate} />
+                    </td>
                     <td>
                       <Link
                         to={`/profile/${encodeURIComponent(profile.addr)}`}
