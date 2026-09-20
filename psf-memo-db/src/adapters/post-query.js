@@ -282,38 +282,41 @@ class PostQuery {
 
   // Iterate the global postHeights index newest first, returning only top-level
   // posts (replies excluded) authored by addresses the viewer follows, excluding
-  // the viewer's own posts. Returns both the page txids and total matching count.
-  async scanFollowingFeedTxidsAndCount (viewerAddr, followingAddrs, { limit, offset }) {
+  // the viewer's own posts. Reply detection uses per-candidate point lookups so
+  // the postParents store is never fully iterated. The scan stops after
+  // offset + limit + totalScanCap eligible followed posts, and the returned
+  // total is capped to totalScanCap so the first pages stay bounded while
+  // hasMore still works.
+  async scanFollowingFeedTxidsAndCount (viewerAddr, followingAddrs, { limit, offset, totalScanCap = TOTAL_SCAN_CAP }) {
     const followeeSet = new Set(followingAddrs.filter((addr) => addr !== viewerAddr))
-    const replyTxids = await this.loadReplyTxids()
     const txids = []
     let skipped = 0
-    let total = 0
+    let eligibleCount = 0
+    const maxEligible = offset + limit + totalScanCap
 
     for await (const [key, value] of this.postHeightsDb.iterator({ reverse: true })) {
       const txid = this.txidFromPostHeight(key, value)
-      if (!(await this.isFolloweePost(txid, replyTxids, followeeSet))) continue
+      if (!(await this.isFolloweePost(txid, followeeSet))) continue
 
-      total++
+      eligibleCount++
 
       if (skipped < offset) {
         skipped++
-        continue
-      }
-
-      if (txids.length < limit) {
+      } else if (txids.length < limit) {
         txids.push(txid)
       }
+
+      if (eligibleCount >= maxEligible) break
     }
 
-    return { txids, total }
+    return { txids, total: Math.min(eligibleCount, totalScanCap) }
   }
 
   // True when a post is a top-level (non-reply) post authored by a followed
-  // address. Loads the post record to check authorship; missing records are
-  // treated as not matching.
-  async isFolloweePost (txid, replyTxids, followeeSet) {
-    if (replyTxids.has(txid)) return false
+  // address. Reply detection is a point lookup on postParents; missing records
+  // are treated as not matching.
+  async isFolloweePost (txid, followeeSet) {
+    if (await this.isReply(txid)) return false
     const post = await this.getPostOrNull(txid)
     if (!post) return false
     return followeeSet.has(post.addr)

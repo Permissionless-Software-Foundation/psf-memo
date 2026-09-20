@@ -57,10 +57,11 @@ function makePostsDb (posts) {
 
 function makeParentsDb (replyTxids) {
   return {
-    async * iterator () {
-      for (const txid of replyTxids) {
-        yield [txid, { parentTxid: 'parent' }]
-      }
+    async get (txid) {
+      if (replyTxids.has(txid)) return { parentTxid: 'parent', childTxid: txid }
+      const err = new Error('not found')
+      err.notFound = true
+      throw err
     }
   }
 }

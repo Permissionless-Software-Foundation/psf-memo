@@ -17,6 +17,7 @@ import ListPostsByAddr from '../../src/use-cases/list-posts-by-addr.js'
 import GetPostThread from '../../src/use-cases/get-post-thread.js'
 import FollowState from '../../src/use-cases/follow-state.js'
 import ListFollowing from '../../src/use-cases/list-following.js'
+import ListFollowingFeed from '../../src/use-cases/list-following-feed.js'
 import ListFollowers from '../../src/use-cases/list-followers.js'
 import ListTopics from '../../src/use-cases/list-topics.js'
 import ListTopicPosts from '../../src/use-cases/list-topic-posts.js'
@@ -112,6 +113,7 @@ async function createWorld () {
   const likesIteratorCounter = { calls: 0 }
   const postLikesIteratorCounter = { calls: 0 }
   const followsIteratorCounter = { calls: 0 }
+  const postParentsIteratorCounter = { calls: 0 }
   const followeeHeightsIteratorCounter = { calls: 0, entries: 0 }
   const roomsIteratorCounter = { calls: 0, entries: 0 }
   const topicRecencyIteratorCounter = { calls: 0, entries: 0 }
@@ -122,6 +124,7 @@ async function createWorld () {
   wrapIterator(adapters.level.likesDb, likesIteratorCounter)
   wrapIterator(adapters.level.postLikesDb, postLikesIteratorCounter)
   wrapIterator(adapters.level.followsDb, followsIteratorCounter)
+  wrapIterator(adapters.level.postParentsDb, postParentsIteratorCounter)
   wrapIterator(adapters.level.followeeHeightsDb, followeeHeightsIteratorCounter)
   wrapIterator(adapters.level.roomsDb, roomsIteratorCounter)
   wrapIterator(adapters.level.topicRecencyDb, topicRecencyIteratorCounter)
@@ -131,6 +134,7 @@ async function createWorld () {
   const getPostThread = new GetPostThread({ adapters })
   const followState = new FollowState({ adapters })
   const listFollowing = new ListFollowing({ adapters })
+  const listFollowingFeed = new ListFollowingFeed({ adapters })
   const listFollowers = new ListFollowers({ adapters })
   const listTopics = new ListTopics({ adapters })
   const listTopicPosts = new ListTopicPosts({ adapters })
@@ -152,6 +156,7 @@ async function createWorld () {
     getPostThread,
     followState,
     listFollowing,
+    listFollowingFeed,
     listFollowers,
     listTopics,
     listTopicPosts,
@@ -170,6 +175,7 @@ async function createWorld () {
     likesIteratorCounter,
     postLikesIteratorCounter,
     followsIteratorCounter,
+    postParentsIteratorCounter,
     followeeHeightsIteratorCounter,
     roomsIteratorCounter,
     topicRecencyIteratorCounter,
@@ -275,6 +281,16 @@ async function loadFixture (world, name) {
 
   if (name === 'many-top-level-posts') {
     await loadManyTopLevelPosts(world)
+    return
+  }
+
+  if (name === 'following-feed-capped') {
+    await loadFollowingFeedCapped(world)
+    return
+  }
+
+  if (name === 'following-feed-mixed') {
+    await loadFollowingFeedMixed(world)
     return
   }
 
@@ -468,6 +484,81 @@ async function loadManyTopLevelPosts (world) {
       { txid, addr: 'bitcoincash:qaddr', blockHeight }
     )
   }
+}
+
+async function loadFollowingFeedCapped (world) {
+  const viewer = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const followee = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  world.fixtureViewer = viewer
+
+  await world.adapters.level.followsDb.put(`${viewer}:${hash160(followee)}`, {
+    followerAddr: viewer,
+    followeePkHash: hash160(followee),
+    unfollow: false,
+    txid: 'follow-capped',
+    seen: 1,
+    blockHeight: 600000
+  })
+
+  // 510 eligible top-level posts, larger than the 500 total-scan cap.
+  for (let i = 0; i < 510; i++) {
+    const id = String(i).padStart(3, '0')
+    const txid = `post-${id}`
+    const blockHeight = 600000 + i
+    await world.adapters.level.postsDb.put(txid, {
+      addr: followee,
+      text: `post ${id}`,
+      seen: i,
+      blockHeight
+    })
+    await world.adapters.level.postHeightsDb.put(
+      `${padHeight(blockHeight)}:${txid}`,
+      { txid, blockHeight }
+    )
+  }
+}
+
+// Fixture "following-feed-mixed" from following-feed-performance.feature: the
+// viewer follows one author while the viewer and another author also have
+// top-level posts, and the followed author has a reply that must be excluded.
+async function loadFollowingFeedMixed (world) {
+  const viewer = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
+  const followee = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  const other = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+  world.fixtureViewer = viewer
+
+  await world.adapters.level.followsDb.put(`${viewer}:${hash160(followee)}`, {
+    followerAddr: viewer,
+    followeePkHash: hash160(followee),
+    unfollow: false,
+    txid: 'follow-mixed',
+    seen: 1,
+    blockHeight: 600000
+  })
+
+  const posts = [
+    { txid: 'post-A1', addr: followee, blockHeight: 600100 },
+    { txid: 'post-A2', addr: followee, blockHeight: 600200 },
+    { txid: 'post-viewer', addr: viewer, blockHeight: 600150 },
+    { txid: 'post-other', addr: other, blockHeight: 600250 },
+    { txid: 'reply-A2', addr: followee, blockHeight: 600300 }
+  ]
+  for (const post of posts) {
+    await world.adapters.level.postsDb.put(post.txid, {
+      addr: post.addr,
+      text: post.txid,
+      seen: post.blockHeight,
+      blockHeight: post.blockHeight
+    })
+    await world.adapters.level.postHeightsDb.put(
+      `${padHeight(post.blockHeight)}:${post.txid}`,
+      { txid: post.txid, blockHeight: post.blockHeight }
+    )
+  }
+
+  const reply = { txid: 'reply-A2', parentTxid: 'post-A2', childTxid: 'reply-A2', blockHeight: 600300 }
+  await world.adapters.level.postParentsDb.put('reply-A2', reply)
+  await world.adapters.level.postChildrenDb.put('post-A2:reply-A2', reply)
 }
 
 async function backfillIndexes (world) {
@@ -1010,6 +1101,17 @@ const handlers = [
       const limit = parseInt(resolveParam(m[2], example), 10)
       const offset = parseInt(resolveParam(m[3], example), 10)
       const resp = await world.listPostsByAddr.execute({ addr, limit, offset })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'request following feed',
+    pattern: /^the client requests \/posts\/following\/(<[A-Za-z0-9_]+>) with limit (<[A-Za-z0-9_]+>) and offset (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      const addr = m[1] === '<viewer>' ? world.fixtureViewer : resolveParam(m[1], example)
+      const limit = parseInt(resolveParam(m[2], example), 10)
+      const offset = parseInt(resolveParam(m[3], example), 10)
+      const resp = await world.listFollowingFeed.execute({ addr, limit, offset })
       world.setLastResponse(resp)
     }
   },
@@ -2074,6 +2176,15 @@ const handlers = [
     run (m, example, world) {
       if (world.followsIteratorCounter.calls !== 0) {
         throw new Error(`Expected follows store not to be iterated, got ${world.followsIteratorCounter.calls} call(s)`)
+      }
+    }
+  },
+  {
+    name: 'postParents store was not iterated',
+    pattern: /^the postParents store was not iterated$/,
+    run (m, example, world) {
+      if (world.postParentsIteratorCounter.calls !== 0) {
+        throw new Error(`Expected postParents store not to be iterated, got ${world.postParentsIteratorCounter.calls} call(s)`)
       }
     }
   }

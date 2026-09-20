@@ -384,16 +384,18 @@ describe('#PostQuery', () => {
       assert.equal(result.total, 2)
     })
 
-    it('should exclude replies from the following feed', async () => {
-      async function * mockParents () {
-        yield ['reply-a', { parentTxid: 'post-a', childTxid: 'reply-a' }]
-      }
+    it('should exclude replies using point lookups without iterating postParents', async () => {
       async function * mockHeights () {
         yield ['000000600300:reply-a', { txid: 'reply-a' }]
         yield ['000000600200:post-a', { txid: 'post-a' }]
       }
-      postParentsDb.iterator.returns(mockParents())
       postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postParentsDb.get.callsFake(async (txid) => {
+        if (txid === 'reply-a') return { parentTxid: 'post-a', childTxid: 'reply-a' }
+        const err = new Error('not found')
+        err.notFound = true
+        throw err
+      })
       postsDb.get.callsFake(async (txid) => {
         return { addr: followeeA, text: txid }
       })
@@ -406,6 +408,77 @@ describe('#PostQuery', () => {
 
       assert.deepEqual(result.txids, ['post-a'])
       assert.equal(result.total, 1)
+      assert.equal(postParentsDb.iterator.called, false)
+    })
+
+    it('should cap the total at 500 and stop scanning after offset + limit + cap eligible posts', async () => {
+      let reads = 0
+      async function * mockHeights () {
+        for (let i = 599; i >= 0; i--) {
+          reads++
+          const id = String(i).padStart(3, '0')
+          yield [`000000${600000 + i}:post-${id}`, { txid: `post-${id}` }]
+        }
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => ({ addr: followeeA, text: txid }))
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA],
+        { limit: 3, offset: 0 }
+      )
+
+      assert.deepEqual(result.txids, ['post-599', 'post-598', 'post-597'])
+      assert.equal(result.total, 500)
+      assert.equal(reads, 503) // offset + limit + default cap eligible posts
+    })
+
+    it('should report the exact total when eligible posts are below the cap', async () => {
+      async function * mockHeights () {
+        yield ['000000600200:post-a', { txid: 'post-a' }]
+        yield ['000000600100:post-b', { txid: 'post-b' }]
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => ({ addr: followeeA, text: txid }))
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA],
+        { limit: 10, offset: 0 }
+      )
+
+      assert.deepEqual(result.txids, ['post-a', 'post-b'])
+      assert.equal(result.total, 2)
+    })
+
+    it('should count only eligible followed posts toward the scan cap', async () => {
+      let reads = 0
+      async function * mockHeights () {
+        // Interleave eligible followed posts with non-followed top-level posts.
+        for (let i = 1199; i >= 0; i--) {
+          reads++
+          const txid = i % 2 === 0 ? `followed-${i}` : `other-${i}`
+          yield [`000000${600000 + i}:${txid}`, { txid }]
+        }
+      }
+      postHeightsDb.iterator.withArgs({ reverse: true }).returns(mockHeights())
+      postsDb.get.callsFake(async (txid) => ({
+        addr: txid.startsWith('followed') ? followeeA : 'bitcoincash:other',
+        text: txid
+      }))
+
+      const result = await uut.scanFollowingFeedTxidsAndCount(
+        viewerAddr,
+        [followeeA],
+        { limit: 3, offset: 0 }
+      )
+
+      assert.deepEqual(result.txids, ['followed-1198', 'followed-1196', 'followed-1194'])
+      assert.equal(result.total, 500)
+      // Non-eligible raw entries do not count toward the cap, so the scan keeps
+      // going past 503 raw entries until it has seen 503 eligible posts.
+      assert.isAbove(reads, 503)
     })
 
     it('should apply limit and offset', async () => {
