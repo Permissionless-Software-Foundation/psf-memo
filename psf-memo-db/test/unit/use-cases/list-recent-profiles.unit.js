@@ -6,8 +6,7 @@ describe('#ListRecentProfiles', () => {
   let uut
   let sandbox
 
-  const mockProfiles = [
-    { addr: 'addr-a', text: 'a', txid: 'tx-a', seen: 100, blockHeight: 600100 },
+  const page = [
     { addr: 'addr-b', text: 'b', txid: 'tx-b', seen: 200, blockHeight: 600200 },
     { addr: 'addr-c', text: 'c', txid: 'tx-c', seen: 50, blockHeight: 600200 }
   ]
@@ -17,7 +16,7 @@ describe('#ListRecentProfiles', () => {
     uut = new ListRecentProfiles({
       adapters: {
         profileQuery: {
-          scanProfilesWithBlockHeight: sandbox.stub().resolves([...mockProfiles]),
+          listRecentProfiles: sandbox.stub().resolves({ profiles: [...page], total: 3 }),
           getProfileIdentity: sandbox.stub().resolves({ name: null, profilePicUrl: null })
         }
       }
@@ -26,7 +25,7 @@ describe('#ListRecentProfiles', () => {
 
   afterEach(() => sandbox.restore())
 
-  it('should join each profile display name and avatar', async () => {
+  it('should join each returned profile display name and avatar', async () => {
     uut.adapters.profileQuery.getProfileIdentity.callsFake(async (addr) => {
       if (addr === 'addr-b') {
         return { name: 'Bob', profilePicUrl: 'https://example.com/bob.jpg' }
@@ -39,44 +38,34 @@ describe('#ListRecentProfiles', () => {
     const bob = result.profiles.find((p) => p.addr === 'addr-b')
     assert.equal(bob.name, 'Bob')
     assert.equal(bob.profilePicUrl, 'https://example.com/bob.jpg')
-    const alice = result.profiles.find((p) => p.addr === 'addr-a')
-    assert.equal(alice.name, null)
-    assert.equal(alice.profilePicUrl, null)
+    const carol = result.profiles.find((p) => p.addr === 'addr-c')
+    assert.equal(carol.name, null)
+    assert.equal(carol.profilePicUrl, null)
   })
 
-  it('should only join identities for the requested page', async () => {
-    await uut.execute({ limit: 1, offset: 1 })
+  it('should only join identities for the profiles the adapter returns', async () => {
+    await uut.execute({ limit: 2, offset: 1 })
 
-    assert.equal(uut.adapters.profileQuery.getProfileIdentity.callCount, 1)
-    assert.equal(uut.adapters.profileQuery.getProfileIdentity.firstCall.args[0], 'addr-c')
+    assert.equal(uut.adapters.profileQuery.getProfileIdentity.callCount, 2)
+    assert.equal(uut.adapters.profileQuery.getProfileIdentity.firstCall.args[0], 'addr-b')
+    assert.equal(uut.adapters.profileQuery.getProfileIdentity.secondCall.args[0], 'addr-c')
   })
 
-  it('should not change pagination metadata when joining identities', async () => {
-    const result = await uut.execute({ limit: 2, offset: 0 })
+  it('should preserve adapter order and pagination metadata when joining identities', async () => {
+    const result = await uut.execute({ limit: 2, offset: 1 })
 
-    assert.equal(result.pagination.total, 3)
-    assert.equal(result.pagination.hasMore, true)
-  })
-
-  it('should return profiles sorted by block height descending', async () => {
-    const result = await uut.execute({ limit: 10, offset: 0 })
-
-    assert.equal(result.profiles.length, 3)
-    assert.equal(result.profiles[0].addr, 'addr-b')
-    assert.equal(result.profiles[1].addr, 'addr-c')
-    assert.equal(result.profiles[2].addr, 'addr-a')
+    assert.deepEqual(result.profiles.map((p) => p.addr), ['addr-b', 'addr-c'])
     assert.equal(result.pagination.total, 3)
     assert.equal(result.pagination.hasMore, false)
   })
 
-  it('should paginate with limit and offset', async () => {
-    const result = await uut.execute({ limit: 1, offset: 1 })
+  it('should pass limit and offset through to the adapter', async () => {
+    await uut.execute({ limit: 7, offset: 14 })
 
-    assert.equal(result.profiles.length, 1)
-    assert.equal(result.profiles[0].addr, 'addr-c')
-    assert.equal(result.pagination.limit, 1)
-    assert.equal(result.pagination.offset, 1)
-    assert.equal(result.pagination.hasMore, true)
+    assert.deepEqual(uut.adapters.profileQuery.listRecentProfiles.firstCall.args[0], {
+      limit: 7,
+      offset: 14
+    })
   })
 
   it('should default limit to 100 and offset to 0', async () => {
@@ -84,22 +73,6 @@ describe('#ListRecentProfiles', () => {
 
     assert.equal(result.pagination.limit, 100)
     assert.equal(result.pagination.offset, 0)
-  })
-
-  it('should sort equal-height profiles by seen descending, falsy seen last', async () => {
-    // Same blockHeight so only the `seen` tie-break matters. The dataset mixes
-    // truthy and falsy (0) seen values; a broken comparator is observable here
-    // because the falsy profiles are not already in descending input order.
-    const ties = [
-      { addr: 'addr-a', txid: 't-a', seen: 0, blockHeight: 700000 },
-      { addr: 'addr-b', txid: 't-b', seen: 0, blockHeight: 700000 },
-      { addr: 'addr-c', txid: 't-c', seen: 1, blockHeight: 700000 }
-    ]
-    uut.adapters.profileQuery.scanProfilesWithBlockHeight.resolves(ties)
-
-    const result = await uut.execute({ limit: 10, offset: 0 })
-
-    assert.deepEqual(result.profiles.map((p) => p.addr), ['addr-c', 'addr-a', 'addr-b'])
   })
 
   it('should reject limit over 100', async () => {

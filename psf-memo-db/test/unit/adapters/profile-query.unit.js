@@ -6,48 +6,121 @@ describe('#ProfileQuery', () => {
   let uut
   let sandbox
   let profilesDb
+  let profileRecencyDb
   let namesDb
   let profilePicsDb
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    profilesDb = {
-      iterator: sandbox.stub()
-    }
-    namesDb = {
-      get: sandbox.stub()
-    }
-    profilePicsDb = {
-      get: sandbox.stub()
-    }
-    uut = new ProfileQuery({ profilesDb, namesDb, profilePicsDb })
+    profilesDb = { get: sandbox.stub(), iterator: sandbox.stub() }
+    profileRecencyDb = { iterator: sandbox.stub() }
+    namesDb = { get: sandbox.stub() }
+    profilePicsDb = { get: sandbox.stub() }
+    uut = new ProfileQuery({ profilesDb, namesDb, profilePicsDb, profileRecencyDb })
   })
 
   afterEach(() => sandbox.restore())
 
-  it('should scan profiles and read block height from stored document', async () => {
-    async function * mockIterator () {
-      yield ['addr1', { text: 'hi', txid: 'tx1', seen: 1000, blockHeight: 600100 }]
-      yield ['addr2', { text: 'bye', txid: 'tx2', seen: 2000, blockHeight: 600200 }]
-    }
-    profilesDb.iterator.returns(mockIterator())
+  function stubRecency (records) {
+    profileRecencyDb.iterator.returns((async function * () {
+      for (const [addr, record] of Object.entries(records)) {
+        yield [addr, record]
+      }
+    })())
+  }
 
-    const result = await uut.scanProfilesWithBlockHeight()
+  function stubProfiles (profiles) {
+    profilesDb.get.callsFake(async (addr) => {
+      if (Object.prototype.hasOwnProperty.call(profiles, addr)) return profiles[addr]
+      const err = new Error('not found')
+      err.notFound = true
+      throw err
+    })
+  }
 
-    assert.equal(result.length, 2)
-    assert.equal(result[0].blockHeight, 600100)
-    assert.equal(result[1].blockHeight, 600200)
+  it('should order profiles by post height descending, then seen descending, then address ascending', async () => {
+    stubRecency({
+      'bitcoincash:qaddr-alice': { addr: 'bitcoincash:qaddr-alice', blockHeight: 600300, seen: 300 },
+      'bitcoincash:qaddr-bob': { addr: 'bitcoincash:qaddr-bob', blockHeight: 600300, seen: 200 },
+      'bitcoincash:qaddr-erin': { addr: 'bitcoincash:qaddr-erin', blockHeight: 600300, seen: 200 },
+      'bitcoincash:qaddr-carol': { addr: 'bitcoincash:qaddr-carol', blockHeight: 600200, seen: 400 }
+    })
+    stubProfiles({
+      'bitcoincash:qaddr-alice': { text: 'alice bio', txid: 'profile-alice' },
+      'bitcoincash:qaddr-bob': { text: 'bob bio', txid: 'profile-bob' },
+      'bitcoincash:qaddr-erin': { text: 'erin bio', txid: 'profile-erin' },
+      'bitcoincash:qaddr-carol': { text: 'carol bio', txid: 'profile-carol' }
+    })
+
+    const { profiles, total } = await uut.listRecentProfiles({ limit: 5, offset: 0 })
+
+    assert.equal(total, 4)
+    assert.deepEqual(profiles.map((p) => p.addr), [
+      'bitcoincash:qaddr-alice',
+      'bitcoincash:qaddr-bob',
+      'bitcoincash:qaddr-erin',
+      'bitcoincash:qaddr-carol'
+    ])
   })
 
-  it('should use block height 0 when field is missing', async () => {
-    async function * mockIterator () {
-      yield ['addr1', { text: 'hi', txid: 'tx1', seen: 1000 }]
-    }
-    profilesDb.iterator.returns(mockIterator())
+  it('should report the recency block height and seen, not the profile record values', async () => {
+    stubRecency({
+      'bitcoincash:qaddr-alice': { addr: 'bitcoincash:qaddr-alice', blockHeight: 600300, seen: 300 }
+    })
+    stubProfiles({
+      'bitcoincash:qaddr-alice': { text: 'alice bio', txid: 'profile-alice', blockHeight: 600010, seen: 10 }
+    })
 
-    const result = await uut.scanProfilesWithBlockHeight()
+    const { profiles } = await uut.listRecentProfiles({ limit: 5, offset: 0 })
 
-    assert.equal(result[0].blockHeight, 0)
+    assert.deepEqual(profiles[0], {
+      addr: 'bitcoincash:qaddr-alice',
+      text: 'alice bio',
+      txid: 'profile-alice',
+      blockHeight: 600300,
+      seen: 300
+    })
+  })
+
+  it('should paginate the ordered recency entries', async () => {
+    stubRecency({
+      'bitcoincash:qaddr-a': { addr: 'bitcoincash:qaddr-a', blockHeight: 600300, seen: 3 },
+      'bitcoincash:qaddr-b': { addr: 'bitcoincash:qaddr-b', blockHeight: 600200, seen: 2 },
+      'bitcoincash:qaddr-c': { addr: 'bitcoincash:qaddr-c', blockHeight: 600100, seen: 1 }
+    })
+    stubProfiles({
+      'bitcoincash:qaddr-a': { text: 'a bio', txid: 'profile-a' },
+      'bitcoincash:qaddr-b': { text: 'b bio', txid: 'profile-b' },
+      'bitcoincash:qaddr-c': { text: 'c bio', txid: 'profile-c' }
+    })
+
+    const { profiles, total } = await uut.listRecentProfiles({ limit: 1, offset: 1 })
+
+    assert.equal(total, 3)
+    assert.deepEqual(profiles.map((p) => p.addr), ['bitcoincash:qaddr-b'])
+  })
+
+  it('should omit a recency record whose profile is missing', async () => {
+    stubRecency({
+      'bitcoincash:qaddr-a': { addr: 'bitcoincash:qaddr-a', blockHeight: 600300, seen: 3 },
+      'bitcoincash:qaddr-gone': { addr: 'bitcoincash:qaddr-gone', blockHeight: 600200, seen: 2 }
+    })
+    stubProfiles({
+      'bitcoincash:qaddr-a': { text: 'a bio', txid: 'profile-a' }
+    })
+
+    const { profiles } = await uut.listRecentProfiles({ limit: 5, offset: 0 })
+
+    assert.deepEqual(profiles.map((p) => p.addr), ['bitcoincash:qaddr-a'])
+  })
+
+  it('should return an empty page when no recency store is configured', async () => {
+    const uutWithoutRecency = new ProfileQuery({ profilesDb })
+
+    const { profiles, total } = await uutWithoutRecency.listRecentProfiles({ limit: 5, offset: 0 })
+
+    assert.deepEqual(profiles, [])
+    assert.equal(total, 0)
   })
 
   it('should join the display name and avatar for an address', async () => {

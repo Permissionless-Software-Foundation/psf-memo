@@ -1,5 +1,6 @@
 import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
+import { establishProfileRecency } from './profile-recency.js'
 
 export async function handleSetProfile (ctx) {
   const { adapters, txid, signerAddr, decoded, seen, blockHeight } = ctx
@@ -17,4 +18,5 @@ export async function handleSetProfile (ctx) {
   }
 
   await adapters.profileDb.create(signerAddr, { text, txid, seen, addr: signerAddr, blockHeight })
+  await establishProfileRecency(adapters, signerAddr)
 }

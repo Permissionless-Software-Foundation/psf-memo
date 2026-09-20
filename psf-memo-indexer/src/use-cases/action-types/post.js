@@ -1,5 +1,6 @@
 import { utf8FromPush, logProcessError, normalizeTwoPushMemoDatas, postHeightKey, addrPostHeightKey } from './helpers.js'
 import { MAX_POST_SIZE } from '../../lib/memo-codes.js'
+import { recordProfileRecency } from './profile-recency.js'
 
 // Create a record only when it does not already exist (idempotent writes).
 async function createIfMissing (db, key, value) {
@@ -35,8 +36,11 @@ export async function handlePost (ctx) {
   await createIfMissing(adapters.postDb, txid, postData)
   await createIfMissing(adapters.postHeightDb, heightKey, { txid, blockHeight })
   await createIfMissing(adapters.addrPostHeightDb, addrHeightKey, { txid, addr: signerAddr, blockHeight })
-}
 
-// mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-28T04:25:56.092Z","module_hash":"0f471223ce221777762f87eb02cc7921f2db624ecb1e333a148f9c682c383330","functions":[{"id":"func/createIfMissing","name":"createIfMissing","line":5,"end_line":11,"hash":"d59cefaf87075a2bc41538961b609387e35393d4fbf02ecfc0633026bbfdca42"},{"id":"func/handlePost","name":"handlePost","line":13,"end_line":38,"hash":"928ea72312ac9d0b94dbe93adef0b775bc8df158177c1b0adbac8cafe2da76d8"}]}
-// mutate4javascript-manifest-end
+  // Only top-level posts and topic messages qualify for profile recency.
+  // Replies reuse handlePost to store their post record but must not move the
+  // author's recency.
+  if (decoded.action === 'post' || decoded.action === 'topicMessage') {
+    await recordProfileRecency(adapters, signerAddr, blockHeight, seen)
+  }
+}

@@ -33,6 +33,7 @@ import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
 import { repairTxidEncoding } from '../../src/lib/repair-txid-encoding.js'
 import { backfillTopicIndexes, topicRecencyKey } from '../../src/lib/backfill-topic-indexes.js'
 import { backfillFolloweeIndex, followeeHeightKey } from '../../src/lib/backfill-followee-index.js'
+import { backfillProfileRecency } from '../../src/lib/backfill-profile-recency.js'
 import BCHJS from '@psf/bch-js'
 
 const bchjs = new BCHJS({ restURL: process.env.RESTURL || 'https://api.fullstack.cash/v5/' })
@@ -335,6 +336,16 @@ async function loadFixture (world, name) {
     return
   }
 
+  if (name === 'profiles-with-post-recency') {
+    await loadProfilesWithPostRecency(world)
+    return
+  }
+
+  if (name === 'profiles-with-post-history') {
+    await loadProfilesWithPostHistory(world)
+    return
+  }
+
   if (name !== 'three-top-level-posts-and-one-reply') {
     throw new Error(`Unknown fixture: ${name}`)
   }
@@ -537,6 +548,15 @@ async function loadProfilesWithIdentities (world) {
     })
   }
 
+  const recency = [
+    { addr: 'bitcoincash:qaddr-alice', blockHeight: 600300, seen: 3 },
+    { addr: 'bitcoincash:qaddr-bob', blockHeight: 600200, seen: 2 },
+    { addr: 'bitcoincash:qaddr-carol', blockHeight: 600100, seen: 1 }
+  ]
+  for (const record of recency) {
+    await world.adapters.level.profileRecencyDb.put(record.addr, record)
+  }
+
   const names = [
     { addr: 'bitcoincash:qaddr-alice', name: 'alice', txid: 'name-alice', blockHeight: 600250 },
     { addr: 'bitcoincash:qaddr-carol', name: 'carol', txid: 'name-carol', blockHeight: 600050 }
@@ -560,6 +580,85 @@ async function loadProfilesWithIdentities (world) {
       blockHeight: picture.blockHeight
     })
   }
+}
+
+// Fixture "profiles-with-post-recency" from recent-profile-ordering.feature:
+// five profiles with distinct set-profile block heights/seens, and four
+// profileRecency records whose values deliberately differ from the profile
+// records so the two sources cannot be confused. Dave never posted.
+async function loadProfilesWithPostRecency (world) {
+  const profiles = [
+    { addr: 'bitcoincash:qaddr-alice', text: 'alice bio', txid: 'profile-alice', blockHeight: 600010, seen: 10 },
+    { addr: 'bitcoincash:qaddr-bob', text: 'bob bio', txid: 'profile-bob', blockHeight: 600020, seen: 20 },
+    { addr: 'bitcoincash:qaddr-erin', text: 'erin bio', txid: 'profile-erin', blockHeight: 600030, seen: 30 },
+    { addr: 'bitcoincash:qaddr-carol', text: 'carol bio', txid: 'profile-carol', blockHeight: 600040, seen: 40 },
+    { addr: 'bitcoincash:qaddr-dave', text: 'dave bio', txid: 'profile-dave', blockHeight: 600050, seen: 50 }
+  ]
+  for (const profile of profiles) {
+    await world.adapters.level.profilesDb.put(profile.addr, profile)
+  }
+
+  const recency = [
+    { addr: 'bitcoincash:qaddr-alice', blockHeight: 600300, seen: 300 },
+    { addr: 'bitcoincash:qaddr-bob', blockHeight: 600300, seen: 200 },
+    { addr: 'bitcoincash:qaddr-erin', blockHeight: 600300, seen: 200 },
+    { addr: 'bitcoincash:qaddr-carol', blockHeight: 600200, seen: 400 }
+  ]
+  for (const record of recency) {
+    await world.adapters.level.profileRecencyDb.put(record.addr, record)
+  }
+}
+
+function pad (blockHeight) {
+  return String(blockHeight ?? 0).padStart(12, '0')
+}
+
+// Fixture "profiles-with-post-history" from backfill-profile-recency.feature:
+// raw profiles/posts/addrPostHeights the backfill projects into profileRecency,
+// including a reply, a poll, and an unconfirmed post that must all be ignored.
+async function loadProfilesWithPostHistory (world) {
+  const profiles = [
+    { addr: 'bitcoincash:qaddr-alice', text: 'alice bio', txid: 'profile-alice' },
+    { addr: 'bitcoincash:qaddr-bob', text: 'bob bio', txid: 'profile-bob' },
+    { addr: 'bitcoincash:qaddr-nopost', text: 'nopost bio', txid: 'profile-nopost' }
+  ]
+  for (const profile of profiles) {
+    await world.adapters.level.profilesDb.put(profile.addr, profile)
+  }
+
+  const posts = [
+    { txid: 'post-a1', addr: 'bitcoincash:qaddr-alice', seen: 100, blockHeight: 600100 },
+    { txid: 'reply-a1', addr: 'bitcoincash:qaddr-alice', seen: 150, blockHeight: 600300 },
+    { txid: 'post-b1', addr: 'bitcoincash:qaddr-bob', seen: 200, blockHeight: 600400 },
+    { txid: 'post-b2', addr: 'bitcoincash:qaddr-bob', seen: 250, blockHeight: 600500 }
+  ]
+  for (const post of posts) {
+    await world.adapters.level.postsDb.put(post.txid, post)
+  }
+
+  const addrPostHeights = [
+    { addr: 'bitcoincash:qaddr-alice', txid: 'post-a1', blockHeight: 600100 },
+    { addr: 'bitcoincash:qaddr-alice', txid: 'reply-a1', blockHeight: 600300 },
+    { addr: 'bitcoincash:qaddr-alice', txid: 'poll-a1', blockHeight: 600200 },
+    { addr: 'bitcoincash:qaddr-bob', txid: 'post-b1', blockHeight: 600400 },
+    { addr: 'bitcoincash:qaddr-bob', txid: 'post-b2', blockHeight: 600500 }
+  ]
+  for (const entry of addrPostHeights) {
+    await world.adapters.level.addrPostHeightsDb.put(
+      `${entry.addr}:${pad(entry.blockHeight)}:${entry.txid}`,
+      entry
+    )
+  }
+
+  await world.adapters.level.postParentsDb.put('reply-a1', {
+    txid: 'reply-a1', parentTxid: 'post-a1', childTxid: 'reply-a1', blockHeight: 600300
+  })
+  await world.adapters.level.pollsDb.put('poll-a1', {
+    addr: 'bitcoincash:qaddr-alice', pollType: 1, optionCount: 2, question: 'which?', seen: 120, blockHeight: 600200
+  })
+  await world.adapters.level.statusDb.put('status', {
+    startBlockHeight: 0, syncedBlockHeight: 600450, chainBlockHeight: 600450
+  })
 }
 
 async function loadFollowingFeedCapped (world) {
@@ -2286,6 +2385,164 @@ const handlers = [
     run (m, example, world) {
       if (world.postParentsIteratorCounter.calls !== 0) {
         throw new Error(`Expected postParents store not to be iterated, got ${world.postParentsIteratorCounter.calls} call(s)`)
+      }
+    }
+  },
+  {
+    name: 'db instance with profiles and profileRecency stores',
+    pattern: /^a psf-memo-db instance with profiles and profileRecency stores$/,
+    async run () {
+      // World is already created with both stores.
+    }
+  },
+  {
+    name: 'db instance with profiles, names, profilePics, and profileRecency stores',
+    pattern: /^a psf-memo-db instance with profiles, names, profilePics, and profileRecency stores$/,
+    async run () {
+      // World is already created with all four stores.
+    }
+  },
+  {
+    name: 'db instance with profiles, posts, addrPostHeights, postParents, polls, status, and profileRecency stores',
+    pattern: /^a psf-memo-db instance with profiles, posts, addrPostHeights, postParents, polls, status, and profileRecency stores$/,
+    async run () {
+      // World is already created with all stores.
+    }
+  },
+  {
+    name: 'load fixture into profiles and profileRecency stores',
+    pattern: /^the fixture "(.+)" is loaded into the profiles and profileRecency stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'load fixture into profiles, names, profilePics, and profileRecency stores',
+    pattern: /^the fixture "(.+)" is loaded into the profiles, names, profilePics, and profileRecency stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'load fixture into profiles, posts, addrPostHeights, postParents, polls, status, and profileRecency stores',
+    pattern: /^the fixture "(.+)" is loaded into the profiles, posts, addrPostHeights, postParents, polls, status, and profileRecency stores$/,
+    async run (m, example, world) {
+      await loadFixture(world, m[1])
+    }
+  },
+  {
+    name: 'request recent profiles with limit and offset',
+    pattern: /^the client requests \/profile\/recent with limit (\S+) and offset (\S+)$/,
+    async run (m, example, world) {
+      const limit = parseInt(resolveParam(m[1], example), 10)
+      const offset = parseInt(resolveParam(m[2], example), 10)
+      const resp = await world.listRecentProfiles.execute({ limit, offset })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'response lists profiles in order',
+    pattern: /^the response lists profiles in order \((.+)\)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example).split(',').map((s) => s.trim())
+      const actual = world.getLastResponse().profiles.map((p) => p.addr)
+      if (expected.join(',') !== actual.join(',')) {
+        throw new Error(`Expected profiles ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
+  },
+  {
+    name: 'response profile has block height and seen',
+    pattern: /^the response profile for (.+) has block height (\S+) and seen (\S+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const height = parseInt(resolveParam(m[2], example), 10)
+      const seen = parseInt(resolveParam(m[3], example), 10)
+      const profile = world.getLastResponse().profiles.find((p) => p.addr === addr)
+      if (!profile) {
+        throw new Error(`No response profile for ${addr}`)
+      }
+      if (profile.blockHeight !== height || profile.seen !== seen) {
+        throw new Error(`Expected ${addr} at ${height} seen ${seen}, got ${profile.blockHeight} seen ${profile.seen}`)
+      }
+    }
+  },
+  {
+    name: 'response does not list addr',
+    pattern: /^the response does not list (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const found = world.getLastResponse().profiles.find((p) => p.addr === addr)
+      if (found) {
+        throw new Error(`Expected response not to list ${addr}`)
+      }
+    }
+  },
+  {
+    name: 'addrPostHeights store was not iterated',
+    pattern: /^the addrPostHeights store was not iterated$/,
+    run (m, example, world) {
+      if (world.addrPostHeightsIteratorCounter.calls !== 0) {
+        throw new Error(`Expected addrPostHeights store not to be iterated, got ${world.addrPostHeightsIteratorCounter.calls} call(s)`)
+      }
+    }
+  },
+  {
+    name: 'run profile recency backfill utility',
+    pattern: /^the profile recency backfill utility is run$/,
+    async run (m, example, world) {
+      await backfillProfileRecency({
+        profilesDb: world.adapters.level.profilesDb,
+        postsDb: world.adapters.level.postsDb,
+        addrPostHeightsDb: world.adapters.level.addrPostHeightsDb,
+        postParentsDb: world.adapters.level.postParentsDb,
+        pollsDb: world.adapters.level.pollsDb,
+        statusDb: world.adapters.level.statusDb,
+        profileRecencyDb: world.adapters.level.profileRecencyDb
+      })
+    }
+  },
+  {
+    name: 'run profile recency backfill utility again',
+    pattern: /^the profile recency backfill utility is run again$/,
+    async run (m, example, world) {
+      await backfillProfileRecency({
+        profilesDb: world.adapters.level.profilesDb,
+        postsDb: world.adapters.level.postsDb,
+        addrPostHeightsDb: world.adapters.level.addrPostHeightsDb,
+        postParentsDb: world.adapters.level.postParentsDb,
+        pollsDb: world.adapters.level.pollsDb,
+        statusDb: world.adapters.level.statusDb,
+        profileRecencyDb: world.adapters.level.profileRecencyDb
+      })
+    }
+  },
+  {
+    name: 'profileRecency records addr at height seen',
+    pattern: /^the profileRecency store records (.+) at block height (\S+) seen at (\S+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const height = parseInt(resolveParam(m[2], example), 10)
+      const seen = parseInt(resolveParam(m[3], example), 10)
+      let record
+      try {
+        record = await world.adapters.level.profileRecencyDb.get(addr)
+      } catch (err) {
+        throw new Error(`No profileRecency record for ${addr}`)
+      }
+      if (record.blockHeight !== height || record.seen !== seen) {
+        throw new Error(`Expected profileRecency ${addr} at ${height} seen ${seen}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'profileRecency has no record for addr',
+    pattern: /^the profileRecency store has no record for (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const record = await world.adapters.level.profileRecencyDb.get(addr).catch(() => null)
+      if (record) {
+        throw new Error(`Expected no profileRecency record for ${addr}, got ${JSON.stringify(record)}`)
       }
     }
   }

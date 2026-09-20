@@ -83,6 +83,36 @@ describe('#handlePost', () => {
     assert.equal(addrPostHeightCreate.callCount, 0)
   })
 
+  it('should record profile recency when the author has a profile', async () => {
+    const notFound = new Error('not found')
+    notFound.notFound = true
+    const profileRecencyUpdate = sinon.stub().resolves({ success: true })
+
+    const adapters = {
+      postDb: { create: sinon.stub().resolves({ success: true }), get: sinon.stub().rejects(notFound) },
+      postHeightDb: { create: sinon.stub().resolves({ success: true }), get: sinon.stub().rejects(notFound) },
+      addrPostHeightDb: { create: sinon.stub().resolves({ success: true }), get: sinon.stub().rejects(notFound) },
+      profileDb: { get: sinon.stub().resolves({ addr: 'bitcoincash:qptest', text: 'bio' }) },
+      profileRecencyDb: { get: sinon.stub().rejects(notFound), update: profileRecencyUpdate },
+      processErrorDb: { create: sinon.stub() }
+    }
+
+    await handlePost({
+      adapters,
+      txid: 'abc123',
+      signerAddr: 'bitcoincash:qptest',
+      seen: 1000,
+      blockHeight: 600100,
+      decoded: { action: 'post', prefix: PREFIX_POST, pushDatas: [PREFIX_POST, Buffer.from('hello memo')] }
+    })
+
+    assert.equal(profileRecencyUpdate.callCount, 1)
+    assert.deepEqual(profileRecencyUpdate.firstCall.args, [
+      'bitcoincash:qptest',
+      { addr: 'bitcoincash:qptest', blockHeight: 600100, seen: 1000 }
+    ])
+  })
+
   it('should accept a post whose text is exactly at the maximum size', async () => {
     const create = sinon.stub().resolves({ success: true })
     const get = sinon.stub().rejects(new Error('not found'))

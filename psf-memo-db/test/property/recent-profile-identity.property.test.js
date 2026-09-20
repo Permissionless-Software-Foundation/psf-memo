@@ -119,11 +119,11 @@ function recentProfilesSetGen () {
   return { profiles, identities }
 }
 
-function makeUseCase (profiles, identities, joined) {
+function makeUseCase (page, total, identities, joined) {
   return new ListRecentProfiles({
     adapters: {
       profileQuery: {
-        scanProfilesWithBlockHeight: async () => profiles.map((profile) => ({ ...profile })),
+        listRecentProfiles: async () => ({ profiles: page.map((profile) => ({ ...profile })), total }),
         getProfileIdentity: async (addr) => {
           joined.push(addr)
           return identities[addr]
@@ -133,7 +133,7 @@ function makeUseCase (profiles, identities, joined) {
   })
 }
 
-test('ListRecentProfiles enriches exactly the requested page without changing order or pagination', async () => {
+test('ListRecentProfiles enriches exactly the returned page without changing order or pagination', async () => {
   await forAll(
     (i) => {
       const { profiles, identities } = recentProfilesSetGen()
@@ -146,10 +146,9 @@ test('ListRecentProfiles enriches exactly the requested page without changing or
     },
     async ({ profiles, identities, limit, offset }) => {
       const joined = []
-      const result = await makeUseCase(profiles, identities, joined).execute({ limit, offset })
-
       const expectedOrder = [...profiles].sort(sortByHeightDesc)
       const expectedPage = expectedOrder.slice(offset, offset + limit)
+      const result = await makeUseCase(expectedPage, profiles.length, identities, joined).execute({ limit, offset })
 
       if (result.profiles.length !== expectedPage.length) return false
       if (result.pagination.limit !== limit) return false

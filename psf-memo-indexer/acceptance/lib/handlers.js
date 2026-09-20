@@ -17,6 +17,7 @@ import { handleMute } from '../../src/use-cases/action-types/mute.js'
 import { handleFollow } from '../../src/use-cases/action-types/follow.js'
 import { handleTopicMessage } from '../../src/use-cases/action-types/topic-message.js'
 import { handleTopicFollow } from '../../src/use-cases/action-types/topic-follow.js'
+import { handleSetProfile } from '../../src/use-cases/action-types/set-profile.js'
 import { topicRecencyKey } from '../../src/use-cases/action-types/helpers.js'
 import BackupDb from '../../src/use-cases/backup-db.js'
 
@@ -42,6 +43,9 @@ function makeInMemoryDb () {
     async delete (key) {
       store.delete(key)
       return { success: true }
+    },
+    async * iterator () {
+      for (const entry of store.entries()) yield entry
     },
     entries () {
       return Array.from(store.entries())
@@ -101,6 +105,13 @@ async function createWorld () {
   const roomDb = makeInMemoryDb()
   const topicSummaryDb = makeInMemoryDb()
   const topicRecencyDb = makeInMemoryDb()
+  const profileDb = makeInMemoryDb()
+  const profileRecencyDb = makeInMemoryDb()
+  const status = { startBlockHeight: 0, syncedBlockHeight: 999999999, chainBlockHeight: 999999999 }
+  const statusDb = {
+    getStatus: async () => status,
+    updateStatus: async (next) => { Object.assign(status, next); return true }
+  }
 
   const adapters = {
     postDb: postsDb,
@@ -119,6 +130,9 @@ async function createWorld () {
     roomDb,
     topicSummaryDb,
     topicRecencyDb,
+    profileDb,
+    profileRecencyDb,
+    statusDb,
     processErrorDb: makeInMemoryDb(),
     dbCtrl: {
       backupDb: async (height, epoch) => {
@@ -147,6 +161,9 @@ async function createWorld () {
     roomsDb: roomDb,
     topicSummariesDb: topicSummaryDb,
     topicRecencyDb,
+    profileDb,
+    profileRecencyDb,
+    status,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -185,16 +202,22 @@ const handlers = [
   },
   {
     name: 'process a Memo post transaction',
-    pattern: /^the indexer processes a Memo post transaction (.+) from (.+) at block height (.+) with text "(.+)"$/,
+    pattern: /^the indexer processes a Memo post transaction (.+) from (.+) at block height (.+) with text "(.+)"(?: seen at (.+))?$/,
     async run (m, example, world) {
       const txid = resolveTxid(m[1], example, world)
       const addr = resolveParam(m[2], example)
       const height = parseInt(resolveParam(m[3], example), 10)
       const text = resolveParam(m[4], example)
+      const seen = m[5] ? parseInt(resolveParam(m[5], example), 10) : Date.now()
 
       world.lastTxid = txid
       world.lastHeight = height
       world.lastAddr = addr
+
+      // A processed post is confirmed, so raise the status tip when needed.
+      if (world.status) {
+        world.status.chainBlockHeight = Math.max(world.status.chainBlockHeight ?? 0, height)
+      }
 
       const prefix = Buffer.from('6d02', 'hex')
       const message = Buffer.from(text, 'utf8')
@@ -203,7 +226,7 @@ const handlers = [
         adapters: world.adapters,
         txid,
         signerAddr: addr,
-        seen: Date.now(),
+        seen,
         blockHeight: height,
         decoded: {
           action: 'post',
@@ -984,6 +1007,118 @@ const muteHandlers = [
       }
       if (record.room !== room || record.blockHeight !== height) {
         throw new Error(`Expected topicRecency ${room} at ${height}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'db instance with profiles and profileRecency stores',
+    pattern: /^a psf-memo-db instance with profiles and profileRecency stores$/,
+    async run () {
+      // World is already created with both stores.
+    }
+  },
+  {
+    name: 'store a profile for an address',
+    pattern: /^the psf-memo-db stores a profile for (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      await world.profileDb.update(addr, {
+        addr,
+        text: 'my bio',
+        txid: `profile-${addr}`,
+        blockHeight: 600000,
+        seen: 1
+      })
+    }
+  },
+  {
+    name: 'transaction indexer sees a Memo post transaction',
+    pattern: /^the transaction indexer sees a Memo post transaction (.+) from (.+) at block height (.+) with text "(.+)"$/,
+    async run (m, example, world) {
+      const txid = resolveTxid(m[1], example, world)
+      const addr = resolveParam(m[2], example)
+      const height = parseInt(resolveParam(m[3], example), 10)
+      const text = resolveParam(m[4], example)
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      // Mempool processing predicts the next height, which is above the chain
+      // tip, so the post is unconfirmed.
+      if (world.status) {
+        world.status.chainBlockHeight = Math.min(world.status.chainBlockHeight ?? height, height - 1)
+      }
+
+      const prefix = Buffer.from('6d02', 'hex')
+      await handlePost({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'post',
+          prefix,
+          pushDatas: [prefix, Buffer.from(text, 'utf8')]
+        }
+      })
+    }
+  },
+  {
+    name: 'process a set-profile transaction',
+    pattern: /^the indexer processes a set-profile transaction for (.+) with text "(.+)"$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const text = resolveParam(m[2], example)
+      const txid = deriveTxid(`profile-${addr}-${text}`)
+      const height = 600400
+
+      world.lastTxid = txid
+      world.lastHeight = height
+      world.lastAddr = addr
+
+      const prefix = Buffer.from('6d05', 'hex')
+      await handleSetProfile({
+        adapters: world.adapters,
+        txid,
+        signerAddr: addr,
+        seen: Date.now(),
+        blockHeight: height,
+        decoded: {
+          action: 'setProfile',
+          prefix,
+          pushDatas: [prefix, Buffer.from(text, 'utf8')]
+        }
+      })
+    }
+  },
+  {
+    name: 'profileRecency records addr at height seen',
+    pattern: /^the profileRecency store records (.+) at block height (.+) seen at (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const height = parseInt(resolveParam(m[2], example), 10)
+      const seen = parseInt(resolveParam(m[3], example), 10)
+      let record
+      try {
+        record = await world.profileRecencyDb.get(addr)
+      } catch (err) {
+        throw new Error(`No profileRecency record for ${addr}`)
+      }
+      if (record.blockHeight !== height || record.seen !== seen) {
+        throw new Error(`Expected profileRecency ${addr} at ${height} seen ${seen}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'profileRecency has no record for addr',
+    pattern: /^the profileRecency store has no record for (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const record = await world.profileRecencyDb.get(addr).catch(() => null)
+      if (record) {
+        throw new Error(`Expected no profileRecency record for ${addr}, got ${JSON.stringify(record)}`)
       }
     }
   }

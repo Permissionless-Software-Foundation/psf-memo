@@ -21,6 +21,7 @@ const DB_NAMES = [
   'names',
   'profiles',
   'profilePics',
+  'profileRecency',
   'follows',
   'followeeHeights',
   'mutes',

@@ -27,6 +27,15 @@ export function makeMemoryDb () {
     async delete (key) {
       store.delete(key)
       return { success: true }
+    },
+    async * iterator (opts = {}) {
+      let keys = [...store.keys()].sort()
+      if (opts.gte !== undefined) keys = keys.filter((key) => key >= opts.gte)
+      if (opts.lte !== undefined) keys = keys.filter((key) => key <= opts.lte)
+      const limit = opts.limit === undefined ? keys.length : opts.limit
+      for (const key of keys.slice(0, limit)) {
+        yield [key, store.get(key)]
+      }
     }
   }
 }
