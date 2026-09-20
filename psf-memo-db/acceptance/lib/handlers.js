@@ -44,6 +44,39 @@ function padHeight (blockHeight) {
   return String(blockHeight ?? 0).padStart(12, '0')
 }
 
+// Shared fixture seeding helpers so every loader writes the same post and
+// follow records without repeating the store/key shape at each call site.
+async function putFollowEdge (world, { followerAddr, followeeAddr, txid, blockHeight = 600000 }) {
+  const followeePkHash = hash160(followeeAddr)
+  await world.adapters.level.followsDb.put(`${followerAddr}:${followeePkHash}`, {
+    followerAddr,
+    followeePkHash,
+    unfollow: false,
+    txid,
+    seen: 1,
+    blockHeight
+  })
+}
+
+async function putPost (world, { txid, addr, text = txid, seen = 0, blockHeight, withAddrIndex = false }) {
+  await world.adapters.level.postsDb.put(txid, {
+    addr,
+    text,
+    seen,
+    blockHeight
+  })
+  await world.adapters.level.postHeightsDb.put(
+    `${padHeight(blockHeight)}:${txid}`,
+    { txid, blockHeight }
+  )
+  if (withAddrIndex) {
+    await world.adapters.level.addrPostHeightsDb.put(
+      `${addr}:${padHeight(blockHeight)}:${txid}`,
+      { txid, addr, blockHeight }
+    )
+  }
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tmpDir = path.resolve(__dirname, '..', '..', 'tmp', 'acceptance')
 
@@ -467,22 +500,14 @@ async function loadManyTopLevelPosts (world) {
   // index and reads all 510 entries.
   for (let i = 0; i < 510; i++) {
     const id = String(i).padStart(3, '0')
-    const txid = `post-${id}`
-    const blockHeight = 600000 + i
-    await world.adapters.level.postsDb.put(txid, {
+    await putPost(world, {
+      txid: `post-${id}`,
       addr: 'bitcoincash:qaddr',
       text: `post ${id}`,
       seen: i,
-      blockHeight
+      blockHeight: 600000 + i,
+      withAddrIndex: true
     })
-    await world.adapters.level.postHeightsDb.put(
-      String(blockHeight).padStart(12, '0') + ':' + txid,
-      { txid, blockHeight }
-    )
-    await world.adapters.level.addrPostHeightsDb.put(
-      `bitcoincash:qaddr:${String(blockHeight).padStart(12, '0')}:${txid}`,
-      { txid, addr: 'bitcoincash:qaddr', blockHeight }
-    )
   }
 }
 
@@ -491,30 +516,22 @@ async function loadFollowingFeedCapped (world) {
   const followee = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
   world.fixtureViewer = viewer
 
-  await world.adapters.level.followsDb.put(`${viewer}:${hash160(followee)}`, {
+  await putFollowEdge(world, {
     followerAddr: viewer,
-    followeePkHash: hash160(followee),
-    unfollow: false,
-    txid: 'follow-capped',
-    seen: 1,
-    blockHeight: 600000
+    followeeAddr: followee,
+    txid: 'follow-capped'
   })
 
   // 510 eligible top-level posts, larger than the 500 total-scan cap.
   for (let i = 0; i < 510; i++) {
     const id = String(i).padStart(3, '0')
-    const txid = `post-${id}`
-    const blockHeight = 600000 + i
-    await world.adapters.level.postsDb.put(txid, {
+    await putPost(world, {
+      txid: `post-${id}`,
       addr: followee,
       text: `post ${id}`,
       seen: i,
-      blockHeight
+      blockHeight: 600000 + i
     })
-    await world.adapters.level.postHeightsDb.put(
-      `${padHeight(blockHeight)}:${txid}`,
-      { txid, blockHeight }
-    )
   }
 }
 
@@ -527,13 +544,10 @@ async function loadFollowingFeedMixed (world) {
   const other = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
   world.fixtureViewer = viewer
 
-  await world.adapters.level.followsDb.put(`${viewer}:${hash160(followee)}`, {
+  await putFollowEdge(world, {
     followerAddr: viewer,
-    followeePkHash: hash160(followee),
-    unfollow: false,
-    txid: 'follow-mixed',
-    seen: 1,
-    blockHeight: 600000
+    followeeAddr: followee,
+    txid: 'follow-mixed'
   })
 
   const posts = [
@@ -544,16 +558,12 @@ async function loadFollowingFeedMixed (world) {
     { txid: 'reply-A2', addr: followee, blockHeight: 600300 }
   ]
   for (const post of posts) {
-    await world.adapters.level.postsDb.put(post.txid, {
+    await putPost(world, {
+      txid: post.txid,
       addr: post.addr,
-      text: post.txid,
       seen: post.blockHeight,
       blockHeight: post.blockHeight
     })
-    await world.adapters.level.postHeightsDb.put(
-      `${padHeight(post.blockHeight)}:${post.txid}`,
-      { txid: post.txid, blockHeight: post.blockHeight }
-    )
   }
 
   const reply = { txid: 'reply-A2', parentTxid: 'post-A2', childTxid: 'reply-A2', blockHeight: 600300 }

@@ -185,3 +185,98 @@ test('following-feed scan never returns replies, the viewer, or un-followed auth
     { label: 'following-feed reply/viewer/membership exclusion' }
   )
 })
+
+// All-eligible corpus: every indexed entry is a top-level post by the single
+// followed author, so the scan's eligible count equals the number of posts it
+// reads. `cap` varies the total-scan cap so the capped and below-cap branches
+// are both exercised.
+function cappedCorpusGen () {
+  return () => {
+    const n = intGen(rng, 0, 25)()
+    const followee = 'bitcoincash:f1'
+    const posts = []
+    const postHeights = []
+
+    for (let i = 0; i < n; i++) {
+      const txid = txidGen(rng)
+      const height = intGen(rng, 0, 9000000)()
+      posts.push({ txid, addr: followee, text: 'post ' + i, seen: i, blockHeight: height })
+      postHeights.push({ key: PostQuery.postHeightKey(height, txid), value: { txid } })
+    }
+
+    return {
+      n,
+      posts,
+      postHeights,
+      followed: [VIEWER, followee],
+      limit: intGen(rng, 1, 8)(),
+      offset: intGen(rng, 0, 12)(),
+      cap: intGen(rng, 1, 12)()
+    }
+  }
+}
+
+function orderedPostTxids (posts) {
+  return [...posts]
+    .sort((a, b) => (PostQuery.postHeightKey(a.blockHeight, a.txid) < PostQuery.postHeightKey(b.blockHeight, b.txid) ? 1 : -1))
+    .map((p) => p.txid)
+}
+
+test('following-feed scan caps the total and conserves the newest-first page', async () => {
+  await forAll(
+    cappedCorpusGen(),
+    async ({ n, posts, postHeights, followed, limit, offset, cap }) => {
+      const query = makeQuery(postHeights, posts, new Set())
+      const { txids, total } = await query.scanFollowingFeedTxidsAndCount(
+        VIEWER,
+        followed,
+        { limit, offset, totalScanCap: cap }
+      )
+
+      const expectedTotal = Math.min(n, cap)
+      const expectedTxids = orderedPostTxids(posts).slice(offset, offset + limit)
+
+      return total === expectedTotal && JSON.stringify(txids) === JSON.stringify(expectedTxids)
+    },
+    { label: 'following-feed capped-total and page conservation' }
+  )
+})
+
+test('following-feed scan reads at most offset + limit + cap eligible posts', async () => {
+  await forAll(
+    cappedCorpusGen(),
+    async ({ n, posts, postHeights, followed, limit, offset, cap }) => {
+      const counter = { reads: 0 }
+      const store = new Map(posts.map((p) => [p.txid, p]))
+      const query = new PostQuery({
+        postsDb: {
+          async get (txid) {
+            counter.reads++
+            const post = store.get(txid)
+            if (!post) {
+              const err = new Error('not found')
+              err.notFound = true
+              throw err
+            }
+            return post
+          }
+        },
+        postHeightsDb: makePostHeightsDb(postHeights),
+        addrPostHeightsDb: {},
+        postParentsDb: makeParentsDb(new Set()),
+        postChildrenDb: {},
+        likesDb: {},
+        postLikesDb: {}
+      })
+
+      await query.scanFollowingFeedTxidsAndCount(
+        VIEWER,
+        followed,
+        { limit, offset, totalScanCap: cap }
+      )
+
+      return counter.reads === Math.min(n, offset + limit + cap)
+    },
+    { label: 'following-feed bounded eligible scan' }
+  )
+})

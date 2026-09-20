@@ -94,6 +94,59 @@ describe('#PostQuery', () => {
     }
   })
 
+  it('should throw when postsDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new PostQuery({ postHeightsDb, addrPostHeightsDb, postParentsDb, postChildrenDb, likesDb, postLikesDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'postsDb required')
+    }
+  })
+
+  it('should throw when postParentsDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new PostQuery({ postsDb, postHeightsDb, addrPostHeightsDb, postChildrenDb, likesDb, postLikesDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'postParentsDb required')
+    }
+  })
+
+  it('should throw when postChildrenDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new PostQuery({ postsDb, postHeightsDb, addrPostHeightsDb, postParentsDb, likesDb, postLikesDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'postChildrenDb required')
+    }
+  })
+
+  it('should throw when likesDb is missing', () => {
+    try {
+      // eslint-disable-next-line no-new
+      new PostQuery({ postsDb, postHeightsDb, addrPostHeightsDb, postParentsDb, postChildrenDb, postLikesDb })
+      assert.fail('Expected error')
+    } catch (err) {
+      assert.include(err.message, 'likesDb required')
+    }
+  })
+
+  describe('#static key helpers', () => {
+    it('should pad block heights to a fixed width for lexicographic ordering', () => {
+      assert.equal(PostQuery.padHeight(600200), '000000600200')
+      assert.equal(PostQuery.padHeight(1), '000000000001')
+    })
+
+    it('should compose postHeight, addrPostHeight, and postLike keys', () => {
+      assert.equal(PostQuery.postHeightKey(600200, 'post-a'), '000000600200:post-a')
+      assert.equal(PostQuery.addrPostHeightKey('bitcoincash:addr', 600200, 'post-a'), 'bitcoincash:addr:000000600200:post-a')
+      assert.equal(PostQuery.postLikeKey('post-a', 'like-1'), 'post-a:like-1')
+    })
+  })
+
   describe('#txidFromPostHeight', () => {
     it('should return the txid from the value when present', () => {
       assert.equal(uut.txidFromPostHeight('any-key', { txid: 'abc123' }), 'abc123')
