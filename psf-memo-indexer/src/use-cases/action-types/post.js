@@ -11,6 +11,13 @@ async function createIfMissing (db, key, value) {
   }
 }
 
+// Only top-level posts and topic messages qualify for profile recency. Replies
+// reuse handlePost to store their post record but must not move the author's
+// recency.
+function qualifiesForRecency (decoded) {
+  return decoded.action === 'post' || decoded.action === 'topicMessage'
+}
+
 export async function handlePost (ctx) {
   const { adapters, txid, signerAddr, decoded, seen, blockHeight } = ctx
   const pushDatas = normalizeTwoPushMemoDatas(decoded.pushDatas)
@@ -37,10 +44,7 @@ export async function handlePost (ctx) {
   await createIfMissing(adapters.postHeightDb, heightKey, { txid, blockHeight })
   await createIfMissing(adapters.addrPostHeightDb, addrHeightKey, { txid, addr: signerAddr, blockHeight })
 
-  // Only top-level posts and topic messages qualify for profile recency.
-  // Replies reuse handlePost to store their post record but must not move the
-  // author's recency.
-  if (decoded.action === 'post' || decoded.action === 'topicMessage') {
+  if (qualifiesForRecency(decoded)) {
     await recordProfileRecency(adapters, signerAddr, blockHeight, seen)
   }
 }

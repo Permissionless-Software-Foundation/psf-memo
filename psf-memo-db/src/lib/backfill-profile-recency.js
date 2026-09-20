@@ -56,50 +56,86 @@ export function partsFromAddrPostHeightKey (key) {
   }
 }
 
-// Keep the newest confirmed qualifying post per address.
-export async function backfillProfileRecency ({
-  profilesDb,
-  postsDb,
-  addrPostHeightsDb,
-  postParentsDb,
-  pollsDb,
-  statusDb,
-  profileRecencyDb
-}) {
-  const chainBlockHeight = await readChainBlockHeight(statusDb)
-  const best = new Map()
-
-  for await (const [key, value] of addrPostHeightsDb.iterator()) {
-    const fallback = partsFromAddrPostHeightKey(key)
-    const addr = value?.addr ?? fallback.addr
-    const txid = value?.txid ?? fallback.txid
-    const blockHeight = value?.blockHeight ?? fallback.blockHeight
-    if (!addr || !txid) continue
-    if (chainBlockHeight !== null && blockHeight > chainBlockHeight) continue
-    if (await getRecord(postParentsDb, txid)) continue
-    if (await getRecord(pollsDb, txid)) continue
-    if (!(await getRecord(profilesDb, addr))) continue
-
-    const post = await getRecord(postsDb, txid)
-    const seen = post?.seen ?? 0
-    const current = best.get(addr)
-    if (!current || blockHeight > current.blockHeight || (blockHeight === current.blockHeight && seen > current.seen)) {
-      best.set(addr, { addr, blockHeight, seen })
-    }
+// Prefer the stored value fields, falling back to the key segments when a
+// record predates the field being written.
+function entryFields (key, value) {
+  const fallback = partsFromAddrPostHeightKey(key)
+  return {
+    addr: value?.addr ?? fallback.addr,
+    txid: value?.txid ?? fallback.txid,
+    blockHeight: value?.blockHeight ?? fallback.blockHeight
   }
+}
 
+// An entry at or below the chain tip is confirmed. With no tip every entry is
+// treated as confirmed.
+function isConfirmedEntry (blockHeight, chainBlockHeight) {
+  if (chainBlockHeight === null) return true
+  return blockHeight <= chainBlockHeight
+}
+
+// A qualifying post is authored by a profile address and is neither a reply
+// (tracked in postParents) nor a poll creation (tracked in polls).
+async function isQualifyingPost (stores, addr, txid) {
+  if (!(await getRecord(stores.profilesDb, addr))) return false
+  if (await getRecord(stores.postParentsDb, txid)) return false
+  if (await getRecord(stores.pollsDb, txid)) return false
+  return true
+}
+
+// The qualifying post for one addrPostHeights entry, or null when the entry
+// does not qualify.
+async function qualifyingCandidate (stores, key, value, chainBlockHeight) {
+  const { addr, txid, blockHeight } = entryFields(key, value)
+  if (!addr || !txid) return null
+  if (!isConfirmedEntry(blockHeight, chainBlockHeight)) return null
+  if (!(await isQualifyingPost(stores, addr, txid))) return null
+  const post = await getRecord(stores.postsDb, txid)
+  return { addr, blockHeight, seen: post?.seen ?? 0 }
+}
+
+// True when `candidate` is newer than `current`: greater height, or equal
+// height with a greater seen value.
+function isNewer (candidate, current) {
+  if (!current) return true
+  if (candidate.blockHeight !== current.blockHeight) return candidate.blockHeight > current.blockHeight
+  return candidate.seen > current.seen
+}
+
+// Keep the newest candidate per address. Equal height and seen keeps the first
+// record seen, which makes reprocessing idempotent.
+function keepNewest (best, candidate) {
+  if (isNewer(candidate, best.get(candidate.addr))) best.set(candidate.addr, candidate)
+}
+
+async function collectBestRecency (stores, chainBlockHeight) {
+  const best = new Map()
+  for await (const [key, value] of stores.addrPostHeightsDb.iterator()) {
+    const candidate = await qualifyingCandidate(stores, key, value, chainBlockHeight)
+    if (candidate) keepNewest(best, candidate)
+  }
+  return best
+}
+
+async function writeRecency (profileRecencyDb, best) {
   for (const record of best.values()) {
     await profileRecencyDb.put(record.addr, record)
   }
+}
 
-  const desired = new Set(best.keys())
-  const stale = []
+async function removeStaleRecency (profileRecencyDb, desired) {
   for await (const [key] of profileRecencyDb.iterator()) {
-    if (!desired.has(key)) stale.push(key)
+    if (!desired.has(key)) await profileRecencyDb.del(key)
   }
-  for (const key of stale) {
-    await profileRecencyDb.del(key)
-  }
+}
 
+// Rebuild the whole index: collect the newest confirmed qualifying post per
+// profile address, write those records, and drop records that no longer
+// qualify.
+export async function backfillProfileRecency (stores) {
+  const chainBlockHeight = await readChainBlockHeight(stores.statusDb)
+  const best = await collectBestRecency(stores, chainBlockHeight)
+  await writeRecency(stores.profileRecencyDb, best)
+  await removeStaleRecency(stores.profileRecencyDb, new Set(best.keys()))
   return { profiles: best.size }
 }
