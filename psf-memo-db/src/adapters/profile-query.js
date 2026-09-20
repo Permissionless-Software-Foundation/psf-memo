@@ -112,3 +112,7 @@ class ProfileQuery {
 }
 
 export default ProfileQuery
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-20T22:17:12.092Z","module_hash":"cd4a1178c4968e0a61acab324514fb4160e41e98535acd134fab994453484fcc","functions":[{"id":"func/ProfileQuery.constructor","name":"ProfileQuery.constructor","line":19,"end_line":32,"hash":"3ac4ed8e2d002256a3fcec017bc8ae0e783f29fe1de9e8b0eac04852b37ecc42"},{"id":"func/ProfileQuery.compareRecency","name":"ProfileQuery.compareRecency","line":37,"end_line":42,"hash":"891628bf31dbb0cf5d9a8560d9243328675f1f2278077eddc7d3d44836027b70"},{"id":"func/ProfileQuery.listRecencyEntries","name":"ProfileQuery.listRecencyEntries","line":46,"end_line":59,"hash":"618f0ae6b9c14a9fadfa6ffe97e818e81d14ca9c1c22fcc98a4d1f6c62444135"},{"id":"func/ProfileQuery.listRecentProfiles","name":"ProfileQuery.listRecentProfiles","line":64,"end_line":85,"hash":"a0c84485d1149689550216c16fda0c5312f6077118d306204b3837479d2cc978"},{"id":"func/ProfileQuery.getProfileIdentity","name":"ProfileQuery.getProfileIdentity","line":91,"end_line":101,"hash":"66105f1c77dadc97f32beec8c952184617e07a0401eae1af1128de70f47df070"},{"id":"func/ProfileQuery.getRecordOrNull","name":"ProfileQuery.getRecordOrNull","line":103,"end_line":111,"hash":"5604da1e9adc18abda5e58e4f366aa0bcc8e0dd417e2f6882c27289df7fb7a14"}]}
+// mutate4javascript-manifest-end

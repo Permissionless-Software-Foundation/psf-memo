@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 import { makeMemoryDb } from '../../../support/memory-db.js'
 import { handleSetProfile } from '../../../../src/use-cases/action-types/set-profile.js'
+import { MAX_POST_SIZE } from '../../../../src/lib/memo-codes.js'
 
 const PREFIX_SET_PROFILE = Buffer.from('6d05', 'hex')
 
@@ -46,6 +47,7 @@ describe('#handleSetProfile', () => {
       blockHeight: 600100,
       seen: 100
     })
+    assert.equal(adapters.profileDb.store.get('bitcoincash:qaddr-a').text, 'my bio')
   })
 
   it('should not create a recency record when the address has no qualifying post', async () => {
@@ -65,5 +67,45 @@ describe('#handleSetProfile', () => {
     })
 
     assert.equal(adapters.profileRecencyDb.store.size, 0)
+  })
+
+  it('should accept a profile whose text is exactly the maximum size', async () => {
+    const adapters = makeAdapters()
+    const text = 'a'.repeat(MAX_POST_SIZE)
+
+    await handleSetProfile({
+      adapters,
+      txid: 'profile-a1',
+      signerAddr: 'bitcoincash:qaddr-a',
+      seen: 500,
+      blockHeight: 600400,
+      decoded: {
+        action: 'setProfile',
+        prefix: PREFIX_SET_PROFILE,
+        pushDatas: [PREFIX_SET_PROFILE, Buffer.from(text)]
+      }
+    })
+
+    assert.equal(adapters.profileDb.store.get('bitcoincash:qaddr-a').text.length, MAX_POST_SIZE)
+  })
+
+  it('should reject a profile larger than the maximum size', async () => {
+    const adapters = makeAdapters()
+    const text = 'a'.repeat(MAX_POST_SIZE + 1)
+
+    await handleSetProfile({
+      adapters,
+      txid: 'profile-a1',
+      signerAddr: 'bitcoincash:qaddr-a',
+      seen: 500,
+      blockHeight: 600400,
+      decoded: {
+        action: 'setProfile',
+        prefix: PREFIX_SET_PROFILE,
+        pushDatas: [PREFIX_SET_PROFILE, Buffer.from(text)]
+      }
+    })
+
+    assert.isFalse(adapters.profileDb.store.has('bitcoincash:qaddr-a'))
   })
 })

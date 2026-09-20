@@ -1,6 +1,6 @@
-# mutation-stamp: sha256=f2672d16093128ab98f47d9bd32fb777fe6a860143e3a04492a6a8446314742b
+# mutation-stamp: sha256=a9cdc032be8bad4a0ec047df3de8eb08b8ef47e305626e5e0f979d84f159d257
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-09-20T20:08:42.739895979Z","feature_name":"Recent Profile Identity","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/recent-profile-identity.feature","background_hash":"0289c6ddd1a0f1e7e23830863aec6d44f90f314d174423c44e8567da4e18f645","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Recent Profile Identity - 1 GET /profile/recent returns each profile's display name and avatar","scenario_hash":"ed4ba1b33ac244e193e9fb24bfd845d351f00cabe5bd507dfe735d73055ecece","mutation_count":9,"result":{"Total":9,"Killed":9,"Survived":0,"Errors":0},"tested_at":"2026-09-20T20:08:42.739895979Z"}]}
+# {"version":1,"tested_at":"2026-09-20T22:26:26.477694996Z","feature_name":"Recent Profile Identity","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/recent-profile-identity.feature","background_hash":"f3df644832c7ba4bfe29da14ebe7c26c7ebc3d0e15db0b39854f6b69c593b670","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Recent Profile Identity - 1 GET /profile/recent returns each profile's display name and avatar","scenario_hash":"ed4ba1b33ac244e193e9fb24bfd845d351f00cabe5bd507dfe735d73055ecece","mutation_count":9,"result":{"Total":9,"Killed":9,"Survived":0,"Errors":0},"tested_at":"2026-09-20T22:26:26.477694996Z"}]}
 # acceptance-mutation-manifest-end
 
 # Scenarios: Recent Profile Identity - 1

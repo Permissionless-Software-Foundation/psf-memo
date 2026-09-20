@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-20T22:26:28.547784872Z","feature_name":"Profile Recency Indexing","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/profile-recency-indexing.feature","background_hash":"2b6c5e5cbd326861a7a295e201fdba1c1dbf847d7b65909821167cdb138f47ef","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Profile Recency Indexing - 1, Profile Recency Indexing - 2, Profile Recency Indexing - 3, Profile Recency Indexing - 4, Profile Recency Indexing - 5, Profile Recency Indexing - 6, Profile Recency Indexing - 7, Profile Recency Indexing - 8, Profile Recency Indexing - 9, Profile Recency Indexing - 10
 #
 # The indexer maintains a profileRecency store so the read side can list

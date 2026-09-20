@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-20T22:25:45.967266375Z","feature_name":"Recent Profile Ordering","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/recent-profile-ordering.feature","background_hash":"8646bb1712dba3493a9703bf3fb32c011f7d4c1d7d9ed749868f9d9b247cdcd2","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Recent Profile Ordering - 2 each row reports the most recent post's block and seen","scenario_hash":"bbbb3e8a87dab0a3380f879cbb511728cf980ad52e46f6d3f411666a4d3b8d87","mutation_count":9,"result":{"Total":9,"Killed":9,"Survived":0,"Errors":0},"tested_at":"2026-09-20T22:25:45.967266375Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Recent Profile Ordering - 1, Recent Profile Ordering - 2, Recent Profile Ordering - 3, Recent Profile Ordering - 4
 #
 # GET /profile/recent lists one row per profile address that has at least one

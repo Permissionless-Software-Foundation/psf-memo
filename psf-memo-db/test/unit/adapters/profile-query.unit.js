@@ -40,10 +40,11 @@ describe('#ProfileQuery', () => {
 
   it('should order profiles by post height descending, then seen descending, then address ascending', async () => {
     stubRecency({
-      'bitcoincash:qaddr-alice': { addr: 'bitcoincash:qaddr-alice', blockHeight: 600300, seen: 300 },
-      'bitcoincash:qaddr-bob': { addr: 'bitcoincash:qaddr-bob', blockHeight: 600300, seen: 200 },
+      // Deliberately unsorted so the comparator must do the work.
+      'bitcoincash:qaddr-carol': { addr: 'bitcoincash:qaddr-carol', blockHeight: 600200, seen: 400 },
       'bitcoincash:qaddr-erin': { addr: 'bitcoincash:qaddr-erin', blockHeight: 600300, seen: 200 },
-      'bitcoincash:qaddr-carol': { addr: 'bitcoincash:qaddr-carol', blockHeight: 600200, seen: 400 }
+      'bitcoincash:qaddr-alice': { addr: 'bitcoincash:qaddr-alice', blockHeight: 600300, seen: 300 },
+      'bitcoincash:qaddr-bob': { addr: 'bitcoincash:qaddr-bob', blockHeight: 600300, seen: 200 }
     })
     stubProfiles({
       'bitcoincash:qaddr-alice': { text: 'alice bio', txid: 'profile-alice' },
@@ -61,6 +62,50 @@ describe('#ProfileQuery', () => {
       'bitcoincash:qaddr-erin',
       'bitcoincash:qaddr-carol'
     ])
+  })
+
+  it('compareRecency ranks greater height and greater seen before lower values', () => {
+    const high = { addr: 'bitcoincash:qaddr-a', blockHeight: 600200, seen: 1 }
+    const low = { addr: 'bitcoincash:qaddr-b', blockHeight: 600100, seen: 1 }
+    assert.isBelow(uut.compareRecency(high, low), 0)
+    assert.isAbove(uut.compareRecency(low, high), 0)
+
+    const newerSeen = { addr: 'bitcoincash:qaddr-c', blockHeight: 600200, seen: 5 }
+    const olderSeen = { addr: 'bitcoincash:qaddr-d', blockHeight: 600200, seen: 2 }
+    assert.isBelow(uut.compareRecency(newerSeen, olderSeen), 0)
+    assert.isAbove(uut.compareRecency(olderSeen, newerSeen), 0)
+
+    const same = { addr: 'bitcoincash:qaddr-e', blockHeight: 600200, seen: 5 }
+    assert.equal(uut.compareRecency(same, { ...same }), 0)
+
+    const addrA = { addr: 'bitcoincash:qaddr-a', blockHeight: 600200, seen: 5 }
+    const addrB = { addr: 'bitcoincash:qaddr-b', blockHeight: 600200, seen: 5 }
+    assert.isBelow(uut.compareRecency(addrA, addrB), 0)
+    assert.isAbove(uut.compareRecency(addrB, addrA), 0)
+  })
+
+  it('listRecencyEntries defaults a missing height and seen to 0', async () => {
+    stubRecency({ 'bitcoincash:qaddr-a': { addr: 'bitcoincash:qaddr-a' } })
+
+    const entries = await uut.listRecencyEntries()
+
+    assert.deepEqual(entries, [{ addr: 'bitcoincash:qaddr-a', blockHeight: 0, seen: 0 }])
+  })
+
+  it('should default limit to 100 and offset to 0', async () => {
+    stubRecency({
+      'bitcoincash:qaddr-a': { addr: 'bitcoincash:qaddr-a', blockHeight: 600300, seen: 3 },
+      'bitcoincash:qaddr-b': { addr: 'bitcoincash:qaddr-b', blockHeight: 600200, seen: 2 }
+    })
+    stubProfiles({
+      'bitcoincash:qaddr-a': { text: 'a bio', txid: 'profile-a' },
+      'bitcoincash:qaddr-b': { text: 'b bio', txid: 'profile-b' }
+    })
+
+    const { profiles, total } = await uut.listRecentProfiles()
+
+    assert.equal(total, 2)
+    assert.deepEqual(profiles.map((p) => p.addr), ['bitcoincash:qaddr-a', 'bitcoincash:qaddr-b'])
   })
 
   it('should report the recency block height and seen, not the profile record values', async () => {

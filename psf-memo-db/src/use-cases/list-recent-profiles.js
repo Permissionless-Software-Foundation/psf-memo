@@ -36,3 +36,7 @@ class ListRecentProfiles extends ListUseCase {
 }
 
 export default ListRecentProfiles
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-20T21:53:30.844Z","module_hash":"ee68d093a6a1377f027641c165bf55ca0b8ca019a0f5449eb39c666b91b80bae","functions":[{"id":"func/ListRecentProfiles.constructor","name":"ListRecentProfiles.constructor","line":10,"end_line":12,"hash":"a2c7dd0696ac463cbc142fa7ccce4a3cadf8e246a872261733d199dbd4c153d1"},{"id":"func/ListRecentProfiles.execute","name":"ListRecentProfiles.execute","line":14,"end_line":35,"hash":"a629483fb61bd14c2a27880b667290c1dfbf2fb4e55faf14fe1010b2532b93bb"}]}
+// mutate4javascript-manifest-end

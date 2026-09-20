@@ -59,5 +59,5 @@ export const ENTITY_CONFIG = [
 ]
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-18T17:40:30.095Z","module_hash":"d37a0c9ebf7d94a345a2b129ffccaabb16ee06906c8f029efd2d7a4a8243936c","functions":[{"id":"func/makeCrudHandlers","name":"makeCrudHandlers","line":5,"end_line":35,"hash":"133b135aa115c058291b6df4a0b6b15152dde83c3163890e0eab0c3b018f8d4d"}]}
+// {"version":1,"tested_at":"2026-09-20T21:59:36.940Z","module_hash":"471a9db88c0e95824a435ad338cd45277ac3dcd439175cd7fa084b87b227dd29","functions":[{"id":"func/makeCrudHandlers","name":"makeCrudHandlers","line":5,"end_line":35,"hash":"133b135aa115c058291b6df4a0b6b15152dde83c3163890e0eab0c3b018f8d4d"}]}
 // mutate4javascript-manifest-end

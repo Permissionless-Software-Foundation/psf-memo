@@ -91,6 +91,116 @@ describe('#backfillProfileRecency', () => {
 
     assert.isFalse(stores.profileRecencyDb.store.has(NOPOST))
   })
+
+  it('should rethrow an unexpected store error instead of treating it as not found', async () => {
+    const stores = fixtureStores()
+    stores.profilesDb.get = async () => { throw new Error('store boom') }
+
+    let error
+    try {
+      await backfillProfileRecency(stores)
+    } catch (err) {
+      error = err
+    }
+
+    assert.equal(error?.message, 'store boom')
+  })
+
+  it('should treat every entry as confirmed when the status store has no chain tip', async () => {
+    const stores = fixtureStores()
+    stores.statusDb = new FakeDb()
+
+    await backfillProfileRecency(stores)
+
+    // With no tip, Bob's unconfirmed post-b2 at 600500 is the newest.
+    assert.deepEqual(stores.profileRecencyDb.store.get(BOB), {
+      addr: BOB, blockHeight: 600500, seen: 250
+    })
+  })
+
+  it('should treat a post exactly at the chain tip as confirmed', async () => {
+    const stores = fixtureStores()
+    stores.statusDb = new FakeDb([['status', { chainBlockHeight: 600500 }]])
+
+    await backfillProfileRecency(stores)
+
+    assert.deepEqual(stores.profileRecencyDb.store.get(BOB), {
+      addr: BOB, blockHeight: 600500, seen: 250
+    })
+  })
+
+  it('should not record a qualifying post from an address without a profile', async () => {
+    const stores = fixtureStores()
+    const noprofile = 'bitcoincash:qaddr-noprofile'
+    stores.addrPostHeightsDb.put(addrPostHeightKey(noprofile, 600100, 'post-np'), {
+      txid: 'post-np', addr: noprofile, blockHeight: 600100
+    })
+    stores.postsDb.put('post-np', { addr: noprofile, seen: 50, blockHeight: 600100 })
+
+    await backfillProfileRecency(stores)
+
+    assert.isFalse(stores.profileRecencyDb.store.has(noprofile))
+  })
+
+  it('should ignore an addrPostHeights entry with no txid', async () => {
+    const stores = fixtureStores()
+    stores.addrPostHeightsDb.put(addrPostHeightKey(ALICE, 600350, ''), null)
+
+    await backfillProfileRecency(stores)
+
+    // The malformed entry must not displace Alice's real post-a1.
+    assert.deepEqual(stores.profileRecencyDb.store.get(ALICE), {
+      addr: ALICE, blockHeight: 600100, seen: 100
+    })
+  })
+
+  it('should default the seen time to 0 when the post record is missing', async () => {
+    const stores = fixtureStores()
+    const ghost = 'bitcoincash:qaddr-ghost'
+    stores.profilesDb.put(ghost, { text: 'ghost bio', txid: 'profile-ghost' })
+    stores.addrPostHeightsDb.put(addrPostHeightKey(ghost, 600100, 'post-ghost'), {
+      txid: 'post-ghost', addr: ghost, blockHeight: 600100
+    })
+
+    await backfillProfileRecency(stores)
+
+    assert.deepEqual(stores.profileRecencyDb.store.get(ghost), {
+      addr: ghost, blockHeight: 600100, seen: 0
+    })
+  })
+
+  it('should tolerate missing optional reply/poll stores', async () => {
+    const stores = fixtureStores()
+    delete stores.postParentsDb
+    delete stores.pollsDb
+
+    await backfillProfileRecency(stores)
+
+    // Without the reply store, reply-a1 at 600300 becomes Alice's newest.
+    assert.deepEqual(stores.profileRecencyDb.store.get(ALICE), {
+      addr: ALICE, blockHeight: 600300, seen: 150
+    })
+  })
+
+  it('should pick the greater seen time for two posts at equal height', async () => {
+    const stores = fixtureStores()
+    const tie = 'bitcoincash:qaddr-tie'
+    stores.profilesDb.put(tie, { text: 'tie bio', txid: 'profile-tie' })
+    stores.addrPostHeightsDb.put(addrPostHeightKey(tie, 600100, 'post-t1'), {
+      txid: 'post-t1', addr: tie, blockHeight: 600100
+    })
+    stores.addrPostHeightsDb.put(addrPostHeightKey(tie, 600100, 'post-t2'), {
+      txid: 'post-t2', addr: tie, blockHeight: 600100
+    })
+    stores.postsDb.put('post-t1', { addr: tie, seen: 50, blockHeight: 600100 })
+    stores.postsDb.put('post-t2', { addr: tie, seen: 80, blockHeight: 600100 })
+
+    await backfillProfileRecency(stores)
+
+    assert.deepEqual(stores.profileRecencyDb.store.get(tie), {
+      addr: tie, blockHeight: 600100, seen: 80
+    })
+  })
 })
 
 describe('#partsFromAddrPostHeightKey', () => {
@@ -98,6 +208,14 @@ describe('#partsFromAddrPostHeightKey', () => {
     assert.deepEqual(partsFromAddrPostHeightKey(addrPostHeightKey(ALICE, 600100, 'post-a1')), {
       addr: ALICE,
       blockHeight: 600100,
+      txid: 'post-a1'
+    })
+  })
+
+  it('should default a non-numeric height segment to 0', () => {
+    assert.deepEqual(partsFromAddrPostHeightKey(`${ALICE}::post-a1`), {
+      addr: ALICE,
+      blockHeight: 0,
       txid: 'post-a1'
     })
   })

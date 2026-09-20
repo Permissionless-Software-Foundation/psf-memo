@@ -54,5 +54,5 @@ class Adapters {
 export default Adapters
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-29T03:35:13.645Z","module_hash":"242418b52e79c7a6f10aadb18839617f2135b16246db9a204d2888bc93c80d78","functions":[{"id":"func/Adapters.constructor","name":"Adapters.constructor","line":14,"end_line":42,"hash":"dc398f0bb823376f488088fc628f94913babcbe494cfd7dc299e230c08813836"},{"id":"func/Adapters.initAdapters","name":"Adapters.initAdapters","line":44,"end_line":47,"hash":"e3fd321225d51de1199b7ea45e4c9ab323a474c6fe99252041271e45daa59650"}]}
+// {"version":1,"tested_at":"2026-09-20T22:03:25.604Z","module_hash":"7c072a095d3984b401d1eab04537690b78baff73211ad325364ddd4cb46379fa","functions":[{"id":"func/Adapters.constructor","name":"Adapters.constructor","line":14,"end_line":46,"hash":"fe2c96567b8ffaf157f7e64fff75e47ea33e2ddda13446048f37981976c4bb6f"},{"id":"func/Adapters.initAdapters","name":"Adapters.initAdapters","line":48,"end_line":51,"hash":"e3fd321225d51de1199b7ea45e4c9ab323a474c6fe99252041271e45daa59650"}]}
 // mutate4javascript-manifest-end

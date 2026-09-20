@@ -20,3 +20,7 @@ export async function handleSetProfile (ctx) {
   await adapters.profileDb.create(signerAddr, { text, txid, seen, addr: signerAddr, blockHeight })
   await establishProfileRecency(adapters, signerAddr)
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-20T22:12:37.670Z","module_hash":"527293404ff751265c80ca2abf4803b478e5786ad6bc3496616fb846668e4e02","functions":[{"id":"func/handleSetProfile","name":"handleSetProfile","line":5,"end_line":22,"hash":"4df97ed1a92e3d265b499abbb977e91ca80bd100b4d59138d4a3cd0d852fb25b"}]}
+// mutate4javascript-manifest-end
