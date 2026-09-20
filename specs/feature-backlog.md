@@ -31,16 +31,26 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Following feed performance (`following-feed-cap`):** `GET /posts/following/:addr`
-  currently full-scans the global `postHeights` index to compute `pagination.total`
-  (the live total reached 10942) and full-scans `postParents` to build a global
-  reply-txid set. The spec caps the scan at 500 eligible followed posts (mirroring
-  the recent feed's `TOTAL_SCAN_CAP`) and replaces the global reply set with
-  per-candidate `isReply` point lookups. DB-only; the client renders
-  `pagination.total` unchanged. Spec:
-  `psf-memo-db/specs/following-feed-performance.feature`.
+_(none)_
 
 ## Recently completed
+
+- **Following feed cap (2026-09-20):** `GET /posts/following/:addr` no longer
+  full-scans the global `postHeights` index to compute `pagination.total` (the
+  live total reached 10942). The scan now stops after `offset + limit + 500`
+  **eligible** followed posts and reports `total = min(eligible, 500)`, and
+  reply detection uses per-candidate `isReply` point lookups instead of
+  iterating the whole `postParents` store. The cap counts eligible followed
+  posts, not raw index entries (followed posts are sparse). DB-only; the client
+  renders `pagination.total` unchanged, so the heading now reads
+  "Showing 1–50 of 500". Spec:
+  `psf-memo-db/specs/following-feed-performance.feature`. Merged to `master` at
+  `de3f1c8` (review commit `b7c2056`; record
+  `docs/reviews/following-feed-cap-verification.json`; the later `de3f1c8`
+  commit is docs-only, so the record is valid for the merged tree). Independent
+  acceptance check after merge: db 3/3. Soft Gherkin mutation 17/14 (3 intrinsic
+  survivors); language mutation 40/40 killed; architect summary
+  `docs/reviews/following-feed-cap-summary.md`.
 
 - **Mute broadcast result (2026-09-18):** the profile page now shows a
   broadcast result modal after a mute (`0x6d16`) or unmute (`0x6d17`) is

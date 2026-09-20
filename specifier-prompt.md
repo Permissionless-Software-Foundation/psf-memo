@@ -601,6 +601,19 @@ that a single user-facing feature may require specs in more than one component.
     prefix, hash160, success message, txid, explorer href/`target=_blank`)
     carried the language and unit/property kills.
 
+46. **Following-feed-cap soft Gherkin survivors are intrinsic (small-fixture).**
+    The soft mutation run on `following-feed-performance.feature` was 17 total /
+    14 killed / 3 survived, 0 errors. All three survivors come from the minimal
+    fixtures, not implementation gaps: scenario 1 example 2 `limit 50 -> 43`
+    (only 11 posts remain after `offset 499`, so both limits return the same 11
+    expected txids), `max_entries 510 -> 512` (the corpus is below the cap and
+    the assertion is an "at most" ceiling, gotcha #23 class), and scenario 2
+    `limit 10 -> 7` (the mixed fixture has only two eligible followed posts).
+    `gherkin-mutator` wrote a tool-owned manifest with `"scenarios":[]` and no
+    `# mutation-stamp`; commit it as-is. The capped-total, page-slice,
+    reply-exclusion, and `postParents`-not-iterated mutations were killed
+    (language mutation 40/40 on `src/adapters/post-query.js`).
+
 ---
 
 ## 10. Run / verify the app
@@ -651,19 +664,22 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `eaaed8e5ea` (`mute-broadcast-result` merged from
+Current `master` HEAD: `de3f1c8bb6` (`following-feed-cap` merged from
 `swarmforge-architect`). The verification record names the architect code
-review commit `a7d9ca6299`; the only later commit (`eaaed8e`) added `docs/`
+review commit `b7c20560c2`; the only later commit (`de3f1c8`) is docs-only
 (record and summary), so the record is valid for the merged tree. This task
-shows a broadcast result modal on the `/profile/:address` page after a
-mute/unmute: on success the success message, the mute txid, and a
-`bch.loping.net` explorer link in a new tab; on failure the broadcast error.
-Pure result state lives in `psf-memo-client/src/services/profile-page.js`;
-shared presentational `MuteResult`/`ExplorerTxLink` components; record
-`docs/reviews/mute-broadcast-result-verification.json` (client). The specifier
-merged the branch and ran only the merged feature's acceptance test (client
-4/4) as the independent check; soft Gherkin mutation was 5/5 (all survivors
-intrinsic example-value case mutations) and language mutation 31/31 killed.
+bounds `GET /posts/following/:addr`: the global `postHeights` scan stops after
+`offset + limit + 500` eligible followed posts and reports
+`total = min(eligible, 500)`, and reply detection uses per-candidate `isReply`
+lookups instead of iterating all of `postParents`. The cap counts eligible
+followed posts, not raw index entries (followed posts are sparse). DB-only; the
+client heading now reads "Showing 1–50 of 500". Spec:
+`psf-memo-db/specs/following-feed-performance.feature`; record
+`docs/reviews/following-feed-cap-verification.json` (psf-memo-db). The specifier
+merged the branch and ran only the merged feature's acceptance test (db 3/3) as
+the independent check; soft Gherkin mutation 17/14 (3 intrinsic survivors) and
+language mutation 40/40 killed. Architect summary:
+`docs/reviews/following-feed-cap-summary.md`.
 
 Note: `master` also contains two earlier human commits made outside the swarm
 pipeline — `ea67979` (removed the redundant inline author name from feed posts)
