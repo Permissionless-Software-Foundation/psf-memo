@@ -31,7 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-_(none)_
+- **Following feed performance (`following-feed-cap`):** `GET /posts/following/:addr`
+  currently full-scans the global `postHeights` index to compute `pagination.total`
+  (the live total reached 10942) and full-scans `postParents` to build a global
+  reply-txid set. The spec caps the scan at 500 eligible followed posts (mirroring
+  the recent feed's `TOTAL_SCAN_CAP`) and replaces the global reply set with
+  per-candidate `isReply` point lookups. DB-only; the client renders
+  `pagination.total` unchanged. Spec:
+  `psf-memo-db/specs/following-feed-performance.feature`.
 
 ## Recently completed
 
