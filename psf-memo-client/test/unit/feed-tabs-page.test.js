@@ -43,42 +43,42 @@ function makeMemoDb ({
   }
 }
 
+// Build a page whose selected feed holds exactly one post, open it, and
+// return the page, its memo-db spy, and the post. The two default-mode tests
+// differ only in which feed holds the post.
+async function openWithOnePost ({ following, feed, key }) {
+  const post = { txid: key.repeat(64), text: key }
+  const memoDb = makeMemoDb({
+    following,
+    [feed]: { posts: [post], pagination: { total: 1, limit: 50, offset: 0, hasMore: false } }
+  })
+  const page = new FeedTabsPage({ memoDb, wallet: makeWallet() })
+  await page.open()
+  return { page, memoDb, post }
+}
+
 test('exposes the Recent and Following tabs in order', () => {
   const page = new FeedTabsPage({ memoDb: makeMemoDb(), wallet: makeWallet() })
   assert.deepEqual(page.tabs, ['Recent', 'Following'])
 })
 
 test('open selects Following and loads followed posts when the viewer follows an account', async () => {
-  const followed = [{ txid: 'a'.repeat(64), text: 'followed' }]
-  const memoDb = makeMemoDb({
-    following: [ALICE],
-    followingFeed: { posts: followed, pagination: { total: 1, limit: 50, offset: 0, hasMore: false } }
-  })
-  const page = new FeedTabsPage({ memoDb, wallet: makeWallet() })
-
-  await page.open()
+  const { page, memoDb, post } = await openWithOnePost({ following: [ALICE], feed: 'followingFeed', key: 'a' })
 
   assert.equal(page.isFollowing(), true)
   assert.equal(page.isRecent(), false)
-  assert.deepEqual(page.posts, followed)
+  assert.deepEqual(page.posts, [post])
   assert.equal(memoDb.calls.getFollowing.length, 1)
   assert.equal(memoDb.calls.getRecentPosts.length, 0)
   assert.equal(memoDb.calls.getFollowingFeed.length, 1)
 })
 
 test('open selects Recent and loads recent posts when the viewer follows no one', async () => {
-  const recent = [{ txid: 'b'.repeat(64), text: 'recent' }]
-  const memoDb = makeMemoDb({
-    following: [],
-    recent: { posts: recent, pagination: { total: 1, limit: 50, offset: 0, hasMore: false } }
-  })
-  const page = new FeedTabsPage({ memoDb, wallet: makeWallet() })
-
-  await page.open()
+  const { page, memoDb, post } = await openWithOnePost({ following: [], feed: 'recent', key: 'b' })
 
   assert.equal(page.isRecent(), true)
   assert.equal(page.isFollowing(), false)
-  assert.deepEqual(page.posts, recent)
+  assert.deepEqual(page.posts, [post])
   assert.equal(memoDb.calls.getRecentPosts.length, 1)
   assert.equal(memoDb.calls.getFollowingFeed.length, 0)
 })
@@ -161,6 +161,15 @@ test('selecting the already active tab does not reload', async () => {
   await page.selectTab('Recent')
 
   assert.equal(memoDb.calls.getRecentPosts.length, 1)
+})
+
+test('selectTab rejects an unknown tab name', async () => {
+  const memoDb = makeMemoDb({ following: [] })
+  const page = new FeedTabsPage({ memoDb, wallet: makeWallet() })
+
+  await page.open()
+
+  await assert.rejects(() => page.selectTab('Topics'), /Unknown feed tab: Topics/)
 })
 
 test('Following tab with no followees shows the not-following-anyone message', async () => {

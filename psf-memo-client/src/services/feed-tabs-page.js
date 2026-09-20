@@ -75,18 +75,22 @@ class FeedTabsPage {
 
   // Load the current tab at the current offset through its page controller.
   async _loadMode () {
-    if (this.mode === FOLLOWING_MODE) {
-      const data = await this.followingPage.load({ limit: this.pageSize, offset: this.offset })
-      this.posts = data.posts || []
-      this.pagination = data.pagination || null
-      this.emptyBecauseNoFollows = this.posts.length === 0 && !this.hasFollows
-      return
-    }
+    const page = this._pageFor(this.mode)
+    const data = await page.load({ limit: this.pageSize, offset: this.offset })
 
-    const data = await this.recentPage.load({ limit: this.pageSize, offset: this.offset })
     this.posts = data.posts || []
     this.pagination = data.pagination || null
-    this.emptyBecauseNoFollows = false
+    this.emptyBecauseNoFollows = this._isEmptyFollowing()
+  }
+
+  _pageFor (mode) {
+    return mode === FOLLOWING_MODE ? this.followingPage : this.recentPage
+  }
+
+  // The not-following-anyone message belongs only to an empty Following tab
+  // when the viewer follows no one; the Recent tab never shows it.
+  _isEmptyFollowing () {
+    return this.mode === FOLLOWING_MODE && this.posts.length === 0 && !this.hasFollows
   }
 
   _normalizeTab (tab) {
@@ -102,10 +106,6 @@ class FeedTabsPage {
 
   isFollowing () {
     return this.mode === FOLLOWING_MODE
-  }
-
-  getActiveTabLabel () {
-    return this.mode === FOLLOWING_MODE ? 'Following' : 'Recent'
   }
 
   canLoadMore () {
