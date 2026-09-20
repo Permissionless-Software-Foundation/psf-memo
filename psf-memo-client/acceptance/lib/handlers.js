@@ -36,6 +36,7 @@ const MemoFollow = require('../../src/services/memo-follow')
 const MemoMute = require('../../src/services/memo-mute')
 const RecentFeedPage = require('../../src/services/recent-feed-page')
 const FollowingFeedPage = require('../../src/services/following-feed-page')
+const FeedTabsPage = require('../../src/services/feed-tabs-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
@@ -492,6 +493,15 @@ function makeMemoDb () {
         .sort((a, b) => (b.blockHeight ?? 0) - (a.blockHeight ?? 0))
       const page = all.slice(offset, offset + limit)
       return { posts: page, pagination: { total: all.length, limit, offset, hasMore: offset + page.length < all.length } }
+    },
+    async getFollowing (addr) {
+      const followees = []
+      for (const [key, following] of Object.entries(followState)) {
+        if (!following) continue
+        const [follower, followee] = key.split('|')
+        if (follower === addr) followees.push(followee)
+      }
+      return followees
     }
   }
 }
@@ -533,6 +543,7 @@ function createWorld () {
   // Read-only page controllers backed by the fake psf-memo-db API.
   world.recentFeedPage = new RecentFeedPage({ memoDb, wallet })
   world.followingFeedPage = new FollowingFeedPage({ memoDb, wallet })
+  world.feedTabsPage = new FeedTabsPage({ memoDb, wallet })
   world.notificationsPage = new NotificationsPage({ memoDb, wallet })
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
@@ -1777,6 +1788,131 @@ const handlers = [
       if (found) {
         throw new Error(`Recent feed unexpectedly shows a post with text "${expected}".`)
       }
+    }
+  },
+  {
+    name: 'open posts feed',
+    pattern: /^I open the posts feed$/,
+    async run (m, example, world) {
+      await world.feedTabsPage.open()
+      world.currentPath = RecentFeedPage.RECENT_FEED_PATH
+    }
+  },
+  {
+    name: 'open posts feed with page size',
+    pattern: /^I open the posts feed with page size (\d+)$/,
+    async run (m, example, world) {
+      await world.feedTabsPage.open({ limit: parseInt(m[1], 10) })
+      world.currentPath = RecentFeedPage.RECENT_FEED_PATH
+    }
+  },
+  {
+    name: 'posts feed shows Recent and Following tabs',
+    pattern: /^the posts feed shows the tabs "Recent" and "Following"$/,
+    run (m, example, world) {
+      const tabs = world.feedTabsPage.tabs
+      if (tabs.length !== 2 || tabs[0] !== 'Recent' || tabs[1] !== 'Following') {
+        throw new Error(`Expected the Recent and Following tabs, got ${JSON.stringify(tabs)}.`)
+      }
+    }
+  },
+  {
+    name: 'Following tab is active',
+    pattern: /^the Following tab is active$/,
+    run (m, example, world) {
+      if (!world.feedTabsPage.isFollowing()) {
+        throw new Error('Expected the Following tab to be active.')
+      }
+    }
+  },
+  {
+    name: 'Recent tab is active',
+    pattern: /^the Recent tab is active$/,
+    run (m, example, world) {
+      if (!world.feedTabsPage.isRecent()) {
+        throw new Error('Expected the Recent tab to be active.')
+      }
+    }
+  },
+  {
+    name: 'click Recent tab',
+    pattern: /^I click the Recent tab$/,
+    async run (m, example, world) {
+      await world.feedTabsPage.selectTab('Recent')
+    }
+  },
+  {
+    name: 'click Following tab',
+    pattern: /^I click the Following tab$/,
+    async run (m, example, world) {
+      await world.feedTabsPage.selectTab('Following')
+    }
+  },
+  {
+    name: 'posts feed shows post text',
+    pattern: /^the posts feed shows the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.feedTabsPage.posts.find((p) => p.text === expected)
+      if (!found) {
+        throw new Error(`Posts feed does not show a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'posts feed does not show post text',
+    pattern: /^the posts feed does not show the post with text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = world.feedTabsPage.posts.find((p) => p.text === expected)
+      if (found) {
+        throw new Error(`Posts feed unexpectedly shows a post with text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'posts feed shows no posts',
+    pattern: /^the posts feed shows no posts$/,
+    run (m, example, world) {
+      if (world.feedTabsPage.posts.length !== 0) {
+        throw new Error(`Expected no posts in the posts feed, got ${world.feedTabsPage.posts.length}.`)
+      }
+    }
+  },
+  {
+    name: 'posts feed shows N posts',
+    pattern: /^the posts feed shows (\d+) posts$/,
+    run (m, example, world) {
+      const expected = parseInt(m[1], 10)
+      const actual = world.feedTabsPage.posts.length
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} posts in the posts feed, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'posts feed shows not following anyone message',
+    pattern: /^the posts feed shows a message that I am not following anyone$/,
+    run (m, example, world) {
+      if (!world.feedTabsPage.emptyBecauseNoFollows) {
+        throw new Error('Expected the posts feed to show the not-following-anyone message.')
+      }
+    }
+  },
+  {
+    name: 'posts feed does not show not following anyone message',
+    pattern: /^the posts feed does not show a message that I am not following anyone$/,
+    run (m, example, world) {
+      if (world.feedTabsPage.emptyBecauseNoFollows) {
+        throw new Error('Did not expect the posts feed to show the not-following-anyone message.')
+      }
+    }
+  },
+  {
+    name: 'click Next page button',
+    pattern: /^I click the Next page button$/,
+    async run (m, example, world) {
+      await world.feedTabsPage.nextPage()
     }
   },
   {

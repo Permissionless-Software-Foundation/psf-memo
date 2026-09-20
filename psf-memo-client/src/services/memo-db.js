@@ -160,6 +160,10 @@ class MemoDb {
     }
   }
 
+  async getFollowing (addr) {
+    return this._getList(`/follow/following/${encodeURIComponent(addr)}`, 'getFollowing', 'following')
+  }
+
   async getFollowingFeed (addr, opts = {}) {
     return this.getPage(`/posts/following/${encodeURIComponent(addr)}`, 'getFollowingFeed', opts)
   }

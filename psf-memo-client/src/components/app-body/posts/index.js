@@ -1,13 +1,19 @@
 /*
-  Display the most recent Memo posts from psf-memo-db.
+  Display the recent/following Memo posts from psf-memo-db.
+
+  One posts page with two mode buttons: "Recent" shows the global recent feed
+  and "Following" shows top-level posts from profiles the viewer follows. The
+  default tab is chosen from the viewer's follow state, and switching tabs
+  resets the feed to its first page.
 */
 
 // Global npm libraries
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Container, Row, Col, Spinner, Button } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
+import FeedTabsPage from '../../../services/feed-tabs-page'
 import PostFeedItem from '../../post-feed/post-feed-item'
 import PostThreadModal from '../../post-thread-modal'
 import {
@@ -21,14 +27,34 @@ const PAGE_SIZE = 50
 
 function RecentPosts (props) {
   const { appData } = props
+  const wallet = appData?.wallet
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [posts, setPosts] = useState([])
   const [profiles, setProfiles] = useState({})
   const [pagination, setPagination] = useState(null)
+  const [mode, setMode] = useState(null)
+  const [emptyBecauseNoFollows, setEmptyBecauseNoFollows] = useState(false)
   const [offset, setOffset] = useState(0)
   const [threadTxid, setThreadTxid] = useState(null)
   const [showThreadModal, setShowThreadModal] = useState(false)
+
+  const pageRef = useRef(null)
+
+  // Reflect a loaded controller page into React state, including the author
+  // profiles needed by the post cards.
+  const showPage = async (page) => {
+    const addrs = collectPostAddrs(page.posts)
+    const profileMap = await loadThreadProfiles(addrs, page.memoDb)
+
+    setPosts(page.posts)
+    setPagination(page.pagination)
+    setMode(page.mode)
+    setEmptyBecauseNoFollows(page.emptyBecauseNoFollows)
+    setOffset(page.offset)
+    setProfiles(profileMap)
+  }
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -41,50 +67,64 @@ function RecentPosts (props) {
   }
 
   useEffect(() => {
+    let cancelled = false
+
     const loadPosts = async () => {
       setLoading(true)
       setError(null)
       setProfiles({})
 
       try {
-        const memoDb = new MemoDb()
-        const viewer = appData?.wallet?.walletInfo?.cashAddress
-        const data = await memoDb.getRecentPosts({
-          limit: PAGE_SIZE,
-          offset,
-          viewer
-        })
+        const page = new FeedTabsPage({ memoDb: new MemoDb(), wallet })
+        pageRef.current = page
+        await page.open({ limit: PAGE_SIZE, offset: 0 })
 
-        const loadedPosts = data.posts || []
-        const addrs = collectPostAddrs(loadedPosts)
-        const profileMap = await loadThreadProfiles(addrs, memoDb)
-
-        setPosts(loadedPosts)
-        setProfiles(profileMap)
-        setPagination(data.pagination || null)
+        if (cancelled) return
+        await showPage(page)
       } catch (err) {
-        setError(err.message || 'Failed to load recent posts')
+        if (cancelled) return
+        setError(err.message || 'Failed to load posts')
         setPosts([])
         setProfiles({})
         setPagination(null)
+        setEmptyBecauseNoFollows(false)
+        setOffset(0)
       }
 
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }
 
     loadPosts()
-  }, [offset])
+
+    return () => { cancelled = true }
+  }, [wallet])
+
+  const runPageAction = async (action) => {
+    const page = pageRef.current
+    if (!page) return
+
+    setLoading(true)
+    setError(null)
+    try {
+      await action(page)
+      await showPage(page)
+    } catch (err) {
+      setError(err.message || 'Failed to load posts')
+      setPosts([])
+      setProfiles({})
+      setPagination(null)
+      setEmptyBecauseNoFollows(false)
+      setOffset(0)
+    }
+    setLoading(false)
+  }
+
+  const handleSelectTab = (tab) => runPageAction((page) => page.selectTab(tab))
+  const handlePrevious = () => runPageAction((page) => page.previousPage())
+  const handleNext = () => runPageAction((page) => page.nextPage())
 
   const canGoBack = offset > 0
   const canGoNext = pagination?.hasMore ?? false
-
-  const handlePrevious = () => {
-    setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
-  }
-
-  const handleNext = () => {
-    setOffset((prev) => prev + PAGE_SIZE)
-  }
 
   return (
     <Container className='recent-posts-page'>
@@ -96,6 +136,22 @@ function RecentPosts (props) {
               Recent messages published through the Memo protocol on Bitcoin Cash.
             </p>
 
+            <div className='posts-feed-tabs'>
+              <Button
+                variant={mode === FeedTabsPage.RECENT_MODE ? 'dark' : 'outline-dark'}
+                onClick={() => handleSelectTab('Recent')}
+              >
+                Recent
+              </Button>
+
+              <Button
+                variant={mode === FeedTabsPage.FOLLOWING_MODE ? 'dark' : 'outline-dark'}
+                onClick={() => handleSelectTab('Following')}
+              >
+                Following
+              </Button>
+            </div>
+
             {pagination && posts.length > 0 && (
               <span className='recent-posts-count'>
                 Showing {pagination.offset + 1}–
@@ -103,7 +159,7 @@ function RecentPosts (props) {
               </span>
             )}
 
-            {pagination && posts.length === 0 && (
+            {pagination && posts.length === 0 && !emptyBecauseNoFollows && (
               <span className='recent-posts-count'>
                 No posts on this page.
               </span>
@@ -126,6 +182,12 @@ function RecentPosts (props) {
             </div>
           )}
 
+          {!loading && !error && posts.length === 0 && emptyBecauseNoFollows && (
+            <p className='recent-posts-empty'>
+              You are not following anyone.
+            </p>
+          )}
+
           {!loading && !error && posts.length > 0 && (
             <div className='posts-feed'>
               {posts.map((post) => (
@@ -133,7 +195,7 @@ function RecentPosts (props) {
                   key={post.txid}
                   post={post}
                   profiles={profiles}
-                  wallet={appData?.wallet}
+                  wallet={wallet}
                   onReplyClick={() => openThread(post.txid)}
                   showFooterMeta
                 />
@@ -167,7 +229,7 @@ function RecentPosts (props) {
         show={showThreadModal}
         txid={threadTxid}
         onHide={closeThread}
-        wallet={appData?.wallet}
+        wallet={wallet}
         profiles={profiles}
       />
     </Container>

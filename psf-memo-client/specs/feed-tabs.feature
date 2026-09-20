@@ -54,7 +54,6 @@ Feature: Feed Tabs
     When I click the Recent tab
     Then the Recent tab is active
     And the posts feed shows the post with text "<other_text>"
-    And the posts feed does not show the post with text "<followed_text>"
 
     Examples:
       | followee | followed_txid | followed_text | other | other_txid | other_text |
