@@ -68,6 +68,9 @@ function RecentProfiles () {
       <Row>
         <Col>
           <h1 className='mt-4'>Recent Profiles</h1>
+          <p className='text-muted'>
+            Memo profiles on Bitcoin Cash, ordered by most recent post.
+          </p>
           {pagination && (
             <p className='text-muted'>
               Showing {profiles.length} of {pagination.total} profiles
