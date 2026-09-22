@@ -7,14 +7,18 @@
   the viewer's follow state for each listed profile, and coordinates
   follow/unfollow broadcasts with an injected MemoFollow action.
 
-  Follow results open a result modal that shows loading while a broadcast is
-  pending, then the success message/txid/explorer link or the failure message.
-  A failed broadcast leaves the row's follow state unchanged and the modal
-  stays open until dismissed.
+  Clicking a row's button opens a confirmation modal that asks whether to
+  follow or unfollow the profile's display name. Nothing is broadcast until the
+  confirmation is accepted; cancelling closes the modal without changing the
+  row. Confirming opens the result modal, which shows loading while a broadcast
+  is pending, then the success message/txid/explorer link or the failure
+  message. A failed broadcast leaves the row's follow state unchanged and the
+  modal stays open until dismissed.
 */
 
 const PaginatedPage = require('./paginated-page')
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
+const { accountDisplayName } = require('./recent-profiles-table')
 const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-result')
 
 const RECENT_PROFILES_PATH = '/profile/recent'
@@ -34,6 +38,7 @@ class RecentProfilesPage extends PaginatedPage {
     this.showFollowResultModal = false
     this.lastFollowResult = null
     this.followBusyAddr = null
+    this.pendingFollow = null
   }
 
   async load ({ limit = 50, offset = 0 } = {}) {
@@ -86,6 +91,45 @@ class RecentProfilesPage extends PaginatedPage {
     return this._broadcastFollow('unfollow', addr, false)
   }
 
+  // Open the confirmation modal for a follow/unfollow on `addr`. The action
+  // and prompt display name are captured from the current row so the
+  // confirmation matches what the button and Account column show. Nothing is
+  // broadcast until confirmFollow runs.
+  requestFollow (addr) {
+    const profile = this.getProfile(addr)
+    this.lastFollowResult = null
+    this.pendingFollow = {
+      action: this.isFollowing(addr) ? 'unfollow' : 'follow',
+      addr,
+      displayName: profile ? accountDisplayName(addr, profile.name) : addr
+    }
+    this.showFollowResultModal = true
+    return this.pendingFollow
+  }
+
+  // The confirmation prompt for the pending follow/unfollow, or ''.
+  getFollowConfirmMessage () {
+    if (!this.pendingFollow) return ''
+    return `Are you sure you want to ${this.pendingFollow.action} ${this.pendingFollow.displayName}?`
+  }
+
+  // Accept the pending confirmation and broadcast it.
+  async confirmFollow () {
+    if (!this.pendingFollow) {
+      throw new Error('Recent profiles page has no pending follow to confirm.')
+    }
+    const { action, addr } = this.pendingFollow
+    this.pendingFollow = null
+    return this._broadcastFollow(action, addr, action === 'follow')
+  }
+
+  // Reject the pending confirmation without broadcasting.
+  cancelFollow () {
+    this.pendingFollow = null
+    this.showFollowResultModal = false
+    return this
+  }
+
   // Broadcast a follow/unfollow and record the result for the result modal.
   // The modal opens immediately so it can show loading; a missing handler is a
   // programming error that still throws, while a broadcast failure is recorded
@@ -127,9 +171,11 @@ class RecentProfilesPage extends PaginatedPage {
     return blockExplorerTxUrl(txid)
   }
 
-  // Dismiss the follow result. This closes the modal without changing the row.
+  // Dismiss the follow modal. This closes it without changing the row and
+  // clears any pending confirmation.
   dismissFollowResult () {
     this.showFollowResultModal = false
+    this.pendingFollow = null
     return this
   }
 }

@@ -63,6 +63,7 @@ const { renderMuteResult } = require('./render-mute-result')
 const { renderNotificationEntry } = require('./render-notification-entry')
 const { renderRecentProfileAccount } = require('./render-recent-profile-account')
 const { renderRecentProfileFollowButton } = require('./render-recent-profile-follow')
+const { renderRecentProfileFollowConfirm } = require('./render-recent-profile-follow-confirm')
 const { renderRecentProfileFollowResult } = require('./render-recent-profile-follow-result')
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
@@ -1480,7 +1481,7 @@ const handlers = [
   },
   {
     name: 'app does not broadcast any transaction',
-    pattern: /^(?:the wallet|the app) does not broadcast any transaction$/,
+    pattern: /^(?:the wallet|the app) does not broadcast (?:any|an OP_RETURN) transaction$/,
     run (m, example, world) {
       if (world.wallet.broadcasts.length !== 0) {
         throw new Error('A transaction was broadcast when none was expected.')
@@ -3921,22 +3922,62 @@ const handlers = [
   {
     name: 'click recent profiles follow button',
     pattern: /^I click the recent profiles follow button for the address (.+)$/,
-    async run (m, example, world) {
+    run (m, example, world) {
       const addr = resolveParam(m[1], example)
+      world.recentProfilesPage.requestFollow(addr)
+    }
+  },
+  {
+    name: 'recent profiles follow modal asks to follow or unfollow',
+    pattern: /^the recent profiles follow modal asks "Are you sure you want to (follow|unfollow) (.+)\?"$/,
+    run (m, example, world) {
+      const action = m[1]
+      const displayName = resolveParam(m[2], example)
+      const expected = `Are you sure you want to ${action} ${displayName}?`
       const page = world.recentProfilesPage
-      if (page.isFollowing(addr)) {
-        await page.unfollow(addr)
-      } else {
-        await page.follow(addr)
+      if (!page.pendingFollow) {
+        throw new Error('Expected the recent profiles follow confirmation to be open.')
+      }
+      const actual = page.getFollowConfirmMessage()
+      if (actual !== expected) {
+        throw new Error(`Expected the follow confirmation "${expected}", got "${actual}".`)
+      }
+      const html = renderRecentProfileFollowConfirm({ message: actual })
+      if (!html.includes(expected)) {
+        throw new Error(`The rendered follow confirmation does not ask "${expected}".`)
       }
     }
   },
   {
-    name: 'start following address',
-    pattern: /^I start following the address (.+)$/,
+    name: 'recent profiles follow modal offers Yes and No buttons',
+    pattern: /^the recent profiles follow modal offers Yes and No buttons$/,
     run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      world.pendingFollow = world.recentProfilesPage.follow(addr)
+      const message = world.recentProfilesPage.getFollowConfirmMessage()
+      const html = renderRecentProfileFollowConfirm({ message })
+      if (!html.includes('>Yes</button>') || !html.includes('>No</button>')) {
+        throw new Error('The rendered follow confirmation does not offer Yes and No buttons.')
+      }
+    }
+  },
+  {
+    name: 'click Yes in recent profiles follow modal',
+    pattern: /^I click the Yes button in the recent profiles follow modal$/,
+    async run (m, example, world) {
+      await world.recentProfilesPage.confirmFollow()
+    }
+  },
+  {
+    name: 'click No in recent profiles follow modal',
+    pattern: /^I click the No button in the recent profiles follow modal$/,
+    run (m, example, world) {
+      world.recentProfilesPage.cancelFollow()
+    }
+  },
+  {
+    name: 'start the confirmed follow broadcast',
+    pattern: /^I start the confirmed follow broadcast$/,
+    run (m, example, world) {
+      world.pendingFollow = world.recentProfilesPage.confirmFollow()
     }
   },
   {

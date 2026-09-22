@@ -2,11 +2,14 @@
   Unit tests for the recent profiles page follow controls.
 
   The recent profiles page controller loads the viewer's follow state for each
-  listed profile and coordinates follow/unfollow broadcasts with an injected
-  MemoFollow action. On a broadcast it opens a result modal that shows loading
-  while the broadcast is pending, then either the success message/txid/explorer
-  link or the failure message. The modal stays open until dismissed and a
-  failed broadcast leaves the button label unchanged.
+  listed profile. Clicking a row's button opens a confirmation modal that asks
+  whether to follow or unfollow the profile's display name; nothing is
+  broadcast until Yes is confirmed, and No closes the modal without changing
+  the row. Confirming coordinates the follow/unfollow broadcast with an
+  injected MemoFollow action. On a broadcast the modal shows loading while the
+  broadcast is pending, then either the success message/txid/explorer link or
+  the failure message. The modal stays open until dismissed and a failed
+  broadcast leaves the button label unchanged.
 */
 
 'use strict'
@@ -213,4 +216,155 @@ test('getProfile still returns a loaded profile by address', async () => {
   await page.load()
 
   assert.equal(page.getProfile(ALICE).text, 'Alice')
+})
+
+test('requestFollow opens a follow confirmation named after the profile', async () => {
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }]),
+    myAddr: DAVE,
+    memoFollow: makeMemoFollow()
+  })
+  await page.load()
+
+  page.requestFollow(ALICE)
+
+  assert.equal(page.showFollowResultModal, true)
+  assert.equal(page.getFollowConfirmMessage(), 'Are you sure you want to follow alice?')
+  assert.equal(page.lastFollowResult, null)
+  assert.equal(page.isFollowing(ALICE), false)
+  assert.equal(page.followBusyAddr, null)
+})
+
+test('requestFollow opens an unfollow confirmation for a followed profile', async () => {
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }], { [`${DAVE}:${ALICE}`]: true }),
+    myAddr: DAVE,
+    memoFollow: makeMemoFollow()
+  })
+  await page.load()
+
+  page.requestFollow(ALICE)
+
+  assert.equal(page.getFollowConfirmMessage(), 'Are you sure you want to unfollow alice?')
+})
+
+test('requestFollow uses the truncated address when the profile has no name', async () => {
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: DAVE }]),
+    myAddr: ALICE,
+    memoFollow: makeMemoFollow()
+  })
+  await page.load()
+
+  page.requestFollow(DAVE)
+
+  assert.equal(page.getFollowConfirmMessage(), 'Are you sure you want to follow bitcoincas...py26r63g3d?')
+})
+
+test('requestFollow does not broadcast before confirmation', async () => {
+  let broadcasts = 0
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }]),
+    myAddr: DAVE,
+    memoFollow: {
+      async follow () {
+        broadcasts++
+        return SUCCESS_TXID
+      },
+      async unfollow () {
+        broadcasts++
+        return SUCCESS_TXID
+      }
+    }
+  })
+  await page.load()
+
+  page.requestFollow(ALICE)
+
+  assert.equal(broadcasts, 0)
+  assert.equal(page.isFollowing(ALICE), false)
+})
+
+test('getFollowConfirmMessage is empty without a pending confirmation', () => {
+  const page = new RecentProfilesPage({})
+
+  assert.equal(page.getFollowConfirmMessage(), '')
+})
+
+test('confirmFollow broadcasts the pending follow and records the result', async () => {
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }]),
+    myAddr: DAVE,
+    memoFollow: makeMemoFollow()
+  })
+  await page.load()
+  page.requestFollow(ALICE)
+
+  const result = await page.confirmFollow()
+
+  assert.equal(result.ok, true)
+  assert.equal(page.isFollowing(ALICE), true)
+  assert.equal(page.showFollowResultModal, true)
+  assert.equal(page.getFollowConfirmMessage(), '')
+  assert.equal(page.getFollowBroadcastMessage(), FOLLOW_MESSAGE)
+})
+
+test('confirmFollow broadcasts the pending unfollow', async () => {
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }], { [`${DAVE}:${ALICE}`]: true }),
+    myAddr: DAVE,
+    memoFollow: makeMemoFollow()
+  })
+  await page.load()
+  page.requestFollow(ALICE)
+
+  await page.confirmFollow()
+
+  assert.equal(page.isFollowing(ALICE), false)
+  assert.equal(page.getFollowBroadcastMessage(), UNFOLLOW_MESSAGE)
+})
+
+test('confirmFollow throws when there is no pending confirmation', async () => {
+  const page = new RecentProfilesPage({ memoDb: makeMemoDb([{ addr: ALICE }]), myAddr: DAVE, memoFollow: makeMemoFollow() })
+  await page.load()
+
+  await assert.rejects(() => page.confirmFollow(), /no pending follow/)
+})
+
+test('cancelFollow closes the confirmation without broadcasting or changing the row', async () => {
+  let broadcasts = 0
+  const page = new RecentProfilesPage({
+    memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }]),
+    myAddr: DAVE,
+    memoFollow: {
+      async follow () {
+        broadcasts++
+        return SUCCESS_TXID
+      },
+      async unfollow () {
+        broadcasts++
+        return SUCCESS_TXID
+      }
+    }
+  })
+  await page.load()
+  page.requestFollow(ALICE)
+
+  page.cancelFollow()
+
+  assert.equal(broadcasts, 0)
+  assert.equal(page.showFollowResultModal, false)
+  assert.equal(page.getFollowConfirmMessage(), '')
+  assert.equal(page.isFollowing(ALICE), false)
+})
+
+test('dismissing the follow modal clears any pending confirmation', async () => {
+  const page = new RecentProfilesPage({ memoDb: makeMemoDb([{ addr: ALICE, name: 'alice' }]), myAddr: DAVE, memoFollow: makeMemoFollow() })
+  await page.load()
+  page.requestFollow(ALICE)
+
+  page.dismissFollowResult()
+
+  assert.equal(page.showFollowResultModal, false)
+  assert.equal(page.getFollowConfirmMessage(), '')
 })

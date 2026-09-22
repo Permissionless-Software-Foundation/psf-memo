@@ -18,6 +18,7 @@ import {
 } from '../../../services/recent-profiles-table'
 import RecentProfileAccount from './recent-profile-account'
 import RecentProfileFollowButton from './recent-profile-follow-button'
+import RecentProfileFollowConfirm from './recent-profile-follow-confirm'
 import RecentProfileFollowResult from './recent-profile-follow-result'
 import { truncateAddr } from '../../../util'
 import '../../../App.css'
@@ -44,6 +45,7 @@ function RecentProfiles (props) {
   const [followLoading, setFollowLoading] = useState(false)
   const [showFollowResultModal, setShowFollowResultModal] = useState(false)
   const [followResult, setFollowResult] = useState(null)
+  const [pendingFollow, setPendingFollow] = useState(null)
 
   const wallet = appData?.wallet || null
   const appProfiles = appData?.profiles || null
@@ -86,19 +88,27 @@ function RecentProfiles (props) {
     setOffset((prev) => prev + PAGE_SIZE)
   }
 
-  // Broadcast a follow/unfollow for one row and keep the row and result modal
-  // in sync with the controller.
-  const handleFollowClick = async (addr) => {
+  // Open the confirmation modal for one row. Nothing is broadcast until the
+  // viewer confirms.
+  const handleFollowClick = (addr) => {
+    if (!page || busy) return
+    setError(null)
+    page.requestFollow(addr)
+    setPendingFollow(page.pendingFollow)
+    setFollowResult(null)
+    setFollowLoading(false)
+    setShowFollowResultModal(true)
+  }
+
+  // Confirm the pending follow/unfollow and keep the row and result modal in
+  // sync with the controller.
+  const handleConfirmFollow = async () => {
     if (!page || busy) return
     setBusy(true)
     setFollowLoading(true)
-    setShowFollowResultModal(true)
+    setPendingFollow(null)
     try {
-      if (page.isFollowing(addr)) {
-        await page.unfollow(addr)
-      } else {
-        await page.follow(addr)
-      }
+      await page.confirmFollow()
       setFollowState({ ...page.followState })
       setFollowResult(page.lastFollowResult)
     } catch (err) {
@@ -108,8 +118,16 @@ function RecentProfiles (props) {
     setBusy(false)
   }
 
+  // Cancel the confirmation without broadcasting.
+  const handleCancelFollow = () => {
+    if (page) page.cancelFollow()
+    setPendingFollow(null)
+    setShowFollowResultModal(false)
+  }
+
   const handleDismissFollowResult = () => {
     if (page) page.dismissFollowResult()
+    setPendingFollow(null)
     setShowFollowResultModal(false)
   }
 
@@ -206,23 +224,35 @@ function RecentProfiles (props) {
       <Modal show={showFollowResultModal} onHide={handleDismissFollowResult} centered>
         <Modal.Header closeButton>
           <Modal.Title>
-            {followLoading || followSucceeded ? 'Follow broadcast' : 'Follow failed'}
+            {pendingFollow ? 'Confirm follow' : followLoading || followSucceeded ? 'Follow broadcast' : 'Follow failed'}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <RecentProfileFollowResult
-            loading={followLoading}
-            txid={followSucceeded ? followResult.txid : ''}
-            message={page ? page.getFollowBroadcastMessage() : ''}
-            error={page ? page.getFollowResultError() : ''}
-            explorerUrl={followSucceeded ? page.explorerUrl(followResult.txid) : ''}
-          />
+          {pendingFollow
+            ? (
+              <RecentProfileFollowConfirm
+                message={page ? page.getFollowConfirmMessage() : ''}
+                onYes={handleConfirmFollow}
+                onNo={handleCancelFollow}
+              />
+              )
+            : (
+              <RecentProfileFollowResult
+                loading={followLoading}
+                txid={followSucceeded ? followResult.txid : ''}
+                message={page ? page.getFollowBroadcastMessage() : ''}
+                error={page ? page.getFollowResultError() : ''}
+                explorerUrl={followSucceeded ? page.explorerUrl(followResult.txid) : ''}
+              />
+              )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant='primary' onClick={handleDismissFollowResult}>
-            Close
-          </Button>
-        </Modal.Footer>
+        {!pendingFollow && (
+          <Modal.Footer>
+            <Button variant='primary' onClick={handleDismissFollowResult}>
+              Close
+            </Button>
+          </Modal.Footer>
+        )}
       </Modal>
     </Container>
   )
