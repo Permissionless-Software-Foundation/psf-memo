@@ -81,6 +81,14 @@ test('buildRecentProfileFollow shows Follow when the viewer does not follow', ()
   assert.equal(follow.disabled, false)
 })
 
+test('buildRecentProfileFollow defaults to Follow when no follow state is given', () => {
+  const follow = buildRecentProfileFollow({ addr: ALICE })
+
+  assert.equal(follow.addr, ALICE)
+  assert.equal(follow.label, 'Follow')
+  assert.equal(follow.disabled, false)
+})
+
 test('buildRecentProfileFollow shows Unfollow when the viewer follows', () => {
   const follow = buildRecentProfileFollow({ addr: ALICE }, { myAddr: DAVE, following: true })
 

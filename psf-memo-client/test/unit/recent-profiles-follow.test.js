@@ -14,23 +14,13 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const RecentProfilesPage = require('../../src/services/recent-profiles-page')
+const { makeRecentProfilesMemoDb: makeMemoDb } = require('../support/recent-profiles')
 
 const DAVE = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
 const ALICE = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
 const SUCCESS_TXID = 'aa'.repeat(32)
 const FOLLOW_MESSAGE = 'Your follow was broadcast to the Bitcoin Cash network.'
 const UNFOLLOW_MESSAGE = 'Your unfollow was broadcast to the Bitcoin Cash network.'
-
-function makeMemoDb (profiles = [], followState = {}) {
-  return {
-    async getRecentProfiles () {
-      return { profiles, pagination: { total: profiles.length } }
-    },
-    async getFollowState (followerAddr, followeeAddr) {
-      return followState[`${followerAddr}:${followeeAddr}`] || false
-    }
-  }
-}
 
 function makeMemoFollow (txid = SUCCESS_TXID) {
   return {
@@ -73,6 +63,35 @@ test('load does not fetch follow state without a viewer address', async () => {
 
   assert.equal(calls, 0)
   assert.equal(page.isFollowing(ALICE), false)
+})
+
+test('a new page starts with no result modal, no pending broadcast, and empty follow state', () => {
+  const page = new RecentProfilesPage({})
+
+  assert.equal(page.showFollowResultModal, false)
+  assert.equal(page.lastFollowResult, null)
+  assert.equal(page.followBusyAddr, null)
+  assert.deepEqual(page.followState, {})
+})
+
+test('load ignores null profiles and profiles without an address', async () => {
+  const requested = []
+  const memoDb = {
+    async getRecentProfiles () {
+      return { profiles: [null, { addr: '' }, { addr: ALICE }], pagination: {} }
+    },
+    async getFollowState (followerAddr, followeeAddr) {
+      requested.push(followeeAddr)
+      return true
+    }
+  }
+  const page = new RecentProfilesPage({ memoDb, myAddr: DAVE })
+
+  const result = await page.load()
+
+  assert.deepEqual(requested, [ALICE])
+  assert.deepEqual(result.followState, { [ALICE]: true })
+  assert.equal('' in result.followState, false)
 })
 
 test('follow delegates to the memo follow handler and flips the row', async () => {

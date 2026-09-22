@@ -29,6 +29,7 @@ const test = require('node:test')
 const React = require('react')
 const ReactDOMServer = require('react-dom/server')
 const { seededRandom, forAll, intGen } = require('./harness')
+const { makeRecentProfilesMemoDb: makeMemoDb } = require('../support/recent-profiles')
 const RecentProfilesPage = require('../../src/services/recent-profiles-page')
 const {
   buildRecentProfileFollow,
@@ -48,18 +49,21 @@ const ADDR_CHARS = Array.from('abcdefghijklmnopqrstuvwxyz0123456789:')
 const HEX = '0123456789abcdef'
 const SAFE_WORDS = ['follow', 'unfollow', 'broadcast', 'success', 'memo', 'network']
 
-function randomAddr () {
-  const n = intGen(rng, 8, 48)()
+// A random string of `min`..`max` characters drawn from `chars`, consuming the
+// shared rng so the seeded runs stay reproducible.
+function randomString (chars, min, max) {
+  const n = intGen(rng, min, max)()
   let out = ''
-  for (let i = 0; i < n; i++) out += ADDR_CHARS[Math.floor(rng() * ADDR_CHARS.length)]
+  for (let i = 0; i < n; i++) out += chars[Math.floor(rng() * chars.length)]
   return out
 }
 
+function randomAddr () {
+  return randomString(ADDR_CHARS, 8, 48)
+}
+
 function randomTxid () {
-  const n = intGen(rng, 1, 64)()
-  let out = ''
-  for (let i = 0; i < n; i++) out += HEX[Math.floor(rng() * HEX.length)]
-  return out
+  return randomString(HEX, 1, 64)
 }
 
 function randomMessage () {
@@ -69,17 +73,6 @@ function randomMessage () {
     out += `${SAFE_WORDS[intGen(rng, 0, SAFE_WORDS.length - 1)()]} `
   }
   return out.trim()
-}
-
-function makeMemoDb (profiles = [], followState = {}) {
-  return {
-    async getRecentProfiles () {
-      return { profiles, pagination: { total: profiles.length } }
-    },
-    async getFollowState (followerAddr, followeeAddr) {
-      return followState[`${followerAddr}:${followeeAddr}`] || false
-    }
-  }
 }
 
 function makeFollow (txid = SUCCESS_TXID) {

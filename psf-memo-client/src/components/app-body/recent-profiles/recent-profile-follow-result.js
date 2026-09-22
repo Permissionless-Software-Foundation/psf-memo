@@ -52,3 +52,7 @@ function RecentProfileFollowResult ({ loading = false, txid = '', message = '', 
 }
 
 module.exports = RecentProfileFollowResult
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-22T16:05:13.520Z","module_hash":"cf3aba3aa8cf0e0741d55c7d372e3027c20034a453e38831f5e8a1ff4699bca7","functions":[{"id":"func/RecentProfileFollowResult","name":"RecentProfileFollowResult","line":17,"end_line":52,"hash":"ea77c02ca0c00b9ac031b3b63d3f95521d746d822cd8dfb6a3edf5f6197e5f9a"}]}
+// mutate4javascript-manifest-end

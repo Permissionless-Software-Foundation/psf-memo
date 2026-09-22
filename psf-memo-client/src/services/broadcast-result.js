@@ -24,3 +24,7 @@ function broadcastErrorMessage (result) {
 }
 
 module.exports = { broadcastSuccessMessage, broadcastErrorMessage }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-22T15:57:03.485Z","module_hash":"ae092754a66e8dde48a21a24cd9b64780b1cbc0119dc49853f0355d8c8530dd3","functions":[{"id":"func/broadcastSuccessMessage","name":"broadcastSuccessMessage","line":14,"end_line":17,"hash":"191af541dd0628cb7fc7e0cc6c585a3bf8c218406c8d653640da3da88f17814a"},{"id":"func/broadcastErrorMessage","name":"broadcastErrorMessage","line":21,"end_line":24,"hash":"33ea3635876f3059705c33a77af0acbe6d77eb0f6c4f0adc1cff0c3922829a10"}]}
+// mutate4javascript-manifest-end
