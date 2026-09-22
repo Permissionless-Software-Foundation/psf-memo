@@ -35,6 +35,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Recent profile follow confirmation (2026-09-22):** clicking a
+  `/profile/recent` Follow/Unfollow button now opens a confirmation modal first:
+  "Are you sure you want to follow <display name>?" (or "unfollow") with Yes
+  and No buttons. Nothing is broadcast until Yes; No closes the modal without
+  broadcasting and leaves the row unchanged; Yes continues to the existing
+  loading -> success (message + txid + `bch.loping.net` explorer link) or red
+  failure flow. The display name is the profile's name, or the truncated
+  address when it has none, matching the Account column (both derive it from
+  `accountDisplayName`). Client-only; no DB/indexer change. The confirmation
+  state machine lives in `RecentProfilesPage` (`requestFollow` /
+  `getFollowConfirmMessage` / `confirmFollow` / `cancelFollow`, `pendingFollow`)
+  with a pure `recent-profile-follow-confirm.js` component. Spec:
+  `psf-memo-client/specs/recent-profile-follow.feature` (scenarios 5-11). Merged
+  to `master` at `3045520` (architect tip `bd86490`; review commit `20b13f2`;
+  the later `bd86490`/`3045520` commits are docs-only, so the record
+  `docs/reviews/recent-profile-follow-confirm-verification.json` is valid for
+  the merged tree). Independent acceptance check after merge: 13/13 example
+  executions. `verify.sh client` pass 5/5 at `20b13f2` (unit 563/0, property
+  146/0, acceptance 39 suites, lint ok, build ok); language mutation 18 killed /
+  0 survived; soft Gherkin mutation 13/11 killed with 2 intrinsic survivors.
+  Architect summary:
+  `docs/reviews/recent-profile-follow-confirm-summary.md`.
+
 - **Recent profile follow controls (2026-09-22):** the `/profile/recent`
   table's right-most TXID column is replaced by a **Follow** column. Each row
   shows a Follow/Unfollow button for the viewer: **Follow** when the viewer does
