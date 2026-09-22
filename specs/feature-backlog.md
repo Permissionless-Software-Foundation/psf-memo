@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-20
+**Last updated**: 2026-09-22
 
 ---
 
@@ -34,6 +34,33 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **Recent profile follow controls (2026-09-22):** the `/profile/recent`
+  table's right-most TXID column is replaced by a **Follow** column. Each row
+  shows a Follow/Unfollow button for the viewer: **Follow** when the viewer does
+  not follow that profile, **Unfollow** when they do, and a disabled Follow
+  button on the viewer's own row. Clicking the button opens a result modal that
+  shows a loading indicator (react-bootstrap `Spinner`) while the Memo follow
+  (`0x6d06`) or unfollow (`0x6d07`) transaction is prepared and broadcast, then
+  the success message plus txid and a `bch.loping.net` block-explorer link, or
+  the broadcast error in red with the row label unchanged. The modal stays open
+  until dismissed. Client-only: it reads the viewer's follow state from
+  `GET /follow/following/:addr` (the same source the feed tabs use) and
+  broadcasts through the existing `MemoFollow`; no DB/indexer change. The new
+  pure leaf `psf-memo-client/src/services/broadcast-result.js` now owns the
+  follow/mute broadcast message strings, shared with `ProfilePage`. Spec:
+  `psf-memo-client/specs/recent-profile-follow.feature` (the scenario-5 header
+  assertion in `psf-memo-client/specs/recent-profile-display.feature` was also
+  updated TXID -> Follow). Merged to `master` at `c37cf61` (fast-forward; review
+  commit `c247680`; the later `c37cf61` commit is docs-only, so the record
+  `docs/reviews/recent-profile-follow-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 11/11 example executions.
+  `verify.sh client` pass 5/5 at `c247680` (unit 549/0, property 138/0,
+  acceptance 39 suites, lint ok, build ok); language mutation 55 killed / 0
+  survived; soft Gherkin mutation 10/7 killed with 3 intrinsic survivors. The
+  tool-written Gherkin mutation manifests/stamps in the two features are
+  committed as-is. Architect summary:
+  `docs/reviews/recent-profile-follow-summary.md`.
 
 - **Profile ordering by last post (2026-09-20):** `/profile/recent` now lists
   only profiles that have posted, ordered by their most recent qualifying post

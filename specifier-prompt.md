@@ -660,6 +660,28 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-db/specs/recent-profile-ordering.feature`,
     `psf-memo-db/specs/backfill-profile-recency.feature`.
 
+50. **Recent-profile-follow soft Gherkin survivors are intrinsic (gotcha #12
+    class).** For `recent-profile-follow.feature` the soft mutation run was 10
+    total / 7 killed / 3 survived, 0 errors. Survivors: `broadcast_error`
+    `Insufficient balance -> ...balanCe` (the scenario fails the wallet with the
+    example value and then asserts the modal contains that same value, so the
+    case change cancels) and `addr` case changes in scenarios 8/9 (the address
+    flows through setup and assertion consistently and those scenarios do not
+    branch on it). The tool wrote a manifest listing only the clean scenarios
+    (1, 2, 4, 5). `recent-profile-display.feature` had 0 mutations (only
+    scenarios 0/1 are in the manifest; scenario 5's TXID -> Follow header change
+    has no example values) and its `# mutation-stamp` was refreshed. Commit all
+    tool-written metadata as-is (#40).
+
+51. **Broadcast result records share one pure leaf.**
+    `psf-memo-client/src/services/broadcast-result.js`
+    (`broadcastSuccessMessage`/`broadcastErrorMessage`) is the single source for
+    the follow/mute success and failure message strings, used by both
+    `ProfilePage` and `RecentProfilesPage`. Reuse it (and the shared
+    `ExplorerTxLink` renderer, #44) for new result modals instead of re-deriving
+    messages. Keep `broadcast-result.js` a leaf with no IO or upward
+    dependency.
+
 ---
 
 ## 10. Run / verify the app
@@ -710,43 +732,39 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `79bb918bd62e9e9b8eab5d2bd1142e77343736e5`
-(`profile-last-post` merged from `swarmforge-architect`; fast-forward). The
-records name the architect code review commit `ace7038`; the only later commit
-`79bb918` adds only the records and summary, so the records are valid for the
-merged tree. This task reorders `/profile/recent` by each profile's most recent
-qualifying post (top-level `0x6d02` or topic message `0x6d0c`; replies `0x6d03`
-and poll creations `0x6d10` do not qualify), drops profiles that have never
-posted, and reports the last post's block/seen in each row. The indexer
-maintains a `profileRecency` store and
-`util/profiles/backfill-profile-recency.js` builds it idempotently,
-confirmed-only. Indexer + DB (no client code change; the client already renders
-the returned `blockHeight`/`seen`). Specs:
-`psf-memo-indexer/specs/profile-recency-indexing.feature`,
-`psf-memo-db/specs/recent-profile-ordering.feature`, and
-`psf-memo-db/specs/backfill-profile-recency.feature`; records
-`docs/reviews/profile-last-post-verification.json` (indexer) and
-`docs/reviews/profile-last-post-db-verification.json` (db). The specifier merged
-the branch and ran only the merged features' acceptance tests (indexer 20/20,
-db recent-profile-ordering 9/9, backfill 5/5, recent-profile-identity 3/3) as
-the independent check. Architect summary:
-`docs/reviews/profile-last-post-summary.md`.
+Current `master` HEAD: `c37cf61dde0d4cddcac6beb8a34f6775d87d5cee`
+(`recent-profile-follow` merged from `swarmforge-architect`; fast-forward). The
+client record names the architect code review commit `c247680e54`; the only
+later commit `c37cf61` adds only the record and summary, so the record is valid
+for the merged tree. This task replaces the right-most TXID column of
+`/profile/recent` with a Follow column: each row shows a Follow/Unfollow button
+for the viewer (a disabled Follow button on the viewer's own row), and clicking
+it opens a result modal that shows a loading indicator while the Memo follow
+(`0x6d06`) or unfollow (`0x6d07`) transaction is prepared and broadcast, then
+the success message plus txid and a `bch.loping.net` explorer link, or the red
+failure message with the row label unchanged. Client-only: it reads the
+viewer's follow state from `GET /follow/following/:addr` (the same source the
+feed tabs use) and broadcasts through the existing `MemoFollow`; no DB/indexer
+change. The new pure leaf `src/services/broadcast-result.js` now owns the
+follow/mute success/failure message strings (#51). Specs:
+`psf-memo-client/specs/recent-profile-follow.feature` and the scenario-5
+header update in `psf-memo-client/specs/recent-profile-display.feature`.
+Record: `docs/reviews/recent-profile-follow-verification.json` (client);
+architect summary `docs/reviews/recent-profile-follow-summary.md`. The
+specifier merged and ran only the merged feature's acceptance test (11/11
+example executions) as the independent check. `verify.sh client` was pass 5/5
+at `c247680` (unit 549/0, property 138/0, acceptance 39 suites, lint ok, build
+ok); language mutation 55 killed / 0 survived; soft Gherkin mutation 10/7 killed
+with the 3 intrinsic survivors noted in #50.
 
-Previous `master` HEAD before this merge: `5fce1405d4`
-(`recent-profile-identity`; records name `7973e2d`, later `5fce140` docs-only).
-That task added the DB display-name/avatar join and the client Account column:
-`GET /profile/recent` returns each profile's `name` (newest `0x6d01`) and
-`profilePicUrl` (newest `0x6d0a`), and the client table shows a leftmost
-Account column linking to `/profile/<addr>`, with truncated-address and
-jdenticon fallbacks. Specs: `psf-memo-client/specs/recent-profile-display.feature`
-and `psf-memo-db/specs/recent-profile-identity.feature`. Architect summary:
-`docs/reviews/recent-profile-identity-summary.md`.
-
-Note: `master` also contains two earlier human commits made outside the swarm
-pipeline — `ea67979` (removed the redundant inline author name from feed posts)
-and `8eab46d` (Notifications entry CSS/layout tweaks). Neither is covered by a
-Gherkin spec yet; they are unspecified working-tree behavior to reconcile if a
-future feature touches those surfaces.
+Previous `master` HEAD before this merge: `477c1c1`. Between the
+`profile-last-post` completion record and this task, four human commits landed
+outside the swarm pipeline: `f7809d0` (feed-page button styling), `477c1c1`
+(recent-profiles page info), and the earlier `ea67979` (removed the redundant
+inline author name from feed posts) and `8eab46d` (Notifications entry
+CSS/layout). None is covered by a Gherkin spec; reconcile if a future feature
+touches those surfaces. The `profile-last-post` records name `ace7038` with only
+docs later, so they remain valid (details in `specs/feature-backlog.md`).
 
 Also open (specifier cleanup, not blocking): `FollowingFeedPage.emptyBecauseNoFollows`
 and `psf-memo-client/specs/following-feed.feature` now describe the retired
