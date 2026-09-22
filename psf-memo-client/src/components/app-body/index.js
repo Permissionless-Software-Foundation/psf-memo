@@ -48,7 +48,7 @@ function AppBody (props) {
         <Route path='/bch' element={<BchSend appData={appData} />} />
         <Route path='/wallet' element={<Wallet appData={appData} />} />
         <Route path='/slp-tokens' element={<SlpTokens appData={appData} />} />
-        <Route path='/profile/recent' element={<RecentProfiles />} />
+        <Route path='/profile/recent' element={<RecentProfiles appData={appData} />} />
         <Route path='/profile/:addr' element={<Profile appData={appData} />} />
         <Route path='/posts/recent' element={<RecentPosts appData={appData} />} />
         <Route path='/posts/new' element={<NewPost appData={appData} />} />

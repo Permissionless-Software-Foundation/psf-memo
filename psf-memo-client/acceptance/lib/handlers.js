@@ -45,7 +45,7 @@ const TopicFeedPage = require('../../src/services/topic-feed-page')
 const SearchPage = require('../../src/services/search-page')
 const NotificationsPage = require('../../src/services/notifications-page')
 const RecentProfilesPage = require('../../src/services/recent-profiles-page')
-const { buildRecentProfilesTable } = require('../../src/services/recent-profiles-table')
+const { buildRecentProfilesTable, buildRecentProfileFollow } = require('../../src/services/recent-profiles-table')
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
@@ -62,6 +62,8 @@ const { renderLikeResult } = require('./render-like-result')
 const { renderMuteResult } = require('./render-mute-result')
 const { renderNotificationEntry } = require('./render-notification-entry')
 const { renderRecentProfileAccount } = require('./render-recent-profile-account')
+const { renderRecentProfileFollowButton } = require('./render-recent-profile-follow')
+const { renderRecentProfileFollowResult } = require('./render-recent-profile-follow-result')
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
@@ -744,6 +746,20 @@ function recentProfileAccountFor (world, addr) {
     throw new Error(`No recent profiles account for the address ${addr}.`)
   }
   return row.account
+}
+
+// The follow-button view model for the recent profile with the given address,
+// built from the page's loaded follow state.
+function recentProfileFollowFor (world, addr) {
+  const page = world.recentProfilesPage
+  const profile = page.getProfile(addr)
+  if (!profile) {
+    throw new Error(`No recent profile for the address ${addr}.`)
+  }
+  return buildRecentProfileFollow(profile, {
+    myAddr: page.myAddr,
+    following: page.isFollowing(addr)
+  })
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -2128,14 +2144,14 @@ const handlers = [
   },
   {
     name: 'broadcasts OP_RETURN with Memo follow prefix for address',
-    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo follow prefix for the address (.+)$/,
+    pattern: /^the app (?:broadcasts|attempts to broadcast) an OP_RETURN transaction with the Memo follow prefix for the address (.+)$/,
     run (m, example, world) {
       assertMemoBroadcastPrefix(world, resolveParam(m[1], example), MEMO_FOLLOW_PREFIX, 'follow')
     }
   },
   {
     name: 'broadcasts OP_RETURN with Memo unfollow prefix for address',
-    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo unfollow prefix for the address (.+)$/,
+    pattern: /^the app (?:broadcasts|attempts to broadcast) an OP_RETURN transaction with the Memo unfollow prefix for the address (.+)$/,
     run (m, example, world) {
       assertMemoBroadcastPrefix(world, resolveParam(m[1], example), MEMO_UNFOLLOW_PREFIX, 'unfollow')
     }
@@ -3792,6 +3808,12 @@ const handlers = [
     name: 'open recent profiles page',
     pattern: /^I open the recent profiles page$/,
     async run (m, example, world) {
+      const myAddr = world.wallet.walletInfo.cashAddress
+      world.recentProfilesPage = new RecentProfilesPage({
+        memoDb: world.memoDb,
+        myAddr,
+        memoFollow: world.memoFollow
+      })
       await world.recentProfilesPage.load()
       world.currentPath = RecentProfilesPage.RECENT_PROFILES_PATH
     }
@@ -3863,6 +3885,178 @@ const handlers = [
       const table = buildRecentProfilesTable(world.recentProfilesPage.profiles)
       if (table.headers.join('|') !== expected.join('|')) {
         throw new Error(`Expected recent profiles headers ${expected.join(', ')}, got ${table.headers.join(', ')}.`)
+      }
+    }
+  },
+  {
+    name: 'recent profiles follow button says',
+    pattern: /^the recent profiles follow button for the address (.+) says "(Follow|Unfollow)"$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const expected = m[2]
+      const follow = recentProfileFollowFor(world, addr)
+      if (follow.label !== expected) {
+        throw new Error(`Expected the recent profiles follow button for ${addr} to say "${expected}", got "${follow.label}".`)
+      }
+      const html = renderRecentProfileFollowButton(follow)
+      if (!html.includes(`>${expected}</button>`)) {
+        throw new Error(`Rendered recent profiles follow button does not say "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'recent profiles follow button is disabled',
+    pattern: /^the recent profiles follow button for the address (.+) is disabled$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const follow = recentProfileFollowFor(world, addr)
+      if (!follow.disabled) {
+        throw new Error(`Expected the recent profiles follow button for ${addr} to be disabled.`)
+      }
+      if (!renderRecentProfileFollowButton(follow).includes('disabled')) {
+        throw new Error('Rendered recent profiles follow button is not disabled.')
+      }
+    }
+  },
+  {
+    name: 'click recent profiles follow button',
+    pattern: /^I click the recent profiles follow button for the address (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const page = world.recentProfilesPage
+      if (page.isFollowing(addr)) {
+        await page.unfollow(addr)
+      } else {
+        await page.follow(addr)
+      }
+    }
+  },
+  {
+    name: 'start following address',
+    pattern: /^I start following the address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      world.pendingFollow = world.recentProfilesPage.follow(addr)
+    }
+  },
+  {
+    name: 'follow broadcast is held until released',
+    pattern: /^the follow broadcast is held until released$/,
+    run (m, example, world) {
+      let release
+      const gate = new Promise((resolve) => { release = resolve })
+      world.releaseFollowBroadcast = release
+      const inner = world.memoFollow
+      world.memoFollow = {
+        follow: async (addr) => {
+          await gate
+          return inner.follow(addr)
+        },
+        unfollow: async (addr) => {
+          await gate
+          return inner.unfollow(addr)
+        }
+      }
+    }
+  },
+  {
+    name: 'release the follow broadcast',
+    pattern: /^I release the follow broadcast$/,
+    async run (m, example, world) {
+      if (world.releaseFollowBroadcast) world.releaseFollowBroadcast()
+      if (world.pendingFollow) await world.pendingFollow
+      world.pendingFollow = null
+    }
+  },
+  {
+    name: 'recent profiles follow modal shows a loading indicator',
+    pattern: /^the recent profiles follow modal shows a loading indicator$/,
+    run (m, example, world) {
+      const page = world.recentProfilesPage
+      if (!page.showFollowResultModal) {
+        throw new Error('Expected the recent profiles follow result modal to be visible.')
+      }
+      if (!page.followBusyAddr) {
+        throw new Error('Expected the recent profiles follow broadcast to be pending.')
+      }
+      if (!page.isFollowLoading(page.followBusyAddr)) {
+        throw new Error('Expected the recent profiles follow broadcast to report loading.')
+      }
+      const html = renderRecentProfileFollowResult({ loading: true })
+      if (!html.includes('recent-profile-follow-loading')) {
+        throw new Error('The rendered recent profiles follow modal does not show a loading indicator.')
+      }
+    }
+  },
+  {
+    name: 'recent profiles follow modal shows a broadcast success message',
+    pattern: /^the recent profiles follow modal shows a broadcast success message$/,
+    run (m, example, world) {
+      assertBroadcastResultMessage(world, 'follow')
+    }
+  },
+  {
+    name: 'recent profiles follow modal shows the follow transaction id',
+    pattern: /^the recent profiles follow modal shows the follow transaction id$/,
+    run (m, example, world) {
+      assertBroadcastResultTxid(world, 'follow')
+    }
+  },
+  {
+    name: 'recent profiles follow modal shows a block explorer link',
+    pattern: /^the recent profiles follow modal shows a link to the block explorer for the follow transaction$/,
+    run (m, example, world) {
+      assertBroadcastResultExplorerLink(world, 'follow')
+    }
+  },
+  {
+    name: 'recent profiles follow modal shows a red error message',
+    pattern: /^the recent profiles follow modal shows a red error message containing "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      const expected = example[param]
+      const page = world.recentProfilesPage
+      if (!page.showFollowResultModal) {
+        throw new Error('Expected the recent profiles follow failure modal to be visible.')
+      }
+      const actual = page.getFollowResultError()
+      if (!actual.includes(expected)) {
+        throw new Error(`Expected a follow failure modal containing "${expected}", got "${actual}".`)
+      }
+      const html = renderRecentProfileFollowResult({ error: actual })
+      if (!html.includes(expected)) {
+        throw new Error(`The rendered follow failure modal does not show "${expected}".`)
+      }
+      if (!html.includes('text-danger')) {
+        throw new Error('The rendered follow failure message is not red.')
+      }
+    }
+  },
+  {
+    name: 'recent profiles follow modal is open',
+    pattern: /^the recent profiles follow modal is open$/,
+    run (m, example, world) {
+      if (!world.recentProfilesPage.showFollowResultModal) {
+        throw new Error('Expected the recent profiles follow result modal to be open.')
+      }
+    }
+  },
+  {
+    name: 'dismiss the recent profiles follow result',
+    pattern: /^I dismiss the recent profiles follow result$/,
+    run (m, example, world) {
+      world.recentProfilesPage.dismissFollowResult()
+    }
+  },
+  {
+    name: 'recent profiles follow modal closes',
+    pattern: /^the recent profiles follow modal closes$/,
+    run (m, example, world) {
+      if (world.recentProfilesPage.showFollowResultModal) {
+        throw new Error('Expected the recent profiles follow result modal to be closed.')
       }
     }
   },
@@ -4204,6 +4398,13 @@ const BROADCAST_RESULTS = {
     resultField: 'lastMuteResult',
     getMessage: (page) => page.getMuteBroadcastMessage(),
     render: renderMuteResult
+  },
+  follow: {
+    page: (world) => world.recentProfilesPage,
+    showField: 'showFollowResultModal',
+    resultField: 'lastFollowResult',
+    getMessage: (page) => page.getFollowBroadcastMessage(),
+    render: renderRecentProfileFollowResult
   }
 }
 

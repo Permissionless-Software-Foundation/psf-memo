@@ -4,17 +4,24 @@
 
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Container, Row, Col, Spinner, Table, Button } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Table, Button, Modal } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
+import MemoFollow from '../../../services/memo-follow'
 import RecentProfilesPage from '../../../services/recent-profiles-page'
-import { RECENT_PROFILES_TABLE_HEADERS, buildRecentProfileAccount } from '../../../services/recent-profiles-table'
+import { getViewerAddress } from '../../../services/profile-wallet'
+import {
+  RECENT_PROFILES_TABLE_HEADERS,
+  buildRecentProfileAccount,
+  buildRecentProfileFollow
+} from '../../../services/recent-profiles-table'
 import RecentProfileAccount from './recent-profile-account'
-import AppUtil, { truncateAddr, truncateTxid } from '../../../util'
+import RecentProfileFollowButton from './recent-profile-follow-button'
+import RecentProfileFollowResult from './recent-profile-follow-result'
+import { truncateAddr } from '../../../util'
 import '../../../App.css'
 
-const appUtil = new AppUtil()
 const PAGE_SIZE = 50
 
 function formatSeen (seen) {
@@ -23,13 +30,24 @@ function formatSeen (seen) {
   return new Date(ms).toLocaleString()
 }
 
-function RecentProfiles () {
+function RecentProfiles (props) {
+  const { appData } = props
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [profiles, setProfiles] = useState([])
   const [pagination, setPagination] = useState(null)
   const [offset, setOffset] = useState(0)
+  const [page, setPage] = useState(null)
+  const [followState, setFollowState] = useState({})
+  const [busy, setBusy] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
+  const [showFollowResultModal, setShowFollowResultModal] = useState(false)
+  const [followResult, setFollowResult] = useState(null)
+
+  const wallet = appData?.wallet || null
+  const appProfiles = appData?.profiles || null
+  const myAddr = getViewerAddress(appData)
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -37,10 +55,15 @@ function RecentProfiles () {
         setLoading(true)
         setError(null)
         const memoDb = new MemoDb()
-        const page = new RecentProfilesPage({ memoDb })
-        const data = await page.load({ limit: PAGE_SIZE, offset })
+        const memoFollow = myAddr && wallet
+          ? new MemoFollow({ wallet, profiles: appProfiles })
+          : null
+        const recentProfilesPage = new RecentProfilesPage({ memoDb, myAddr, memoFollow })
+        const data = await recentProfilesPage.load({ limit: PAGE_SIZE, offset })
         setProfiles(data.profiles || [])
         setPagination(data.pagination || null)
+        setPage(recentProfilesPage)
+        setFollowState(data.followState || {})
       } catch (err) {
         setError(err.message || 'Failed to load recent profiles')
         setProfiles([])
@@ -50,7 +73,7 @@ function RecentProfiles () {
     }
 
     loadProfiles()
-  }, [offset])
+  }, [offset, myAddr, wallet, appProfiles])
 
   const canGoBack = offset > 0
   const canGoNext = pagination?.hasMore ?? false
@@ -62,6 +85,35 @@ function RecentProfiles () {
   const handleNext = () => {
     setOffset((prev) => prev + PAGE_SIZE)
   }
+
+  // Broadcast a follow/unfollow for one row and keep the row and result modal
+  // in sync with the controller.
+  const handleFollowClick = async (addr) => {
+    if (!page || busy) return
+    setBusy(true)
+    setFollowLoading(true)
+    setShowFollowResultModal(true)
+    try {
+      if (page.isFollowing(addr)) {
+        await page.unfollow(addr)
+      } else {
+        await page.follow(addr)
+      }
+      setFollowState({ ...page.followState })
+      setFollowResult(page.lastFollowResult)
+    } catch (err) {
+      setError(err.message || 'Failed to follow')
+    }
+    setFollowLoading(false)
+    setBusy(false)
+  }
+
+  const handleDismissFollowResult = () => {
+    if (page) page.dismissFollowResult()
+    setShowFollowResultModal(false)
+  }
+
+  const followSucceeded = Boolean(followResult && followResult.ok)
 
   return (
     <Container>
@@ -115,13 +167,13 @@ function RecentProfiles () {
                     <td>{profile.blockHeight}</td>
                     <td>{formatSeen(profile.seen)}</td>
                     <td>
-                      <span
-                        style={{ fontFamily: 'monospace', cursor: 'pointer' }}
-                        title={profile.txid}
-                        onClick={() => appUtil.copyToClipboard(profile.txid)}
-                      >
-                        {truncateTxid(profile.txid, 20)}
-                      </span>
+                      <RecentProfileFollowButton
+                        follow={buildRecentProfileFollow(profile, {
+                          myAddr,
+                          following: followState[profile.addr] === true
+                        })}
+                        onClick={handleFollowClick}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -150,6 +202,28 @@ function RecentProfiles () {
           )}
         </Col>
       </Row>
+
+      <Modal show={showFollowResultModal} onHide={handleDismissFollowResult} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {followLoading || followSucceeded ? 'Follow broadcast' : 'Follow failed'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <RecentProfileFollowResult
+            loading={followLoading}
+            txid={followSucceeded ? followResult.txid : ''}
+            message={page ? page.getFollowBroadcastMessage() : ''}
+            error={page ? page.getFollowResultError() : ''}
+            explorerUrl={followSucceeded ? page.explorerUrl(followResult.txid) : ''}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant='primary' onClick={handleDismissFollowResult}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   )
 }

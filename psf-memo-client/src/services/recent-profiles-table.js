@@ -6,7 +6,7 @@
   from the profilePics store). The React Recent Profiles page renders the table
   from this model so the leftmost Account column — display name and avatar,
   both linking to the profile, with truncated-address and identicon fallbacks —
-  stays testable without a DOM.
+  and the rightmost Follow column button stay testable without a DOM.
 */
 
 const { truncateAddr } = require('../util')
@@ -14,8 +14,8 @@ const { truncateAddr } = require('../util')
 const PROFILE_PATH_PREFIX = '/profile'
 
 // Column headers, left to right. Account is first; the other columns preserve
-// the pre-existing order.
-const RECENT_PROFILES_TABLE_HEADERS = ['Account', 'Address', 'Bio', 'Block', 'Seen', 'TXID']
+// the pre-existing order, with Follow replacing the former TXID column.
+const RECENT_PROFILES_TABLE_HEADERS = ['Account', 'Address', 'Bio', 'Block', 'Seen', 'Follow']
 
 function profilePath (addr) {
   return `${PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
@@ -37,13 +37,30 @@ function buildRecentProfileAccount (profile = {}) {
   }
 }
 
-// The table view model: the header row plus one row per profile.
-function buildRecentProfilesTable (profiles = []) {
+// The Follow-column view model for one profile row: the label flips with the
+// viewer's follow state, and the viewer's own row is a disabled Follow button.
+function buildRecentProfileFollow (profile = {}, { myAddr = null, following = false } = {}) {
+  const addr = profile.addr
+  return {
+    addr,
+    label: following ? 'Unfollow' : 'Follow',
+    disabled: Boolean(myAddr) && myAddr === addr
+  }
+}
+
+// The table view model: the header row plus one row per profile. The optional
+// follow options carry the viewer address and the per-address follow state.
+function buildRecentProfilesTable (profiles = [], options = {}) {
+  const followingByAddr = options.followingByAddr || {}
   return {
     headers: [...RECENT_PROFILES_TABLE_HEADERS],
     rows: profiles.map((profile) => ({
       addr: profile.addr,
-      account: buildRecentProfileAccount(profile)
+      account: buildRecentProfileAccount(profile),
+      follow: buildRecentProfileFollow(profile, {
+        myAddr: options.myAddr,
+        following: followingByAddr[profile.addr] === true
+      })
     }))
   }
 }
@@ -54,6 +71,7 @@ module.exports = {
   profilePath,
   accountDisplayName,
   buildRecentProfileAccount,
+  buildRecentProfileFollow,
   buildRecentProfilesTable
 }
 

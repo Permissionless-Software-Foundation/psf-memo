@@ -17,6 +17,7 @@ const {
   profilePath,
   accountDisplayName,
   buildRecentProfileAccount,
+  buildRecentProfileFollow,
   buildRecentProfilesTable
 } = require('../../src/services/recent-profiles-table')
 
@@ -55,8 +56,8 @@ test('buildRecentProfileAccount reports a null avatar when the profile has no pi
   assert.equal(account.avatarUrl, null)
 })
 
-test('the table headers put Account first and preserve the existing columns', () => {
-  assert.deepEqual(RECENT_PROFILES_TABLE_HEADERS, ['Account', 'Address', 'Bio', 'Block', 'Seen', 'TXID'])
+test('the table headers put Account first and end with the Follow column', () => {
+  assert.deepEqual(RECENT_PROFILES_TABLE_HEADERS, ['Account', 'Address', 'Bio', 'Block', 'Seen', 'Follow'])
 })
 
 test('buildRecentProfilesTable builds one row per profile with its account', () => {
@@ -70,4 +71,37 @@ test('buildRecentProfilesTable builds one row per profile with its account', () 
   assert.equal(table.rows[0].addr, ALICE)
   assert.equal(table.rows[0].account.displayName, 'alice')
   assert.equal(table.rows[1].account.displayName, 'bitcoincas...py26r63g3d')
+})
+
+test('buildRecentProfileFollow shows Follow when the viewer does not follow', () => {
+  const follow = buildRecentProfileFollow({ addr: ALICE }, { myAddr: DAVE, following: false })
+
+  assert.equal(follow.addr, ALICE)
+  assert.equal(follow.label, 'Follow')
+  assert.equal(follow.disabled, false)
+})
+
+test('buildRecentProfileFollow shows Unfollow when the viewer follows', () => {
+  const follow = buildRecentProfileFollow({ addr: ALICE }, { myAddr: DAVE, following: true })
+
+  assert.equal(follow.label, 'Unfollow')
+})
+
+test('buildRecentProfileFollow shows a disabled Follow button on the viewer own row', () => {
+  const follow = buildRecentProfileFollow({ addr: DAVE }, { myAddr: DAVE, following: false })
+
+  assert.equal(follow.label, 'Follow')
+  assert.equal(follow.disabled, true)
+})
+
+test('buildRecentProfilesTable carries each row follow button from the page state', () => {
+  const table = buildRecentProfilesTable(
+    [{ addr: ALICE }, { addr: DAVE }],
+    { myAddr: DAVE, followingByAddr: { [ALICE]: true } }
+  )
+
+  assert.equal(table.rows[0].follow.label, 'Unfollow')
+  assert.equal(table.rows[0].follow.disabled, false)
+  assert.equal(table.rows[1].follow.label, 'Follow')
+  assert.equal(table.rows[1].follow.disabled, true)
 })
