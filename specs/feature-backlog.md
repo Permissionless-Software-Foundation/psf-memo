@@ -31,7 +31,11 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Profile address copy (task `profile-address-copy`):** clicking the
+  `/profile/:addr` sidebar address copies it to the clipboard and shows a
+  transient "Copied to clipboard" confirmation that disappears after a short
+  delay. Client-only; no Memo broadcast, no DB/indexer change. Spec:
+  `psf-memo-client/specs/profile-address-copy.feature`.
 
 ## Recently completed
 
