@@ -180,6 +180,16 @@ the captured output before the tool's `System/exit`; the JSON report
   the current component, so the DB mutation runs use the DB suite without a
   second tool install.
 
+- **A delivered source file can carry a stale `mutate4javascript` manifest.**
+  On 2026-09-22 the `profile-address-copy` handoff delivered
+  `src/services/profile-page.js` with the address-copy functions in the source
+  but a manifest listing only the pre-existing functions (`tested_at` predating
+  the feature). The differential run still selected and ran all 36 covered
+  sites because the module hash changed, and the tool then rewrote the manifest
+  to include the new functions. Treat a stale manifest as expected churn that
+  the architect's mutation run repairs: after mutating a file, commit the
+  rewritten manifest rather than treating it as a source behavior change.
+
 - **A killed `mutate4javascript` run can strip the embedded manifest.** If the
   tool is killed after it removes the old `mutate4javascript-manifest` block but
   before it rewrites it (seen on `topic-query.js` when a worker hung and the

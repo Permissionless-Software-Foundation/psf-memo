@@ -53,3 +53,7 @@ function ProfileAddress ({ address = '', copied = false, onClick }) {
 ProfileAddress.COPIED_TEXT = COPIED_TEXT
 
 module.exports = ProfileAddress
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-22T18:06:41.268Z","module_hash":"ef6a3eaa367a0a216ca16b33da84e3e797102886d571de28737155b96d4c4039","functions":[{"id":"func/ProfileAddress","name":"ProfileAddress","line":15,"end_line":51,"hash":"44eb6fd2adf6513a3db61dde75b08ee1730d4495cb09a1f447f160442ad1dfb4"}]}
+// mutate4javascript-manifest-end

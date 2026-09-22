@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-22T18:13:49.997822314Z","feature_name":"Profile Address Copy","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/profile-address-copy.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Profile Address Copy - 1, Profile Address Copy - 2, Profile Address Copy - 3, Profile Address Copy - 4
 #
 # The /profile/:addr sidebar lists the profile's BCH cash address on the left.
