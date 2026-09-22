@@ -8,8 +8,11 @@
 # Follow/Unfollow button for the viewer: "Follow" when the viewer does not
 # follow that profile, "Unfollow" when they do, and a disabled Follow button on
 # the viewer's own row. Clicking the button opens a confirmation modal that
-# asks "Are you sure you want to follow <display name>?" (or "unfollow") and
-# offers Yes and No buttons; nothing is broadcast until Yes is clicked. The
+# asks the profile's display name - "Are you sure you want to follow alice?"
+# (or "unfollow alice?"), where "alice" is the profile's display name, never a
+# literal placeholder - and offers Yes and No buttons; nothing is broadcast
+# until Yes is clicked. In the Gherkin below, <display_name> is a parameter
+# that the acceptance runtime replaces with the profile's display name. That
 # display name is the profile's name, or the truncated address when it has no
 # name, matching the Account column. Clicking Yes continues to the broadcast:
 # the modal shows a loading indicator while the Memo follow (0x6d06) or
