@@ -31,13 +31,31 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Profile address copy (task `profile-address-copy`):** clicking the
-  `/profile/:addr` sidebar address copies it to the clipboard and shows a
-  transient "Copied to clipboard" confirmation that disappears after a short
-  delay. Client-only; no Memo broadcast, no DB/indexer change. Spec:
-  `psf-memo-client/specs/profile-address-copy.feature`.
+- None.
 
 ## Recently completed
+
+- **Profile address copy (2026-09-22):** the `/profile/:addr` sidebar address
+  is now a button. Clicking it writes the profile's BCH cash address to the
+  system clipboard and shows a transient "Copied to clipboard" confirmation
+  (`role=status`, `aria-live=polite`) that disappears after 1.5s. It mirrors
+  the post-txid copy-confirmation UX on feed cards. The confirmation state
+  machine lives in the pure `ProfilePage` controller (`copyAddress`,
+  `isShowingAddressCopyConfirmation`, `addressCopyTimeoutElapsed`, `destroy`)
+  with an injected clipboard write and timer; `profile-address.js` is a
+  presentational plain-`React.createElement` component shared with the Node
+  acceptance adapter (`acceptance/lib/render-profile-address.js`). Client-only;
+  no Memo broadcast, no DB/indexer change. Spec:
+  `psf-memo-client/specs/profile-address-copy.feature`. Merged to `master` at
+  `d9a6371` (fast-forward; architect review commit `3bccb41`; the later
+  `d9a6371` commit adds only the record and summary, so the record
+  `docs/reviews/profile-address-copy-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 6/6 example executions.
+  `verify.sh client` pass 5/5 at `3bccb41` (unit 579/0, property 153/0,
+  acceptance 40 suites, lint ok, build ok); language mutation 37 killed / 0
+  survived; soft Gherkin mutation 4/0 with 4 intrinsic example-address case
+  survivors; max CC 4 / CRAP 4.0. Architect summary:
+  `docs/reviews/profile-address-copy-summary.md`.
 
 - **Recent profile follow confirmation (2026-09-22):** clicking a
   `/profile/recent` Follow/Unfollow button now opens a confirmation modal first:
