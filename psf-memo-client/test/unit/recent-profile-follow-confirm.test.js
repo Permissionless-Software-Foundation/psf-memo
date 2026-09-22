@@ -22,6 +22,12 @@ function render (props = {}) {
   )
 }
 
+// The Yes (index 0) and No (index 1) button elements from the confirm body.
+function confirmButtons (props = {}) {
+  const actions = RecentProfileFollowConfirm({ message: MESSAGE, ...props }).props.children[1]
+  return actions.props.children
+}
+
 test('renders the confirmation message', () => {
   assert.ok(render().includes(MESSAGE))
 })
@@ -33,33 +39,23 @@ test('offers Yes and No buttons', () => {
   assert.match(html, /<button[^>]*>No<\/button>/)
 })
 
-test('clicking Yes invokes the confirm handler', () => {
+test('clicking Yes invokes the confirm handler and No invokes the cancel handler', () => {
   let confirmed = 0
-  const tree = RecentProfileFollowConfirm({ message: MESSAGE, onYes: () => { confirmed++ } })
-  const actions = tree.props.children[1]
-  const yesButton = actions.props.children[0]
+  let cancelled = 0
+  const [yesButton, noButton] = confirmButtons({
+    onYes: () => { confirmed++ },
+    onNo: () => { cancelled++ }
+  })
 
   yesButton.props.onClick()
-
-  assert.equal(confirmed, 1)
-})
-
-test('clicking No invokes the cancel handler', () => {
-  let cancelled = 0
-  const tree = RecentProfileFollowConfirm({ message: MESSAGE, onNo: () => { cancelled++ } })
-  const actions = tree.props.children[1]
-  const noButton = actions.props.children[1]
-
   noButton.props.onClick()
 
+  assert.equal(confirmed, 1)
   assert.equal(cancelled, 1)
 })
 
 test('clicking without handlers is a no-op', () => {
-  const tree = RecentProfileFollowConfirm({ message: MESSAGE })
-  const actions = tree.props.children[1]
-  const yesButton = actions.props.children[0]
-  const noButton = actions.props.children[1]
+  const [yesButton, noButton] = confirmButtons()
 
   assert.doesNotThrow(() => yesButton.props.onClick())
   assert.doesNotThrow(() => noButton.props.onClick())

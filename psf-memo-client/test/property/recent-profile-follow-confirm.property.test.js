@@ -26,8 +26,13 @@
 const test = require('node:test')
 const React = require('react')
 const ReactDOMServer = require('react-dom/server')
-const { seededRandom, forAll, intGen } = require('./harness')
-const { makeRecentProfilesMemoDb: makeMemoDb } = require('../support/recent-profiles')
+const { seededRandom, forAll } = require('./harness')
+const {
+  makeRecentProfilesMemoDb: makeMemoDb,
+  randomRecentProfileAddr,
+  makeRecordingFollow
+} = require('../support/recent-profiles')
+const { randomWords } = require('../support/random')
 const RecentProfilesPage = require('../../src/services/recent-profiles-page')
 const { accountDisplayName } = require('../../src/services/recent-profiles-table')
 const RecentProfileFollowConfirm = require('../../src/components/app-body/recent-profiles/recent-profile-follow-confirm')
@@ -35,48 +40,15 @@ const RecentProfileFollowConfirm = require('../../src/components/app-body/recent
 const rng = seededRandom(20260922)
 
 const MY_ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
-const SUCCESS_TXID = 'ab'.repeat(32)
 
-const ADDR_CHARS = Array.from('abcdefghijklmnopqrstuvwxyz0123456789:')
 const SAFE_WORDS = ['alice', 'bob', 'carol', 'dave', 'follow', 'unfollow']
 
-function randomString (chars, min, max) {
-  const n = intGen(rng, min, max)()
-  let out = ''
-  for (let i = 0; i < n; i++) out += chars[Math.floor(rng() * chars.length)]
-  return out
-}
-
 function randomAddr () {
-  return randomString(ADDR_CHARS, 8, 48)
+  return randomRecentProfileAddr(rng)
 }
 
 function randomDisplayName () {
-  const n = intGen(rng, 1, 4)()
-  let out = ''
-  for (let i = 0; i < n; i++) {
-    out += `${SAFE_WORDS[intGen(rng, 0, SAFE_WORDS.length - 1)()]} `
-  }
-  return out.trim()
-}
-
-// A memo follow handler that records every broadcast so a property can count
-// them, and either succeeds or throws.
-function makeRecordingFollow ({ fail = false } = {}) {
-  const calls = []
-  return {
-    calls,
-    async follow (addr) {
-      calls.push({ method: 'follow', addr })
-      if (fail) throw new Error('Insufficient balance')
-      return SUCCESS_TXID
-    },
-    async unfollow (addr) {
-      calls.push({ method: 'unfollow', addr })
-      if (fail) throw new Error('Insufficient balance')
-      return SUCCESS_TXID
-    }
-  }
+  return randomWords(rng, SAFE_WORDS, 1, 4)
 }
 
 function renderConfirm (props) {
