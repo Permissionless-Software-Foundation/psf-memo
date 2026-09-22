@@ -7,7 +7,7 @@
 #
 # The /profile/recent page renders each recent profile in a table. A new
 # leftmost "Account" column shows the profile's display name and avatar, ahead
-# of the existing Address, Bio, Block, Seen, and TXID columns. The display name
+# of the existing Address, Bio, Block, and Seen columns. The display name
 # and avatar link to the profile. When a profile has no display name the account
 # shows the truncated address; when it has no avatar the account shows an
 # identicon. This is a read-only rendering feature: it broadcasts no Memo action
@@ -57,4 +57,4 @@ Feature: Recent Profile Display
 
   Scenario: Recent Profile Display - 5 the account column is the first column and the other columns remain
     When I open the recent profiles page
-    Then the recent profiles table has the column headers "Account", "Address", "Bio", "Block", "Seen", "TXID"
+    Then the recent profiles table has the column headers "Account", "Address", "Bio", "Block", "Seen", "Follow"
