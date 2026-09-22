@@ -12,6 +12,7 @@
 */
 
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
+const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-result')
 
 const PROFILE_PATH_PREFIX = '/profile'
 const MUTE_SUCCESS_MESSAGE = 'Your mute was broadcast to the Bitcoin Cash network.'
@@ -136,14 +137,16 @@ class ProfilePage {
 
   // The broadcast success message for the visible mute result, or ''.
   getMuteBroadcastMessage () {
-    if (!this.lastMuteResult || !this.lastMuteResult.ok) return ''
-    return this.lastMuteResult.action === 'unmute' ? UNMUTE_SUCCESS_MESSAGE : MUTE_SUCCESS_MESSAGE
+    return broadcastSuccessMessage(
+      this.lastMuteResult,
+      { unmute: UNMUTE_SUCCESS_MESSAGE },
+      MUTE_SUCCESS_MESSAGE
+    )
   }
 
   // The broadcast error message for the visible mute result, or ''.
   getMuteResultError () {
-    if (!this.lastMuteResult || this.lastMuteResult.ok) return ''
-    return this.lastMuteResult.message || ''
+    return broadcastErrorMessage(this.lastMuteResult)
   }
 
   // Block explorer URL for a mute/unmute transaction.

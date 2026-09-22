@@ -15,6 +15,7 @@
 
 const PaginatedPage = require('./paginated-page')
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
+const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-result')
 
 const RECENT_PROFILES_PATH = '/profile/recent'
 const FOLLOW_SUCCESS_MESSAGE = 'Your follow was broadcast to the Bitcoin Cash network.'
@@ -42,17 +43,25 @@ class RecentProfilesPage extends PaginatedPage {
   }
 
   // Load the viewer's follow state for every listed profile. Without a viewer
-  // address there is no follow state to load.
+  // address and a memo db that can report follow state there is nothing to
+  // load.
   async _loadFollowState () {
     this.followState = {}
-    if (!this.myAddr || !this.memoDb || typeof this.memoDb.getFollowState !== 'function') {
-      return
-    }
-
+    if (!this._canLoadFollowState()) return
     for (const profile of this.profiles) {
-      if (!profile || !profile.addr) continue
-      this.followState[profile.addr] = await this.memoDb.getFollowState(this.myAddr, profile.addr)
+      await this._loadProfileFollowState(profile)
     }
+  }
+
+  // True when the injected viewer address and memo db can report follow state.
+  _canLoadFollowState () {
+    return Boolean(this.myAddr && this.memoDb && typeof this.memoDb.getFollowState === 'function')
+  }
+
+  // Record the viewer's follow state for one profile, ignoring empty rows.
+  async _loadProfileFollowState (profile) {
+    if (!profile || !profile.addr) return
+    this.followState[profile.addr] = await this.memoDb.getFollowState(this.myAddr, profile.addr)
   }
 
   getProfile (addr) {
@@ -101,14 +110,16 @@ class RecentProfilesPage extends PaginatedPage {
 
   // The broadcast success message for the visible follow result, or ''.
   getFollowBroadcastMessage () {
-    if (!this.lastFollowResult || !this.lastFollowResult.ok) return ''
-    return this.lastFollowResult.action === 'unfollow' ? UNFOLLOW_SUCCESS_MESSAGE : FOLLOW_SUCCESS_MESSAGE
+    return broadcastSuccessMessage(
+      this.lastFollowResult,
+      { unfollow: UNFOLLOW_SUCCESS_MESSAGE },
+      FOLLOW_SUCCESS_MESSAGE
+    )
   }
 
   // The broadcast error message for the visible follow result, or ''.
   getFollowResultError () {
-    if (!this.lastFollowResult || this.lastFollowResult.ok) return ''
-    return this.lastFollowResult.message || ''
+    return broadcastErrorMessage(this.lastFollowResult)
   }
 
   // Block explorer URL for a follow/unfollow transaction.
