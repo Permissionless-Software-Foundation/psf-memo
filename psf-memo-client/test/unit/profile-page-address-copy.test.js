@@ -3,7 +3,8 @@
 
   Clicking the profile address copies it to the clipboard through an injected
   adapter and shows a transient "Copied to clipboard" confirmation. The
-  confirmation clears when the injected timer elapses.
+  confirmation clears when the injected timer elapses, and destroying the page
+  stops the pending timer without changing the visible confirmation.
 */
 
 'use strict'
@@ -11,30 +12,11 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const ProfilePage = require('../../src/services/profile-page')
-
-const ADDR = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
-
-function makePage (deps = {}) {
-  return new ProfilePage({ addr: ADDR, copyToClipboard: async () => {}, ...deps })
-}
-
-function makeTimers () {
-  const scheduled = []
-  const cleared = []
-  let nextId = 0
-  return {
-    scheduled,
-    cleared,
-    setTimer (fn) {
-      nextId += 1
-      scheduled.push({ id: nextId, fn })
-      return nextId
-    },
-    clearTimer (id) {
-      cleared.push(id)
-    }
-  }
-}
+const {
+  PROFILE_ADDR: ADDR,
+  makeAddressCopyPage: makePage,
+  makeFakeTimers: makeTimers
+} = require('../support/address-copy')
 
 test('copyAddress writes the profile address to the clipboard adapter', async () => {
   const writes = []
@@ -111,6 +93,26 @@ test('copyAddress notifies the change listener as the confirmation toggles', asy
   timers.scheduled[0].fn()
 
   assert.deepEqual(changes, [true, false])
+})
+
+test('destroy clears the pending timeout without hiding the confirmation', async () => {
+  const timers = makeTimers()
+  const page = makePage({ setTimer: timers.setTimer, clearTimer: timers.clearTimer })
+  await page.copyAddress()
+
+  const returned = page.destroy()
+
+  assert.equal(returned, page)
+  assert.deepEqual(timers.cleared, [1])
+  assert.equal(page.isShowingAddressCopyConfirmation(), true)
+})
+
+test('destroy is safe when no confirmation timer is pending', () => {
+  const timers = makeTimers()
+  const page = makePage({ setTimer: timers.setTimer, clearTimer: timers.clearTimer })
+
+  assert.doesNotThrow(() => page.destroy())
+  assert.deepEqual(timers.cleared, [])
 })
 
 test('copyAddress throws when the profile has no address', async () => {
