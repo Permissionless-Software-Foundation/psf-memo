@@ -17,6 +17,7 @@ const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-
 const PROFILE_PATH_PREFIX = '/profile'
 const MUTE_SUCCESS_MESSAGE = 'Your mute was broadcast to the Bitcoin Cash network.'
 const UNMUTE_SUCCESS_MESSAGE = 'Your unmute was broadcast to the Bitcoin Cash network.'
+const ADDRESS_COPY_CONFIRMATION_MS = 1500
 
 class ProfilePage {
   constructor (deps = {}) {
@@ -31,6 +32,12 @@ class ProfilePage {
     this.muteState = null
     this.showMuteResultModal = false
     this.lastMuteResult = null
+    this.copyToClipboard = deps.copyToClipboard || null
+    this.onAddressCopyChange = deps.onAddressCopyChange || null
+    this.setTimer = deps.setTimer || ((fn, ms) => setTimeout(fn, ms))
+    this.clearTimer = deps.clearTimer || ((id) => clearTimeout(id))
+    this.addressCopied = false
+    this.addressCopyTimer = null
   }
 
   async load ({ limit = 50, offset = 0 } = {}) {
@@ -147,6 +154,61 @@ class ProfilePage {
   // The broadcast error message for the visible mute result, or ''.
   getMuteResultError () {
     return broadcastErrorMessage(this.lastMuteResult)
+  }
+
+  // Copy the profile's address to the clipboard and show a transient
+  // confirmation. The clipboard write is delegated to the injected adapter so
+  // the controller stays free of browser APIs.
+  async copyAddress () {
+    if (!this.addr) {
+      throw new Error('Profile page requires an address.')
+    }
+    if (!this.copyToClipboard) {
+      throw new Error('Profile page requires a clipboard adapter.')
+    }
+    await this.copyToClipboard(this.addr)
+    this._setAddressCopied(true)
+    this._scheduleAddressCopyReset()
+    return this.addr
+  }
+
+  isShowingAddressCopyConfirmation () {
+    return this.addressCopied
+  }
+
+  // Clear the copy confirmation, as the confirmation timeout would. Exposed so
+  // tests and acceptance runs can elapse the timer deterministically.
+  addressCopyTimeoutElapsed () {
+    this._clearAddressCopyTimer()
+    this._setAddressCopied(false)
+    return this
+  }
+
+  // Stop the pending confirmation timer without changing the confirmation
+  // state. Used when the page unmounts or reloads.
+  destroy () {
+    this._clearAddressCopyTimer()
+    return this
+  }
+
+  _setAddressCopied (copied) {
+    this.addressCopied = copied
+    if (this.onAddressCopyChange) this.onAddressCopyChange(copied)
+  }
+
+  _scheduleAddressCopyReset () {
+    this._clearAddressCopyTimer()
+    this.addressCopyTimer = this.setTimer(() => {
+      this.addressCopyTimer = null
+      this._setAddressCopied(false)
+    }, ADDRESS_COPY_CONFIRMATION_MS)
+  }
+
+  _clearAddressCopyTimer () {
+    if (this.addressCopyTimer !== null) {
+      this.clearTimer(this.addressCopyTimer)
+      this.addressCopyTimer = null
+    }
   }
 
   // Block explorer URL for a mute/unmute transaction.

@@ -47,6 +47,17 @@
   font-family: monospace;
   font-size: 0.8rem;
   word-break: break-all;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.profile-address-copied {
+  color: #28a745;
+  font-size: 0.75rem;
 }
 
 .profile-posts-header {

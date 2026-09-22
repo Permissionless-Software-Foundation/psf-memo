@@ -12,15 +12,18 @@ import MemoFollow from '../../../services/memo-follow'
 import MemoMute from '../../../services/memo-mute'
 import ProfilePage from '../../../services/profile-page'
 import { getViewerAddress } from '../../../services/profile-wallet'
+import AppUtil from '../../../util'
 import PostReplyCount from '../../post-reply-count'
 import LikeButton from '../../post-feed/like-button'
 import PostOptionsMenu from '../../post-feed/post-options-menu'
 import PostThreadModal from '../../post-thread-modal'
 import MuteResult from './mute-result'
+import ProfileAddress from './profile-address'
 import '../../../App.css'
 import './profile.css'
 
 const PAGE_SIZE = 50
+const appUtil = new AppUtil()
 
 function formatSeen (seen) {
   if (!seen) return ''
@@ -72,6 +75,7 @@ function Profile (props) {
   const [busy, setBusy] = useState(false)
   const [showMuteResultModal, setShowMuteResultModal] = useState(false)
   const [muteResult, setMuteResult] = useState(null)
+  const [addressCopied, setAddressCopied] = useState(false)
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -123,9 +127,19 @@ function Profile (props) {
     setShowMuteResultModal(false)
   }
 
+  const handleCopyAddress = () => {
+    if (!profilePage) return
+    profilePage.copyAddress().catch((err) => {
+      setError(err.message || 'Failed to copy address')
+    })
+  }
+
   const muteSucceeded = Boolean(muteResult && muteResult.ok)
 
   useEffect(() => {
+    let page = null
+    setAddressCopied(false)
+
     const loadProfile = async () => {
       setLoading(true)
       setError(null)
@@ -138,7 +152,15 @@ function Profile (props) {
         const memoMute = myAddr && wallet
           ? new MemoMute({ wallet, profiles: appProfiles })
           : null
-        const page = new ProfilePage({ memoDb, addr, myAddr, memoFollow, memoMute })
+        page = new ProfilePage({
+          memoDb,
+          addr,
+          myAddr,
+          memoFollow,
+          memoMute,
+          copyToClipboard: (text) => appUtil.copyToClipboard(text),
+          onAddressCopyChange: setAddressCopied
+        })
 
         const [profile, profilePic, pageData] = await Promise.all([
           memoDb.getProfile(addr),
@@ -164,6 +186,10 @@ function Profile (props) {
     } else {
       setError('Missing profile address')
       setLoading(false)
+    }
+
+    return () => {
+      if (page) page.destroy()
     }
   }, [addr, myAddr, wallet, appProfiles, offset])
 
@@ -207,10 +233,11 @@ function Profile (props) {
                 No profile text
               </p>
             )}
-            <div className='profile-address mt-3'>
-              <span className='profile-address-label'>BCH</span>
-              <span className='profile-address-value' title={addr}>{addr}</span>
-            </div>
+            <ProfileAddress
+              address={addr}
+              copied={addressCopied}
+              onClick={handleCopyAddress}
+            />
             {showFollowButton && (
               <Button
                 className='mt-3'

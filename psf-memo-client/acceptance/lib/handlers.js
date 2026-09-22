@@ -65,6 +65,7 @@ const { renderRecentProfileAccount } = require('./render-recent-profile-account'
 const { renderRecentProfileFollowButton } = require('./render-recent-profile-follow')
 const { renderRecentProfileFollowConfirm } = require('./render-recent-profile-follow-confirm')
 const { renderRecentProfileFollowResult } = require('./render-recent-profile-follow-result')
+const { renderProfileAddress } = require('./render-profile-address')
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
@@ -541,6 +542,7 @@ function createWorld () {
     memoPollCreate,
     memoDb,
     currentPath: null,
+    clipboard: null,
     menuOpen: false,
     likedTxids: new Set()
   }
@@ -760,6 +762,19 @@ function recentProfileFollowFor (world, addr) {
   return buildRecentProfileFollow(profile, {
     myAddr: page.myAddr,
     following: page.isFollowing(addr)
+  })
+}
+
+// Build a profile page controller wired to the fake MemoDb and to a fake
+// clipboard adapter that records the last copied value on the world.
+function makeProfilePage (world, addr, myAddr) {
+  return new ProfilePage({
+    memoDb: world.memoDb,
+    addr,
+    myAddr,
+    memoFollow: world.memoFollow,
+    memoMute: world.memoMute,
+    copyToClipboard: async (text) => { world.clipboard = text }
   })
 }
 
@@ -2052,13 +2067,7 @@ const handlers = [
     async run (m, example, world) {
       const addr = resolveParam(m[1], example)
       const myAddr = world.wallet.walletInfo.cashAddress
-      world.profilePage = new ProfilePage({
-        memoDb: world.memoDb,
-        addr,
-        myAddr,
-        memoFollow: world.memoFollow,
-        memoMute: world.memoMute
-      })
+      world.profilePage = makeProfilePage(world, addr, myAddr)
       await world.profilePage.load()
       world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
     }
@@ -2068,15 +2077,99 @@ const handlers = [
     pattern: /^I open the profile page for my own address$/,
     async run (m, example, world) {
       const myAddr = world.wallet.walletInfo.cashAddress
-      world.profilePage = new ProfilePage({
-        memoDb: world.memoDb,
-        addr: myAddr,
-        myAddr,
-        memoFollow: world.memoFollow,
-        memoMute: world.memoMute
-      })
+      world.profilePage = makeProfilePage(world, myAddr, myAddr)
       await world.profilePage.load()
       world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(myAddr)}`
+    }
+  },
+  {
+    name: 'profile page shows the profile address',
+    pattern: /^the profile page shows the profile address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (world.profilePage.addr !== addr) {
+        throw new Error(`Expected the profile page address ${addr}, got ${world.profilePage.addr}.`)
+      }
+      if (!renderProfileAddress({ address: addr }).includes(addr)) {
+        throw new Error(`The rendered profile page does not show the address ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'click the profile address',
+    pattern: /^I click the profile address$/,
+    async run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      await world.profilePage.copyAddress()
+    }
+  },
+  {
+    name: 'clipboard contains value',
+    pattern: /^the clipboard contains (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.clipboard !== expected) {
+        throw new Error(`Expected the clipboard to contain ${expected}, got ${world.clipboard}.`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows address copy confirmation with text',
+    pattern: /^the profile page shows an address copy confirmation with the text "([^"]+)"$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.isShowingAddressCopyConfirmation()) {
+        throw new Error('Expected the profile page to show an address copy confirmation.')
+      }
+      const html = renderProfileAddress({
+        address: world.profilePage.addr,
+        copied: true
+      })
+      if (!html.includes(expected)) {
+        throw new Error(`The rendered address copy confirmation does not show "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows address copy confirmation',
+    pattern: /^the profile page shows an address copy confirmation$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (!world.profilePage.isShowingAddressCopyConfirmation()) {
+        throw new Error('Expected the profile page to show an address copy confirmation.')
+      }
+    }
+  },
+  {
+    name: 'profile page does not show address copy confirmation',
+    pattern: /^the profile page does not show an address copy confirmation$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      if (world.profilePage.isShowingAddressCopyConfirmation()) {
+        throw new Error('Did not expect the profile page to show an address copy confirmation.')
+      }
+    }
+  },
+  {
+    name: 'address copy confirmation timeout elapses',
+    pattern: /^the address copy confirmation timeout elapses$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      world.profilePage.addressCopyTimeoutElapsed()
     }
   },
   {
@@ -4099,23 +4192,6 @@ const handlers = [
       if (world.recentProfilesPage.showFollowResultModal) {
         throw new Error('Expected the recent profiles follow result modal to be closed.')
       }
-    }
-  },
-  {
-    name: 'open profile page for address',
-    pattern: /^I open the profile page for the address (.+)$/,
-    async run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      const myAddr = world.wallet.walletInfo.cashAddress
-      world.profilePage = new ProfilePage({
-        memoDb: world.memoDb,
-        addr,
-        myAddr,
-        memoFollow: world.memoFollow,
-        memoMute: world.memoMute
-      })
-      await world.profilePage.load()
-      world.currentPath = `${ProfilePage.PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
     }
   },
   {
