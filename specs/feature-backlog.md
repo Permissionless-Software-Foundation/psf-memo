@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-22
+**Last updated**: 2026-09-23
 
 ---
 
@@ -34,6 +34,32 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **Profile token icons (2026-09-23):** the `/profile/:addr` sidebar now shows
+  a row of small (30 px) SLP token icons below the Follow/Mute controls for the
+  SLP tokens held by that profile address. Each icon prefers the token's
+  mutable-data image (an http `fullSizedUrl` over the `tokenIcon`) and
+  otherwise renders a jdenticon keyed on the token id; icons carry the token id
+  as a native tooltip, expose the ticker as an accessible label, link to
+  `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab, and wrap
+  to multiple rows. A profile with no tokens, or a token lookup that fails,
+  shows no icons and does not error. The pure view model is
+  `psf-memo-client/src/services/profile-token-icons.js`; `ProfilePage` loads
+  tokens through an injected `tokenSource` (preferring `getTokenData2`), and
+  `src/components/app-body/profile/profile-token-icons.js` is the
+  plain-`React.createElement` render seam shared with the Node acceptance
+  adapter (`acceptance/lib/render-profile-token-icons.js`). Client-only; no
+  Memo broadcast, no DB/indexer change. Spec:
+  `psf-memo-client/specs/profile-token-icons.feature`. Merged to `master` at
+  `2e6de9b` (fast-forward; architect review commit `6e76766`; the later
+  `2e6de9b` commit adds only the record and summary, so the record
+  `docs/reviews/profile-token-icons-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 17/17 example executions.
+  `verify.sh client` pass 5/5 at `6e76766` (unit 605/0, property 161/0,
+  acceptance 41 suites, lint ok, build ok); language mutation 50 killed / 0
+  survived (`profile-page.js` 42, `profile-token-icons.js` 5, the component 3);
+  soft Gherkin mutation 18/18 killed with no survivors; max CC 5 / CRAP 5.0.
+  Architect summary: `docs/reviews/profile-token-icons-summary.md`.
 
 - **Profile address copy (2026-09-22):** the `/profile/:addr` sidebar address
   is now a button. Clicking it writes the profile's BCH cash address to the

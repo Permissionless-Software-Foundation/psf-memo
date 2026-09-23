@@ -720,6 +720,30 @@ that a single user-facing feature may require specs in more than one component.
     acceptance + unit + property tests instead. Spec:
     `psf-memo-client/specs/profile-address-copy.feature`.
 
+54. **Profile token icons reuse the pure view-model + presentational-component
+    seam (#17/#22/#53 class), with a per-token failure boundary.** The
+    `/profile/:addr` sidebar below the Follow/Mute controls shows 30 px SLP
+    token icons for the profile address's tokens. The icon/label/explorer
+    decisions live in the pure leaf
+    `psf-memo-client/src/services/profile-token-icons.js`; `ProfilePage` loads
+    tokens through an injected `tokenSource` (preferring `getTokenData2` over
+    `getTokenData`), isolates a per-token metadata failure, and swallows a
+    missing source or failed lookup as "no icons" rather than erroring the
+    page; `src/components/app-body/profile/profile-token-icons.js` is the
+    plain-`React.createElement` render seam shared with the Node adapter
+    `acceptance/lib/render-profile-token-icons.js`. The mutable-data image
+    prefers an http `fullSizedUrl` over `tokenIcon`, else a jdenticon keyed on
+    the token id; each anchor carries the token id as a native `title` tooltip,
+    the ticker as its accessible label, and opens
+    `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab. The JSX
+    shell `src/components/app-body/profile/index.js` remains excluded from
+    `mutate4javascript`. Soft Gherkin mutation of
+    `profile-token-icons.feature` was 18 total / 18 killed / 0 survived (no
+    intrinsic equivalents); language mutation 50 killed / 0 survived
+    (`profile-page.js` 42, `profile-token-icons.js` 5, the component 3); max
+    CC 5 / CRAP 5.0. Spec:
+    `psf-memo-client/specs/profile-token-icons.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -770,28 +794,33 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `d9a6371` (`Record profile-address-copy architect review
+Current `master` HEAD: `2e6de9b` (`Record profile-token-icons architect review
 and verification`). The client record
-`docs/reviews/profile-address-copy-verification.json` names the architect code
-review commit `3bccb41`; the only later commit `d9a6371` adds only
-`docs/reviews/` (record + summary), so the record is valid for the merged tree
-(extends #38). This task makes the `/profile/:addr` sidebar BCH cash address a
-button: clicking it writes the address to the clipboard and shows a transient
-`Copied to clipboard` confirmation (`role=status`, `aria-live=polite`) that
-disappears after 1.5s. The confirmation state machine lives in the pure
-`ProfilePage` controller (`copyAddress`, `isShowingAddressCopyConfirmation`,
-`addressCopyTimeoutElapsed`, `destroy`) with injected `copyToClipboard` /
-`setTimer` / `clearTimer`; `profile-address.js` is a presentational
-plain-`React.createElement` component shared with the Node acceptance adapter
-`acceptance/lib/render-profile-address.js`. Client-only; no Memo broadcast, no
-DB/indexer change. The specifier merged fast-forward to `d9a6371` and ran only
-the merged feature's acceptance test (6/6 example executions) as the
-independent check. `verify.sh client` was pass 5/5 at `3bccb41` (unit 579/0,
-property 153/0, acceptance 40 suites, lint ok, build ok); language mutation 37
-killed / 0 survived (`profile-page.js` 36, `profile-address.js` 1); soft
-Gherkin mutation 4/0 with 4 intrinsic example-address case survivors (#53); max
-CC 4 / CRAP 4.0. Architect summary:
-`docs/reviews/profile-address-copy-summary.md`.
+`docs/reviews/profile-token-icons-verification.json` names the architect code
+review commit `6e76766`; the later tip `2e6de9b` adds only `docs/reviews/`
+(record + summary), so the record is valid for the merged tree (extends #38).
+This task adds a row of small (30 px) SLP token icons to the `/profile/:addr`
+sidebar, below the Follow/Mute controls, for the SLP tokens held by that
+profile address. Each icon prefers the token's mutable-data image (an http
+`fullSizedUrl` over the `tokenIcon`) and otherwise renders a jdenticon keyed on
+the token id; icons carry the token id as a native `title` tooltip, expose the
+ticker as an accessible label, link to
+`https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab, and wrap to
+multiple rows. A profile with no tokens, or a token lookup that fails, shows no
+icons and does not error. The pure view model is
+`psf-memo-client/src/services/profile-token-icons.js`; `ProfilePage` loads
+tokens through an injected `tokenSource` (preferring `getTokenData2`), and
+`src/components/app-body/profile/profile-token-icons.js` is the
+plain-`React.createElement` render seam shared with the Node adapter
+`acceptance/lib/render-profile-token-icons.js`. Client-only; no Memo broadcast,
+no DB/indexer change. The specifier merged fast-forward to `2e6de9b` and ran
+only the merged feature's acceptance test (17/17 example executions) as the
+independent check. `verify.sh client` was pass 5/5 at `6e76766` (unit 605/0,
+property 161/0, acceptance 41 suites, lint ok, build ok); language mutation 50
+killed / 0 survived (`profile-page.js` 42, `profile-token-icons.js` 5, the
+component 3); soft Gherkin mutation 18/18 killed with no survivors; max CC 5 /
+CRAP 5.0. Architect summary:
+`docs/reviews/profile-token-icons-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),
