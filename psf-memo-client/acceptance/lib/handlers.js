@@ -66,6 +66,7 @@ const { renderRecentProfileFollowButton } = require('./render-recent-profile-fol
 const { renderRecentProfileFollowConfirm } = require('./render-recent-profile-follow-confirm')
 const { renderRecentProfileFollowResult } = require('./render-recent-profile-follow-result')
 const { renderProfileAddress } = require('./render-profile-address')
+const { renderProfileTokenIcons, renderProfileTokenIcon } = require('./render-profile-token-icons')
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
@@ -110,6 +111,19 @@ function makeWallet (address) {
     },
     utxos: [],
     broadcasts: [],
+    tokenFixtures: {},
+    tokenData: {},
+    tokenLookupFails: false,
+    listTokens: async function (addr) {
+      if (this.tokenLookupFails) throw new Error('token lookup failed')
+      return this.tokenFixtures[addr] || []
+    },
+    getTokenData: async function (tokenId) {
+      return this.tokenData[tokenId] || null
+    },
+    getTokenData2: async function (tokenId) {
+      return this.tokenData[tokenId] || null
+    },
     getUtxos: async function () {
       return this.utxos
     },
@@ -741,6 +755,36 @@ function loadRecentProfilesFixture (world, name) {
   }
 }
 
+// Fixture "profile-tokens" from profile-token-icons.feature: the SLP tokens
+// held by each profile address, with the mutable data used to choose each
+// icon. The holder address owns three tokens; the other address owns none.
+const PROFILE_TOKEN_ALPHA = '1111111111111111111111111111111111111111111111111111111111111111'
+const PROFILE_TOKEN_BETA = '2222222222222222222222222222222222222222222222222222222222222222'
+const PROFILE_TOKEN_GAMMA = '3333333333333333333333333333333333333333333333333333333333333333'
+const PROFILE_TOKEN_HOLDER = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+
+function loadProfileTokensFixture (world, name) {
+  if (name !== 'profile-tokens') {
+    throw new Error(`Unknown SLP token fixture: ${name}`)
+  }
+
+  world.wallet.tokenFixtures[PROFILE_TOKEN_HOLDER] = [
+    { tokenId: PROFILE_TOKEN_ALPHA, ticker: 'ALPHA', name: 'Alpha Token' },
+    { tokenId: PROFILE_TOKEN_BETA, ticker: 'BETA', name: 'Beta Token' },
+    { tokenId: PROFILE_TOKEN_GAMMA, ticker: 'GAMMA', name: 'Gamma Token' }
+  ]
+  world.wallet.tokenData[PROFILE_TOKEN_ALPHA] = {
+    mutableData: { tokenIcon: 'https://example.com/icons/alpha.png' }
+  }
+  world.wallet.tokenData[PROFILE_TOKEN_BETA] = { mutableData: null }
+  world.wallet.tokenData[PROFILE_TOKEN_GAMMA] = {
+    mutableData: {
+      tokenIcon: 'https://example.com/icons/gamma.png',
+      fullSizedUrl: 'https://example.com/icons/gamma-full.png'
+    }
+  }
+}
+
 // The account view model for the recent profile with the given address.
 function recentProfileAccountFor (world, addr) {
   const table = buildRecentProfilesTable(world.recentProfilesPage.profiles)
@@ -774,8 +818,21 @@ function makeProfilePage (world, addr, myAddr) {
     myAddr,
     memoFollow: world.memoFollow,
     memoMute: world.memoMute,
+    tokenSource: world.wallet,
     copyToClipboard: async (text) => { world.clipboard = text }
   })
+}
+
+// The token icon view model for the SLP token with the given id.
+function profileTokenIconFor (world, tokenId) {
+  if (!world.profilePage) {
+    throw new Error('No profile page is loaded.')
+  }
+  const icon = world.profilePage.getTokenIcons().find((candidate) => candidate.tokenId === tokenId)
+  if (!icon) {
+    throw new Error(`No token icon for the SLP token ${tokenId}.`)
+  }
+  return icon
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -786,6 +843,20 @@ const handlers = [
     pattern: /^a wallet authenticated for the address (.+)$/,
     run (m, example, world) {
       world.wallet.walletInfo.cashAddress = m[1].trim()
+    }
+  },
+  {
+    name: 'wallet serves SLP token fixture',
+    pattern: /^the wallet serves the SLP token fixture "([^"]+)"$/,
+    run (m, example, world) {
+      loadProfileTokensFixture(world, m[1])
+    }
+  },
+  {
+    name: 'SLP token lookup fails',
+    pattern: /^the SLP token lookup for the profile address fails$/,
+    run (m, example, world) {
+      world.wallet.tokenLookupFails = true
     }
   },
   {
@@ -2170,6 +2241,131 @@ const handlers = [
         throw new Error('No profile page is loaded.')
       }
       world.profilePage.addressCopyTimeoutElapsed()
+    }
+  },
+  {
+    name: 'profile page shows N token icons',
+    pattern: /^the profile page shows (\d+) token icons$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      const expected = parseInt(m[1], 10)
+      const icons = world.profilePage.getTokenIcons()
+      if (icons.length !== expected) {
+        throw new Error(`Expected the profile page to show ${expected} token icons, got ${icons.length}.`)
+      }
+      const rendered = (renderProfileTokenIcons(icons).match(/data-token-id=/g) || []).length
+      if (rendered !== expected) {
+        throw new Error(`Rendered profile page shows ${rendered} token icons, expected ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows a token icon with the image',
+    pattern: /^the profile page shows a token icon for the SLP token (.+) with the image (.+)$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (icon.imageUrl !== expected) {
+        throw new Error(`Expected the token icon for ${tokenId} to use image "${expected}", got "${icon.imageUrl}".`)
+      }
+      if (!renderProfileTokenIcon(icon).includes(`src="${expected}"`)) {
+        throw new Error(`Rendered token icon for ${tokenId} does not use image "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows a jdenticon token icon',
+    pattern: /^the profile page shows a jdenticon token icon for the SLP token (.+)$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (!icon.isJdenticon) {
+        throw new Error(`Expected the token icon for ${tokenId} to be a jdenticon, got image "${icon.imageUrl}".`)
+      }
+      const html = renderProfileTokenIcon(icon)
+      if (!html.includes(`data-jdenticon-value="${tokenId}"`) || html.includes('<img')) {
+        throw new Error(`Rendered token icon for ${tokenId} is not a jdenticon.`)
+      }
+    }
+  },
+  {
+    name: 'token icon has the tooltip',
+    pattern: /^the token icon for the SLP token (.+) has the tooltip (.+)$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (icon.tooltip !== expected) {
+        throw new Error(`Expected the token icon for ${tokenId} to have tooltip "${expected}", got "${icon.tooltip}".`)
+      }
+      if (!renderProfileTokenIcon(icon).includes(`title="${expected}"`)) {
+        throw new Error(`Rendered token icon for ${tokenId} does not carry the tooltip "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'token icon links to explorer in a new tab',
+    pattern: /^the token icon for the SLP token (.+) links to (.+) in a new tab$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const expected = resolveTemplate(m[2], example)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (icon.explorerUrl !== expected) {
+        throw new Error(`Expected the token icon for ${tokenId} to link to "${expected}", got "${icon.explorerUrl}".`)
+      }
+      const html = renderProfileTokenIcon(icon)
+      if (!html.includes(`href="${expected}"`)) {
+        throw new Error(`Rendered token icon for ${tokenId} does not link to "${expected}".`)
+      }
+      if (!html.includes('target="_blank"')) {
+        throw new Error(`Rendered token icon for ${tokenId} does not open in a new tab.`)
+      }
+    }
+  },
+  {
+    name: 'token icon has the accessible label',
+    pattern: /^the token icon for the SLP token (.+) has the accessible label "([^"]+)"$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (icon.label !== expected) {
+        throw new Error(`Expected the token icon for ${tokenId} to have label "${expected}", got "${icon.label}".`)
+      }
+      if (!renderProfileTokenIcon(icon).includes(`aria-label="${expected}"`)) {
+        throw new Error(`Rendered token icon for ${tokenId} does not have the accessible label "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'token icon is N pixels wide',
+    pattern: /^the token icon for the SLP token (.+) is (\d+) pixels wide$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const expected = parseInt(m[2], 10)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (!renderProfileTokenIcon(icon).includes(`width="${expected}"`)) {
+        throw new Error(`Rendered token icon for ${tokenId} is not ${expected} pixels wide.`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows no token icons',
+    pattern: /^the profile page shows no token icons$/,
+    run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      const icons = world.profilePage.getTokenIcons()
+      if (icons.length !== 0) {
+        throw new Error(`Expected no token icons, got ${icons.length}.`)
+      }
+      if (renderProfileTokenIcons(icons) !== '') {
+        throw new Error('Rendered profile page unexpectedly shows token icons.')
+      }
     }
   },
   {

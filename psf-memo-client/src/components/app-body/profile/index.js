@@ -19,6 +19,7 @@ import PostOptionsMenu from '../../post-feed/post-options-menu'
 import PostThreadModal from '../../post-thread-modal'
 import MuteResult from './mute-result'
 import ProfileAddress from './profile-address'
+import ProfileTokenIcons from './profile-token-icons'
 import '../../../App.css'
 import './profile.css'
 
@@ -76,6 +77,7 @@ function Profile (props) {
   const [showMuteResultModal, setShowMuteResultModal] = useState(false)
   const [muteResult, setMuteResult] = useState(null)
   const [addressCopied, setAddressCopied] = useState(false)
+  const [tokenIcons, setTokenIcons] = useState([])
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -139,6 +141,7 @@ function Profile (props) {
   useEffect(() => {
     let page = null
     setAddressCopied(false)
+    setTokenIcons([])
 
     const loadProfile = async () => {
       setLoading(true)
@@ -158,6 +161,7 @@ function Profile (props) {
           myAddr,
           memoFollow,
           memoMute,
+          tokenSource: wallet,
           copyToClipboard: (text) => appUtil.copyToClipboard(text),
           onAddressCopyChange: setAddressCopied
         })
@@ -172,6 +176,7 @@ function Profile (props) {
         setProfilePicUrl(profilePic?.url || null)
         setPosts(pageData.posts || [])
         setPagination(pageData.pagination || null)
+        setTokenIcons(pageData.tokenIcons || [])
         setProfilePage(page)
         setProfiles({})
       } catch (err) {
@@ -282,6 +287,7 @@ function Profile (props) {
                 Unmute
               </Button>
             )}
+            <ProfileTokenIcons tokens={tokenIcons} />
           </Col>
 
           <Col lg={9} md={8} className='profile-posts'>

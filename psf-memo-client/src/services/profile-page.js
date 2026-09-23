@@ -13,6 +13,7 @@
 
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-result')
+const { buildTokenIcons } = require('./profile-token-icons')
 
 const PROFILE_PATH_PREFIX = '/profile'
 const MUTE_SUCCESS_MESSAGE = 'Your mute was broadcast to the Bitcoin Cash network.'
@@ -26,7 +27,9 @@ class ProfilePage {
     this.myAddr = deps.myAddr || null
     this.memoFollow = deps.memoFollow || null
     this.memoMute = deps.memoMute || null
+    this.tokenSource = deps.tokenSource || null
     this.posts = []
+    this.tokenIcons = []
     this.pagination = null
     this.followState = null
     this.muteState = null
@@ -48,12 +51,14 @@ class ProfilePage {
     this.pagination = data.pagination || null
     this.followState = await this._loadState('getFollowState')
     this.muteState = await this._loadState('getMuteState')
+    await this.loadTokenIcons()
 
     return {
       posts: this.posts,
       pagination: this.pagination,
       followState: this.followState,
       muteState: this.muteState,
+      tokenIcons: this.tokenIcons,
       isOwnProfile: this.isOwnProfile()
     }
   }
@@ -75,6 +80,61 @@ class ProfilePage {
       return this.memoDb[method](this.myAddr, this.addr)
     }
     return false
+  }
+
+  // Load the SLP token icons for the profile address through the injected
+  // token source. A missing source or a token lookup failure is silent: the
+  // page simply shows no token icons.
+  async loadTokenIcons () {
+    this.tokenIcons = []
+    if (!this.tokenSource || typeof this.tokenSource.listTokens !== 'function' || !this.addr) {
+      return this.tokenIcons
+    }
+
+    try {
+      const tokens = await this.tokenSource.listTokens(this.addr)
+      const enriched = await this._withMutableData(tokens)
+      this.tokenIcons = buildTokenIcons(enriched)
+    } catch (err) {
+      this.tokenIcons = []
+    }
+
+    return this.tokenIcons
+  }
+
+  getTokenIcons () {
+    return this.tokenIcons
+  }
+
+  // Fill in each token's mutable data when the token list did not already
+  // carry it. Prefer minimal-slp-wallet's getTokenData2, which returns the
+  // resolved token media (mutableData.tokenIcon / fullSizedUrl); fall back to
+  // getTokenData for wallets that only expose that. A single token's metadata
+  // failure only costs that token its image; it does not hide the other icons.
+  async _withMutableData (tokens) {
+    if (!Array.isArray(tokens)) return []
+    const fetchTokenData = this._tokenDataFetcher()
+    if (!fetchTokenData) return tokens
+
+    return Promise.all(tokens.map(async (token) => {
+      if (!token || token.mutableData) return token
+      try {
+        const data = await fetchTokenData(token.tokenId)
+        return { ...token, mutableData: (data && data.mutableData) || null }
+      } catch (err) {
+        return { ...token, mutableData: null }
+      }
+    }))
+  }
+
+  _tokenDataFetcher () {
+    if (typeof this.tokenSource.getTokenData2 === 'function') {
+      return (tokenId) => this.tokenSource.getTokenData2(tokenId)
+    }
+    if (typeof this.tokenSource.getTokenData === 'function') {
+      return (tokenId) => this.tokenSource.getTokenData(tokenId)
+    }
+    return null
   }
 
   isOwnProfile () {
