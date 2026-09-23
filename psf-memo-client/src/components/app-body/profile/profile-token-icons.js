@@ -72,3 +72,7 @@ ProfileTokenIcons.ProfileTokenIcon = ProfileTokenIcon
 ProfileTokenIcons.TOKEN_ICON_SIZE = TOKEN_ICON_SIZE
 
 module.exports = ProfileTokenIcons
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-23T23:16:37.424Z","module_hash":"100e78cf75f31f215045ed8174562cbe0c287ce5fda2eeb001de7def5d305979","functions":[{"id":"func/ProfileTokenImage","name":"ProfileTokenImage","line":23,"end_line":31,"hash":"8081e9b604a84aef9811fb1adb8f571d623882522b6b8b12b8007e301516232e"},{"id":"func/ProfileTokenJdenticon","name":"ProfileTokenJdenticon","line":33,"end_line":39,"hash":"fc7280c0087867c1e2cd6421cb2fd1e8aa5952c4586a5aea95e18d136d47fc1d"},{"id":"func/ProfileTokenIcon","name":"ProfileTokenIcon","line":41,"end_line":59,"hash":"6db95ef5a2d2e2253c765823df1d695c177f3fa65e099efa61b4e7bfb41a2534"},{"id":"func/ProfileTokenIcons","name":"ProfileTokenIcons","line":61,"end_line":69,"hash":"08f12a59c803ab0ac6900c67dfc8840eef0d9b89163d0370077226dbb90c86c8"}]}
+// mutate4javascript-manifest-end

@@ -153,6 +153,23 @@ test('loadTokenIcons shows no icons without a token source', async () => {
   assert.deepEqual(page.getTokenIcons(), [])
 })
 
+test('loadTokenIcons does not list tokens when the page has no address', async () => {
+  let listed = 0
+  const tokenSource = {
+    async listTokens () {
+      listed++
+      return [makeToken(ALPHA_ID, { mutableData: { tokenIcon: 'https://example.com/a.png' } })]
+    }
+  }
+  const page = new ProfilePage({ memoDb: makeMemoDb(), addr: null, tokenSource })
+
+  const icons = await page.loadTokenIcons()
+
+  assert.deepEqual(icons, [])
+  assert.deepEqual(page.getTokenIcons(), [])
+  assert.equal(listed, 0)
+})
+
 test('load returns the token icons it loaded', async () => {
   const tokenSource = {
     async listTokens () {

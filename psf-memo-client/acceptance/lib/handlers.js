@@ -835,6 +835,21 @@ function profileTokenIconFor (world, tokenId) {
   return icon
 }
 
+// Assert a token icon view-model field equals the expected example value and
+// that the rendered icon carries the matching HTML attribute. `label` names
+// the field in failure messages.
+function assertTokenIconField (world, m, example, field, attribute, label) {
+  const tokenId = resolveParam(m[1], example)
+  const expected = resolveParam(m[2], example)
+  const icon = profileTokenIconFor(world, tokenId)
+  if (icon[field] !== expected) {
+    throw new Error(`Expected the token icon for ${tokenId} to have ${label} "${expected}", got "${icon[field]}".`)
+  }
+  if (!renderProfileTokenIcon(icon).includes(`${attribute}="${expected}"`)) {
+    throw new Error(`Rendered token icon for ${tokenId} does not have the ${label} "${expected}".`)
+  }
+}
+
 // Handler registry. Each entry: { pattern, run }.
 // run receives (match, exampleStore, world, step).
 const handlers = [
@@ -2265,15 +2280,7 @@ const handlers = [
     name: 'profile page shows a token icon with the image',
     pattern: /^the profile page shows a token icon for the SLP token (.+) with the image (.+)$/,
     run (m, example, world) {
-      const tokenId = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const icon = profileTokenIconFor(world, tokenId)
-      if (icon.imageUrl !== expected) {
-        throw new Error(`Expected the token icon for ${tokenId} to use image "${expected}", got "${icon.imageUrl}".`)
-      }
-      if (!renderProfileTokenIcon(icon).includes(`src="${expected}"`)) {
-        throw new Error(`Rendered token icon for ${tokenId} does not use image "${expected}".`)
-      }
+      assertTokenIconField(world, m, example, 'imageUrl', 'src', 'image')
     }
   },
   {
@@ -2295,15 +2302,7 @@ const handlers = [
     name: 'token icon has the tooltip',
     pattern: /^the token icon for the SLP token (.+) has the tooltip (.+)$/,
     run (m, example, world) {
-      const tokenId = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const icon = profileTokenIconFor(world, tokenId)
-      if (icon.tooltip !== expected) {
-        throw new Error(`Expected the token icon for ${tokenId} to have tooltip "${expected}", got "${icon.tooltip}".`)
-      }
-      if (!renderProfileTokenIcon(icon).includes(`title="${expected}"`)) {
-        throw new Error(`Rendered token icon for ${tokenId} does not carry the tooltip "${expected}".`)
-      }
+      assertTokenIconField(world, m, example, 'tooltip', 'title', 'tooltip')
     }
   },
   {
@@ -2329,15 +2328,7 @@ const handlers = [
     name: 'token icon has the accessible label',
     pattern: /^the token icon for the SLP token (.+) has the accessible label "([^"]+)"$/,
     run (m, example, world) {
-      const tokenId = resolveParam(m[1], example)
-      const expected = resolveParam(m[2], example)
-      const icon = profileTokenIconFor(world, tokenId)
-      if (icon.label !== expected) {
-        throw new Error(`Expected the token icon for ${tokenId} to have label "${expected}", got "${icon.label}".`)
-      }
-      if (!renderProfileTokenIcon(icon).includes(`aria-label="${expected}"`)) {
-        throw new Error(`Rendered token icon for ${tokenId} does not have the accessible label "${expected}".`)
-      }
+      assertTokenIconField(world, m, example, 'label', 'aria-label', 'accessible label')
     }
   },
   {
