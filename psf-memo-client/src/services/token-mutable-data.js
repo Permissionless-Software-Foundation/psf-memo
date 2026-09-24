@@ -29,14 +29,11 @@ function tokenIconFromMutableData (mutableData) {
   return mutableData.tokenIcon || null
 }
 
-// Resolve a token's mutable-data record through the wallet, the same way the
-// /slp-tokens page does. Returns the resolved JSON record, or null when the
-// token has no mutable data or the wallet cannot resolve it. A mutable-data
-// value that is already a record is returned as-is.
-async function resolveTokenMutableData (wallet, tokenId) {
-  const tokenData = await wallet.getTokenData(tokenId)
-  const mutableData = tokenData && tokenData.mutableData
-  if (!mutableData) return null
+// Resolve one mutable-data value to its JSON record through the wallet. A
+// value that is already a record is returned as-is; an ipfs:// URI (or bare
+// CID) is resolved with cid2json. Returns null when the wallet cannot resolve
+// it or the value carries no usable CID.
+async function resolveMutableDataRecord (wallet, mutableData) {
   if (typeof mutableData === 'object') return mutableData
   if (typeof wallet.cid2json !== 'function') return null
 
@@ -45,6 +42,16 @@ async function resolveTokenMutableData (wallet, tokenId) {
 
   const resolved = await wallet.cid2json({ cid })
   return (resolved && resolved.json) || null
+}
+
+// Resolve a token's mutable-data record through the wallet, the same way the
+// /slp-tokens page does. Returns the resolved JSON record, or null when the
+// token has no mutable data.
+async function resolveTokenMutableData (wallet, tokenId) {
+  const tokenData = await wallet.getTokenData(tokenId)
+  const mutableData = tokenData && tokenData.mutableData
+  if (!mutableData) return null
+  return resolveMutableDataRecord(wallet, mutableData)
 }
 
 module.exports = {
