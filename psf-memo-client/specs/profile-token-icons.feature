@@ -10,7 +10,9 @@
 # SLP tokens held by that profile address. Each icon is the token's
 # mutable-data icon when one exists (the full-sized URL wins when the mutable
 # data carries an http fullSizedUrl), otherwise a jdenticon derived from the
-# token ID. Hovering a token icon shows the token ID as a native tooltip;
+# token ID. The mutable data is the token's IPFS mutable-data record, resolved
+# the same way the /slp-tokens page resolves it. Hovering a token icon shows
+# the token ID as a native tooltip;
 # clicking it opens the Tokentiger explorer for the token in a new tab. Token
 # icons are about 30 pixels wide and wrap to multiple rows. A profile that
 # holds no SLP tokens, or whose token list cannot be loaded, shows no token
