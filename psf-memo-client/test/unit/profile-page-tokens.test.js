@@ -140,6 +140,20 @@ test('loadTokenIcons does not re-fetch mutable data already on the token', async
   assert.equal(page.getTokenIcons()[0].imageUrl, 'https://example.com/a.png')
 })
 
+test('_withMutableData leaves tokens untouched when the wallet cannot fetch mutable data', async () => {
+  const tokens = [makeToken(ALPHA_ID)]
+  const tokenSource = {
+    async listTokens () {
+      return tokens
+    }
+  }
+  const page = new ProfilePage({ memoDb: makeMemoDb(), addr: ADDR, tokenSource })
+
+  const enriched = await page._withMutableData(tokens)
+
+  assert.equal(enriched, tokens)
+})
+
 test('loadTokenIcons keeps other tokens when one mutable-data lookup fails', async () => {
   const tokenSource = {
     async listTokens () {

@@ -60,3 +60,7 @@ module.exports = {
   tokenIconFromMutableData,
   resolveTokenMutableData
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-24T00:13:48.031Z","module_hash":"d0aa39c7c5915d39b0e6d13c914609be9b7ba7b5992f99dd117312045e99d645","functions":[{"id":"func/parseMutableDataCid","name":"parseMutableDataCid","line":16,"end_line":20,"hash":"d86ac0e0a6e672e6f7075d31ed895e3b424ecb5dcf8a39f4a9ceb947ceb83103"},{"id":"func/tokenIconFromMutableData","name":"tokenIconFromMutableData","line":24,"end_line":30,"hash":"d66ca17720934a299d8f48b4caa970ddac744521f04bfa3cc676f0e7a13610a8"},{"id":"func/resolveMutableDataRecord","name":"resolveMutableDataRecord","line":36,"end_line":45,"hash":"0611674972e0d530b46d22f386348674c53771efeccc2e42c109020e786d4c2d"},{"id":"func/resolveTokenMutableData","name":"resolveTokenMutableData","line":50,"end_line":55,"hash":"27556bf084910c37d61f02401077a6a40aeb77842e705b0d75d173cef7f783da"}]}
+// mutate4javascript-manifest-end
