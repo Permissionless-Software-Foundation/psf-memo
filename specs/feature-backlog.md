@@ -31,21 +31,42 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Profile token name tooltip (task `profile-token-name-tooltip`):** the
-  `/profile/:addr` token icons now start with the token ID as the tooltip and
-  replace it with the token's genesis name once the token data is retrieved;
-  the token ID remains when genesis has no name or the token data cannot be
-  retrieved. Client-only; no Memo broadcast, no DB/indexer change. Spec:
-  `psf-memo-client/specs/profile-token-icons.feature` (scenarios 4, 5, 11, 12).
+- None.
 
 ## Recently completed
+
+- **Profile token name tooltip (2026-09-24):** the `/profile/:addr` token icons
+  now load in two phases. Phase one lists the profile's SLP tokens and renders
+  an icon per token immediately, with the token ID as the native tooltip and a
+  jdenticon placeholder. Phase two retrieves each token's token data (genesis
+  record + IPFS mutable-data record) in one `getTokenData` call, then rebuilds
+  the icons: the tooltip becomes the token's genesis name and the mutable-data
+  image resolves. A token whose genesis record has no name, or whose token data
+  cannot be retrieved, keeps the token-ID tooltip and its jdenticon. The
+  controller exposes `loadTokenIcons()`/`loadTokenData()` and notifies an
+  injected `onTokenIconsChange` listener so the React shell updates the
+  sidebar; a destroyed page does not notify. The shared
+  `psf-memo-client/src/services/token-mutable-data.js` now also returns the
+  genesis name. Client-only; no Memo broadcast, no DB/indexer change. Spec:
+  `psf-memo-client/specs/profile-token-icons.feature` (scenarios 4, 5, 11, 12).
+  Merged to `master` at `03ad934` (fast-forward; architect review commit
+  `79cf584`; the later tip `03ad934` adds only the record and summary, so the
+  record `docs/reviews/profile-token-name-tooltip-verification.json` is valid
+  for the merged tree). Independent acceptance check after merge: 25/25 example
+  executions. `verify.sh client` pass 5/5 at `79cf584` (unit 629/0, property
+  172/0, acceptance 41 suites, lint ok, build ok); language mutation 61 killed
+  / 0 survived (`profile-page.js` 50, `token-mutable-data.js` 8,
+  `profile-token-icons.js` 3); soft Gherkin mutation 28/28 killed; max CC 6 /
+  CRAP 6.0. Architect summary:
+  `docs/reviews/profile-token-name-tooltip-summary.md`.
 
 - **Profile token icons (2026-09-23):** the `/profile/:addr` sidebar now shows
   a row of small (30 px) SLP token icons below the Follow/Mute controls for the
   SLP tokens held by that profile address. Each icon prefers the token's
   mutable-data image (an http `fullSizedUrl` over the `tokenIcon`) and
   otherwise renders a jdenticon keyed on the token id; icons carry the token id
-  as a native tooltip, expose the ticker as an accessible label, link to
+  as a native tooltip (later replaced by the genesis name; see the token name
+  tooltip entry), expose the ticker as an accessible label, link to
   `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab, and wrap
   to multiple rows. A profile with no tokens, or a token lookup that fails,
   shows no icons and does not error. The shared

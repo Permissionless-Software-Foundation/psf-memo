@@ -760,6 +760,28 @@ that a single user-facing feature may require specs in more than one component.
     `profile-token-icons-fetch` (`12def3d` coder, `cf278d3` refactorer, review
     `073b1e7`).
 
+56. **Profile token icons load in two phases with an injected change listener
+    (#54/#55).** `ProfilePage.loadTokenIcons()` lists the profile's SLP tokens
+    and renders each icon immediately with a jdenticon and the token ID as the
+    tooltip; `ProfilePage.loadTokenData()` then retrieves each token's token
+    data (genesis + IPFS mutable data) in one `getTokenData` call and rebuilds
+    the icons, setting the tooltip to the genesis name and resolving the image.
+    A token whose genesis record has no name, or whose token data cannot be
+    retrieved, keeps the token-ID tooltip and jdenticon. The controller
+    notifies an injected `onTokenIconsChange` listener so the React shell
+    updates the sidebar; `destroy()` suppresses late notifications so a stale
+    async load cannot overwrite a newer page. The pure decision is one line in
+    `buildTokenIcon` (`token.genesisName || token.tokenId`); the shared
+    `token-mutable-data.js` `resolveTokenData` returns `{ name, mutableData }`.
+    The `open profile page` acceptance step must therefore make phase one
+    observable without awaiting phase two (a separate `token data is retrieved`
+    step drives it). Soft Gherkin mutation of the 12-scenario
+    `profile-token-icons.feature` was 28/28 killed; language mutation 61 killed
+    / 0 survived (`profile-page.js` 50, `token-mutable-data.js` 8,
+    `profile-token-icons.js` 3); max CC 6 / CRAP 6.0. Spec:
+    `psf-memo-client/specs/profile-token-icons.feature` (scenarios 4, 5, 11,
+    12).
+
 ---
 
 ## 10. Run / verify the app
@@ -810,37 +832,31 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `97067aa` (`Record profile-token-icons-fetch architect
+Current `master` HEAD: `03ad934` (`Record profile-token-name-tooltip architect
 review and verification`). The client record
-`docs/reviews/profile-token-icons-fetch-verification.json` names the architect
-code review commit `073b1e7`; the later tip `97067aa` adds only `docs/reviews/`
+`docs/reviews/profile-token-name-tooltip-verification.json` names the architect
+code review commit `79cf584`; the later tip `03ad934` adds only `docs/reviews/`
 (record + summary), so the record is valid for the merged tree (extends #38).
-This task adds a row of small (30 px) SLP token icons to the `/profile/:addr`
-sidebar, below the Follow/Mute controls, for the SLP tokens held by that
-profile address. Each icon prefers the token's mutable-data image (an http
-`fullSizedUrl` over the `tokenIcon`) and otherwise renders a jdenticon keyed on
-the token id; icons carry the token id as a native `title` tooltip, expose the
-ticker as an accessible label, link to
-`https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab, and wrap to
-multiple rows. A profile with no tokens, or a token lookup that fails, shows no
-icons and does not error. Resolution is shared with `/slp-tokens` through
-`psf-memo-client/src/services/token-mutable-data.js`, which reads the token's
-`ipfs://` mutable-data URI, fetches it with `wallet.cid2json`, and prefers an
-http `fullSizedUrl`; `ProfilePage` loads tokens through an injected
-`tokenSource`, and `src/components/app-body/profile/profile-token-icons.js` is
-the plain-`React.createElement` render seam shared with the Node adapter
-`acceptance/lib/render-profile-token-icons.js`. Client-only; no Memo broadcast,
-no DB/indexer change. The specifier merged fast-forward: the initial feature to
-`2e6de9b` (record `profile-token-icons-verification.json`, review `6e76766`)
-and the mutable-data fetch fix to `97067aa` (record
-`profile-token-icons-fetch-verification.json`, review `073b1e7`), running only
-the merged feature's acceptance test (17/17 example executions) after each
-merge. Final `verify.sh client` was pass 5/5 at `073b1e7` (unit 618/0, property
-168/0, acceptance 41 suites, lint ok, build ok); the fix's language mutation was
-50 killed / 0 survived (`token-mutable-data.js` 7, `profile-token-icons.js` 2,
-`profile-page.js` 41); soft Gherkin mutation 18/18 killed; max CC 6 / CRAP 6.0.
-Architect summaries: `docs/reviews/profile-token-icons-summary.md`,
-`docs/reviews/profile-token-icons-fetch-summary.md`.
+This task extends the `/profile/:addr` token icons (#54/#55) to load in two
+phases: the icons render from the token list with the token ID as the tooltip,
+then the token data (genesis + IPFS mutable data) is retrieved and the tooltip
+becomes the token's genesis name, with the token ID kept when genesis has no
+name or the token data cannot be retrieved. The controller exposes
+`loadTokenIcons()`/`loadTokenData()` and notifies an injected
+`onTokenIconsChange` listener; a destroyed page does not notify. The earlier
+feature/fix merged to `2e6de9b` and `97067aa` (records
+`profile-token-icons-verification.json` review `6e76766`, and
+`profile-token-icons-fetch-verification.json` review `073b1e7`); this extension
+merged to `03ad934` (review `79cf584`). After each merge the specifier ran only
+the merged feature's acceptance test as the independent check (17/17 for the
+first two, 25/25 for this extension). `verify.sh client` was pass 5/5 at
+`79cf584` (unit 629/0, property 172/0, acceptance 41 suites, lint ok, build
+ok); language mutation 61 killed / 0 survived (`profile-page.js` 50,
+`token-mutable-data.js` 8, `profile-token-icons.js` 3); soft Gherkin mutation
+28/28 killed; max CC 6 / CRAP 6.0. Architect summaries:
+`docs/reviews/profile-token-icons-summary.md`,
+`docs/reviews/profile-token-icons-fetch-summary.md`,
+`docs/reviews/profile-token-name-tooltip-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),
