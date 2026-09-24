@@ -185,6 +185,47 @@ test('loadTokenData does not re-fetch token data already resolved', async () => 
   assert.equal(page.getTokenIcons()[0].tooltip, 'Alpha Token')
 })
 
+test('loadTokenData does not re-fetch a token that already has a genesis name', async () => {
+  let requested = 0
+  const tokenSource = {
+    async listTokens () {
+      return [makeToken(ALPHA_ID, { genesisName: 'Alpha Token' })]
+    },
+    async getTokenData () {
+      requested++
+      return { genesisData: { name: 'Other' }, mutableData: null }
+    }
+  }
+  const page = new ProfilePage({ memoDb: makeMemoDb(), addr: ADDR, tokenSource })
+
+  await page.loadTokenIcons()
+  await page.loadTokenData()
+
+  assert.equal(requested, 0)
+  assert.equal(page.getTokenIcons()[0].tooltip, 'Alpha Token')
+})
+
+test('loadTokenData does not re-fetch a token that already has mutable data', async () => {
+  let requested = 0
+  const tokenSource = {
+    async listTokens () {
+      return [makeToken(ALPHA_ID, { mutableData: { tokenIcon: 'https://example.com/a.png' } })]
+    },
+    async getTokenData () {
+      requested++
+      return { genesisData: { name: 'Other' }, mutableData: null }
+    }
+  }
+  const page = new ProfilePage({ memoDb: makeMemoDb(), addr: ADDR, tokenSource })
+
+  await page.loadTokenIcons()
+  await page.loadTokenData()
+
+  assert.equal(requested, 0)
+  assert.equal(page.getTokenIcons()[0].imageUrl, 'https://example.com/a.png')
+  assert.equal(page.getTokenIcons()[0].tooltip, ALPHA_ID)
+})
+
 test('loadTokenData leaves the icons untouched when the wallet cannot fetch token data', async () => {
   const tokens = [makeToken(ALPHA_ID)]
   const tokenSource = {
@@ -199,6 +240,31 @@ test('loadTokenData leaves the icons untouched when the wallet cannot fetch toke
   await page.loadTokenData()
 
   assert.equal(page.getTokenIcons(), before)
+})
+
+test('loadTokenData does nothing when the token list is empty', async () => {
+  const changes = []
+  const tokenSource = {
+    async listTokens () {
+      return []
+    },
+    async getTokenData () {
+      return { genesisData: { name: 'Other' }, mutableData: null }
+    }
+  }
+  const page = new ProfilePage({
+    memoDb: makeMemoDb(),
+    addr: ADDR,
+    tokenSource,
+    onTokenIconsChange: (icons) => changes.push(icons)
+  })
+
+  await page.loadTokenIcons()
+  const before = page.getTokenIcons()
+  await page.loadTokenData()
+
+  assert.equal(page.getTokenIcons(), before)
+  assert.equal(changes.length, 1)
 })
 
 test('loadTokenIcons shows no icons and does not throw when the lookup fails', async () => {
@@ -273,4 +339,28 @@ test('loadTokenIcons and loadTokenData notify the token icons change callback', 
   await page.loadTokenData()
 
   assert.deepEqual(changes, [[ALPHA_ID], ['Alpha Token']])
+})
+
+test('a destroyed page does not notify the token icons change callback', async () => {
+  const changes = []
+  const tokenSource = {
+    async listTokens () {
+      return [makeToken(ALPHA_ID)]
+    },
+    async getTokenData () {
+      return { genesisData: { name: 'Alpha Token' }, mutableData: null }
+    }
+  }
+  const page = new ProfilePage({
+    memoDb: makeMemoDb(),
+    addr: ADDR,
+    tokenSource,
+    onTokenIconsChange: (icons) => changes.push(icons)
+  })
+
+  await page.loadTokenIcons()
+  page.destroy()
+  await page.loadTokenData()
+
+  assert.equal(changes.length, 1)
 })
