@@ -82,13 +82,11 @@ function randomTokenList () {
 }
 
 // Independent restatements of the expected decisions.
-function isHttp (url) {
-  return typeof url === 'string' && /^https?:\/\//i.test(url)
-}
-
 function expectedImage (token) {
   const mutableData = token.mutableData || {}
-  if (isHttp(mutableData.fullSizedUrl)) return mutableData.fullSizedUrl
+  if (typeof mutableData.fullSizedUrl === 'string' && mutableData.fullSizedUrl.includes('http')) {
+    return mutableData.fullSizedUrl
+  }
   return mutableData.tokenIcon || null
 }
 

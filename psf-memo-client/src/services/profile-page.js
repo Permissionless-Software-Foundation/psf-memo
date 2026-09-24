@@ -14,6 +14,7 @@
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-result')
 const { buildTokenIcons } = require('./profile-token-icons')
+const { resolveTokenMutableData } = require('./token-mutable-data')
 
 const PROFILE_PATH_PREFIX = '/profile'
 const MUTE_SUCCESS_MESSAGE = 'Your mute was broadcast to the Bitcoin Cash network.'
@@ -107,34 +108,23 @@ class ProfilePage {
   }
 
   // Fill in each token's mutable data when the token list did not already
-  // carry it. Prefer minimal-slp-wallet's getTokenData2, which returns the
-  // resolved token media (mutableData.tokenIcon / fullSizedUrl); fall back to
-  // getTokenData for wallets that only expose that. A single token's metadata
-  // failure only costs that token its image; it does not hide the other icons.
+  // carry it. This resolves the token's IPFS mutable-data record through the
+  // wallet the same way the /slp-tokens page does (getTokenData -> cid2json).
+  // A single token's resolution failure only costs that token its image; it
+  // does not hide the other icons.
   async _withMutableData (tokens) {
     if (!Array.isArray(tokens)) return []
-    const fetchTokenData = this._tokenDataFetcher()
-    if (!fetchTokenData) return tokens
+    if (!this.tokenSource || typeof this.tokenSource.getTokenData !== 'function') return tokens
 
     return Promise.all(tokens.map(async (token) => {
       if (!token || token.mutableData) return token
       try {
-        const data = await fetchTokenData(token.tokenId)
-        return { ...token, mutableData: (data && data.mutableData) || null }
+        const mutableData = await resolveTokenMutableData(this.tokenSource, token.tokenId)
+        return { ...token, mutableData }
       } catch (err) {
         return { ...token, mutableData: null }
       }
     }))
-  }
-
-  _tokenDataFetcher () {
-    if (typeof this.tokenSource.getTokenData2 === 'function') {
-      return (tokenId) => this.tokenSource.getTokenData2(tokenId)
-    }
-    if (typeof this.tokenSource.getTokenData === 'function') {
-      return (tokenId) => this.tokenSource.getTokenData(tokenId)
-    }
-    return null
   }
 
   isOwnProfile () {

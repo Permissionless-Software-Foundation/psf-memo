@@ -71,18 +71,22 @@ test('loadTokenIcons enriches tokens with their mutable data', async () => {
   assert.equal(page.getTokenIcons()[0].imageUrl, 'https://example.com/a.png')
 })
 
-test('loadTokenIcons prefers getTokenData2 when the wallet exposes it', async () => {
+test('loadTokenIcons resolves the token IPFS mutable data through cid2json', async () => {
   const calls = []
   const tokenSource = {
     async listTokens () {
       return [makeToken(ALPHA_ID)]
     },
-    async getTokenData2 (tokenId) {
-      calls.push(['data2', tokenId])
-      return { mutableData: { tokenIcon: 'https://example.com/a.png' } }
-    },
     async getTokenData (tokenId) {
-      calls.push(['data', tokenId])
+      calls.push(['getTokenData', tokenId])
+      return { mutableData: 'ipfs://bafyAlpha' }
+    },
+    async cid2json ({ cid }) {
+      calls.push(['cid2json', cid])
+      return { json: { tokenIcon: 'https://example.com/a.png' } }
+    },
+    async getTokenData2 (tokenId) {
+      calls.push(['getTokenData2', tokenId])
       return { mutableData: { tokenIcon: 'https://example.com/other.png' } }
     }
   }
@@ -90,8 +94,31 @@ test('loadTokenIcons prefers getTokenData2 when the wallet exposes it', async ()
 
   await page.loadTokenIcons()
 
-  assert.deepEqual(calls, [['data2', ALPHA_ID]])
+  assert.deepEqual(calls, [['getTokenData', ALPHA_ID], ['cid2json', 'bafyAlpha']])
   assert.equal(page.getTokenIcons()[0].imageUrl, 'https://example.com/a.png')
+})
+
+test('loadTokenIcons isolates a per-token cid2json failure', async () => {
+  const tokenSource = {
+    async listTokens () {
+      return [makeToken(ALPHA_ID), makeToken(BETA_ID)]
+    },
+    async getTokenData (tokenId) {
+      return { mutableData: `ipfs://cid-${tokenId.slice(0, 1)}` }
+    },
+    async cid2json ({ cid }) {
+      if (cid === 'cid-1') throw new Error('ipfs unavailable')
+      return { json: { tokenIcon: 'https://example.com/b.png' } }
+    }
+  }
+  const page = new ProfilePage({ memoDb: makeMemoDb(), addr: ADDR, tokenSource })
+
+  await page.loadTokenIcons()
+
+  const icons = page.getTokenIcons()
+  assert.equal(icons.length, 2)
+  assert.equal(icons[0].isJdenticon, true)
+  assert.equal(icons[1].imageUrl, 'https://example.com/b.png')
 })
 
 test('loadTokenIcons does not re-fetch mutable data already on the token', async () => {

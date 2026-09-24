@@ -11,6 +11,7 @@ import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons'
 // Local libraries
 import TokenCard from './token-card'
 import RefreshTokenBalance from './refresh-tokens'
+import { parseMutableDataCid, tokenIconFromMutableData } from '../../../services/token-mutable-data'
 
 const SlpTokens = (props) => {
   const { appData } = props
@@ -37,16 +38,6 @@ const SlpTokens = (props) => {
   // This function triggers the on-click function within the refresh-tokens.js button.
   const refreshTokens = async () => {
     await refreshTokenButtonRef.current.handleRefreshTokenBalance()
-  }
-
-  // Get Cid from url
-  const parseCid = (url) => {
-    // get the cid from the url format 'ipfs://bafybeicem27xbzs65uvbcgykcmscsgln3lmhbfrcoec3gdttkdgtxv5acq
-    if (url && url.includes('ipfs://')) {
-      const cid = url.split('ipfs://')[1]
-      return cid
-    }
-    return url
   }
 
   //  This function loads the token data .
@@ -87,18 +78,14 @@ const SlpTokens = (props) => {
       if (!tokenData.mutableData) return false // Return false if no mutable data
 
       // Get the token icon from the mutable data
-      const cid = parseCid(tokenData.mutableData)
+      const cid = parseMutableDataCid(tokenData.mutableData)
       console.log('mutable data cid', cid)
 
       const { json } = await appData.wallet.cid2json({ cid })
       console.log('json: ', json)
       if (!json) return false
 
-      let iconUrl = json.tokenIcon
-
-      if (json.fullSizedUrl && json.fullSizedUrl.includes('http')) {
-        iconUrl = json.fullSizedUrl
-      }
+      const iconUrl = tokenIconFromMutableData(json)
       const userData = json.userData
       // Return icon url
       return { iconUrl, userData }

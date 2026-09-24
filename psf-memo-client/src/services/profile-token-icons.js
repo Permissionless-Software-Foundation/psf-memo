@@ -8,6 +8,8 @@
   React shell and the Node acceptance adapter share the same decisions.
 */
 
+const { tokenIconFromMutableData } = require('./token-mutable-data')
+
 const TOKENTIGER_BASE = 'https://explorer.tokentiger.com/?tokenid='
 
 // The Tokentiger explorer page for a token id.
@@ -15,16 +17,11 @@ function tokenExplorerUrl (tokenId) {
   return `${TOKENTIGER_BASE}${tokenId}`
 }
 
-function isHttpUrl (url) {
-  return typeof url === 'string' && /^https?:\/\//i.test(url)
-}
-
-// The image URL from a token's mutable data. An http fullSizedUrl wins; then
-// the tokenIcon. Anything else falls back to a jdenticon (null).
+// The image URL from a token's resolved mutable-data record. An http
+// fullSizedUrl wins; then the tokenIcon. Anything else falls back to a
+// jdenticon (null).
 function tokenIconUrl (token = {}) {
-  const mutableData = token.mutableData || {}
-  if (isHttpUrl(mutableData.fullSizedUrl)) return mutableData.fullSizedUrl
-  return mutableData.tokenIcon || null
+  return tokenIconFromMutableData(token.mutableData)
 }
 
 // The accessible label for a token: its ticker, its name, or the token id.
@@ -53,7 +50,6 @@ function buildTokenIcons (tokens = []) {
 module.exports = {
   TOKENTIGER_BASE,
   tokenExplorerUrl,
-  isHttpUrl,
   tokenIconUrl,
   tokenLabel,
   buildTokenIcon,

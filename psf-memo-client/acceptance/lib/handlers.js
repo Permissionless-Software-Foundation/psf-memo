@@ -112,17 +112,19 @@ function makeWallet (address) {
     utxos: [],
     broadcasts: [],
     tokenFixtures: {},
-    tokenData: {},
+    tokenMutableData: {},
+    tokenMutableJson: {},
     tokenLookupFails: false,
     listTokens: async function (addr) {
       if (this.tokenLookupFails) throw new Error('token lookup failed')
       return this.tokenFixtures[addr] || []
     },
     getTokenData: async function (tokenId) {
-      return this.tokenData[tokenId] || null
+      if (!(tokenId in this.tokenMutableData)) return null
+      return { mutableData: this.tokenMutableData[tokenId] }
     },
-    getTokenData2: async function (tokenId) {
-      return this.tokenData[tokenId] || null
+    cid2json: async function ({ cid }) {
+      return { json: this.tokenMutableJson[cid] || null }
     },
     getUtxos: async function () {
       return this.utxos
@@ -773,15 +775,15 @@ function loadProfileTokensFixture (world, name) {
     { tokenId: PROFILE_TOKEN_BETA, ticker: 'BETA', name: 'Beta Token' },
     { tokenId: PROFILE_TOKEN_GAMMA, ticker: 'GAMMA', name: 'Gamma Token' }
   ]
-  world.wallet.tokenData[PROFILE_TOKEN_ALPHA] = {
-    mutableData: { tokenIcon: 'https://example.com/icons/alpha.png' }
+  world.wallet.tokenMutableData[PROFILE_TOKEN_ALPHA] = 'ipfs://alpha-cid'
+  world.wallet.tokenMutableJson['alpha-cid'] = {
+    tokenIcon: 'https://example.com/icons/alpha.png'
   }
-  world.wallet.tokenData[PROFILE_TOKEN_BETA] = { mutableData: null }
-  world.wallet.tokenData[PROFILE_TOKEN_GAMMA] = {
-    mutableData: {
-      tokenIcon: 'https://example.com/icons/gamma.png',
-      fullSizedUrl: 'https://example.com/icons/gamma-full.png'
-    }
+  world.wallet.tokenMutableData[PROFILE_TOKEN_BETA] = null
+  world.wallet.tokenMutableData[PROFILE_TOKEN_GAMMA] = 'ipfs://gamma-cid'
+  world.wallet.tokenMutableJson['gamma-cid'] = {
+    tokenIcon: 'https://example.com/icons/gamma.png',
+    fullSizedUrl: 'https://example.com/icons/gamma-full.png'
   }
 }
 
