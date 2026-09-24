@@ -112,19 +112,20 @@ function makeWallet (address) {
     utxos: [],
     broadcasts: [],
     tokenFixtures: {},
-    tokenMutableData: {},
-    tokenMutableJson: {},
+    tokenData: {},
+    tokenJson: {},
+    tokenDataFailures: {},
     tokenLookupFails: false,
     listTokens: async function (addr) {
       if (this.tokenLookupFails) throw new Error('token lookup failed')
       return this.tokenFixtures[addr] || []
     },
     getTokenData: async function (tokenId) {
-      if (!(tokenId in this.tokenMutableData)) return null
-      return { mutableData: this.tokenMutableData[tokenId] }
+      if (this.tokenDataFailures[tokenId]) throw new Error('token data unavailable')
+      return this.tokenData[tokenId] || null
     },
     cid2json: async function ({ cid }) {
-      return { json: this.tokenMutableJson[cid] || null }
+      return { json: this.tokenJson[cid] || null }
     },
     getUtxos: async function () {
       return this.utxos
@@ -763,6 +764,7 @@ function loadRecentProfilesFixture (world, name) {
 const PROFILE_TOKEN_ALPHA = '1111111111111111111111111111111111111111111111111111111111111111'
 const PROFILE_TOKEN_BETA = '2222222222222222222222222222222222222222222222222222222222222222'
 const PROFILE_TOKEN_GAMMA = '3333333333333333333333333333333333333333333333333333333333333333'
+const PROFILE_TOKEN_DELTA = '4444444444444444444444444444444444444444444444444444444444444444'
 const PROFILE_TOKEN_HOLDER = 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
 
 function loadProfileTokensFixture (world, name) {
@@ -773,17 +775,31 @@ function loadProfileTokensFixture (world, name) {
   world.wallet.tokenFixtures[PROFILE_TOKEN_HOLDER] = [
     { tokenId: PROFILE_TOKEN_ALPHA, ticker: 'ALPHA', name: 'Alpha Token' },
     { tokenId: PROFILE_TOKEN_BETA, ticker: 'BETA', name: 'Beta Token' },
-    { tokenId: PROFILE_TOKEN_GAMMA, ticker: 'GAMMA', name: 'Gamma Token' }
+    { tokenId: PROFILE_TOKEN_GAMMA, ticker: 'GAMMA', name: 'Gamma Token' },
+    { tokenId: PROFILE_TOKEN_DELTA, ticker: 'DELTA' }
   ]
-  world.wallet.tokenMutableData[PROFILE_TOKEN_ALPHA] = 'ipfs://alpha-cid'
-  world.wallet.tokenMutableJson['alpha-cid'] = {
+  world.wallet.tokenData[PROFILE_TOKEN_ALPHA] = {
+    genesisData: { name: 'Alpha Token' },
+    mutableData: 'ipfs://alpha-cid'
+  }
+  world.wallet.tokenJson['alpha-cid'] = {
     tokenIcon: 'https://example.com/icons/alpha.png'
   }
-  world.wallet.tokenMutableData[PROFILE_TOKEN_BETA] = null
-  world.wallet.tokenMutableData[PROFILE_TOKEN_GAMMA] = 'ipfs://gamma-cid'
-  world.wallet.tokenMutableJson['gamma-cid'] = {
+  world.wallet.tokenData[PROFILE_TOKEN_BETA] = {
+    genesisData: { name: 'Beta Token' },
+    mutableData: null
+  }
+  world.wallet.tokenData[PROFILE_TOKEN_GAMMA] = {
+    genesisData: { name: 'Gamma Token' },
+    mutableData: 'ipfs://gamma-cid'
+  }
+  world.wallet.tokenJson['gamma-cid'] = {
     tokenIcon: 'https://example.com/icons/gamma.png',
     fullSizedUrl: 'https://example.com/icons/gamma-full.png'
+  }
+  world.wallet.tokenData[PROFILE_TOKEN_DELTA] = {
+    genesisData: {},
+    mutableData: null
   }
 }
 
@@ -842,7 +858,7 @@ function profileTokenIconFor (world, tokenId) {
 // the field in failure messages.
 function assertTokenIconField (world, m, example, field, attribute, label) {
   const tokenId = resolveParam(m[1], example)
-  const expected = resolveParam(m[2], example)
+  const expected = resolveText(m[2], example)
   const icon = profileTokenIconFor(world, tokenId)
   if (icon[field] !== expected) {
     throw new Error(`Expected the token icon for ${tokenId} to have ${label} "${expected}", got "${icon[field]}".`)
@@ -874,6 +890,13 @@ const handlers = [
     pattern: /^the SLP token lookup for the profile address fails$/,
     run (m, example, world) {
       world.wallet.tokenLookupFails = true
+    }
+  },
+  {
+    name: 'token data for SLP token cannot be retrieved',
+    pattern: /^the token data for the SLP token (.+) cannot be retrieved$/,
+    run (m, example, world) {
+      world.wallet.tokenDataFailures[resolveParam(m[1], example)] = true
     }
   },
   {
@@ -2261,6 +2284,16 @@ const handlers = [
     }
   },
   {
+    name: 'token data is retrieved',
+    pattern: /^the token data is retrieved$/,
+    async run (m, example, world) {
+      if (!world.profilePage) {
+        throw new Error('No profile page is loaded.')
+      }
+      await world.profilePage.loadTokenData()
+    }
+  },
+  {
     name: 'profile page shows N token icons',
     pattern: /^the profile page shows (\d+) token icons$/,
     run (m, example, world) {
@@ -2305,6 +2338,20 @@ const handlers = [
     pattern: /^the token icon for the SLP token (.+) has the tooltip (.+)$/,
     run (m, example, world) {
       assertTokenIconField(world, m, example, 'tooltip', 'title', 'tooltip')
+    }
+  },
+  {
+    name: 'token icon has the token ID as its tooltip',
+    pattern: /^the token icon for the SLP token (.+) has the token ID as its tooltip$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const icon = profileTokenIconFor(world, tokenId)
+      if (icon.tooltip !== tokenId) {
+        throw new Error(`Expected the token icon for ${tokenId} to have the token ID as its tooltip, got "${icon.tooltip}".`)
+      }
+      if (!renderProfileTokenIcon(icon).includes(`title="${tokenId}"`)) {
+        throw new Error(`Rendered token icon for ${tokenId} does not carry the token ID tooltip.`)
+      }
     }
   },
   {

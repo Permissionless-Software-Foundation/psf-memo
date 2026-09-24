@@ -206,6 +206,7 @@ test('loadTokenIcons enriches every token and isolates per-token failures', asyn
 
       const page = new ProfilePage({ addr: ADDR, tokenSource })
       await page.loadTokenIcons()
+      await page.loadTokenData()
       const icons = page.getTokenIcons()
       if (icons.length !== tokens.length) return false
 

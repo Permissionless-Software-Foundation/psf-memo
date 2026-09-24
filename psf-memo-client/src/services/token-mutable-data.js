@@ -44,20 +44,33 @@ async function resolveMutableDataRecord (wallet, mutableData) {
   return (resolved && resolved.json) || null
 }
 
+// Resolve a token's genesis name and mutable-data record through the wallet,
+// the same way the /slp-tokens page does. Returns { name, mutableData } (each
+// may be null), or null when the wallet has no token data for the id.
+async function resolveTokenData (wallet, tokenId) {
+  const tokenData = await wallet.getTokenData(tokenId)
+  if (!tokenData) return null
+
+  const name = (tokenData.genesisData && tokenData.genesisData.name) || null
+  const mutableData = tokenData.mutableData
+    ? await resolveMutableDataRecord(wallet, tokenData.mutableData)
+    : null
+  return { name, mutableData }
+}
+
 // Resolve a token's mutable-data record through the wallet, the same way the
 // /slp-tokens page does. Returns the resolved JSON record, or null when the
 // token has no mutable data.
 async function resolveTokenMutableData (wallet, tokenId) {
-  const tokenData = await wallet.getTokenData(tokenId)
-  const mutableData = tokenData && tokenData.mutableData
-  if (!mutableData) return null
-  return resolveMutableDataRecord(wallet, mutableData)
+  const tokenData = await resolveTokenData(wallet, tokenId)
+  return tokenData ? tokenData.mutableData : null
 }
 
 module.exports = {
   IPFS_PREFIX,
   parseMutableDataCid,
   tokenIconFromMutableData,
+  resolveTokenData,
   resolveTokenMutableData
 }
 

@@ -29,7 +29,8 @@ function tokenLabel (token = {}) {
   return token.ticker || token.name || token.tokenId
 }
 
-// The view model for one token icon.
+// The view model for one token icon. The tooltip is the token id until the
+// token's genesis name is retrieved, then the genesis name.
 function buildTokenIcon (token = {}) {
   const imageUrl = tokenIconUrl(token)
   return {
@@ -38,7 +39,7 @@ function buildTokenIcon (token = {}) {
     imageUrl,
     isJdenticon: !imageUrl,
     explorerUrl: tokenExplorerUrl(token.tokenId),
-    tooltip: token.tokenId
+    tooltip: token.genesisName || token.tokenId
   }
 }
 

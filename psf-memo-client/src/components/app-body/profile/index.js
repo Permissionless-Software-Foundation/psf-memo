@@ -163,7 +163,8 @@ function Profile (props) {
           memoMute,
           tokenSource: wallet,
           copyToClipboard: (text) => appUtil.copyToClipboard(text),
-          onAddressCopyChange: setAddressCopied
+          onAddressCopyChange: setAddressCopied,
+          onTokenIconsChange: setTokenIcons
         })
 
         const [profile, profilePic, pageData] = await Promise.all([
@@ -179,6 +180,12 @@ function Profile (props) {
         setTokenIcons(pageData.tokenIcons || [])
         setProfilePage(page)
         setProfiles({})
+
+        // Phase two: resolve each token's genesis name and mutable-data image
+        // asynchronously. onTokenIconsChange re-renders the sidebar when it
+        // completes.
+        page.loadTokenData()
+          .catch(() => {})
       } catch (err) {
         setError(err.message || 'Failed to load profile')
       }

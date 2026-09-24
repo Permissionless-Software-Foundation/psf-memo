@@ -14,7 +14,7 @@
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
 const { broadcastSuccessMessage, broadcastErrorMessage } = require('./broadcast-result')
 const { buildTokenIcons } = require('./profile-token-icons')
-const { resolveTokenMutableData } = require('./token-mutable-data')
+const { resolveTokenData } = require('./token-mutable-data')
 
 const PROFILE_PATH_PREFIX = '/profile'
 const MUTE_SUCCESS_MESSAGE = 'Your mute was broadcast to the Bitcoin Cash network.'
@@ -29,8 +29,11 @@ class ProfilePage {
     this.memoFollow = deps.memoFollow || null
     this.memoMute = deps.memoMute || null
     this.tokenSource = deps.tokenSource || null
+    this.onTokenIconsChange = deps.onTokenIconsChange || null
     this.posts = []
+    this.tokens = []
     this.tokenIcons = []
+    this.destroyed = false
     this.pagination = null
     this.followState = null
     this.muteState = null
@@ -83,23 +86,54 @@ class ProfilePage {
     return false
   }
 
-  // Load the SLP token icons for the profile address through the injected
-  // token source. A missing source or a token lookup failure is silent: the
-  // page simply shows no token icons.
+  // Phase one: list the SLP tokens held by the profile address and render an
+  // icon for each immediately, with the token ID as its tooltip. A missing
+  // source or a token lookup failure is silent: the page simply shows no
+  // token icons.
   async loadTokenIcons () {
-    this.tokenIcons = []
+    this.tokens = []
     if (!this.tokenSource || typeof this.tokenSource.listTokens !== 'function' || !this.addr) {
+      this._setTokenIcons([])
       return this.tokenIcons
     }
 
     try {
       const tokens = await this.tokenSource.listTokens(this.addr)
-      const enriched = await this._withMutableData(tokens)
-      this.tokenIcons = buildTokenIcons(enriched)
+      this.tokens = Array.isArray(tokens) ? tokens : []
     } catch (err) {
-      this.tokenIcons = []
+      this.tokens = []
     }
 
+    this._setTokenIcons(buildTokenIcons(this.tokens))
+    return this.tokenIcons
+  }
+
+  // Phase two: retrieve each token's token data (its genesis name and
+  // mutable-data record) through the wallet and rebuild the icons. The
+  // tooltip becomes the genesis name and the mutable-data image resolves. A
+  // token's token-data failure leaves that token's icon unchanged (token ID
+  // tooltip and jdenticon), so the other icons still update.
+  async loadTokenData () {
+    if (!Array.isArray(this.tokens) || this.tokens.length === 0) return this.tokenIcons
+    if (!this.tokenSource || typeof this.tokenSource.getTokenData !== 'function') return this.tokenIcons
+
+    const tokens = await Promise.all(this.tokens.map(async (token) => {
+      if (!token || token.genesisName || token.mutableData) return token
+      try {
+        const tokenData = await resolveTokenData(this.tokenSource, token.tokenId)
+        if (!tokenData) return token
+        return {
+          ...token,
+          genesisName: tokenData.name || null,
+          mutableData: tokenData.mutableData || null
+        }
+      } catch (err) {
+        return token
+      }
+    }))
+
+    this.tokens = tokens
+    this._setTokenIcons(buildTokenIcons(tokens))
     return this.tokenIcons
   }
 
@@ -107,24 +141,13 @@ class ProfilePage {
     return this.tokenIcons
   }
 
-  // Fill in each token's mutable data when the token list did not already
-  // carry it. This resolves the token's IPFS mutable-data record through the
-  // wallet the same way the /slp-tokens page does (getTokenData -> cid2json).
-  // A single token's resolution failure only costs that token its image; it
-  // does not hide the other icons.
-  async _withMutableData (tokens) {
-    if (!Array.isArray(tokens)) return []
-    if (!this.tokenSource || typeof this.tokenSource.getTokenData !== 'function') return tokens
-
-    return Promise.all(tokens.map(async (token) => {
-      if (!token || token.mutableData) return token
-      try {
-        const mutableData = await resolveTokenMutableData(this.tokenSource, token.tokenId)
-        return { ...token, mutableData }
-      } catch (err) {
-        return { ...token, mutableData: null }
-      }
-    }))
+  // Record the current icon view models and notify the injected listener (the
+  // React shell) so it can re-render. A destroyed page does not notify, so a
+  // stale async token-data load cannot overwrite a newer page's icons.
+  _setTokenIcons (icons) {
+    this.tokenIcons = icons
+    if (!this.destroyed && this.onTokenIconsChange) this.onTokenIconsChange(icons)
+    return this.tokenIcons
   }
 
   isOwnProfile () {
@@ -237,6 +260,7 @@ class ProfilePage {
   // Stop the pending confirmation timer without changing the confirmation
   // state. Used when the page unmounts or reloads.
   destroy () {
+    this.destroyed = true
     this._clearAddressCopyTimer()
     return this
   }

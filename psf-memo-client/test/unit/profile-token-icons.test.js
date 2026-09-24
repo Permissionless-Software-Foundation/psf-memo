@@ -98,6 +98,12 @@ test('buildTokenIcon marks a token without an image as a jdenticon', () => {
   assert.equal(icon.isJdenticon, true)
 })
 
+test('buildTokenIcon uses the genesis name as the tooltip once it is known', () => {
+  const icon = buildTokenIcon({ ...ALPHA, genesisName: 'Alpha Token' })
+
+  assert.equal(icon.tooltip, 'Alpha Token')
+})
+
 test('buildTokenIcons maps every token and tolerates a missing list', () => {
   const icons = buildTokenIcons([ALPHA, BETA, GAMMA])
 

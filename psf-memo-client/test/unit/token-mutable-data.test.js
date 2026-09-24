@@ -15,6 +15,7 @@ const assert = require('node:assert/strict')
 const {
   parseMutableDataCid,
   tokenIconFromMutableData,
+  resolveTokenData,
   resolveTokenMutableData
 } = require('../../src/services/token-mutable-data')
 
@@ -116,6 +117,55 @@ test('resolveTokenMutableData is null when the wallet cannot resolve the CID', a
 
   assert.equal(await resolveTokenMutableData(noCid2json, TOKEN_ID), null)
   assert.equal(await resolveTokenMutableData(emptyJson, TOKEN_ID), null)
+})
+
+test('resolveTokenData resolves the genesis name and mutable-data record once', async () => {
+  const calls = []
+  const wallet = {
+    async getTokenData (tokenId) {
+      calls.push(['getTokenData', tokenId])
+      return { genesisData: { name: 'Alpha Token' }, mutableData: 'ipfs://bafyAlpha' }
+    },
+    async cid2json ({ cid }) {
+      calls.push(['cid2json', cid])
+      return { json: { tokenIcon: 'https://example.com/a.png' } }
+    }
+  }
+
+  const tokenData = await resolveTokenData(wallet, TOKEN_ID)
+
+  assert.deepEqual(calls, [['getTokenData', TOKEN_ID], ['cid2json', 'bafyAlpha']])
+  assert.equal(tokenData.name, 'Alpha Token')
+  assert.deepEqual(tokenData.mutableData, { tokenIcon: 'https://example.com/a.png' })
+})
+
+test('resolveTokenData returns null when the wallet has no token data', async () => {
+  const wallet = { async getTokenData () { return null } }
+
+  assert.equal(await resolveTokenData(wallet, TOKEN_ID), null)
+})
+
+test('resolveTokenData has a null name and record without genesis or mutable data', async () => {
+  const wallet = {
+    async getTokenData () {
+      return { genesisData: {}, mutableData: null }
+    }
+  }
+
+  assert.deepEqual(await resolveTokenData(wallet, TOKEN_ID), { name: null, mutableData: null })
+})
+
+test('resolveTokenMutableData still exposes only the mutable-data record', async () => {
+  const wallet = {
+    async getTokenData () {
+      return { genesisData: { name: 'Alpha Token' }, mutableData: { tokenIcon: 'https://example.com/a.png' } }
+    }
+  }
+
+  assert.deepEqual(
+    await resolveTokenMutableData(wallet, TOKEN_ID),
+    { tokenIcon: 'https://example.com/a.png' }
+  )
 })
 
 test('resolveTokenMutableData is null for an empty CID and does not query the gateway', async () => {
