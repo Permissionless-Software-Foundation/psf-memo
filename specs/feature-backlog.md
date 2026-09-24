@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-23
+**Last updated**: 2026-09-24
 
 ---
 
@@ -43,23 +43,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
   as a native tooltip, expose the ticker as an accessible label, link to
   `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab, and wrap
   to multiple rows. A profile with no tokens, or a token lookup that fails,
-  shows no icons and does not error. The pure view model is
-  `psf-memo-client/src/services/profile-token-icons.js`; `ProfilePage` loads
-  tokens through an injected `tokenSource` (preferring `getTokenData2`), and
-  `src/components/app-body/profile/profile-token-icons.js` is the
+  shows no icons and does not error. The shared
+  `psf-memo-client/src/services/token-mutable-data.js` resolves each token's
+  `ipfs://` mutable data via `getTokenData` then `cid2json` (the same path as
+  `/slp-tokens`, which now shares the helper); `ProfilePage` loads tokens
+  through an injected `tokenSource`, `profile-token-icons.js` is the pure view
+  model, and `src/components/app-body/profile/profile-token-icons.js` is the
   plain-`React.createElement` render seam shared with the Node acceptance
   adapter (`acceptance/lib/render-profile-token-icons.js`). Client-only; no
   Memo broadcast, no DB/indexer change. Spec:
   `psf-memo-client/specs/profile-token-icons.feature`. Merged to `master` at
-  `2e6de9b` (fast-forward; architect review commit `6e76766`; the later
-  `2e6de9b` commit adds only the record and summary, so the record
-  `docs/reviews/profile-token-icons-verification.json` is valid for the merged
-  tree). Independent acceptance check after merge: 17/17 example executions.
-  `verify.sh client` pass 5/5 at `6e76766` (unit 605/0, property 161/0,
-  acceptance 41 suites, lint ok, build ok); language mutation 50 killed / 0
-  survived (`profile-page.js` 42, `profile-token-icons.js` 5, the component 3);
-  soft Gherkin mutation 18/18 killed with no survivors; max CC 5 / CRAP 5.0.
-  Architect summary: `docs/reviews/profile-token-icons-summary.md`.
+  `2e6de9b` for the initial feature and at `97067aa` for the mutable-data fetch
+  fix (fast-forwards; review commits `6e76766` and `073b1e7`; the later tip
+  commits add only records/summaries, so records
+  `docs/reviews/profile-token-icons-verification.json` and
+  `docs/reviews/profile-token-icons-fetch-verification.json` are valid for the
+  merged trees). Independent acceptance check after each merge: 17/17 example
+  executions. Final `verify.sh client` pass 5/5 at `073b1e7` (unit 618/0,
+  property 168/0, acceptance 41 suites, lint ok, build ok); language mutation
+  50 killed / 0 survived on the fix (`token-mutable-data.js` 7,
+  `profile-token-icons.js` 2, `profile-page.js` 41); soft Gherkin mutation
+  18/18 killed; max CC 6 / CRAP 6.0. Architect summaries:
+  `docs/reviews/profile-token-icons-summary.md`,
+  `docs/reviews/profile-token-icons-fetch-summary.md`.
 
 - **Profile address copy (2026-09-22):** the `/profile/:addr` sidebar address
   is now a button. Clicking it writes the profile's BCH cash address to the

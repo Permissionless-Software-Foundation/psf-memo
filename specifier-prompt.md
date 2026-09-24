@@ -723,26 +723,42 @@ that a single user-facing feature may require specs in more than one component.
 54. **Profile token icons reuse the pure view-model + presentational-component
     seam (#17/#22/#53 class), with a per-token failure boundary.** The
     `/profile/:addr` sidebar below the Follow/Mute controls shows 30 px SLP
-    token icons for the profile address's tokens. The icon/label/explorer
-    decisions live in the pure leaf
-    `psf-memo-client/src/services/profile-token-icons.js`; `ProfilePage` loads
-    tokens through an injected `tokenSource` (preferring `getTokenData2` over
-    `getTokenData`), isolates a per-token metadata failure, and swallows a
-    missing source or failed lookup as "no icons" rather than erroring the
-    page; `src/components/app-body/profile/profile-token-icons.js` is the
+    token icons for the profile address's tokens. Resolution is shared with
+    `/slp-tokens` through `psf-memo-client/src/services/token-mutable-data.js`
+    (`parseMutableDataCid` / `tokenIconFromMutableData` /
+    `resolveTokenMutableData`), which reads the token's `ipfs://` mutable-data
+    URI, fetches it with `wallet.cid2json`, and prefers an http `fullSizedUrl`
+    over `tokenIcon`; `ProfilePage` loads tokens through an injected
+    `tokenSource`, isolates a per-token metadata failure, and swallows a missing
+    source or failed lookup as "no icons" rather than erroring the page.
+    `profile-token-icons.js` is the pure view model and
+    `src/components/app-body/profile/profile-token-icons.js` is the
     plain-`React.createElement` render seam shared with the Node adapter
-    `acceptance/lib/render-profile-token-icons.js`. The mutable-data image
-    prefers an http `fullSizedUrl` over `tokenIcon`, else a jdenticon keyed on
-    the token id; each anchor carries the token id as a native `title` tooltip,
-    the ticker as its accessible label, and opens
-    `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab. The JSX
-    shell `src/components/app-body/profile/index.js` remains excluded from
-    `mutate4javascript`. Soft Gherkin mutation of
-    `profile-token-icons.feature` was 18 total / 18 killed / 0 survived (no
-    intrinsic equivalents); language mutation 50 killed / 0 survived
-    (`profile-page.js` 42, `profile-token-icons.js` 5, the component 3); max
-    CC 5 / CRAP 5.0. Spec:
-    `psf-memo-client/specs/profile-token-icons.feature`.
+    `acceptance/lib/render-profile-token-icons.js`. Each anchor carries the
+    token id as a native `title` tooltip, the ticker as its accessible label,
+    and opens `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab.
+    The JSX shells (`profile/index.js`, `slp-tokens/index.js`) remain excluded
+    from `mutate4javascript`. Soft Gherkin mutation of
+    `profile-token-icons.feature` was 18 total / 18 killed / 0 survived; the
+    fix's language mutation was 50 killed / 0 survived (`token-mutable-data.js`
+    7, `profile-token-icons.js` 2, `profile-page.js` 41); max CC 6 / CRAP 6.0.
+    Spec: `psf-memo-client/specs/profile-token-icons.feature`.
+
+55. **`/bch/getTokenData2` does not return usable token icons; resolve mutable
+    data the way `/slp-tokens` does (#54).** The first profile-token-icons
+    implementation preferred `wallet.getTokenData2` (which posts to
+    `/bch/getTokenData2` through `bch-consumer`, whose wrapper does not even
+    check `success`) and read `mutableData` as an already-resolved object, so
+    every icon silently fell back to a jdenticon while the working `/slp-tokens`
+    page used a different path. The working contract is the two-step
+    `getTokenData` -> `mutableData` `ipfs://<cid>` -> `wallet.cid2json({ cid })`
+    -> resolved JSON `tokenIcon`/`fullSizedUrl`. The acceptance fake had stubbed
+    `getTokenData2` to return the resolved object, so the real retrieval
+    contract was never exercised and the regression passed acceptance. When a
+    feature claims "same functionality as page X", model page X's real data
+    contract in the acceptance fixture, not a convenient shortcut. Fixed in task
+    `profile-token-icons-fetch` (`12def3d` coder, `cf278d3` refactorer, review
+    `073b1e7`).
 
 ---
 
@@ -794,10 +810,10 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `2e6de9b` (`Record profile-token-icons architect review
-and verification`). The client record
-`docs/reviews/profile-token-icons-verification.json` names the architect code
-review commit `6e76766`; the later tip `2e6de9b` adds only `docs/reviews/`
+Current `master` HEAD: `97067aa` (`Record profile-token-icons-fetch architect
+review and verification`). The client record
+`docs/reviews/profile-token-icons-fetch-verification.json` names the architect
+code review commit `073b1e7`; the later tip `97067aa` adds only `docs/reviews/`
 (record + summary), so the record is valid for the merged tree (extends #38).
 This task adds a row of small (30 px) SLP token icons to the `/profile/:addr`
 sidebar, below the Follow/Mute controls, for the SLP tokens held by that
@@ -807,20 +823,24 @@ the token id; icons carry the token id as a native `title` tooltip, expose the
 ticker as an accessible label, link to
 `https://explorer.tokentiger.com/?tokenid=<tokenId>` in a new tab, and wrap to
 multiple rows. A profile with no tokens, or a token lookup that fails, shows no
-icons and does not error. The pure view model is
-`psf-memo-client/src/services/profile-token-icons.js`; `ProfilePage` loads
-tokens through an injected `tokenSource` (preferring `getTokenData2`), and
-`src/components/app-body/profile/profile-token-icons.js` is the
-plain-`React.createElement` render seam shared with the Node adapter
+icons and does not error. Resolution is shared with `/slp-tokens` through
+`psf-memo-client/src/services/token-mutable-data.js`, which reads the token's
+`ipfs://` mutable-data URI, fetches it with `wallet.cid2json`, and prefers an
+http `fullSizedUrl`; `ProfilePage` loads tokens through an injected
+`tokenSource`, and `src/components/app-body/profile/profile-token-icons.js` is
+the plain-`React.createElement` render seam shared with the Node adapter
 `acceptance/lib/render-profile-token-icons.js`. Client-only; no Memo broadcast,
-no DB/indexer change. The specifier merged fast-forward to `2e6de9b` and ran
-only the merged feature's acceptance test (17/17 example executions) as the
-independent check. `verify.sh client` was pass 5/5 at `6e76766` (unit 605/0,
-property 161/0, acceptance 41 suites, lint ok, build ok); language mutation 50
-killed / 0 survived (`profile-page.js` 42, `profile-token-icons.js` 5, the
-component 3); soft Gherkin mutation 18/18 killed with no survivors; max CC 5 /
-CRAP 5.0. Architect summary:
-`docs/reviews/profile-token-icons-summary.md`.
+no DB/indexer change. The specifier merged fast-forward: the initial feature to
+`2e6de9b` (record `profile-token-icons-verification.json`, review `6e76766`)
+and the mutable-data fetch fix to `97067aa` (record
+`profile-token-icons-fetch-verification.json`, review `073b1e7`), running only
+the merged feature's acceptance test (17/17 example executions) after each
+merge. Final `verify.sh client` was pass 5/5 at `073b1e7` (unit 618/0, property
+168/0, acceptance 41 suites, lint ok, build ok); the fix's language mutation was
+50 killed / 0 survived (`token-mutable-data.js` 7, `profile-token-icons.js` 2,
+`profile-page.js` 41); soft Gherkin mutation 18/18 killed; max CC 6 / CRAP 6.0.
+Architect summaries: `docs/reviews/profile-token-icons-summary.md`,
+`docs/reviews/profile-token-icons-fetch-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),
