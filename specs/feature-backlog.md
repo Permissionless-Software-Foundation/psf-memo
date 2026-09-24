@@ -31,7 +31,12 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Profile token name tooltip (task `profile-token-name-tooltip`):** the
+  `/profile/:addr` token icons now start with the token ID as the tooltip and
+  replace it with the token's genesis name once the token data is retrieved;
+  the token ID remains when genesis has no name or the token data cannot be
+  retrieved. Client-only; no Memo broadcast, no DB/indexer change. Spec:
+  `psf-memo-client/specs/profile-token-icons.feature` (scenarios 4, 5, 11, 12).
 
 ## Recently completed
 
