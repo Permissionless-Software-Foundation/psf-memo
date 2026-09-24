@@ -4,7 +4,8 @@
   The unit tests pin the icon decisions at fixed fixtures. These properties
   exercise them over broad random token shapes:
 
-    - icon: every buildTokenIcon view model carries the token id, derives the
+    - icon: every buildTokenIcon view model carries the token id, uses the
+      genesis name as its tooltip when present (else the token id), derives the
       label and explorer link, and marks a jdenticon exactly when it has no
       image.
     - precedence: tokenIconUrl prefers an http fullSizedUrl, then a tokenIcon,
@@ -68,6 +69,7 @@ function randomToken () {
   const token = { tokenId: randomTokenId() }
   if (rng() < 0.8) token.ticker = randomString(rng, WORD_CHARS, 0, 6).trim().toUpperCase()
   if (rng() < 0.8) token.name = randomString(rng, WORD_CHARS, 0, 12).trim()
+  if (rng() < 0.5) token.genesisName = randomString(rng, WORD_CHARS, 1, 12).trim()
 
   const mutableData = randomMutableData()
   if (mutableData !== undefined) token.mutableData = mutableData
@@ -94,6 +96,10 @@ function expectedLabel (token) {
   return token.ticker || token.name || token.tokenId
 }
 
+function expectedTooltip (token) {
+  return token.genesisName || token.tokenId
+}
+
 function renderRow (tokens) {
   return ReactDOMServer.renderToStaticMarkup(
     React.createElement(ProfileTokenIcons, { tokens })
@@ -107,7 +113,7 @@ test('buildTokenIcon carries the token id and a consistent image flag', async ()
       const icon = viewModel.buildTokenIcon(token)
 
       return icon.tokenId === token.tokenId &&
-        icon.tooltip === token.tokenId &&
+        icon.tooltip === expectedTooltip(token) &&
         icon.explorerUrl === `${viewModel.TOKENTIGER_BASE}${token.tokenId}` &&
         icon.label === expectedLabel(token) &&
         icon.imageUrl === expectedImage(token) &&
@@ -183,11 +189,15 @@ test('loadTokenIcons enriches every token and isolates per-token failures', asyn
       // Plan each token: tokens that already carry mutable data must not be
       // fetched; the rest either succeed, fail, or return no data.
       const plans = tokens.map((token) => {
-        if (token.mutableData) return { kind: 'prefetched' }
+        if (token.genesisName || token.mutableData) return { kind: 'prefetched' }
         const roll = rng()
         if (roll < 0.2) return { kind: 'fail' }
         if (roll < 0.4) return { kind: 'null' }
-        return { kind: 'ok', imageUrl: `https://example.com/${token.tokenId.slice(0, 8)}.png` }
+        return {
+          kind: 'ok',
+          name: rng() < 0.5 ? randomString(rng, WORD_CHARS, 1, 12).trim() : null,
+          imageUrl: `https://example.com/${token.tokenId.slice(0, 8)}.png`
+        }
       })
 
       const fetched = []
@@ -200,7 +210,10 @@ test('loadTokenIcons enriches every token and isolates per-token failures', asyn
           const plan = plans[tokens.findIndex((token) => token.tokenId === tokenId)]
           if (plan.kind === 'fail') throw new Error('metadata unavailable')
           if (plan.kind === 'null') return null
-          return { mutableData: { tokenIcon: plan.imageUrl } }
+          return {
+            genesisData: plan.name ? { name: plan.name } : {},
+            mutableData: { tokenIcon: plan.imageUrl }
+          }
         }
       }
 
@@ -219,17 +232,63 @@ test('loadTokenIcons enriches every token and isolates per-token failures', asyn
 
         if (plan.kind === 'prefetched') {
           if (icon.imageUrl !== expectedImage(token)) return false
+          if (icon.tooltip !== expectedTooltip(token)) return false
           if (fetched.includes(token.tokenId)) return false
         } else if (plan.kind === 'ok') {
           if (icon.imageUrl !== plan.imageUrl) return false
-        } else if (!icon.isJdenticon) {
-          return false
+          if (icon.tooltip !== (plan.name || token.tokenId)) return false
+        } else {
+          if (!icon.isJdenticon) return false
+          if (icon.tooltip !== token.tokenId) return false
         }
       }
 
       return true
     },
     { label: 'profile token icon loader', samples: 500 }
+  )
+})
+
+test('the two-phase load notifies the listener and a destroyed page stays quiet', async () => {
+  await forAll(
+    () => randomTokenList(),
+    async (tokens) => {
+      const changes = []
+      const tokenSource = {
+        async listTokens () {
+          return tokens
+        },
+        async getTokenData (tokenId) {
+          return { genesisData: { name: `name-${tokenId.slice(0, 4)}` }, mutableData: null }
+        }
+      }
+
+      const page = new ProfilePage({
+        addr: ADDR,
+        tokenSource,
+        onTokenIconsChange: (icons) => changes.push(icons.map((icon) => icon.tooltip))
+      })
+
+      await page.loadTokenIcons()
+      await page.loadTokenData()
+
+      const first = tokens.map((token) => expectedTooltip(token))
+      const second = tokens.map((token) => {
+        if (token.genesisName || token.mutableData) return expectedTooltip(token)
+        return `name-${token.tokenId.slice(0, 4)}`
+      })
+
+      if (changes.length !== (tokens.length === 0 ? 1 : 2)) return false
+      if (JSON.stringify(changes[0]) !== JSON.stringify(first)) return false
+      if (tokens.length > 0 && JSON.stringify(changes[1]) !== JSON.stringify(second)) return false
+
+      // A destroyed page records the new icons but does not notify again.
+      const before = changes.length
+      page.destroy()
+      await page.loadTokenData()
+      return changes.length === before
+    },
+    { label: 'profile token icon change notification', samples: 400 }
   )
 })
 

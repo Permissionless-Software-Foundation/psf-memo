@@ -12,6 +12,9 @@
       lookup.
     - resolve: an ipfs:// value is resolved through cid2json with the parsed
       CID, and every unresolvable shape returns null without throwing.
+    - token data: resolveTokenData reads the genesis name and resolves the
+      mutable-data record from one getTokenData call, and is null without
+      token data.
 
   All generation is seeded, so runs are reproducible.
 */
@@ -25,6 +28,7 @@ const {
   IPFS_PREFIX,
   parseMutableDataCid,
   tokenIconFromMutableData,
+  resolveTokenData,
   resolveTokenMutableData
 } = require('../../src/services/token-mutable-data')
 
@@ -192,5 +196,64 @@ test('an ipfs:// value with no CID returns null without querying the gateway', a
       return (await resolveTokenMutableData(wallet, TOKEN_ID)) === null && queried === 0
     },
     { label: 'token mutable data empty cid', samples: 300 }
+  )
+})
+
+test('resolveTokenData returns the genesis name and the resolved record', async () => {
+  await forAll(
+    () => ({ cid: randomCid(), name: randomCid(), record: randomRecord() }),
+    async ({ cid, name, record }) => {
+      const wallet = {
+        async getTokenData () {
+          return { genesisData: { name }, mutableData: `${IPFS_PREFIX}${cid}` }
+        },
+        async cid2json ({ cid: resolvedCid }) {
+          return resolvedCid === cid ? { json: record } : null
+        }
+      }
+
+      const tokenData = await resolveTokenData(wallet, TOKEN_ID)
+      return tokenData.name === name &&
+        JSON.stringify(tokenData.mutableData) === JSON.stringify(record)
+    },
+    { label: 'token data genesis name and record', samples: 800 }
+  )
+})
+
+test('resolveTokenData falls back to a null name and skips absent mutable data', async () => {
+  await forAll(
+    () => randomCid(),
+    async () => {
+      let queried = 0
+      const wallet = {
+        async getTokenData () {
+          return { genesisData: {}, mutableData: null }
+        },
+        async cid2json () {
+          queried++
+          return { json: {} }
+        }
+      }
+
+      const tokenData = await resolveTokenData(wallet, TOKEN_ID)
+      return tokenData.name === null && tokenData.mutableData === null && queried === 0
+    },
+    { label: 'token data empty record', samples: 400 }
+  )
+})
+
+test('resolveTokenData is null when the wallet has no token data', async () => {
+  await forAll(
+    () => randomCid(),
+    async () => {
+      const wallet = {
+        async getTokenData () {
+          return null
+        }
+      }
+
+      return (await resolveTokenData(wallet, TOKEN_ID)) === null
+    },
+    { label: 'token data missing', samples: 300 }
   )
 })
