@@ -13,6 +13,8 @@
     - Bound: with `maxRetries`, the loop stops after exactly that many retries.
     - Safety: `startInBackground` resolves instead of rejecting so a failed
       handoff can never stop block indexing.
+    - Logging: every failed attempt emits exactly one line naming the endpoint
+      and the retry interval.
 */
 
 import test from 'node:test'
@@ -24,7 +26,7 @@ const rng = seededRandom(20260925)
 
 // Build a handoff whose start function fails the first `failures` requests and
 // succeeds afterwards, recording every start call and requested sleep.
-function makeHandoff ({ failures, interval }) {
+function makeHandoff ({ failures, interval, endpoint, log }) {
   let calls = 0
   const startTxIndexer = async () => {
     calls++
@@ -37,7 +39,9 @@ function makeHandoff ({ failures, interval }) {
     sleep: async (ms) => {
       sleeps.push(ms)
     },
-    retryIntervalMs: interval
+    retryIntervalMs: interval,
+    ...(endpoint ? { endpoint } : {}),
+    ...(log ? { log } : {})
   })
   return { handoff, sleeps, callCount: () => calls }
 }
@@ -136,5 +140,37 @@ test('startInBackground resolves instead of rejecting when the endpoint never su
       return result.started === false && result.retries === maxRetries
     },
     { label: 'tx handoff startInBackground never rejects' }
+  )
+})
+
+test('logs one failed-attempt line per failure naming the endpoint and retry interval', async () => {
+  const failuresGen = intGen(rng, 1, 8)
+  const intervalGen = intGen(rng, 1, 60000)
+  const portGen = intGen(rng, 1, 65535)
+
+  await forAll(
+    () => ({ failures: failuresGen(), interval: intervalGen(), port: portGen() }),
+    async ({ failures, interval, port }) => {
+      const logs = []
+      const { handoff } = makeHandoff({
+        failures,
+        interval,
+        endpoint: () => ({ ip: '10.0.0.7', port }),
+        log: (message) => logs.push(message)
+      })
+
+      const result = await handoff.run()
+
+      return (
+        result.started === true &&
+        logs.length === failures &&
+        logs.every(
+          (message) =>
+            message.includes(`IP 10.0.0.7 port ${port}`) &&
+            message.includes(`Retrying in ${interval} milliseconds`)
+        )
+      )
+    },
+    { label: 'tx handoff failure logging' }
   )
 })
