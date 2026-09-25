@@ -31,6 +31,7 @@ import ListNotifications from '../../src/use-cases/list-notifications.js'
 import GetPoll from '../../src/use-cases/get-poll.js'
 import GetPollOptions from '../../src/use-cases/get-poll-options.js'
 import GetPollVotes from '../../src/use-cases/get-poll-votes.js'
+import LevelRESTControllerLib from '../../src/controllers/rest-api/level/controller.js'
 import { repairTxidEncoding } from '../../src/lib/repair-txid-encoding.js'
 import { backfillTopicIndexes, topicRecencyKey } from '../../src/lib/backfill-topic-indexes.js'
 import { backfillFolloweeIndex, followeeHeightKey } from '../../src/lib/backfill-followee-index.js'
@@ -1168,6 +1169,37 @@ async function loadMutes (world) {
   }
 }
 
+// Write a mute/unmute through the real `mute` entity route. The controller is
+// built from the same adapters as the running DB and the POST body is
+// dispatched through the entity handler registry, so a missing /level/mute
+// route fails the scenario instead of silently writing the mutes store
+// directly.
+async function storeMuteViaEntityApi (world, { muterAddr, muteeAddr, blockHeight, unmute }) {
+  const muteePkHash = hash160(muteeAddr)
+  const key = `${muterAddr}:${muteePkHash}`
+  const muteData = {
+    muterAddr,
+    muteePkHash,
+    unmute,
+    txid: `mute-${muterAddr.slice(-8)}-${muteePkHash.slice(-8)}-${blockHeight}`,
+    seen: blockHeight,
+    blockHeight
+  }
+  const controller = new LevelRESTControllerLib({ adapters: world.adapters, useCases: {} })
+  const ctx = {
+    params: {},
+    request: { body: { key, muteData } },
+    body: null,
+    throw (status, message) {
+      throw new Error(message || `mute entity route failed with status ${status}`)
+    }
+  }
+  await controller.entityHandlers.mute.create(ctx)
+  if (!ctx.body || ctx.body.success !== true || ctx.body.key !== key) {
+    throw new Error(`mute entity route did not persist key ${key}`)
+  }
+}
+
 const handlers = [
   {
     name: 'db instance with posts and postHeights stores',
@@ -2189,6 +2221,30 @@ const handlers = [
     }
   },
   {
+    name: 'entity API stores mute',
+    pattern: /^the psf-memo-db entity API stores a mute record for mutee (<[A-Za-z0-9_]+>) from muter (<[A-Za-z0-9_]+>) at block height (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      await storeMuteViaEntityApi(world, {
+        muteeAddr: resolveParam(m[1], example),
+        muterAddr: resolveParam(m[2], example),
+        blockHeight: parseInt(resolveParam(m[3], example), 10),
+        unmute: false
+      })
+    }
+  },
+  {
+    name: 'entity API stores unmute',
+    pattern: /^the psf-memo-db entity API stores an unmute record for mutee (<[A-Za-z0-9_]+>) from muter (<[A-Za-z0-9_]+>) at block height (<[A-Za-z0-9_]+>)$/,
+    async run (m, example, world) {
+      await storeMuteViaEntityApi(world, {
+        muteeAddr: resolveParam(m[1], example),
+        muterAddr: resolveParam(m[2], example),
+        blockHeight: parseInt(resolveParam(m[3], example), 10),
+        unmute: true
+      })
+    }
+  },
+  {
     name: 'request mute state',
     pattern: /^the client requests the mute state for muter (<[A-Za-z0-9_]+>) and mutee (<[A-Za-z0-9_]+>)$/,
     async run (m, example, world) {
@@ -2200,7 +2256,7 @@ const handlers = [
   },
   {
     name: 'mute state reports muted',
-    pattern: /^the mute state reports muted (<muted>)$/,
+    pattern: /^the mute state reports muted (true|false|<muted>)$/,
     run (m, example, world) {
       const expected = resolveParam(m[1], example) === 'true'
       const actual = world.getLastResponse().muted
@@ -2229,6 +2285,20 @@ const handlers = [
       const actualSet = new Set(actual)
       if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
         throw new Error(`Expected muted ${expected.join(',')}, got ${actual.join(',')}`)
+      }
+    }
+  },
+  {
+    name: 'muted list does not contain addresses',
+    pattern: /^the muted list does not contain the addresses (<[A-Za-z0-9_]+>)$/,
+    run (m, example, world) {
+      const raw = resolveParam(m[1], example).trim()
+      const unexpected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
+      const actual = world.getLastResponse().muted
+      const actualSet = new Set(actual)
+      const present = unexpected.filter((addr) => actualSet.has(addr))
+      if (present.length > 0) {
+        throw new Error(`Expected muted list not to contain ${present.join(',')}, got ${actual.join(',')}`)
       }
     }
   },

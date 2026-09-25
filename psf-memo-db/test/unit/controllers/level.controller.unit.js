@@ -14,12 +14,17 @@ describe('#LevelRESTController', () => {
     put: sinon.stub().resolves(),
     del: sinon.stub().resolves()
   }
+  const mockMutesDb = {
+    get: sinon.stub().resolves({ unmute: false }),
+    put: sinon.stub().resolves(),
+    del: sinon.stub().resolves()
+  }
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     uut = new LevelRESTControllerLib({
       adapters: {
-        level: { postsDb: mockDb, postHeightsDb: mockDb, statusDb: mockDb },
+        level: { postsDb: mockDb, postHeightsDb: mockDb, statusDb: mockDb, mutesDb: mockMutesDb },
         dbBackup: { zipDb: sandbox.stub().resolves(true) }
       },
       useCases: {}
@@ -54,6 +59,34 @@ describe('#LevelRESTController', () => {
     await uut.entityHandlers.postheight.create(ctx)
     assert.equal(ctx.body.success, true)
     assert.equal(ctx.body.key, '600000:abc')
+  })
+
+  it('should expose a mute entity handler that upserts into the mutes store', async () => {
+    const muteData = {
+      muterAddr: 'bitcoincash:muter',
+      muteePkHash: 'aabbccdd',
+      unmute: false,
+      txid: 'mute-tx',
+      seen: 1,
+      blockHeight: 600100
+    }
+    const ctx = {
+      params: {},
+      request: { body: { key: 'bitcoincash:muter:aabbccdd', muteData } },
+      body: null
+    }
+    await uut.entityHandlers.mute.create(ctx)
+
+    assert.equal(mockMutesDb.put.callCount, 1)
+    assert.deepEqual(mockMutesDb.put.firstCall.args, ['bitcoincash:muter:aabbccdd', muteData])
+    assert.equal(ctx.body.success, true)
+    assert.equal(ctx.body.key, 'bitcoincash:muter:aabbccdd')
+  })
+
+  it('should read a mute through the entity handler registry', async () => {
+    const ctx = { params: { key: 'bitcoincash:muter:aabbccdd' }, body: null }
+    await uut.entityHandlers.mute.get(ctx)
+    assert.deepEqual(ctx.body, { unmute: false })
   })
 
   it('should throw the error status when err has a status', () => {

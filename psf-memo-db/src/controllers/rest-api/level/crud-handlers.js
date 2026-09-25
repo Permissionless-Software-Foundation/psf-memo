@@ -48,6 +48,7 @@ export const ENTITY_CONFIG = [
   { route: 'profilerecency', dbProp: 'profileRecencyDb', keyParam: 'addr', bodyIdField: 'addr', bodyDataField: 'profileRecencyData' },
   { route: 'follow', dbProp: 'followsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'followData' },
   { route: 'followeeheight', dbProp: 'followeeHeightsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'followeeHeightData' },
+  { route: 'mute', dbProp: 'mutesDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'muteData' },
   { route: 'room', dbProp: 'roomsDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'roomData' },
   { route: 'topicsummary', dbProp: 'topicSummariesDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'topicSummaryData' },
   { route: 'topicrecency', dbProp: 'topicRecencyDb', keyParam: 'key', bodyIdField: 'key', bodyDataField: 'topicRecencyData' },
