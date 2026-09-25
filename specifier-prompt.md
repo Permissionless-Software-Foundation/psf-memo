@@ -782,6 +782,24 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/profile-token-icons.feature` (scenarios 4, 5, 11,
     12).
 
+57. **The indexer's `createEntityDb` HTTP adapters have no `iterator`; read
+    ranges through a psf-memo-db read API (#55 class).** `establishProfileRecency`
+    called `adapters.addrPostHeightDb.iterator(range)`, but the real adapter
+    (`psf-memo-indexer/src/adapters/entity-db.js`) only wraps `/level` CRUD
+    (get/create/update/delete) and psf-memo-db exposes no generic range route,
+    so every set-profile (`0x6d05`) threw `addrPostHeightDb.iterator(...) is not
+    a function or its return value is not async iterable` and crashed the block
+    indexer. The unit/acceptance fakes implemented `iterator`, so they passed.
+    Fixed in `profile-recency-db-read` by adding the DB read API
+    `GET /profile/newest-post/:addr` (use case
+    `psf-memo-db/src/use-cases/get-newest-qualifying-post.js`, shared rule
+    `psf-memo-db/src/lib/qualifying-post.js`) and the indexer adapter
+    `psf-memo-indexer/src/adapters/newest-qualifying-post.js`; the indexer no
+    longer iterates `addrPostHeights`. Do not call `.iterator()` on an indexer
+    entity adapter; add a DB read endpoint plus an adapter method, and cover new
+    adapter methods with a real-adapter contract test. Spec:
+    `psf-memo-db/specs/newest-qualifying-post.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -832,31 +850,29 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `03ad934` (`Record profile-token-name-tooltip architect
-review and verification`). The client record
-`docs/reviews/profile-token-name-tooltip-verification.json` names the architect
-code review commit `79cf584`; the later tip `03ad934` adds only `docs/reviews/`
-(record + summary), so the record is valid for the merged tree (extends #38).
-This task extends the `/profile/:addr` token icons (#54/#55) to load in two
-phases: the icons render from the token list with the token ID as the tooltip,
-then the token data (genesis + IPFS mutable data) is retrieved and the tooltip
-becomes the token's genesis name, with the token ID kept when genesis has no
-name or the token data cannot be retrieved. The controller exposes
-`loadTokenIcons()`/`loadTokenData()` and notifies an injected
-`onTokenIconsChange` listener; a destroyed page does not notify. The earlier
-feature/fix merged to `2e6de9b` and `97067aa` (records
-`profile-token-icons-verification.json` review `6e76766`, and
-`profile-token-icons-fetch-verification.json` review `073b1e7`); this extension
-merged to `03ad934` (review `79cf584`). After each merge the specifier ran only
-the merged feature's acceptance test as the independent check (17/17 for the
-first two, 25/25 for this extension). `verify.sh client` was pass 5/5 at
-`79cf584` (unit 629/0, property 172/0, acceptance 41 suites, lint ok, build
-ok); language mutation 61 killed / 0 survived (`profile-page.js` 50,
-`token-mutable-data.js` 8, `profile-token-icons.js` 3); soft Gherkin mutation
-28/28 killed; max CC 6 / CRAP 6.0. Architect summaries:
-`docs/reviews/profile-token-icons-summary.md`,
-`docs/reviews/profile-token-icons-fetch-summary.md`,
-`docs/reviews/profile-token-name-tooltip-summary.md`.
+Current `master` HEAD: `81beada` (`Record profile-recency-db-read architect
+review and verification`). The DB record
+`docs/reviews/profile-recency-db-read-verification.json` and the indexer record
+`docs/reviews/profile-recency-db-read-indexer-verification.json` both name the
+architect code review commit `3a3c314`; the later tip `81beada` adds only
+`docs/reviews/` (records + summary), so both records are valid for the merged
+tree (extends #38). This task replaces the indexer's cross-REST `addrPostHeights`
+scan with a psf-memo-db read API: `GET /profile/newest-post/:addr` returns the
+newest confirmed qualifying post (`{ addr, blockHeight, seen }`) or an empty
+response, and the shared `psf-memo-db/src/lib/qualifying-post.js` now owns the
+qualification rule for both the backfill and the read path; the indexer
+`establishProfileRecency` calls the injected
+`psf-memo-indexer/src/adapters/newest-qualifying-post.js` client. Specs:
+`psf-memo-db/specs/newest-qualifying-post.feature`, and
+`psf-memo-indexer/specs/profile-recency-indexing.feature` scenarios 7-8. Merged
+to `master` at `81beada` (fast-forward from `440ab0b`). After the merge the
+specifier ran only the merged features' acceptance tests as the independent
+check (DB 3/3, indexer 20/20). `verify.sh db` and `verify.sh indexer` were pass
+4/4 at `3a3c314` (DB: unit 454, property 67/0, acceptance 23 suites, lint ok;
+indexer: unit 150, property 14/0, acceptance 9 suites, lint ok); soft Gherkin
+mutation 6/6 killed for the new DB feature and 88/8 killed for the indexer
+feature (80 intrinsic example-value survivors); max CC 5 / CRAP 5.0. Architect
+summary: `docs/reviews/profile-recency-db-read-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),

@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-24
+**Last updated**: 2026-09-25
 
 ---
 
@@ -34,6 +34,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **Profile recency via DB read API (2026-09-25):** set-profile establishment
+  (`0x6d05`) no longer scans `addrPostHeights` across the REST boundary. When a
+  set-profile arrives after the address has posted, the indexer asks
+  psf-memo-db for the newest confirmed qualifying post through the new
+  `GET /profile/newest-post/:addr` read API (use case
+  `get-newest-qualifying-post`); psf-memo-db owns the qualifying rule (top-level
+  post or topic message; replies and poll creations excluded; unconfirmed
+  ignored; newest height then seen) and shares it with the backfill through
+  `psf-memo-db/src/lib/qualifying-post.js`. The indexer's duplicate
+  `addrPostHeights` scan was deleted and replaced by
+  `psf-memo-indexer/src/adapters/newest-qualifying-post.js`. DB + indexer; no
+  client change. Specs: `psf-memo-db/specs/newest-qualifying-post.feature` and
+  `psf-memo-indexer/specs/profile-recency-indexing.feature` (scenarios 7-8).
+  Merged to `master` at `81beada` (fast-forward from `440ab0b`; architect
+  review commit `3a3c314`; the later `81beada` commit adds only the records and
+  summary, so the records are valid for the merged tree). Independent acceptance
+  check after merge: db 3/3, indexer 20/20. Records:
+  `docs/reviews/profile-recency-db-read-verification.json` (db) and
+  `docs/reviews/profile-recency-db-read-indexer-verification.json`. Architect
+  summary: `docs/reviews/profile-recency-db-read-summary.md`.
 
 - **Profile token name tooltip (2026-09-24):** the `/profile/:addr` token icons
   now load in two phases. Phase one lists the profile's SLP tokens and renders
