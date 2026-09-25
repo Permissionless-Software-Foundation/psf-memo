@@ -16,6 +16,13 @@ describe('#ProfileRESTController', () => {
             profiles: [{ addr: 'q1', blockHeight: 600000 }],
             pagination: { limit: 100, offset: 0, total: 1, hasMore: false }
           })
+        },
+        getNewestQualifyingPost: {
+          execute: sandbox.stub().resolves({
+            addr: 'bitcoincash:qaddr-alice',
+            blockHeight: 600100,
+            seen: 100
+          })
         }
       }
     })
@@ -34,6 +41,21 @@ describe('#ProfileRESTController', () => {
     })
     assert.equal(ctx.body.profiles.length, 1)
     assert.equal(ctx.body.pagination.total, 1)
+  })
+
+  it('should return the newest qualifying post from the use case', async () => {
+    const ctx = { params: { addr: 'bitcoincash:qaddr-alice' }, body: null, throw: sandbox.stub() }
+    await uut.getNewestQualifyingPost(ctx)
+
+    assert.equal(uut.useCases.getNewestQualifyingPost.execute.callCount, 1)
+    assert.deepEqual(uut.useCases.getNewestQualifyingPost.execute.firstCall.args[0], {
+      addr: 'bitcoincash:qaddr-alice'
+    })
+    assert.deepEqual(ctx.body, {
+      addr: 'bitcoincash:qaddr-alice',
+      blockHeight: 600100,
+      seen: 100
+    })
   })
 
   it('should throw the error status when err has a status', () => {

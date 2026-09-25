@@ -16,6 +16,7 @@ class ProfileRESTControllerLib {
     }
 
     this.getRecentProfiles = this.getRecentProfiles.bind(this)
+    this.getNewestQualifyingPost = this.getNewestQualifyingPost.bind(this)
     this.handleError = this.handleError.bind(this)
   }
 
@@ -55,6 +56,32 @@ class ProfileRESTControllerLib {
     try {
       const { limit, offset } = ctx.query
       ctx.body = await this.useCases.listRecentProfiles.execute({ limit, offset })
+    } catch (err) {
+      this.handleError(ctx, err)
+    }
+  }
+
+  /**
+   * @api {get} /profile/newest-post/:addr Newest qualifying post
+   * @apiPermission public
+   * @apiName GetNewestQualifyingPost
+   * @apiGroup REST Profile
+   *
+   * @apiDescription Returns the newest confirmed qualifying post for one profile address, or an empty object when the address has no qualifying post. A qualifying post is a top-level post (0x6d02) or a topic message (0x6d0c); replies and poll creations do not qualify. Posts above the chain tip are unconfirmed and ignored. The newest confirmed post wins, with seen as the tie-breaker at equal heights.
+   *
+   * @apiParam {String} addr Cash address
+   *
+   * @apiExample Example usage:
+   * curl -X GET "localhost:5021/profile/newest-post/bitcoincash%3Aqaddr-alice"
+   *
+   * @apiSuccess {String} addr Cash address, absent when there is no qualifying post
+   * @apiSuccess {Number} blockHeight Block height of the newest confirmed qualifying post
+   * @apiSuccess {Number} seen Unix epoch milliseconds of the newest confirmed qualifying post
+   */
+  async getNewestQualifyingPost (ctx) {
+    try {
+      const { addr } = ctx.params
+      ctx.body = await this.useCases.getNewestQualifyingPost.execute({ addr })
     } catch (err) {
       this.handleError(ctx, err)
     }

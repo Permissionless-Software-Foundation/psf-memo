@@ -30,7 +30,12 @@ class Adapters {
       profilesDb: level.profilesDb,
       namesDb: level.namesDb,
       profilePicsDb: level.profilePicsDb,
-      profileRecencyDb: level.profileRecencyDb
+      profileRecencyDb: level.profileRecencyDb,
+      addrPostHeightsDb: level.addrPostHeightsDb,
+      postsDb: level.postsDb,
+      postParentsDb: level.postParentsDb,
+      pollsDb: level.pollsDb,
+      statusDb: level.statusDb
     })
     // muteQuery must be constructed before postQuery: downstream adapters read
     // this.muteQuery at construction time, so declaring postQuery first would

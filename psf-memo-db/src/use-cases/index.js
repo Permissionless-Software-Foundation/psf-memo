@@ -3,6 +3,7 @@
 */
 
 import ListRecentProfiles from './list-recent-profiles.js'
+import GetNewestQualifyingPost from './get-newest-qualifying-post.js'
 import ListRecentPosts from './list-recent-posts.js'
 import ListPostsByAddr from './list-posts-by-addr.js'
 import ListFollowingFeed from './list-following-feed.js'
@@ -33,6 +34,7 @@ class UseCases {
     }
 
     this.listRecentProfiles = null
+    this.getNewestQualifyingPost = null
     this.listRecentPosts = null
     this.listPostsByAddr = null
     this.listFollowingFeed = null
@@ -55,6 +57,10 @@ class UseCases {
 
   async start () {
     this.listRecentProfiles = new ListRecentProfiles({
+      adapters: this.adapters
+    })
+
+    this.getNewestQualifyingPost = new GetNewestQualifyingPost({
       adapters: this.adapters
     })
 

@@ -2,14 +2,14 @@
   Property tests for the indexer's profileRecency maintenance.
 
   The unit tests probe fixed fixtures. These properties pin the invariants that
-  must hold across broad random, out-of-order post streams:
+  must hold across broad random post streams:
 
     - Convergence: recordProfileRecency ends on the greatest confirmed height,
       with seen as the tie-breaker, regardless of processing order.
     - Confirmation: posts above status.chainBlockHeight never move recency.
     - Idempotence: replaying the same stream leaves the index unchanged.
-    - Establishment: establishProfileRecency recovers the same newest confirmed
-      qualifying post from addrPostHeights, excluding replies and polls.
+    - Establishment: establishProfileRecency stores exactly the newest
+      qualifying post reported by psf-memo-db's read API.
 */
 
 import test from 'node:test'
@@ -24,15 +24,12 @@ import {
 const rng = seededRandom(20260921)
 const ADDR = 'bitcoincash:qaddr-a'
 
-function makeAdapters (chainBlockHeight) {
+function makeAdapters (chainBlockHeight, newestPost = null) {
   return {
     profileDb: makeMemoryDb(),
     profileRecencyDb: makeMemoryDb(),
-    addrPostHeightDb: makeMemoryDb(),
-    postParentDb: makeMemoryDb(),
-    pollDb: makeMemoryDb(),
-    postDb: makeMemoryDb(),
-    statusDb: { getStatus: async () => ({ chainBlockHeight }) }
+    statusDb: { getStatus: async () => ({ chainBlockHeight }) },
+    newestQualifyingPost: { get: async () => newestPost }
   }
 }
 
@@ -99,52 +96,28 @@ test('recordProfileRecency converges on the newest confirmed post and is idempot
 function establishWorldGen () {
   return () => {
     const chainBlockHeight = intGen(rng, 10, 1000)()
-    const adapters = makeAdapters(chainBlockHeight)
-    const entries = []
-    const count = intGen(rng, 0, 10)()
-
+    const count = intGen(rng, 0, 8)()
+    const candidates = []
     for (let i = 0; i < count; i++) {
-      const txid = `tx-${i}`
-      const blockHeight = chainBlockHeight + intGen(rng, -4, 4)()
-      const seen = intGen(rng, 0, 50)()
-      const key = `${ADDR}:${String(blockHeight).padStart(12, '0')}:${txid}`
-      adapters.addrPostHeightDb.store.set(key, { txid, addr: ADDR, blockHeight })
-      adapters.postDb.store.set(txid, { addr: ADDR, seen, blockHeight })
-
-      const roll = rng()
-      let kind = 'post'
-      if (roll < 0.3) {
-        kind = 'reply'
-        adapters.postParentDb.store.set(txid, { txid, parentTxid: 'parent' })
-      } else if (roll < 0.5) {
-        kind = 'poll'
-        adapters.pollDb.store.set(txid, { txid })
-      }
-      entries.push({ txid, blockHeight, seen, kind })
+      candidates.push({
+        blockHeight: chainBlockHeight + intGen(rng, -4, 4)(),
+        seen: intGen(rng, 0, 50)()
+      })
     }
-
-    return { adapters, entries, chainBlockHeight }
+    const newest = candidates.length > 0 ? expectedBest(candidates, chainBlockHeight) : null
+    const adapters = makeAdapters(chainBlockHeight, newest ? { addr: ADDR, ...newest } : null)
+    return { adapters, newest }
   }
 }
 
-test('establishProfileRecency recovers the newest confirmed qualifying post', async () => {
-  await forAll(establishWorldGen(), async ({ adapters, entries, chainBlockHeight }) => {
+test('establishProfileRecency stores the newest qualifying post reported by the read API', async () => {
+  await forAll(establishWorldGen(), async ({ adapters, newest }) => {
     await establishProfileRecency(adapters, ADDR)
 
-    let expected = null
-    for (const entry of entries) {
-      if (entry.kind !== 'post') continue
-      if (entry.blockHeight > chainBlockHeight) continue
-      if (!expected || entry.blockHeight > expected.blockHeight ||
-        (entry.blockHeight === expected.blockHeight && entry.seen > expected.seen)) {
-        expected = entry
-      }
-    }
-
     const stored = adapters.profileRecencyDb.store.get(ADDR)
-    if (!expected) return stored === undefined
+    if (!newest) return stored === undefined
     return Boolean(stored) &&
-      stored.blockHeight === expected.blockHeight &&
-      stored.seen === expected.seen
-  }, { label: 'establishProfileRecency newest qualifying post' })
+      stored.blockHeight === newest.blockHeight &&
+      stored.seen === newest.seen
+  }, { label: 'establishProfileRecency read API result' })
 })

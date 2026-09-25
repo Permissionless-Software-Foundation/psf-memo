@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 import sinon from 'sinon'
 import ProfileQuery from '../../../src/adapters/profile-query.js'
+import { FakeDb } from '../../support/level-double.js'
 
 describe('#ProfileQuery', () => {
   let uut
@@ -221,5 +222,61 @@ describe('#ProfileQuery', () => {
     const identity = await uutWithoutStores.getProfileIdentity('addr1')
 
     assert.deepEqual(identity, { name: null, profilePicUrl: null })
+  })
+})
+
+describe('#ProfileQuery.getNewestQualifyingPost', () => {
+  const ALICE = 'bitcoincash:qaddr-alice'
+
+  function pad (height) {
+    return String(height).padStart(12, '0')
+  }
+
+  function addrPostHeightKey (addr, height, txid) {
+    return `${addr}:${pad(height)}:${txid}`
+  }
+
+  function makeQuery (overrides = {}) {
+    const stores = {
+      addrPostHeightsDb: new FakeDb([
+        [addrPostHeightKey(ALICE, 600100, 'post-a1'), { txid: 'post-a1', addr: ALICE, blockHeight: 600100 }],
+        [addrPostHeightKey(ALICE, 600300, 'reply-a1'), { txid: 'reply-a1', addr: ALICE, blockHeight: 600300 }]
+      ]),
+      postsDb: new FakeDb([
+        ['post-a1', { addr: ALICE, seen: 100, blockHeight: 600100 }]
+      ]),
+      postParentsDb: new FakeDb([
+        ['reply-a1', { txid: 'reply-a1', parentTxid: 'post-a1' }]
+      ]),
+      pollsDb: new FakeDb(),
+      statusDb: new FakeDb([['status', { chainBlockHeight: 600450 }]]),
+      ...overrides
+    }
+
+    return { query: new ProfileQuery({ profilesDb: new FakeDb(), ...stores }), stores }
+  }
+
+  it('should return the newest confirmed qualifying post', async () => {
+    const { query } = makeQuery()
+
+    const result = await query.getNewestQualifyingPost(ALICE)
+
+    assert.deepEqual(result, { addr: ALICE, blockHeight: 600100, seen: 100 })
+  })
+
+  it('should return an empty object when the address has no qualifying post', async () => {
+    const { query } = makeQuery()
+
+    const result = await query.getNewestQualifyingPost('bitcoincash:qaddr-nopost')
+
+    assert.deepEqual(result, {})
+  })
+
+  it('should return an empty object when the addrPostHeights store is not configured', async () => {
+    const query = new ProfileQuery({ profilesDb: new FakeDb() })
+
+    const result = await query.getNewestQualifyingPost(ALICE)
+
+    assert.deepEqual(result, {})
   })
 })

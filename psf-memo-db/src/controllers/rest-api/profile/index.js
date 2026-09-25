@@ -25,6 +25,7 @@ class ProfileRouter {
 
   attach (app) {
     this.router.get('/recent', this.profileRESTController.getRecentProfiles)
+    this.router.get('/newest-post/:addr', this.profileRESTController.getNewestQualifyingPost)
     app.use(this.router.routes())
     app.use(this.router.allowedMethods())
   }

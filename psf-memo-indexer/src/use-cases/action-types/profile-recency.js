@@ -12,6 +12,11 @@
   confirmed blocks (at or below status.chainBlockHeight). Processing posts in
   any order converges on the greatest height, with seen as the tie-breaker, so
   a replay never regresses a profile's recency.
+
+  When a set-profile transaction arrives after the address has already posted,
+  the initial recency comes from psf-memo-db's newest-qualifying-post read API
+  (the `newestQualifyingPost` adapter). The indexer never scans
+  addrPostHeights itself.
 */
 
 import { getIfPresent } from './helpers.js'
@@ -63,50 +68,16 @@ export async function recordProfileRecency (adapters, addr, blockHeight, seen) {
   return upsertProfileRecency(adapters, addr, blockHeight ?? 0, seen ?? 0)
 }
 
-// The qualifying post for one addrPostHeights entry, or null when the entry is
-// for another address, has no txid, is unconfirmed, is a reply, or is a poll.
-async function qualifyingCandidate (adapters, key, value, addr, chainBlockHeight) {
-  if (!String(key).startsWith(`${addr}:`)) return null
-  const txid = value?.txid
-  if (!txid) return null
-  const blockHeight = value?.blockHeight ?? 0
-  if (!isConfirmed(blockHeight, chainBlockHeight)) return null
-  if (await getIfPresent(adapters.postParentDb, txid)) return null
-  if (await getIfPresent(adapters.pollDb, txid)) return null
-  const post = await getIfPresent(adapters.postDb, txid)
-  return { blockHeight, seen: post?.seen ?? 0 }
-}
-
-// Return whichever of two candidates is newer: greater height, or equal height
-// with a greater seen value. The current candidate wins a tie.
-function newerCandidate (current, candidate) {
-  if (!current) return candidate
-  if (candidate.blockHeight !== current.blockHeight) return candidate.blockHeight > current.blockHeight ? candidate : current
-  return candidate.seen > current.seen ? candidate : current
-}
-
-async function findNewestQualifyingPost (adapters, addr, chainBlockHeight) {
-  const range = { gte: `${addr}:`, lte: `${addr}:\uffff` }
-  let best = null
-  for await (const [key, value] of adapters.addrPostHeightDb.iterator(range)) {
-    const candidate = await qualifyingCandidate(adapters, key, value, addr, chainBlockHeight)
-    if (candidate) best = newerCandidate(best, candidate)
-  }
-  return best
-}
-
-// Establish a profile's recency from the posts already indexed for its
-// address. Runs when a set-profile action creates the profile, so a profile
-// set after posting still reports the existing newest confirmed qualifying
-// post. Replies and poll creations are excluded and unconfirmed posts are
-// ignored.
+// Establish a profile's recency from psf-memo-db when a set-profile action
+// creates the profile, so a profile set after posting still reports the
+// existing newest confirmed qualifying post. The read API applies the
+// qualifying and confirmation rules.
 export async function establishProfileRecency (adapters, addr) {
-  if (!adapters.profileRecencyDb || !adapters.addrPostHeightDb) return null
+  if (!adapters.profileRecencyDb || !adapters.newestQualifyingPost) return null
 
-  const chainBlockHeight = await getChainBlockHeight(adapters)
-  const best = await findNewestQualifyingPost(adapters, addr, chainBlockHeight)
-  if (!best) return null
-  return upsertProfileRecency(adapters, addr, best.blockHeight, best.seen)
+  const newest = await adapters.newestQualifyingPost.get(addr)
+  if (!newest) return null
+  return upsertProfileRecency(adapters, addr, newest.blockHeight ?? 0, newest.seen ?? 0)
 }
 
 // mutate4javascript-manifest-begin

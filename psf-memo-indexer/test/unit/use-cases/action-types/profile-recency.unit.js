@@ -8,18 +8,10 @@ import {
 
 const ADDR = 'bitcoincash:qaddr-a'
 
-function pad (height) {
-  return String(height).padStart(12, '0')
-}
-
 function makeAdapters (overrides = {}) {
   return {
     profileDb: makeMemoryDb(),
     profileRecencyDb: makeMemoryDb(),
-    addrPostHeightDb: makeMemoryDb(),
-    postParentDb: makeMemoryDb(),
-    pollDb: makeMemoryDb(),
-    postDb: makeMemoryDb(),
     ...overrides
   }
 }
@@ -34,16 +26,6 @@ async function makeAdaptersWithProfile (overrides = {}) {
 
 function assertRecency (adapters, expected, addr = ADDR) {
   assert.deepEqual(adapters.profileRecencyDb.store.get(addr), { addr, ...expected })
-}
-
-async function addAddrPost (adapters, txid, blockHeight, addr = ADDR) {
-  await adapters.addrPostHeightDb.update(`${addr}:${pad(blockHeight)}:${txid}`, {
-    txid, addr, blockHeight
-  })
-}
-
-async function addPost (adapters, txid, fields, addr = ADDR) {
-  await adapters.postDb.update(txid, { addr, ...fields })
 }
 
 describe('#isConfirmed', () => {
@@ -154,92 +136,60 @@ describe('#recordProfileRecency', () => {
 })
 
 describe('#establishProfileRecency', () => {
-  it('should pick the newest qualifying post and exclude replies and polls', async () => {
-    const adapters = makeAdapters()
-    await addAddrPost(adapters, 'post-a1', 600100)
-    await addAddrPost(adapters, 'poll-a1', 600200)
-    await addAddrPost(adapters, 'reply-a1', 600300)
-    await addPost(adapters, 'post-a1', { seen: 100, blockHeight: 600100 })
-    await adapters.postParentDb.update('reply-a1', { txid: 'reply-a1', parentTxid: 'post-a1' })
-    await adapters.pollDb.update('poll-a1', { txid: 'poll-a1' })
+  function makeEstablishAdapters (post, overrides = {}) {
+    const reads = []
+    const newestQualifyingPost = {
+      get: async (addr) => {
+        reads.push(addr)
+        return post
+      }
+    }
+    return { adapters: makeAdapters({ newestQualifyingPost, ...overrides }), reads }
+  }
+
+  it('should record the newest qualifying post returned by the db read API', async () => {
+    const { adapters, reads } = makeEstablishAdapters({
+      addr: ADDR, blockHeight: 600100, seen: 100
+    })
 
     await establishProfileRecency(adapters, ADDR)
 
     assertRecency(adapters, { blockHeight: 600100, seen: 100 })
+    assert.deepEqual(reads, [ADDR])
   })
 
-  it('should ignore an unconfirmed qualifying post', async () => {
-    const adapters = makeAdapters({
-      statusDb: { getStatus: async () => ({ chainBlockHeight: 600450 }) }
-    })
-    const addr = 'bitcoincash:qaddr-b'
-    await addAddrPost(adapters, 'post-b2', 600500, addr)
-    await addPost(adapters, 'post-b2', { seen: 250, blockHeight: 600500 }, addr)
+  it('should not record when the read API returns no qualifying post', async () => {
+    const { adapters } = makeEstablishAdapters(null)
 
-    await establishProfileRecency(adapters, addr)
+    await establishProfileRecency(adapters, ADDR)
 
     assert.equal(adapters.profileRecencyDb.store.size, 0)
   })
 
-  it('should not record a profile with no qualifying post', async () => {
-    const adapters = makeAdapters()
-
-    await establishProfileRecency(adapters, 'bitcoincash:qaddr-nopost')
-
-    assert.equal(adapters.profileRecencyDb.store.size, 0)
-  })
-
-  it('should default a missing addrPostHeight block height to 0', async () => {
-    const adapters = makeAdapters()
-    await adapters.addrPostHeightDb.update(`${ADDR}:${pad(600100)}:post-a1`, {
-      txid: 'post-a1', addr: ADDR
-    })
-    await addPost(adapters, 'post-a1', { seen: 42 })
+  it('should default a missing block height and seen to 0', async () => {
+    const { adapters } = makeEstablishAdapters({ addr: ADDR })
 
     await establishProfileRecency(adapters, ADDR)
 
-    assertRecency(adapters, { blockHeight: 0, seen: 42 })
+    assertRecency(adapters, { blockHeight: 0, seen: 0 })
   })
 
-  it('should default a missing post seen to 0', async () => {
+  it('should return null when the read API adapter is not configured', async () => {
     const adapters = makeAdapters()
-    await addAddrPost(adapters, 'post-a1', 600100)
-    await adapters.postDb.update('post-a1', { addr: ADDR })
-
-    await establishProfileRecency(adapters, ADDR)
-
-    assertRecency(adapters, { blockHeight: 600100, seen: 0 })
-  })
-
-  it('should pick the newest of several qualifying posts', async () => {
-    const adapters = makeAdapters()
-    await addAddrPost(adapters, 'post-a1', 600100)
-    await addAddrPost(adapters, 'post-a2', 600300)
-    await addPost(adapters, 'post-a1', { seen: 100 })
-    await addPost(adapters, 'post-a2', { seen: 300 })
-
-    await establishProfileRecency(adapters, ADDR)
-
-    assertRecency(adapters, { blockHeight: 600300, seen: 300 })
-  })
-
-  it('should return null when the addrPostHeight store is not configured', async () => {
-    const adapters = makeAdapters({ addrPostHeightDb: undefined })
 
     const result = await establishProfileRecency(adapters, ADDR)
 
     assert.equal(result, null)
   })
 
-  it('should treat a status read error as no chain tip', async () => {
-    const adapters = makeAdapters({
-      statusDb: { getStatus: async () => { throw new Error('status down') } }
-    })
-    await addAddrPost(adapters, 'post-a1', 600100)
-    await addPost(adapters, 'post-a1', { seen: 100 })
+  it('should return null when the profileRecency store is not configured', async () => {
+    const { adapters } = makeEstablishAdapters(
+      { addr: ADDR, blockHeight: 600100, seen: 100 },
+      { profileRecencyDb: undefined }
+    )
 
-    await establishProfileRecency(adapters, ADDR)
+    const result = await establishProfileRecency(adapters, ADDR)
 
-    assertRecency(adapters, { blockHeight: 600100, seen: 100 })
+    assert.equal(result, null)
   })
 })

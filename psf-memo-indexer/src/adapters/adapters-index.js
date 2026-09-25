@@ -9,6 +9,7 @@ import ZMQ from './zmq.js'
 import TxIndexerAdapter from './tx-indexer.js'
 import DbCtrl from './backup-db.js'
 import { createEntityDb } from './entity-db.js'
+import { createNewestQualifyingPost } from './newest-qualifying-post.js'
 
 class Adapters {
   constructor (localConfig = {}) {
@@ -30,6 +31,7 @@ class Adapters {
     this.profileDb = createEntityDb('profile', 'addr', 'profileData')
     this.profilePicDb = createEntityDb('profilepic', 'addr', 'profilePicData')
     this.profileRecencyDb = createEntityDb('profilerecency', 'addr', 'profileRecencyData')
+    this.newestQualifyingPost = createNewestQualifyingPost()
     this.followDb = createEntityDb('follow', 'key', 'followData')
     this.followeeHeightDb = createEntityDb('followeeheight', 'key', 'followeeHeightData')
     this.muteDb = createEntityDb('mute', 'key', 'muteData')

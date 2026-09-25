@@ -87,6 +87,46 @@ function resolveTxid (value, example, world) {
   return world.txidMap.get(resolved)
 }
 
+// Read a record from an in-memory DB, or null when it is absent. Mirrors the
+// point lookups the psf-memo-db newest-qualifying-post read API performs.
+async function getOrNull (db, key) {
+  try {
+    return await db.get(key)
+  } catch (err) {
+    if (err.notFound) return null
+    throw err
+  }
+}
+
+// In-memory stand-in for psf-memo-db's newest-qualifying-post read API. A
+// qualifying post is a top-level post or topic message; replies (postParents)
+// and poll creations (polls) do not qualify, and posts above the chain tip are
+// unconfirmed. The newest confirmed qualifying post wins, with seen as the
+// tie-breaker.
+async function computeNewestQualifyingPost (stores, addr) {
+  const chainBlockHeight = stores.status?.chainBlockHeight
+  let best = null
+  for await (const [key, value] of stores.addrPostHeightDb.iterator()) {
+    if (!String(key).startsWith(`${addr}:`)) continue
+    const txid = value?.txid
+    if (!txid) continue
+    const blockHeight = value?.blockHeight ?? 0
+    if (chainBlockHeight !== undefined && blockHeight > chainBlockHeight) continue
+    if (await getOrNull(stores.postParentDb, txid)) continue
+    if (await getOrNull(stores.pollDb, txid)) continue
+    const post = await getOrNull(stores.postDb, txid)
+    const candidate = { addr, blockHeight, seen: post?.seen ?? 0 }
+    if (
+      !best ||
+      candidate.blockHeight > best.blockHeight ||
+      (candidate.blockHeight === best.blockHeight && candidate.seen > best.seen)
+    ) {
+      best = candidate
+    }
+  }
+  return best
+}
+
 async function createWorld () {
   const postsDb = makeInMemoryDb()
   const postHeightsDb = makeInMemoryDb()
@@ -113,6 +153,20 @@ async function createWorld () {
     updateStatus: async (next) => { Object.assign(status, next); return true }
   }
 
+  const newestQualifyingPostReads = []
+  const newestQualifyingPost = {
+    async get (addr) {
+      newestQualifyingPostReads.push(addr)
+      return computeNewestQualifyingPost({
+        addrPostHeightDb: addrPostHeightsDb,
+        postDb: postsDb,
+        postParentDb: postParentsDb,
+        pollDb,
+        status
+      }, addr)
+    }
+  }
+
   const adapters = {
     postDb: postsDb,
     postHeightDb: postHeightsDb,
@@ -133,6 +187,7 @@ async function createWorld () {
     profileDb,
     profileRecencyDb,
     statusDb,
+    newestQualifyingPost,
     processErrorDb: makeInMemoryDb(),
     dbCtrl: {
       backupDb: async (height, epoch) => {
@@ -164,6 +219,7 @@ async function createWorld () {
     profileDb,
     profileRecencyDb,
     status,
+    newestQualifyingPostReads,
     txidMap: new Map(),
     lastTxid: null,
     lastHeight: null,
@@ -1119,6 +1175,16 @@ const muteHandlers = [
       const record = await world.profileRecencyDb.get(addr).catch(() => null)
       if (record) {
         throw new Error(`Expected no profileRecency record for ${addr}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'indexer read newest qualifying post from psf-memo-db',
+    pattern: /^the indexer read the newest qualifying post for (.+) from the psf-memo-db$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      if (!world.newestQualifyingPostReads.includes(addr)) {
+        throw new Error(`Expected the indexer to read the newest qualifying post for ${addr} from psf-memo-db`)
       }
     }
   }

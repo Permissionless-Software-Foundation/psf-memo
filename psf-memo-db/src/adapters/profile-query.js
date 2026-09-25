@@ -15,9 +15,21 @@
   store.
 */
 
+import { findNewestQualifyingPost } from '../lib/qualifying-post.js'
+
 class ProfileQuery {
   constructor (localConfig = {}) {
-    const { profilesDb, namesDb, profilePicsDb, profileRecencyDb } = localConfig
+    const {
+      profilesDb,
+      namesDb,
+      profilePicsDb,
+      profileRecencyDb,
+      addrPostHeightsDb,
+      postsDb,
+      postParentsDb,
+      pollsDb,
+      statusDb
+    } = localConfig
     if (!profilesDb) {
       throw new Error('profilesDb required when instantiating ProfileQuery adapter.')
     }
@@ -25,9 +37,15 @@ class ProfileQuery {
     this.namesDb = namesDb || null
     this.profilePicsDb = profilePicsDb || null
     this.profileRecencyDb = profileRecencyDb || null
+    this.addrPostHeightsDb = addrPostHeightsDb || null
+    this.postsDb = postsDb || null
+    this.postParentsDb = postParentsDb || null
+    this.pollsDb = pollsDb || null
+    this.statusDb = statusDb || null
     this.listRecentProfiles = this.listRecentProfiles.bind(this)
     this.listRecencyEntries = this.listRecencyEntries.bind(this)
     this.getProfileIdentity = this.getProfileIdentity.bind(this)
+    this.getNewestQualifyingPost = this.getNewestQualifyingPost.bind(this)
     this.getRecordOrNull = this.getRecordOrNull.bind(this)
   }
 
@@ -98,6 +116,24 @@ class ProfileQuery {
       name: nameRecord?.name || null,
       profilePicUrl: picRecord?.url || null
     }
+  }
+
+  // The newest confirmed qualifying post for one profile address, shaped as
+  // `{ addr, blockHeight, seen }`, or an empty object when the address has no
+  // qualifying post. Reads only the requested address's addrPostHeights range.
+  async getNewestQualifyingPost (addr) {
+    if (!this.addrPostHeightsDb) return {}
+
+    const best = await findNewestQualifyingPost({
+      addrPostHeightsDb: this.addrPostHeightsDb,
+      postsDb: this.postsDb,
+      postParentsDb: this.postParentsDb,
+      pollsDb: this.pollsDb,
+      statusDb: this.statusDb
+    }, addr)
+
+    if (!best) return {}
+    return { addr: best.addr, blockHeight: best.blockHeight, seen: best.seen }
   }
 
   async getRecordOrNull (db, key) {

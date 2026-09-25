@@ -14,6 +14,7 @@ import { DB_NAMES } from '../../src/adapters/level-db.js'
 import Adapters from '../../src/adapters/index.js'
 import ListRecentPosts from '../../src/use-cases/list-recent-posts.js'
 import ListRecentProfiles from '../../src/use-cases/list-recent-profiles.js'
+import GetNewestQualifyingPost from '../../src/use-cases/get-newest-qualifying-post.js'
 import ListPostsByAddr from '../../src/use-cases/list-posts-by-addr.js'
 import GetPostThread from '../../src/use-cases/get-post-thread.js'
 import FollowState from '../../src/use-cases/follow-state.js'
@@ -182,6 +183,7 @@ async function createWorld () {
   const getPoll = new GetPoll({ adapters })
   const getPollOptions = new GetPollOptions({ adapters })
   const getPollVotes = new GetPollVotes({ adapters })
+  const getNewestQualifyingPost = new GetNewestQualifyingPost({ adapters })
 
   let lastResponse = null
 
@@ -205,6 +207,7 @@ async function createWorld () {
     getPoll,
     getPollOptions,
     getPollVotes,
+    getNewestQualifyingPost,
     postHeightsIteratorCounter,
     addrPostHeightsIteratorCounter,
     postChildrenIteratorCounter,
@@ -2543,6 +2546,37 @@ const handlers = [
       const record = await world.adapters.level.profileRecencyDb.get(addr).catch(() => null)
       if (record) {
         throw new Error(`Expected no profileRecency record for ${addr}, got ${JSON.stringify(record)}`)
+      }
+    }
+  },
+  {
+    name: 'request newest qualifying post',
+    pattern: /^the client requests the newest qualifying post for (.+)$/,
+    async run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      const resp = await world.getNewestQualifyingPost.execute({ addr })
+      world.setLastResponse(resp)
+    }
+  },
+  {
+    name: 'newest qualifying post response at height seen',
+    pattern: /^the newest qualifying post response is at block height (\S+) seen at (\S+)$/,
+    run (m, example, world) {
+      const height = parseInt(resolveParam(m[1], example), 10)
+      const seen = parseInt(resolveParam(m[2], example), 10)
+      const resp = world.getLastResponse()
+      if (!resp || resp.blockHeight !== height || resp.seen !== seen) {
+        throw new Error(`Expected newest qualifying post at ${height} seen ${seen}, got ${JSON.stringify(resp)}`)
+      }
+    }
+  },
+  {
+    name: 'newest qualifying post response is empty',
+    pattern: /^the newest qualifying post response is empty$/,
+    run (m, example, world) {
+      const resp = world.getLastResponse()
+      if (resp && resp.addr) {
+        throw new Error(`Expected an empty newest qualifying post response, got ${JSON.stringify(resp)}`)
       }
     }
   }
