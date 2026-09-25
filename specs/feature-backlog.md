@@ -35,6 +35,26 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **TX indexer handoff failure logging (2026-09-25):** each failed TX indexer
+  handoff attempt now emits one diagnostic line naming the control endpoint
+  (`TX_REST_API_IP` / `TX_REST_API_PORT`) and the error, and stating the
+  automatic retry interval, so the previously silent failure is observable. The
+  adapter owns the endpoint description (`endpoint()` -> `{ ip, port }`); the
+  pure `TxIndexerHandoff` use case takes injected `log` and `endpoint()`, and
+  the composition root wires `console.error`. Building on `tx-handoff-retry`;
+  indexer-only, no client/DB change. Spec:
+  `psf-memo-indexer/specs/tx-indexer-handoff-retry.feature` (scenario 5). Merged
+  to `master` at `1411abe` (fast-forward from `7ce9597`; architect review commit
+  `a9b1965`; the later `1411abe` commit is docs-only, so the record
+  `docs/reviews/tx-handoff-retry-logging-verification.json` is valid for the
+  merged tree). Independent acceptance check after merge: 11/11 example
+  executions. `verify.sh indexer` pass 4/4 at `a9b1965` (unit 168/0, property
+  19/0, acceptance 10 suites, lint ok); language mutation 15/15
+  (`tx-indexer-handoff.js`), 3/3 (`tx-indexer.js`), no survivors; soft Gherkin
+  mutation 33 total / 24 killed / 9 intrinsic survivors (scenario 5: 16/16
+  killed); max CC 6 / CRAP 6.0. Architect summary:
+  `docs/reviews/tx-handoff-retry-logging-summary.md`.
+
 - **TX indexer handoff retry (2026-09-25):** the block indexer no longer
   `await`s a single `GET http://{TX_REST_API_IP}:{TX_REST_API_PORT}/tx-start`
   after IBD. A failed or unreachable TX indexer control endpoint (the observed

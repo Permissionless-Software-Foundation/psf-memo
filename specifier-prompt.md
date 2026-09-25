@@ -818,6 +818,23 @@ that a single user-facing feature may require specs in more than one component.
     commit `0acf7a9`; the merged tip `20ed191` adds review docs plus a one-line
     test lint cleanup (extends #38).
 
+59. **Failed TX indexer handoff attempts now log the endpoint and the retry.**
+    `TxIndexerHandoff` takes injected `log` and `endpoint`; the adapter's
+    `endpoint()` returns `{ ip, port }` from `txRestApiIp`/`txRestApiPort` and
+    is the single source of truth shared with the request URL. Each failed
+    attempt calls `logFailure` -> `TX indexer handoff failed for IP <ip> port
+    <port>: <err>. Retrying in <interval> milliseconds.` The composition root
+    (`use-cases-index.js`) wires `console.error` as the sink (the requester
+    said `console.log`; stderr was chosen and accepted, and both appear in
+    `docker logs`). In bounded diagnostic mode (`maxRetries` set) the terminal
+    failed attempt still logs a retry that does not happen; production is
+    unbounded and always retries, so the wording is accurate there
+    (architect-accepted). Spec scenario 5 requires one log per failed attempt
+    (`log_count = retries + 1`). Record
+    `docs/reviews/tx-handoff-retry-logging-verification.json` names the
+    code-review commit `a9b1965`; the merged tip `1411abe` is docs-only
+    (extends #38).
+
 ---
 
 ## 10. Run / verify the app
@@ -868,28 +885,25 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `20ed191` (`Record TX indexer handoff retry architect
-review and verification`). The indexer record
-`docs/reviews/tx-handoff-retry-verification.json` names the architect code-review
-commit `0acf7a9`; the later tip `20ed191` adds the review docs plus a one-line
-lint cleanup in `test/unit/config/config.unit.js`, so the record is valid for
-the merged tree (extends #38). This task replaces the block indexer's single
-fatal `GET /tx-start` after IBD with a background retry: the pure
-`TxIndexerHandoff` use case
-(`psf-memo-indexer/src/use-cases/tx-indexer-handoff.js`) retries every
-`TX_INDEXER_HANDOFF_RETRY_MS` (default 10000) until the TX indexer control
-endpoint responds, each axios request is bounded by
-`TX_INDEXER_HANDOFF_TIMEOUT_MS` (default 10000), and `psf-memo-block-indexer.js`
-calls `startInBackground()` and never exits on handoff failure. Spec:
-`psf-memo-indexer/specs/tx-indexer-handoff-retry.feature`. Merged to `master` at
-`20ed191` (fast-forward from `b778509`). After the merge the specifier ran only
-the merged feature's acceptance test as the independent check (9/9 examples).
-`verify.sh indexer` was pass 4/4 at `0acf7a9` (unit 164/0, property 18/0,
-acceptance 10 suites, lint ok); language mutation 12/12
-(`tx-indexer-handoff.js`), 3/3 (`tx-indexer.js`), 8/8 (`config/index.js`), no
-survivors; soft Gherkin mutation 32 total / 23 killed / 9 intrinsic survivors;
-max CC 6 / CRAP 6.0. Architect summary:
-`docs/reviews/tx-handoff-retry-summary.md`.
+Current `master` HEAD: `1411abe` (`Record TX indexer handoff failure-logging
+architect review and verification`). The indexer record
+`docs/reviews/tx-handoff-retry-logging-verification.json` names the architect
+code-review commit `a9b1965`; the later tip `1411abe` is docs-only (summary +
+record), so the record is valid for the merged tree (extends #38). Building on
+`tx-handoff-retry`, each failed TX indexer handoff attempt now logs the control
+endpoint (`TX_REST_API_IP` / `TX_REST_API_PORT`), the error, and the retry
+interval instead of failing silently: the adapter owns `endpoint()` -> `{ ip,
+port }` (shared with the request URL), the pure `TxIndexerHandoff` use case
+takes injected `log` + `endpoint`, and `use-cases-index.js` wires
+`console.error`. Spec: `psf-memo-indexer/specs/tx-indexer-handoff-retry.feature`
+(scenario 5). Merged to `master` at `1411abe` (fast-forward from `7ce9597`).
+After the merge the specifier ran only the merged feature's acceptance test as
+the independent check (11/11 examples). `verify.sh indexer` was pass 4/4 at
+`a9b1965` (unit 168/0, property 19/0, acceptance 10 suites, lint ok); language
+mutation 15/15 (`tx-indexer-handoff.js`), 3/3 (`tx-indexer.js`), no survivors;
+soft Gherkin mutation 33 total / 24 killed / 9 intrinsic survivors (scenario 5:
+16/16 killed); max CC 6 / CRAP 6.0. Architect summary:
+`docs/reviews/tx-handoff-retry-logging-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),
