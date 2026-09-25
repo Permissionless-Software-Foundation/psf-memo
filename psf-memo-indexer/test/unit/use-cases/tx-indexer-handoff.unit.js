@@ -112,6 +112,11 @@ describe('#TxIndexerHandoff', () => {
 
     const result = await uut.startInBackground()
 
-    assert.equal(result.started, false)
+    assert.deepEqual(result, {
+      started: false,
+      attempts: 0,
+      retries: 0,
+      waits: []
+    })
   })
 })

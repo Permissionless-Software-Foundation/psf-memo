@@ -69,3 +69,7 @@ class TxIndexerHandoff {
 }
 
 export default TxIndexerHandoff
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-25T18:29:32.487Z","module_hash":"a97ebdb3440029ccc0c9ed58f59a82ac0cef603e6f8761ff68f217b2e5c6bb4e","functions":[{"id":"func/defaultSleep","name":"defaultSleep","line":17,"end_line":19,"hash":"23aa9df91da50c4a4d42ff6b0863ace10a10dca26373b98b2f7fd053130f4749"},{"id":"func/TxIndexerHandoff.constructor","name":"TxIndexerHandoff.constructor","line":22,"end_line":32,"hash":"1f98b806565edad8fdf84e1f4265f777c211d6a29b34ff6ac904251af3095292"},{"id":"func/TxIndexerHandoff.run","name":"TxIndexerHandoff.run","line":34,"end_line":57,"hash":"15aba5cada32021d43bc7b408623cb71b0f6f7bdc9fec56ae993f3451163a654"},{"id":"func/TxIndexerHandoff.startInBackground","name":"TxIndexerHandoff.startInBackground","line":61,"end_line":68,"hash":"2898e9a1de65d4513b8fda442e713bafd37c371cc0a9e38b312baacbaebdcc57"}]}
+// mutate4javascript-manifest-end

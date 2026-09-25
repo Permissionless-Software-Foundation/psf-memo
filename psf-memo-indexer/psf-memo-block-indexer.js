@@ -108,3 +108,7 @@ async function start () {
 }
 
 start()
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-25T18:28:22.209Z","module_hash":"705fd886c6b1bd74022bb3770c554ffb6f606d90248ce42a361ba61a6002747b","functions":[{"id":"func/start","name":"start","line":13,"end_line":108,"hash":"c219519b21b14588b6c5fa7d34010bec5f1cfbdc4bb5ec0a45a416f0b8d85935"}]}
+// mutate4javascript-manifest-end

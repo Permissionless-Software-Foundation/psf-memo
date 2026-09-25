@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-25T18:31:17.761733272Z","feature_name":"TX indexer handoff retry","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-indexer/specs/tx-indexer-handoff-retry.feature","background_hash":"5cd624958f61d16ae7b4ef44cc4a41bb067a41ea16b20863c58f852e446e83c2","implementation_hash":"unknown","scenarios":[{"index":1,"name":"TX indexer handoff retry - 2 the handoff retries at the configured interval","scenario_hash":"30895449a5cfaf276c1ddfd494d81ca835dbf8d0c3fedd1690aebc7efc56cd46","mutation_count":12,"result":{"Total":12,"Killed":12,"Survived":0,"Errors":0},"tested_at":"2026-09-25T18:31:17.761733272Z"},{"index":2,"name":"TX indexer handoff retry - 3 the retry interval defaults to 10 seconds","scenario_hash":"09304c6bef93fb218c1cf742f2ed48726a3dbf99110c9a4b036029e2624002a0","mutation_count":3,"result":{"Total":3,"Killed":3,"Survived":0,"Errors":0},"tested_at":"2026-09-25T18:31:17.761733272Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: TX indexer handoff retry - 1, TX indexer handoff retry - 2, TX indexer handoff retry - 3, TX indexer handoff retry - 4
 #
 # After initial block download, the block indexer starts the mempool (TX)

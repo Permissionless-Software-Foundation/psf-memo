@@ -43,3 +43,7 @@ export default {
     ? parseInt(process.env.DEBUG_LEVEL, 10)
     : 0
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-25T18:30:13.362Z","module_hash":"8628cf0a71952b6d68371402b6b3abec6add0d614db3ff51eba101f9e59848d0","functions":[]}
+// mutate4javascript-manifest-end
