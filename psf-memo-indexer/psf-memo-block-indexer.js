@@ -67,8 +67,10 @@ async function start () {
     await adapters.zmq.connect()
     console.log('Connected to ZMQ.')
 
-    await adapters.txIndexerAdapter.startTxIndexer()
-    console.log('TX indexer started.')
+    // Hand off to the TX indexer in the background. A failed or unanswered
+    // handoff is retried by the use case and must never stop block indexing.
+    useCases.txIndexerHandoff.startInBackground()
+    console.log('TX indexer handoff started in the background.')
 
     let loopCnt = 0
     const liveStatus = status

@@ -20,6 +20,9 @@ import { handleTopicFollow } from '../../src/use-cases/action-types/topic-follow
 import { handleSetProfile } from '../../src/use-cases/action-types/set-profile.js'
 import { topicRecencyKey } from '../../src/use-cases/action-types/helpers.js'
 import BackupDb from '../../src/use-cases/backup-db.js'
+import TxIndexerHandoff from '../../src/use-cases/tx-indexer-handoff.js'
+import TxIndexerAdapter from '../../src/adapters/tx-indexer.js'
+import config from '../../config/index.js'
 
 function makeInMemoryDb () {
   const store = new Map()
@@ -1185,6 +1188,143 @@ const muteHandlers = [
       const addr = resolveParam(m[1], example)
       if (!world.newestQualifyingPostReads.includes(addr)) {
         throw new Error(`Expected the indexer to read the newest qualifying post for ${addr} from psf-memo-db`)
+      }
+    }
+  },
+  {
+    name: 'psf-memo-indexer with a TX indexer control endpoint',
+    pattern: /^a psf-memo-indexer with a TX indexer control endpoint$/,
+    run (m, example, world) {
+      world.txHandoff = {
+        remainingFailures: 0,
+        unreachable: false,
+        retryIntervalMs: undefined,
+        waits: [],
+        parkSleeps: false,
+        requestCount: 0,
+        requests: [],
+        result: null,
+        backgroundPromise: null
+      }
+      world.txConfig = { ...config }
+      world.txControl = {
+        get: async (url, options) => {
+          world.txHandoff.requestCount++
+          world.txHandoff.requests.push({ url, options })
+          if (world.txHandoff.unreachable) {
+            throw new Error('TX indexer control endpoint unreachable')
+          }
+          if (world.txHandoff.remainingFailures > 0) {
+            world.txHandoff.remainingFailures--
+            throw new Error('TX indexer control endpoint failed')
+          }
+          return { data: { started: true } }
+        }
+      }
+      world.txIndexerAdapter = new TxIndexerAdapter({
+        axios: world.txControl,
+        config: world.txConfig
+      })
+      world.txHandoff.handoff = new TxIndexerHandoff({
+        startTxIndexer: () => world.txIndexerAdapter.startTxIndexer(),
+        sleep: (ms) => {
+          world.txHandoff.waits.push(ms)
+          if (world.txHandoff.parkSleeps) return new Promise(() => {})
+          return Promise.resolve()
+        }
+      })
+    }
+  },
+  {
+    name: 'TX indexer control endpoint fails then succeeds',
+    pattern: /^the TX indexer control endpoint fails (.+) time\(s\) then succeeds$/,
+    run (m, example, world) {
+      world.txHandoff.remainingFailures = parseInt(resolveParam(m[1], example), 10)
+    }
+  },
+  {
+    name: 'TX indexer control endpoint is unreachable',
+    pattern: /^the TX indexer control endpoint is unreachable$/,
+    run (m, example, world) {
+      world.txHandoff.unreachable = true
+    }
+  },
+  {
+    name: 'retry interval configured',
+    pattern: /^the retry interval is configured to (.+) milliseconds$/,
+    run (m, example, world) {
+      world.txHandoff.retryIntervalMs = parseInt(resolveParam(m[1], example), 10)
+    }
+  },
+  {
+    name: 'block indexer runs TX indexer handoff',
+    pattern: /^the block indexer runs the TX indexer handoff$/,
+    async run (m, example, world) {
+      world.txHandoff.result = await world.txHandoff.handoff.run({
+        retryIntervalMs: world.txHandoff.retryIntervalMs
+      })
+    }
+  },
+  {
+    name: 'block indexer runs TX indexer handoff until stopped',
+    pattern: /^the block indexer runs the TX indexer handoff until stopped after (.+) retries?$/,
+    async run (m, example, world) {
+      world.txHandoff.result = await world.txHandoff.handoff.run({
+        maxRetries: parseInt(resolveParam(m[1], example), 10),
+        retryIntervalMs: world.txHandoff.retryIntervalMs
+      })
+    }
+  },
+  {
+    name: 'block indexer starts TX indexer handoff in background',
+    pattern: /^the block indexer starts the TX indexer handoff in the background$/,
+    run (m, example, world) {
+      world.txHandoff.parkSleeps = true
+      world.txHandoff.backgroundPromise = world.txHandoff.handoff.startInBackground({
+        retryIntervalMs: world.txHandoff.retryIntervalMs
+      })
+    }
+  },
+  {
+    name: 'TX indexer start request attempted',
+    pattern: /^the TX indexer start request was attempted (.+) times?$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      if (world.txHandoff.requestCount !== expected) {
+        throw new Error(`Expected ${expected} TX indexer start request(s), got ${world.txHandoff.requestCount}`)
+      }
+    }
+  },
+  {
+    name: 'handoff retried',
+    pattern: /^the handoff retried (.+) time\(s\)$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      if (world.txHandoff.result?.retries !== expected) {
+        throw new Error(`Expected ${expected} handoff retries, got ${world.txHandoff.result?.retries}`)
+      }
+    }
+  },
+  {
+    name: 'handoff waited before each retry',
+    pattern: /^the handoff waited (.+) milliseconds before each retry$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const waits = world.txHandoff.waits
+      if (waits.length !== world.txHandoff.result?.retries) {
+        throw new Error(`Expected a wait before each of ${world.txHandoff.result?.retries} retries, got ${waits.length}`)
+      }
+      if (!waits.every((w) => w === expected)) {
+        throw new Error(`Expected each handoff wait to be ${expected}ms, got ${JSON.stringify(waits)}`)
+      }
+    }
+  },
+  {
+    name: 'TX indexer is started',
+    pattern: /^the TX indexer is started$/,
+    run (m, example, world) {
+      if (world.txHandoff.result?.started !== true) {
+        throw new Error('Expected the TX indexer handoff to start the TX indexer')
       }
     }
   }

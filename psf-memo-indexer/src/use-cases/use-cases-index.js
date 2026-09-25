@@ -3,6 +3,7 @@ import BackupDb from './backup-db.js'
 import IndexBlocks from './index-blocks.js'
 import State from './state.js'
 import Utils from './utils.js'
+import TxIndexerHandoff from './tx-indexer-handoff.js'
 
 class UseCases {
   constructor (localConfig = {}) {
@@ -15,6 +16,11 @@ class UseCases {
     this.state = new State({ adapters: this.adapters })
     this.utils = new Utils()
     this.retryQueue = new RetryQueue()
+    this.txIndexerHandoff = new TxIndexerHandoff({
+      startTxIndexer: this.adapters.txIndexerAdapter.startTxIndexer.bind(
+        this.adapters.txIndexerAdapter
+      )
+    })
     this.initUseCases = this.initUseCases.bind(this)
   }
 

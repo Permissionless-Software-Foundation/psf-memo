@@ -11,6 +11,12 @@ export default {
 
   txRestApiPort: process.env.TX_REST_API_PORT ? parseInt(process.env.TX_REST_API_PORT) : 5455,
   txRestApiIp: process.env.TX_REST_API_IP || 'localhost',
+  txIndexerHandoffRetryMs: process.env.TX_INDEXER_HANDOFF_RETRY_MS
+    ? parseInt(process.env.TX_INDEXER_HANDOFF_RETRY_MS, 10)
+    : 10000,
+  txIndexerHandoffTimeoutMs: process.env.TX_INDEXER_HANDOFF_TIMEOUT_MS
+    ? parseInt(process.env.TX_INDEXER_HANDOFF_TIMEOUT_MS, 10)
+    : 10000,
   seenTxMax: process.env.SEEN_TX_MAX ? parseInt(process.env.SEEN_TX_MAX) : 100000,
   zmqTxQueueMax: process.env.ZMQ_TX_QUEUE_MAX ? parseInt(process.env.ZMQ_TX_QUEUE_MAX) : 50000,
   zmqBlockQueueMax: process.env.ZMQ_BLOCK_QUEUE_MAX ? parseInt(process.env.ZMQ_BLOCK_QUEUE_MAX) : 1000,
