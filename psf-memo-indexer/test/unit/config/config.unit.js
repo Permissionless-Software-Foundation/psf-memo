@@ -33,7 +33,7 @@ describe('#config', () => {
       saved[key] = process.env[key]
       delete process.env[key]
     }
-    config = (await import(`../../../config/index.js?config-defaults`)).default
+    config = (await import('../../../config/index.js?config-defaults')).default
   })
 
   after(() => {
