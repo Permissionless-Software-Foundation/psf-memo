@@ -60,5 +60,5 @@ export const ENTITY_CONFIG = [
 ]
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-20T21:59:36.940Z","module_hash":"471a9db88c0e95824a435ad338cd45277ac3dcd439175cd7fa084b87b227dd29","functions":[{"id":"func/makeCrudHandlers","name":"makeCrudHandlers","line":5,"end_line":35,"hash":"133b135aa115c058291b6df4a0b6b15152dde83c3163890e0eab0c3b018f8d4d"}]}
+// {"version":1,"tested_at":"2026-09-25T22:40:39.892Z","module_hash":"5aa5b89386979ccfbb3075b80b26c84122556cabc64bf22e825402a63fabad4f","functions":[{"id":"func/makeCrudHandlers","name":"makeCrudHandlers","line":5,"end_line":35,"hash":"133b135aa115c058291b6df4a0b6b15152dde83c3163890e0eab0c3b018f8d4d"}]}
 // mutate4javascript-manifest-end

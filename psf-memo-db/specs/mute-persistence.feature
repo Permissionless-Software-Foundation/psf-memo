@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-25T22:44:20.454089052Z","feature_name":"Mute Persistence","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/mute-persistence.feature","background_hash":"0819ba7011f4a38292efd90e4da33aa9cfbcd5c825593dcb9ef2121cd449d219","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Mute Persistence - 1, Mute Persistence - 2, Mute Persistence - 3
 #
 # psf-memo-db must expose the `mute` entity write route on the same generic

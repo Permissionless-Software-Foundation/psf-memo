@@ -169,6 +169,21 @@ the captured output before the tool's `System/exit`; the JSON report
   client runner-workers still run the full feature; apply the same pattern if
   their soft runs get slow.
 
+- **Production logging can corrupt the runner-worker's stdout protocol.** The
+  DB `runner-worker.js` originally redirected only `console.log`, but importing
+  `LevelRESTControllerLib` (added to `acceptance/lib/handlers.js` for the
+  mute entity route) also loads `wlogger.js`, whose winston Console transport
+  writes through `console._stdout` (== `process.stdout`). Its startup
+  `info: Wlogger initialized...` line became the first `readLine` the mutator
+  saw, so it reported all 24 soft mutations as `errors` (JSON parse failure)
+  and wrote an empty manifest. Fix: in `runner-worker.js` capture the real
+  `process.stdout.write` for JSON responses, then replace
+  `process.stdout.write` with a stderr redirect so every other stdout writer is
+  invisible to the protocol. Any future acceptance handler that imports a
+  production logger relies on this guard; reproduce with
+  `node acceptance/lib/runner-worker.js < /dev/null` and confirm stdout stays
+  empty.
+
 - **`gherkin-mutator` status lines may not appear until the run finishes.** A
   long run can print only its initial `completed=0` line and look hung; the
   final status/report only lands at the end. Gauge real progress by counting the

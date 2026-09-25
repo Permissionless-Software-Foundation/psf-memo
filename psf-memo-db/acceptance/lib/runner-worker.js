@@ -24,6 +24,14 @@ import readline from 'node:readline'
 import fs from 'node:fs'
 import path from 'node:path'
 
+// stdout is the worker protocol channel. Libraries loaded by the acceptance
+// runtime (config, and wlogger's winston Console transport that writes through
+// console._stdout) also write to stdout, so the mutator's first readLine would
+// see a log line like "info: ..." instead of JSON and report every mutation as
+// an infrastructure error. Route every stdout write except the worker's own
+// JSON responses to stderr: capture the real stdout writer, then replace it.
+const protocolWrite = process.stdout.write.bind(process.stdout)
+process.stdout.write = (...args) => process.stderr.write(...args)
 console.log = (...args) => console.error('[worker]', ...args)
 
 const { runFeature } = await import('./runtime.js')
@@ -68,7 +76,7 @@ const rl = readline.createInterface({
 rl.on('line', async (line) => {
   const started = Date.now()
   const respond = (payload) => {
-    process.stdout.write(`${JSON.stringify(payload)}\n`)
+    protocolWrite(`${JSON.stringify(payload)}\n`)
   }
 
   let job
