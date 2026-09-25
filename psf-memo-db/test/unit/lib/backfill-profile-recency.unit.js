@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { backfillProfileRecency, partsFromAddrPostHeightKey } from '../../../src/lib/backfill-profile-recency.js'
+import { backfillProfileRecency } from '../../../src/lib/backfill-profile-recency.js'
 import { FakeDb } from '../../support/level-double.js'
 
 const ALICE = 'bitcoincash:qaddr-alice'
@@ -96,12 +96,7 @@ describe('#backfillProfileRecency', () => {
     const stores = fixtureStores()
     stores.profilesDb.get = async () => { throw new Error('store boom') }
 
-    let error
-    try {
-      await backfillProfileRecency(stores)
-    } catch (err) {
-      error = err
-    }
+    const error = await backfillProfileRecency(stores).catch((err) => err)
 
     assert.equal(error?.message, 'store boom')
   })
@@ -199,24 +194,6 @@ describe('#backfillProfileRecency', () => {
 
     assert.deepEqual(stores.profileRecencyDb.store.get(tie), {
       addr: tie, blockHeight: 600100, seen: 80
-    })
-  })
-})
-
-describe('#partsFromAddrPostHeightKey', () => {
-  it('should recover the address, height, and txid from a key', () => {
-    assert.deepEqual(partsFromAddrPostHeightKey(addrPostHeightKey(ALICE, 600100, 'post-a1')), {
-      addr: ALICE,
-      blockHeight: 600100,
-      txid: 'post-a1'
-    })
-  })
-
-  it('should default a non-numeric height segment to 0', () => {
-    assert.deepEqual(partsFromAddrPostHeightKey(`${ALICE}::post-a1`), {
-      addr: ALICE,
-      blockHeight: 0,
-      txid: 'post-a1'
     })
   })
 })

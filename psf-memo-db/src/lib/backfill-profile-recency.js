@@ -24,11 +24,8 @@ import {
   getRecord,
   readChainBlockHeight,
   qualifyingCandidate,
-  keepNewest,
-  partsFromAddrPostHeightKey
+  keepNewest
 } from './qualifying-post.js'
-
-export { partsFromAddrPostHeightKey }
 
 // Keep the newest candidate per profile address. Addresses without a profile
 // record are not part of the recent-profile read path and are skipped.

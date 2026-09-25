@@ -164,12 +164,7 @@ describe('#findNewestQualifyingPost', () => {
     const stores = fixtureStores()
     stores.postsDb.get = async () => { throw new Error('store boom') }
 
-    let error
-    try {
-      await findNewestQualifyingPost(stores, ALICE)
-    } catch (err) {
-      error = err
-    }
+    const error = await findNewestQualifyingPost(stores, ALICE).catch((err) => err)
 
     assert.equal(error?.message, 'store boom')
   })
@@ -180,6 +175,14 @@ describe('#partsFromAddrPostHeightKey', () => {
     assert.deepEqual(partsFromAddrPostHeightKey(addrPostHeightKey(ALICE, 600100, 'post-a1')), {
       addr: ALICE,
       blockHeight: 600100,
+      txid: 'post-a1'
+    })
+  })
+
+  it('should default a non-numeric height segment to 0', () => {
+    assert.deepEqual(partsFromAddrPostHeightKey(`${ALICE}::post-a1`), {
+      addr: ALICE,
+      blockHeight: 0,
       txid: 'post-a1'
     })
   })

@@ -73,6 +73,16 @@ describe('#recordProfileRecency', () => {
     assert.equal(adapters.profileRecencyDb.store.size, 0)
   })
 
+  it('should treat every post as confirmed when the status read fails', async () => {
+    const adapters = await makeAdaptersWithProfile({
+      statusDb: { getStatus: async () => { throw new Error('status boom') } }
+    })
+
+    await recordProfileRecency(adapters, ADDR, 600100, 1000)
+
+    assertRecency(adapters, { blockHeight: 600100, seen: 1000 })
+  })
+
   it('should keep the greatest height regardless of processing order', async () => {
     const adapters = await makeAdaptersWithProfile()
 

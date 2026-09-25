@@ -10,6 +10,10 @@
       unconfirmed entries, and writes nothing for addresses without a profile.
     - Idempotence: a second backfill leaves the index byte-for-byte identical.
     - Stale removal: pre-existing records that no longer qualify are dropped.
+    - Read path: findNewestQualifyingPost returns the same greatest confirmed
+      qualifying post for a single address that the backfill computes for a
+      profile address, so the two paths that share the qualifying-post rules
+      agree.
     - Key round trip: partsFromAddrPostHeightKey recovers the address, height,
       and txid from a formatted addrPostHeights key, including cash addresses
       that contain colons.
@@ -20,7 +24,8 @@
 import test from 'node:test'
 
 import { seededRandom, forAll, intGen, txidGen } from './harness.js'
-import { backfillProfileRecency, partsFromAddrPostHeightKey } from '../../src/lib/backfill-profile-recency.js'
+import { backfillProfileRecency } from '../../src/lib/backfill-profile-recency.js'
+import { findNewestQualifyingPost, partsFromAddrPostHeightKey } from '../../src/lib/qualifying-post.js'
 import ProfileQuery from '../../src/adapters/profile-query.js'
 import { FakeDb } from '../support/level-double.js'
 
@@ -60,6 +65,7 @@ function recencyWorldGen () {
       profileRecencyDb: new FakeDb()
     }
     const expected = new Map()
+    const expectedReads = new Map()
     let seq = 0
 
     for (const addr of ADDRS) {
@@ -81,9 +87,10 @@ function recencyWorldGen () {
           stores.postParentsDb.store.set(txid, { txid, parentTxid: 'parent' })
         } else if (roll < 0.5) {
           stores.pollsDb.store.set(txid, { txid })
-        } else if (hasProfile && blockHeight <= chainBlockHeight) {
+        } else if (blockHeight <= chainBlockHeight) {
           const candidate = { addr, blockHeight, seen }
-          if (isNewer(candidate, expected.get(addr))) expected.set(addr, candidate)
+          if (isNewer(candidate, expectedReads.get(addr))) expectedReads.set(addr, candidate)
+          if (hasProfile && isNewer(candidate, expected.get(addr))) expected.set(addr, candidate)
         }
       }
     }
@@ -93,7 +100,7 @@ function recencyWorldGen () {
     const staleAddr = 'bitcoincash:qaddr-stale'
     stores.profileRecencyDb.store.set(staleAddr, { addr: staleAddr, blockHeight: 999999, seen: 1 })
 
-    return { stores, expected }
+    return { stores, expected, expectedReads }
   }
 }
 
@@ -120,6 +127,26 @@ test('backfillProfileRecency conserves the newest confirmed qualifying post per 
     await backfillProfileRecency(stores)
     return snapshot(stores.profileRecencyDb) === before
   }, { label: 'profile recency backfill conservation and idempotence' })
+})
+
+test('findNewestQualifyingPost returns the greatest confirmed qualifying post per address', async () => {
+  await forAll(recencyWorldGen(), async ({ stores, expectedReads }) => {
+    for (const addr of ADDRS) {
+      const read = await findNewestQualifyingPost(stores, addr)
+      const want = expectedReads.get(addr) ?? null
+
+      if (!want) {
+        if (read !== null) return false
+        continue
+      }
+      if (!read) return false
+      if (read.addr !== addr) return false
+      if (read.blockHeight !== want.blockHeight) return false
+      if (read.seen !== want.seen) return false
+    }
+
+    return true
+  }, { label: 'newest qualifying post read path' })
 })
 
 test('partsFromAddrPostHeightKey round-trips a formatted addrPostHeights key', async () => {
