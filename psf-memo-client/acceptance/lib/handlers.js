@@ -4451,44 +4451,21 @@ const handlers = [
     name: 'feed shows embedded YouTube player',
     pattern: /^the feed shows an embedded YouTube player for the video (.+)$/,
     run (m, example, world) {
-      const videoId = resolveParam(m[1], example)
-      const rendered = getRenderedFeed(world)
-      const needle = `${YOUTUBE_EMBED_BASE_URL}/${videoId}`
-      const found = rendered.some((html) => html.includes(needle))
-      if (!found) {
-        throw new Error(`Feed does not show an embedded YouTube player for ${videoId}.`)
-      }
+      assertRenderedEmbedsVideo(getRenderedFeed(world), resolveParam(m[1], example), 'Feed')
     }
   },
   {
     name: 'feed shows a link that opens in a new tab',
     pattern: /^the feed shows a link to (.+) that opens in a new tab$/,
     run (m, example, world) {
-      const href = resolveParam(m[1], example)
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) =>
-        anchorsIn(html).some((anchor) =>
-          anchor.attrs.includes(`href="${href}"`) &&
-          anchor.attrs.includes('target="_blank"')
-        )
-      )
-      if (!found) {
-        throw new Error(`Feed does not show a link to ${href} that opens in a new tab.`)
-      }
+      assertRenderedLinksInNewTab(getRenderedFeed(world), resolveParam(m[1], example), 'Feed')
     }
   },
   {
     name: 'feed shows a link with the text',
     pattern: /^the feed shows a link with the text (.+)$/,
     run (m, example, world) {
-      const label = resolveParam(m[1], example)
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) =>
-        anchorsIn(html).some((anchor) => anchor.text === label)
-      )
-      if (!found) {
-        throw new Error(`Feed does not show a link with the text "${label}".`)
-      }
+      assertRenderedLinkText(getRenderedFeed(world), resolveParam(m[1], example), 'Feed')
     }
   },
   {
@@ -4502,24 +4479,14 @@ const handlers = [
     name: 'feed does not show raw URL',
     pattern: /^the feed does not show the raw URL (.+)$/,
     run (m, example, world) {
-      const url = resolveText(m[1], example)
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) => html.includes(url))
-      if (found) {
-        throw new Error(`Feed unexpectedly shows the raw URL ${url}.`)
-      }
+      assertRenderedHidesRawUrl(getRenderedFeed(world), resolveText(m[1], example), 'Feed')
     }
   },
   {
     name: 'feed shows text',
     pattern: /^the feed shows the text (.+)$/,
     run (m, example, world) {
-      const expected = resolveText(m[1], example)
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) => html.replace(/<[^\u003e]+>/g, '').includes(expected))
-      if (!found) {
-        throw new Error(`Feed does not show the text "${expected}".`)
-      }
+      assertRenderedShowsText(getRenderedFeed(world), resolveText(m[1], example), 'Feed')
     }
   },
   {
@@ -4537,39 +4504,21 @@ const handlers = [
     name: 'feed shows an image',
     pattern: /^the feed shows an image with the URL (.+) and alt text (.+)$/,
     run (m, example, world) {
-      const url = resolveParam(m[1], example)
-      const alt = resolveParam(m[2], example)
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) =>
-        imagesIn(html).some((image) =>
-          image.attrs.includes(`src="${url}"`) &&
-          image.attrs.includes(`alt="${alt}"`)
-        )
-      )
-      if (!found) {
-        throw new Error(`Feed does not show an image with URL ${url} and alt text "${alt}".`)
-      }
+      assertRenderedShowsImage(getRenderedFeed(world), resolveParam(m[1], example), resolveParam(m[2], example), 'Feed')
     }
   },
   {
     name: 'feed shows no image',
     pattern: /^the feed shows no image$/,
     run (m, example, world) {
-      assertFeedHasNoElement(world, imagesIn, 'Feed unexpectedly shows an image.')
+      assertRenderedHasNoImage(getRenderedFeed(world), 'Feed')
     }
   },
   {
     name: 'feed does not show the URL as text',
     pattern: /^the feed does not show the URL (.+) as text$/,
     run (m, example, world) {
-      const url = resolveParam(m[1], example)
-      const rendered = getRenderedFeed(world)
-      const found = rendered.some((html) =>
-        html.replace(/<[^>]+>/g, '').includes(url)
-      )
-      if (found) {
-        throw new Error(`Feed unexpectedly shows the URL ${url} as text.`)
-      }
+      assertRenderedHidesUrlText(getRenderedFeed(world), resolveParam(m[1], example), 'Feed')
     }
   },
   {
@@ -4590,104 +4539,56 @@ const handlers = [
     name: 'profile page shows embedded YouTube player',
     pattern: /^the profile page shows an embedded YouTube player for the video (.+)$/,
     run (m, example, world) {
-      const videoId = resolveParam(m[1], example)
-      const needle = `${YOUTUBE_EMBED_BASE_URL}/${videoId}`
-      const found = getRenderedProfilePosts(world).some((html) => html.includes(needle))
-      if (!found) {
-        throw new Error(`Profile page does not show an embedded YouTube player for ${videoId}.`)
-      }
+      assertRenderedEmbedsVideo(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
     }
   },
   {
     name: 'profile page does not show raw URL',
     pattern: /^the profile page does not show the raw URL (.+)$/,
     run (m, example, world) {
-      const url = resolveText(m[1], example)
-      const found = getRenderedProfilePosts(world).some((html) => html.includes(url))
-      if (found) {
-        throw new Error(`Profile page unexpectedly shows the raw URL ${url}.`)
-      }
+      assertRenderedHidesRawUrl(getRenderedProfilePosts(world), resolveText(m[1], example), 'Profile page')
     }
   },
   {
     name: 'profile page shows text',
     pattern: /^the profile page shows the text (.+)$/,
     run (m, example, world) {
-      const expected = resolveText(m[1], example)
-      const found = getRenderedProfilePosts(world).some((html) =>
-        html.replace(/<[^\u003e]+>/g, '').includes(expected)
-      )
-      if (!found) {
-        throw new Error(`Profile page does not show the text "${expected}".`)
-      }
+      assertRenderedShowsText(getRenderedProfilePosts(world), resolveText(m[1], example), 'Profile page')
     }
   },
   {
     name: 'profile page shows an image',
     pattern: /^the profile page shows an image with the URL (.+) and alt text (.+)$/,
     run (m, example, world) {
-      const url = resolveParam(m[1], example)
-      const alt = resolveParam(m[2], example)
-      const found = getRenderedProfilePosts(world).some((html) =>
-        imagesIn(html).some((image) =>
-          image.attrs.includes(`src="${url}"`) &&
-          image.attrs.includes(`alt="${alt}"`)
-        )
-      )
-      if (!found) {
-        throw new Error(`Profile page does not show an image with URL ${url} and alt text "${alt}".`)
-      }
+      assertRenderedShowsImage(getRenderedProfilePosts(world), resolveParam(m[1], example), resolveParam(m[2], example), 'Profile page')
     }
   },
   {
     name: 'profile page shows a link that opens in a new tab',
     pattern: /^the profile page shows a link to (.+) that opens in a new tab$/,
     run (m, example, world) {
-      const href = resolveParam(m[1], example)
-      const found = getRenderedProfilePosts(world).some((html) =>
-        anchorsIn(html).some((anchor) =>
-          anchor.attrs.includes(`href="${href}"`) && anchor.attrs.includes('target="_blank"')
-        )
-      )
-      if (!found) {
-        throw new Error(`Profile page does not show a link to ${href} that opens in a new tab.`)
-      }
+      assertRenderedLinksInNewTab(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
     }
   },
   {
     name: 'profile page shows a link with the text',
     pattern: /^the profile page shows a link with the text (.+)$/,
     run (m, example, world) {
-      const label = resolveParam(m[1], example)
-      const found = getRenderedProfilePosts(world).some((html) =>
-        anchorsIn(html).some((anchor) => anchor.text === label)
-      )
-      if (!found) {
-        throw new Error(`Profile page does not show a link with the text "${label}".`)
-      }
+      assertRenderedLinkText(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
     }
   },
   {
     name: 'profile page shows no image',
     pattern: /^the profile page shows no image$/,
     run (m, example, world) {
-      const found = getRenderedProfilePosts(world).some((html) => imagesIn(html).length > 0)
-      if (found) {
-        throw new Error('Profile page unexpectedly shows an image.')
-      }
+      assertRenderedHasNoImage(getRenderedProfilePosts(world), 'Profile page')
     }
   },
   {
     name: 'profile page does not show the URL as text',
     pattern: /^the profile page does not show the URL (.+) as text$/,
     run (m, example, world) {
-      const url = resolveParam(m[1], example)
-      const found = getRenderedProfilePosts(world).some((html) =>
-        html.replace(/<[^>]+>/g, '').includes(url)
-      )
-      if (found) {
-        throw new Error(`Profile page unexpectedly shows the URL ${url} as text.`)
-      }
+      assertRenderedHidesUrlText(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
     }
   },
   {
@@ -4975,6 +4876,92 @@ function getRenderedProfilePosts (world) {
     )
   }
   return world.renderedProfilePosts
+}
+
+// Post-rendering acceptance assertions shared by the feed and profile page
+// steps. Each takes the rendered post HTML array plus a display label used in
+// failure messages.
+
+// Fail unless a rendered post embeds the YouTube player for `videoId`.
+function assertRenderedEmbedsVideo (rendered, videoId, label) {
+  const needle = `${YOUTUBE_EMBED_BASE_URL}/${videoId}`
+  const found = rendered.some((html) => html.includes(needle))
+  if (!found) {
+    throw new Error(`${label} does not show an embedded YouTube player for ${videoId}.`)
+  }
+}
+
+// Fail unless a rendered post links `href` in a new tab.
+function assertRenderedLinksInNewTab (rendered, href, label) {
+  const found = rendered.some((html) =>
+    anchorsIn(html).some((anchor) =>
+      anchor.attrs.includes(`href="${href}"`) &&
+      anchor.attrs.includes('target="_blank"')
+    )
+  )
+  if (!found) {
+    throw new Error(`${label} does not show a link to ${href} that opens in a new tab.`)
+  }
+}
+
+// Fail unless a rendered post shows an anchor with `text`.
+function assertRenderedLinkText (rendered, text, label) {
+  const found = rendered.some((html) =>
+    anchorsIn(html).some((anchor) => anchor.text === text)
+  )
+  if (!found) {
+    throw new Error(`${label} does not show a link with the text "${text}".`)
+  }
+}
+
+// Fail when a rendered post shows the raw URL `url`.
+function assertRenderedHidesRawUrl (rendered, url, label) {
+  const found = rendered.some((html) => html.includes(url))
+  if (found) {
+    throw new Error(`${label} unexpectedly shows the raw URL ${url}.`)
+  }
+}
+
+// Fail unless a rendered post shows `text` outside of markup.
+function assertRenderedShowsText (rendered, text, label) {
+  const found = rendered.some((html) => visibleText(html).includes(text))
+  if (!found) {
+    throw new Error(`${label} does not show the text "${text}".`)
+  }
+}
+
+// Fail unless a rendered post shows an image with `url` and `alt`.
+function assertRenderedShowsImage (rendered, url, alt, label) {
+  const found = rendered.some((html) =>
+    imagesIn(html).some((image) =>
+      image.attrs.includes(`src="${url}"`) &&
+      image.attrs.includes(`alt="${alt}"`)
+    )
+  )
+  if (!found) {
+    throw new Error(`${label} does not show an image with URL ${url} and alt text "${alt}".`)
+  }
+}
+
+// Fail when a rendered post shows an image.
+function assertRenderedHasNoImage (rendered, label) {
+  const found = rendered.some((html) => imagesIn(html).length > 0)
+  if (found) {
+    throw new Error(`${label} unexpectedly shows an image.`)
+  }
+}
+
+// Fail when a rendered post shows `url` outside of markup.
+function assertRenderedHidesUrlText (rendered, url, label) {
+  const found = rendered.some((html) => visibleText(html).includes(url))
+  if (found) {
+    throw new Error(`${label} unexpectedly shows the URL ${url} as text.`)
+  }
+}
+
+// Strip tags from a rendered HTML string to inspect its visible text.
+function visibleText (html) {
+  return html.replace(/<[^>]+>/g, '')
 }
 
 // Fail when any rendered feed HTML contains an element matched by extract.
