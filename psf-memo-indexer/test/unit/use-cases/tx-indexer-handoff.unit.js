@@ -89,6 +89,22 @@ describe('#TxIndexerHandoff', () => {
     assert.deepEqual(result.waits, [250, 250])
   })
 
+  it('should fall back to the real setTimeout sleep', async () => {
+    let calls = 0
+    const startTxIndexer = sandbox.stub().callsFake(async () => {
+      calls++
+      if (calls <= 1) throw new Error('endpoint down')
+      return true
+    })
+    const uut = new TxIndexerHandoff({ startTxIndexer, retryIntervalMs: 0 })
+
+    const result = await uut.run()
+
+    assert.equal(result.started, true)
+    assert.equal(result.attempts, 2)
+    assert.deepEqual(result.waits, [0])
+  })
+
   it('should not reject when started in the background', async () => {
     const startTxIndexer = sandbox.stub().rejects(new Error('endpoint down'))
     const sleep = sandbox.stub().rejects(new Error('sleep failed'))
