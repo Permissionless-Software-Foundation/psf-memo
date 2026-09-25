@@ -35,6 +35,43 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Mute persistence (2026-09-25):** the indexer's mute writes now persist.
+  `psf-memo-indexer` writes mutes through
+  `createEntityDb('mute', 'key', 'muteData')` (`POST /level/mute` with
+  `{ key, muteData }`, key `${muterAddr}:${muteeHash160}`), but
+  `psf-memo-db`'s `ENTITY_CONFIG` had no `mute` route, so every write 404'd and
+  the `mutes` store stayed empty; `/mute/state`, `/mute/muted`, and the
+  `/posts/recent?viewer=` mute filter therefore always saw no mutes and the
+  client kept showing muted authors' posts. The fix registers the `mute` route
+  against `mutesDb`. DB-only; no client or indexer code change. Spec:
+  `psf-memo-db/specs/mute-persistence.feature`. Merged to `master` at `04275c4`
+  (architect review commit `5de0ab1`; the later tip `04275c4` adds only the
+  record and summary, so `docs/reviews/mute-persistence-verification.json` is
+  valid for the merged tree). Independent acceptance check after merge: 6/6
+  examples. `verify.sh db` pass 4/4 at `5de0ab1` (unit 458/0, property 71/0,
+  acceptance 24 suites, lint ok); language mutation 3/3 on `crud-handlers.js`;
+  soft Gherkin mutation 24 total / 8 killed / 16 intrinsic survivors; max CC 1 /
+  CRAP 1.0. Architect summary: `docs/reviews/mute-persistence-summary.md`.
+  Backfill of already-lost mutes was explicitly dropped (it needs a chain
+  re-scan); re-mute from the client after deploy.
+
+- **Profile post rendering (2026-09-25):** the `/profile/:addr` post cards now
+  render post text through the shared `PostContent` renderer (wrapped in a pure
+  `ProfilePostContent` seam), so image URLs render inline, YouTube links embed,
+  other URLs become new-tab links, and surrounding text is preserved with a
+  failed-image fallback to a plain link -- matching the recent feed. Client-only
+  read rendering; no broadcast, no DB/indexer change. Spec:
+  `psf-memo-client/specs/profile-post-rendering.feature`. Merged to `master` at
+  `43b4f74` (architect review commit `5076f07`; the later tip `43b4f74` adds
+  only the record and summary, so
+  `docs/reviews/profile-post-rendering-verification.json` is valid for the
+  merged tree). The merged feature's acceptance suite has 13 example executions
+  across 5 scenarios. `verify.sh client` pass 5/5 at `5076f07` (unit 636/0,
+  property 178/0, acceptance 42 suites, lint ok, build ok); language mutation 0
+  mutable sites (`profile-post-content.js`); soft Gherkin mutation 35 total / 33
+  killed / 2 intrinsic survivors (scenario 4); max CC 1 / CRAP 1.0. Architect
+  summary: `docs/reviews/profile-post-rendering-summary.md`.
+
 - **TX indexer handoff failure logging (2026-09-25):** each failed TX indexer
   handoff attempt now emits one diagnostic line naming the control endpoint
   (`TX_REST_API_IP` / `TX_REST_API_PORT`) and the error, and stating the

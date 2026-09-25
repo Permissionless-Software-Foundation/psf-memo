@@ -835,6 +835,24 @@ that a single user-facing feature may require specs in more than one component.
     code-review commit `a9b1965`; the merged tip `1411abe` is docs-only
     (extends #38).
 
+60. **A missing DB entity write route silently drops an entire action class.**
+    The mute feature shipped with a read API (`/mute/state`, `/mute/muted`) and
+    an indexer handler that writes through `createEntityDb('mute', ...)`
+    (`POST /level/mute`), but `ENTITY_CONFIG` in
+    `psf-memo-db/src/controllers/rest-api/level/crud-handlers.js` never gained a
+    `mute` route, so every indexer mute write 404'd and the `mutes` store stayed
+    empty. Unit tests stubbed `muteDb.create` and acceptance fakes seeded
+    `mutesDb` directly, so no test crossed the indexer REST write to the DB
+    route (gotcha #4/#57 class). When a spec's acceptance drives a write, make
+    the write step go through the real route registry
+    (`entityHandlers.<route>`) rather than the store, and keep the route table
+    in sync with every `createEntityDb(...)` call the indexer introduces. Fixed
+    in `mute-persistence` (`04275c4`); the architect also had to fix the DB
+    gherkin-mutation `runner-worker.js` stdout protocol because importing the
+    real controller loads winston, whose `Console` transport writes to stdout
+    and corrupted the worker's newline-delimited JSON channel (see
+    `docs/architect-process-notes.md`).
+
 ---
 
 ## 10. Run / verify the app
@@ -885,25 +903,31 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `1411abe` (`Record TX indexer handoff failure-logging
-architect review and verification`). The indexer record
-`docs/reviews/tx-handoff-retry-logging-verification.json` names the architect
-code-review commit `a9b1965`; the later tip `1411abe` is docs-only (summary +
-record), so the record is valid for the merged tree (extends #38). Building on
-`tx-handoff-retry`, each failed TX indexer handoff attempt now logs the control
-endpoint (`TX_REST_API_IP` / `TX_REST_API_PORT`), the error, and the retry
-interval instead of failing silently: the adapter owns `endpoint()` -> `{ ip,
-port }` (shared with the request URL), the pure `TxIndexerHandoff` use case
-takes injected `log` + `endpoint`, and `use-cases-index.js` wires
-`console.error`. Spec: `psf-memo-indexer/specs/tx-indexer-handoff-retry.feature`
-(scenario 5). Merged to `master` at `1411abe` (fast-forward from `7ce9597`).
-After the merge the specifier ran only the merged feature's acceptance test as
-the independent check (11/11 examples). `verify.sh indexer` was pass 4/4 at
-`a9b1965` (unit 168/0, property 19/0, acceptance 10 suites, lint ok); language
-mutation 15/15 (`tx-indexer-handoff.js`), 3/3 (`tx-indexer.js`), no survivors;
-soft Gherkin mutation 33 total / 24 killed / 9 intrinsic survivors (scenario 5:
-16/16 killed); max CC 6 / CRAP 6.0. Architect summary:
-`docs/reviews/tx-handoff-retry-logging-summary.md`.
+Current `master` HEAD: `04275c4` (`Record mute persistence architect review and
+verification`). The DB record `docs/reviews/mute-persistence-verification.json`
+names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
+only the record and summary, so the record is valid for the merged tree
+(extends #38). `mute-persistence` fixed the live bug where the indexer's
+`POST /level/mute` returned 404 because `ENTITY_CONFIG` had no `mute` route, so
+no mute was ever persisted and the `/posts/recent?viewer=` filter saw an empty
+store. The fix registers `mute` against `mutesDb`; covered by controller unit
+tests, a generic entity-CRUD property test, and Gherkin acceptance that drives
+the real entity route registry. `verify.sh db` pass 4/4 at `5de0ab1` (unit
+458/0, property 71/0, acceptance 24 suites, lint ok); language mutation 3/3 on
+`crud-handlers.js`; soft Gherkin mutation 24 total / 8 killed / 16 intrinsic
+survivors; max CC 1 / CRAP 1.0. Architect summary:
+`docs/reviews/mute-persistence-summary.md`. After the merge the specifier ran
+only the merged feature's acceptance test as the independent check (6/6
+examples). Backfill of the already-lost mutes was explicitly dropped (it needs a
+chain re-scan); re-mute from the client after deploy.
+
+The previously unrecorded `profile-post-rendering` feature (merged at `43b4f74`;
+record `docs/reviews/profile-post-rendering-verification.json` names review
+commit `5076f07`) is now recorded in the backlog. `verify.sh client` pass 5/5 at
+`5076f07` (unit 636/0, property 178/0, acceptance 42 suites, lint ok, build ok);
+language mutation 0 mutable sites (`profile-post-content.js`); soft Gherkin
+mutation 35 total / 33 killed / 2 intrinsic survivors; max CC 1 / CRAP 1.0.
+Architect summary: `docs/reviews/profile-post-rendering-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),
