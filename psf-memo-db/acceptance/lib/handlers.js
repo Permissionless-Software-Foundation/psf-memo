@@ -44,6 +44,31 @@ function hash160 (addr) {
   return bchjs.Address.toHash160(addr)
 }
 
+// Parse a comma-separated Gherkin address list into a trimmed array.
+function parseAddressList (raw) {
+  const trimmed = raw.trim()
+  return trimmed.length === 0 ? [] : trimmed.split(',').map((s) => s.trim())
+}
+
+// Assert two address lists span the same set of addresses.
+function assertListContainsExactly (actual, raw, label) {
+  const expected = parseAddressList(raw)
+  const expectedSet = new Set(expected)
+  const actualSet = new Set(actual)
+  if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
+    throw new Error(`Expected ${label} ${expected.join(',')}, got ${actual.join(',')}`)
+  }
+}
+
+// Assert none of the addresses in a comma-separated list appear in `actual`.
+function assertListExcludes (actual, raw, label) {
+  const actualSet = new Set(actual)
+  const present = parseAddressList(raw).filter((addr) => actualSet.has(addr))
+  if (present.length > 0) {
+    throw new Error(`Expected ${label} not to contain ${present.join(',')}, got ${actual.join(',')}`)
+  }
+}
+
 function padHeight (blockHeight) {
   return String(blockHeight ?? 0).padStart(12, '0')
 }
@@ -1714,14 +1739,7 @@ const handlers = [
     name: 'followers list contains addresses',
     pattern: /^the followers list contains the addresses (<[A-Za-z0-9_]+>)$/,
     run (m, example, world) {
-      const raw = resolveParam(m[1], example).trim()
-      const expected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
-      const actual = world.getLastResponse().followers
-      const expectedSet = new Set(expected)
-      const actualSet = new Set(actual)
-      if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
-        throw new Error(`Expected followers ${expected.join(',')}, got ${actual.join(',')}`)
-      }
+      assertListContainsExactly(world.getLastResponse().followers, resolveParam(m[1], example), 'followers')
     }
   },
   {
@@ -2052,14 +2070,7 @@ const handlers = [
     name: 'topic followers list contains addresses',
     pattern: /^the topic followers list contains the addresses (<expected>)$/,
     run (m, example, world) {
-      const raw = resolveParam(m[1], example).trim()
-      const expected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
-      const actual = world.getLastResponse().followers
-      const expectedSet = new Set(expected)
-      const actualSet = new Set(actual)
-      if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
-        throw new Error(`Expected topic followers ${expected.join(',')}, got ${actual.join(',')}`)
-      }
+      assertListContainsExactly(world.getLastResponse().followers, resolveParam(m[1], example), 'topic followers')
     }
   },
   {
@@ -2221,26 +2232,14 @@ const handlers = [
     }
   },
   {
-    name: 'entity API stores mute',
-    pattern: /^the psf-memo-db entity API stores a mute record for mutee (<[A-Za-z0-9_]+>) from muter (<[A-Za-z0-9_]+>) at block height (<[A-Za-z0-9_]+>)$/,
+    name: 'entity API stores mute or unmute',
+    pattern: /^the psf-memo-db entity API stores an? (un)?mute record for mutee (<[A-Za-z0-9_]+>) from muter (<[A-Za-z0-9_]+>) at block height (<[A-Za-z0-9_]+>)$/,
     async run (m, example, world) {
       await storeMuteViaEntityApi(world, {
-        muteeAddr: resolveParam(m[1], example),
-        muterAddr: resolveParam(m[2], example),
-        blockHeight: parseInt(resolveParam(m[3], example), 10),
-        unmute: false
-      })
-    }
-  },
-  {
-    name: 'entity API stores unmute',
-    pattern: /^the psf-memo-db entity API stores an unmute record for mutee (<[A-Za-z0-9_]+>) from muter (<[A-Za-z0-9_]+>) at block height (<[A-Za-z0-9_]+>)$/,
-    async run (m, example, world) {
-      await storeMuteViaEntityApi(world, {
-        muteeAddr: resolveParam(m[1], example),
-        muterAddr: resolveParam(m[2], example),
-        blockHeight: parseInt(resolveParam(m[3], example), 10),
-        unmute: true
+        muteeAddr: resolveParam(m[2], example),
+        muterAddr: resolveParam(m[3], example),
+        blockHeight: parseInt(resolveParam(m[4], example), 10),
+        unmute: m[1] === 'un'
       })
     }
   },
@@ -2278,28 +2277,14 @@ const handlers = [
     name: 'muted list contains addresses',
     pattern: /^the muted list contains the addresses (<[A-Za-z0-9_]+>)$/,
     run (m, example, world) {
-      const raw = resolveParam(m[1], example).trim()
-      const expected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
-      const actual = world.getLastResponse().muted
-      const expectedSet = new Set(expected)
-      const actualSet = new Set(actual)
-      if (expectedSet.size !== actualSet.size || !expectedSet.isSubsetOf(actualSet)) {
-        throw new Error(`Expected muted ${expected.join(',')}, got ${actual.join(',')}`)
-      }
+      assertListContainsExactly(world.getLastResponse().muted, resolveParam(m[1], example), 'muted')
     }
   },
   {
     name: 'muted list does not contain addresses',
     pattern: /^the muted list does not contain the addresses (<[A-Za-z0-9_]+>)$/,
     run (m, example, world) {
-      const raw = resolveParam(m[1], example).trim()
-      const unexpected = raw.length === 0 ? [] : raw.split(',').map((s) => s.trim())
-      const actual = world.getLastResponse().muted
-      const actualSet = new Set(actual)
-      const present = unexpected.filter((addr) => actualSet.has(addr))
-      if (present.length > 0) {
-        throw new Error(`Expected muted list not to contain ${present.join(',')}, got ${actual.join(',')}`)
-      }
+      assertListExcludes(world.getLastResponse().muted, resolveParam(m[1], example), 'muted list')
     }
   },
   {

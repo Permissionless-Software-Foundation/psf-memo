@@ -89,6 +89,27 @@ describe('#LevelRESTController', () => {
     assert.deepEqual(ctx.body, { unmute: false })
   })
 
+  it('should update a mute through the entity handler registry', async () => {
+    const muteData = { unmute: true, blockHeight: 600200 }
+    const ctx = {
+      params: { key: 'bitcoincash:muter:aabbccdd' },
+      request: { body: { key: 'bitcoincash:muter:aabbccdd', muteData } },
+      body: null
+    }
+    await uut.entityHandlers.mute.update(ctx)
+
+    assert.deepEqual(mockMutesDb.put.lastCall.args, ['bitcoincash:muter:aabbccdd', muteData])
+    assert.deepEqual(ctx.body, { key: 'bitcoincash:muter:aabbccdd', success: true })
+  })
+
+  it('should delete a mute through the entity handler registry', async () => {
+    const ctx = { params: { key: 'bitcoincash:muter:aabbccdd' }, body: null }
+    await uut.entityHandlers.mute.delete(ctx)
+
+    assert.deepEqual(mockMutesDb.del.lastCall.args, ['bitcoincash:muter:aabbccdd'])
+    assert.deepEqual(ctx.body, { key: 'bitcoincash:muter:aabbccdd', success: true })
+  })
+
   it('should throw the error status when err has a status', () => {
     const ctx = { throw: sandbox.stub() }
     const err = { status: 400, message: 'Bad request' }
