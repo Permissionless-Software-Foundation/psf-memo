@@ -20,6 +20,11 @@
 # the block containing that post is indexed. Processing qualifying posts in any
 # order converges on the greatest height, with seen as the tie-breaker at equal
 # heights, so a replay never regresses a profile's recency.
+#
+# When a set-profile transaction arrives after the address has posted, the
+# indexer establishes the initial recency by reading the newest qualifying post
+# from psf-memo-db's read API, rather than scanning the addrPostHeights store
+# itself.
 Feature: Profile Recency Indexing
 
   Background:
@@ -93,6 +98,7 @@ Feature: Profile Recency Indexing
     And the indexer processes a Memo reply transaction <replyTxid> to parent <postTxid> from <addr> at block height <replyHeight> with text "newer reply"
     And the indexer processes a set-profile transaction for <addr> with text "my bio"
     Then the profileRecency store records <addr> at block height <postHeight> seen at 100
+    And the indexer read the newest qualifying post for <addr> from the psf-memo-db
 
     Examples:
       | addr                | postTxid | postHeight | replyTxid | replyHeight |
@@ -102,6 +108,7 @@ Feature: Profile Recency Indexing
   Scenario Outline: Profile Recency Indexing - 8 setting a profile with no qualifying post creates no recency record
     When the indexer processes a set-profile transaction for <addr> with text "my bio"
     Then the profileRecency store has no record for <addr>
+    And the indexer read the newest qualifying post for <addr> from the psf-memo-db
 
     Examples:
       | addr                |
