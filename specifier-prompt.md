@@ -800,6 +800,24 @@ that a single user-facing feature may require specs in more than one component.
     adapter methods with a real-adapter contract test. Spec:
     `psf-memo-db/specs/newest-qualifying-post.feature`.
 
+58. **The TX indexer handoff retries in the background and must never stop
+    block indexing.** After IBD the block indexer starts the mempool indexer
+    through `GET /tx-start`; that handoff now runs in a pure `TxIndexerHandoff`
+    use case (`psf-memo-indexer/src/use-cases/tx-indexer-handoff.js`) with
+    injected `startTxIndexer` + `sleep`, retrying every
+    `TX_INDEXER_HANDOFF_RETRY_MS` (default 10000) until success and never
+    rejecting into `psf-memo-block-indexer.js`. Each axios request is bounded
+    by `TX_INDEXER_HANDOFF_TIMEOUT_MS` (default 10000), which equals the retry
+    interval, so a genuinely hung endpoint is retried about every 20s (10s
+    timeout + 10s wait) rather than every 10s; the documented "retry interval"
+    is the wait between attempts. The pre-fix bug was a single `await`ed,
+    unbounded, fatal `GET` that produced `connect ETIMEDOUT 172.17.0.1:5455`
+    and exited the block indexer. Spec:
+    `psf-memo-indexer/specs/tx-indexer-handoff-retry.feature`. Record
+    `docs/reviews/tx-handoff-retry-verification.json` names the code-review
+    commit `0acf7a9`; the merged tip `20ed191` adds review docs plus a one-line
+    test lint cleanup (extends #38).
+
 ---
 
 ## 10. Run / verify the app
@@ -850,29 +868,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `81beada` (`Record profile-recency-db-read architect
-review and verification`). The DB record
-`docs/reviews/profile-recency-db-read-verification.json` and the indexer record
-`docs/reviews/profile-recency-db-read-indexer-verification.json` both name the
-architect code review commit `3a3c314`; the later tip `81beada` adds only
-`docs/reviews/` (records + summary), so both records are valid for the merged
-tree (extends #38). This task replaces the indexer's cross-REST `addrPostHeights`
-scan with a psf-memo-db read API: `GET /profile/newest-post/:addr` returns the
-newest confirmed qualifying post (`{ addr, blockHeight, seen }`) or an empty
-response, and the shared `psf-memo-db/src/lib/qualifying-post.js` now owns the
-qualification rule for both the backfill and the read path; the indexer
-`establishProfileRecency` calls the injected
-`psf-memo-indexer/src/adapters/newest-qualifying-post.js` client. Specs:
-`psf-memo-db/specs/newest-qualifying-post.feature`, and
-`psf-memo-indexer/specs/profile-recency-indexing.feature` scenarios 7-8. Merged
-to `master` at `81beada` (fast-forward from `440ab0b`). After the merge the
-specifier ran only the merged features' acceptance tests as the independent
-check (DB 3/3, indexer 20/20). `verify.sh db` and `verify.sh indexer` were pass
-4/4 at `3a3c314` (DB: unit 454, property 67/0, acceptance 23 suites, lint ok;
-indexer: unit 150, property 14/0, acceptance 9 suites, lint ok); soft Gherkin
-mutation 6/6 killed for the new DB feature and 88/8 killed for the indexer
-feature (80 intrinsic example-value survivors); max CC 5 / CRAP 5.0. Architect
-summary: `docs/reviews/profile-recency-db-read-summary.md`.
+Current `master` HEAD: `20ed191` (`Record TX indexer handoff retry architect
+review and verification`). The indexer record
+`docs/reviews/tx-handoff-retry-verification.json` names the architect code-review
+commit `0acf7a9`; the later tip `20ed191` adds the review docs plus a one-line
+lint cleanup in `test/unit/config/config.unit.js`, so the record is valid for
+the merged tree (extends #38). This task replaces the block indexer's single
+fatal `GET /tx-start` after IBD with a background retry: the pure
+`TxIndexerHandoff` use case
+(`psf-memo-indexer/src/use-cases/tx-indexer-handoff.js`) retries every
+`TX_INDEXER_HANDOFF_RETRY_MS` (default 10000) until the TX indexer control
+endpoint responds, each axios request is bounded by
+`TX_INDEXER_HANDOFF_TIMEOUT_MS` (default 10000), and `psf-memo-block-indexer.js`
+calls `startInBackground()` and never exits on handoff failure. Spec:
+`psf-memo-indexer/specs/tx-indexer-handoff-retry.feature`. Merged to `master` at
+`20ed191` (fast-forward from `b778509`). After the merge the specifier ran only
+the merged feature's acceptance test as the independent check (9/9 examples).
+`verify.sh indexer` was pass 4/4 at `0acf7a9` (unit 164/0, property 18/0,
+acceptance 10 suites, lint ok); language mutation 12/12
+(`tx-indexer-handoff.js`), 3/3 (`tx-indexer.js`), 8/8 (`config/index.js`), no
+survivors; soft Gherkin mutation 32 total / 23 killed / 9 intrinsic survivors;
+max CC 6 / CRAP 6.0. Architect summary:
+`docs/reviews/tx-handoff-retry-summary.md`.
 
 `master` still carries four human commits made outside the swarm pipeline -
 `f7809d0` (feed-page button styling), `477c1c1` (recent-profiles page info),

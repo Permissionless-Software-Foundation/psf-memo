@@ -35,6 +35,30 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **TX indexer handoff retry (2026-09-25):** the block indexer no longer
+  `await`s a single `GET http://{TX_REST_API_IP}:{TX_REST_API_PORT}/tx-start`
+  after IBD. A failed or unreachable TX indexer control endpoint (the observed
+  `connect ETIMEDOUT 172.17.0.1:5455`) used to abort `start()` and stop block
+  indexing. The handoff now runs through the pure `TxIndexerHandoff` use case
+  (`psf-memo-indexer/src/use-cases/tx-indexer-handoff.js`) with injected
+  `startTxIndexer` and `sleep`: it retries every `TX_INDEXER_HANDOFF_RETRY_MS`
+  (default 10000) indefinitely, in the background, until the request succeeds,
+  and never rejects into the block-indexing loop. `psf-memo-block-indexer.js`
+  calls `startInBackground()`; each axios request is bounded by
+  `TX_INDEXER_HANDOFF_TIMEOUT_MS` (default 10000). Indexer-only; no client or DB
+  change. Spec: `psf-memo-indexer/specs/tx-indexer-handoff-retry.feature`.
+  Merged to `master` at `20ed191` (fast-forward from `b778509`; architect review
+  commit `0acf7a9`; the later `20ed191` commit adds the review docs and a
+  one-line test lint cleanup, so the record
+  `docs/reviews/tx-handoff-retry-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 9/9 example executions.
+  `verify.sh indexer` pass 4/4 at `0acf7a9` (unit 164/0, property 18/0,
+  acceptance 10 suites, lint ok); language mutation 12/12
+  (`tx-indexer-handoff.js`), 3/3 (`tx-indexer.js`), 8/8 (`config/index.js`), no
+  survivors; soft Gherkin mutation 32 total / 23 killed / 9 intrinsic
+  survivors; max CC 6 / CRAP 6.0. Architect summary:
+  `docs/reviews/tx-handoff-retry-summary.md`.
+
 - **Profile recency via DB read API (2026-09-25):** set-profile establishment
   (`0x6d05`) no longer scans `addrPostHeights` across the REST boundary. When a
   set-profile arrives after the address has posted, the indexer asks
