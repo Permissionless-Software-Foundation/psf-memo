@@ -99,5 +99,5 @@ class Adapters {
 export default Adapters
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-20T21:56:16.308Z","module_hash":"7e2f08e8c4f5cbe9c883e29212a6391cd63a20f0875c29c192a0f078e1363458","functions":[{"id":"func/Adapters.constructor","name":"Adapters.constructor","line":17,"end_line":22,"hash":"d5d1fd454ddfa112378f278773b65be5cb39aab75473dd57c04c9a385de1aa58"},{"id":"func/Adapters.openDatabases","name":"Adapters.openDatabases","line":24,"end_line":85,"hash":"ed9027f054515a862e5eeaaaf5a996975cad3c910f2cd4e486c369a0a0282fa6"},{"id":"func/Adapters.start","name":"Adapters.start","line":87,"end_line":91,"hash":"f9e62a9199f0259f5c22913625e6e497548b3887cc24871bba475e73e52b3750"}]}
+// {"version":1,"tested_at":"2026-09-25T17:19:51.047Z","module_hash":"04e0064b7f3abfaa7567faf45100ecdca8ab8225a4a16385d6db63d688c3bd25","functions":[{"id":"func/Adapters.constructor","name":"Adapters.constructor","line":17,"end_line":22,"hash":"d5d1fd454ddfa112378f278773b65be5cb39aab75473dd57c04c9a385de1aa58"},{"id":"func/Adapters.openDatabases","name":"Adapters.openDatabases","line":24,"end_line":90,"hash":"3079cdfda0e181712974855082824c86613ed2bed68c5d207832d4cce25ef66a"},{"id":"func/Adapters.start","name":"Adapters.start","line":92,"end_line":96,"hash":"f9e62a9199f0259f5c22913625e6e497548b3887cc24871bba475e73e52b3750"}]}
 // mutate4javascript-manifest-end

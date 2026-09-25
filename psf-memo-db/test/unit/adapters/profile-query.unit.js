@@ -272,6 +272,39 @@ describe('#ProfileQuery.getNewestQualifyingPost', () => {
     assert.deepEqual(result, {})
   })
 
+  it('should exclude a poll creation even when it is the newest entry', async () => {
+    const { query } = makeQuery({
+      addrPostHeightsDb: new FakeDb([
+        [addrPostHeightKey(ALICE, 600100, 'post-a1'), { txid: 'post-a1', addr: ALICE, blockHeight: 600100 }],
+        [addrPostHeightKey(ALICE, 600400, 'poll-a1'), { txid: 'poll-a1', addr: ALICE, blockHeight: 600400 }]
+      ]),
+      pollsDb: new FakeDb([
+        ['poll-a1', { txid: 'poll-a1', question: 'best coin?' }]
+      ])
+    })
+
+    const result = await query.getNewestQualifyingPost(ALICE)
+
+    assert.deepEqual(result, { addr: ALICE, blockHeight: 600100, seen: 100 })
+  })
+
+  it('should exclude a post above the chain tip', async () => {
+    const { query } = makeQuery({
+      addrPostHeightsDb: new FakeDb([
+        [addrPostHeightKey(ALICE, 600100, 'post-a1'), { txid: 'post-a1', addr: ALICE, blockHeight: 600100 }],
+        [addrPostHeightKey(ALICE, 600900, 'post-a2'), { txid: 'post-a2', addr: ALICE, blockHeight: 600900 }]
+      ]),
+      postsDb: new FakeDb([
+        ['post-a1', { addr: ALICE, seen: 100, blockHeight: 600100 }],
+        ['post-a2', { addr: ALICE, seen: 900, blockHeight: 600900 }]
+      ])
+    })
+
+    const result = await query.getNewestQualifyingPost(ALICE)
+
+    assert.deepEqual(result, { addr: ALICE, blockHeight: 600100, seen: 100 })
+  })
+
   it('should return an empty object when the addrPostHeights store is not configured', async () => {
     const query = new ProfileQuery({ profilesDb: new FakeDb() })
 

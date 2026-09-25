@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=0f17bb75cfb4aafe389e2752ad73384af9e34403a5302eeb2104ceda626c9442
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-09-25T17:29:33.789815821Z","feature_name":"Newest Qualifying Post","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-db/specs/newest-qualifying-post.feature","background_hash":"9f29f1fd1af8398c20a9345845798f4d950d7074d138b4acd70ea111b8cf1017","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Newest Qualifying Post - 1 the newest confirmed qualifying post is returned","scenario_hash":"ff3f5722d287ac72dddb7bd353a53617fc881774ff422c844dacea515779dd76","mutation_count":6,"result":{"Total":6,"Killed":6,"Survived":0,"Errors":0},"tested_at":"2026-09-25T17:29:33.789815821Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Newest Qualifying Post - 1, Newest Qualifying Post - 2
 #
 # psf-memo-db exposes a read API that returns the newest confirmed qualifying

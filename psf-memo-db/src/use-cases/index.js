@@ -145,5 +145,5 @@ class UseCases {
 export default UseCases
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-02T20:16:09.198Z","module_hash":"246be2cf01feda067a62a77a8502f76cef8569cb63dff49bf7b139fdd25dd355","functions":[{"id":"func/UseCases.constructor","name":"UseCases.constructor","line":26,"end_line":54,"hash":"e8f3118c89d65ad1abddc4ad92dd13c7b77ae063767be248339f581a7651749e"},{"id":"func/UseCases.start","name":"UseCases.start","line":56,"end_line":136,"hash":"3207d2a7848465e421e0bdc61719cf4aa61b23e1dcdf751af087f13e6dc984cb"}]}
+// {"version":1,"tested_at":"2026-09-25T17:20:25.115Z","module_hash":"eade7a728ece677096e0baea547b25ade73573cec826af82778be9dc929d335f","functions":[{"id":"func/UseCases.constructor","name":"UseCases.constructor","line":27,"end_line":56,"hash":"b7862f883b68e8f12b8a1ad4f51da9639e47e673aa5d7e7c4812bb70b75193df"},{"id":"func/UseCases.start","name":"UseCases.start","line":58,"end_line":142,"hash":"cc865baafc13cb726926b4742e7c0fe299e7807f3e22df6df4e4fa7992eb2319"}]}
 // mutate4javascript-manifest-end

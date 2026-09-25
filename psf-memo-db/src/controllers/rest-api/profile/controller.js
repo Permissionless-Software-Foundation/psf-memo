@@ -89,3 +89,7 @@ class ProfileRESTControllerLib {
 }
 
 export default ProfileRESTControllerLib
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-25T17:17:56.959Z","module_hash":"8f29b9637f96e71551dc0c622bf0d71a6d6c367f09fec45b05f1f4fe2d7805c6","functions":[{"id":"func/ProfileRESTControllerLib.constructor","name":"ProfileRESTControllerLib.constructor","line":8,"end_line":21,"hash":"1dbd97121f672a98d6da36cf3bc11dade19f5467433f763af6a7421d4bdb47fb"},{"id":"func/ProfileRESTControllerLib.handleError","name":"ProfileRESTControllerLib.handleError","line":23,"end_line":25,"hash":"dd78b4827c34b435ec347deb58a5887eb2637f2178787abbad0ab1876b3aeeb5"},{"id":"func/ProfileRESTControllerLib.getRecentProfiles","name":"ProfileRESTControllerLib.getRecentProfiles","line":55,"end_line":62,"hash":"19def1b20db3c01af46d2984e3db108c0d2327f23e33f0b653b6b8b3311f83a7"},{"id":"func/ProfileRESTControllerLib.getNewestQualifyingPost","name":"ProfileRESTControllerLib.getNewestQualifyingPost","line":81,"end_line":88,"hash":"5736d56da2ca9376dedaa4818f2a73144c4dfee398d76d608add28137577e0ca"}]}
+// mutate4javascript-manifest-end

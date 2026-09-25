@@ -37,3 +37,7 @@ class GetNewestQualifyingPost {
 }
 
 export default GetNewestQualifyingPost
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-09-25T17:18:30.807Z","module_hash":"2d88049d1563a52e436bac82ab2493a8f35accadd7795efd5bcf7db18be84e86","functions":[{"id":"func/GetNewestQualifyingPost.constructor","name":"GetNewestQualifyingPost.constructor","line":11,"end_line":26,"hash":"6ea3da7336d96446cb47d12d08b436324cac0782baf108f4acf47c8364d751a3"},{"id":"func/GetNewestQualifyingPost.execute","name":"GetNewestQualifyingPost.execute","line":28,"end_line":36,"hash":"5344d5d69eb3b56eab46b63cb866bf008542b2f7b87858608430793d10d404f8"}]}
+// mutate4javascript-manifest-end

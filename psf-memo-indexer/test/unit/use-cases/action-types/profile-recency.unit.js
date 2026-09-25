@@ -110,6 +110,23 @@ describe('#recordProfileRecency', () => {
     assertRecency(adapters, { blockHeight: 600100, seen: 100 })
   })
 
+  it('should not rewrite a recency record with the same height and seen', async () => {
+    const adapters = await makeAdaptersWithProfile()
+    await recordProfileRecency(adapters, ADDR, 600100, 100)
+
+    let updates = 0
+    const originalUpdate = adapters.profileRecencyDb.update
+    adapters.profileRecencyDb.update = async (...args) => {
+      updates++
+      return originalUpdate(...args)
+    }
+
+    await recordProfileRecency(adapters, ADDR, 600100, 100)
+
+    assert.equal(updates, 0)
+    assertRecency(adapters, { blockHeight: 600100, seen: 100 })
+  })
+
   it('should default a missing seen value to 0', async () => {
     const adapters = await makeAdaptersWithProfile()
 
