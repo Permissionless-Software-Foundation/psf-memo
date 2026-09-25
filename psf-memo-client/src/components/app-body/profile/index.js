@@ -19,6 +19,7 @@ import PostOptionsMenu from '../../post-feed/post-options-menu'
 import PostThreadModal from '../../post-thread-modal'
 import MuteResult from './mute-result'
 import ProfileAddress from './profile-address'
+import ProfilePostContent from './profile-post-content'
 import ProfileTokenIcons from './profile-token-icons'
 import '../../../App.css'
 import './profile.css'
@@ -321,7 +322,7 @@ function Profile (props) {
                     </div>
                     <PostOptionsMenu txid={post.txid} />
                   </div>
-                  <Card.Text className='profile-post-text'>{post.text}</Card.Text>
+                  <ProfilePostContent text={post.text} />
                   <div className='profile-post-actions d-flex gap-3 align-items-center'>
                     <LikeButton count={post.likeCount ?? 0} liked={false} readOnly />
                     <PostReplyCount

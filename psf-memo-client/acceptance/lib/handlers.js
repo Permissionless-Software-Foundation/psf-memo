@@ -56,6 +56,7 @@ const PollOptionPage = require('../../src/services/poll-option-page')
 const MemoPollVote = require('../../src/services/memo-poll-vote')
 const PollVotePage = require('../../src/services/poll-vote-page')
 const { renderPostText } = require('./render-post')
+const { renderProfilePost } = require('./render-profile-post')
 const { renderAccountAvatar } = require('./render-account-avatar')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
@@ -4577,9 +4578,116 @@ const handlers = [
     run (m, example, world) {
       const url = resolveParam(m[1], example)
       world.failedImages = new Set([...(world.failedImages || []), url])
-      world.renderedFeed = world.recentFeedPage.posts.map((post) =>
-        renderPostText(post.text, { initialFailedImages: [...world.failedImages] })
+      world.renderedFeed = world.recentFeedPage
+        ? world.recentFeedPage.posts.map((post) =>
+          renderPostText(post.text, { initialFailedImages: [...world.failedImages] })
+        )
+        : []
+      world.renderedProfilePosts = null
+    }
+  },
+  {
+    name: 'profile page shows embedded YouTube player',
+    pattern: /^the profile page shows an embedded YouTube player for the video (.+)$/,
+    run (m, example, world) {
+      const videoId = resolveParam(m[1], example)
+      const needle = `${YOUTUBE_EMBED_BASE_URL}/${videoId}`
+      const found = getRenderedProfilePosts(world).some((html) => html.includes(needle))
+      if (!found) {
+        throw new Error(`Profile page does not show an embedded YouTube player for ${videoId}.`)
+      }
+    }
+  },
+  {
+    name: 'profile page does not show raw URL',
+    pattern: /^the profile page does not show the raw URL (.+)$/,
+    run (m, example, world) {
+      const url = resolveText(m[1], example)
+      const found = getRenderedProfilePosts(world).some((html) => html.includes(url))
+      if (found) {
+        throw new Error(`Profile page unexpectedly shows the raw URL ${url}.`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows text',
+    pattern: /^the profile page shows the text (.+)$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const found = getRenderedProfilePosts(world).some((html) =>
+        html.replace(/<[^\u003e]+>/g, '').includes(expected)
       )
+      if (!found) {
+        throw new Error(`Profile page does not show the text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows an image',
+    pattern: /^the profile page shows an image with the URL (.+) and alt text (.+)$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      const alt = resolveParam(m[2], example)
+      const found = getRenderedProfilePosts(world).some((html) =>
+        imagesIn(html).some((image) =>
+          image.attrs.includes(`src="${url}"`) &&
+          image.attrs.includes(`alt="${alt}"`)
+        )
+      )
+      if (!found) {
+        throw new Error(`Profile page does not show an image with URL ${url} and alt text "${alt}".`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows a link that opens in a new tab',
+    pattern: /^the profile page shows a link to (.+) that opens in a new tab$/,
+    run (m, example, world) {
+      const href = resolveParam(m[1], example)
+      const found = getRenderedProfilePosts(world).some((html) =>
+        anchorsIn(html).some((anchor) =>
+          anchor.attrs.includes(`href="${href}"`) && anchor.attrs.includes('target="_blank"')
+        )
+      )
+      if (!found) {
+        throw new Error(`Profile page does not show a link to ${href} that opens in a new tab.`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows a link with the text',
+    pattern: /^the profile page shows a link with the text (.+)$/,
+    run (m, example, world) {
+      const label = resolveParam(m[1], example)
+      const found = getRenderedProfilePosts(world).some((html) =>
+        anchorsIn(html).some((anchor) => anchor.text === label)
+      )
+      if (!found) {
+        throw new Error(`Profile page does not show a link with the text "${label}".`)
+      }
+    }
+  },
+  {
+    name: 'profile page shows no image',
+    pattern: /^the profile page shows no image$/,
+    run (m, example, world) {
+      const found = getRenderedProfilePosts(world).some((html) => imagesIn(html).length > 0)
+      if (found) {
+        throw new Error('Profile page unexpectedly shows an image.')
+      }
+    }
+  },
+  {
+    name: 'profile page does not show the URL as text',
+    pattern: /^the profile page does not show the URL (.+) as text$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      const found = getRenderedProfilePosts(world).some((html) =>
+        html.replace(/<[^>]+>/g, '').includes(url)
+      )
+      if (found) {
+        throw new Error(`Profile page unexpectedly shows the URL ${url} as text.`)
+      }
     }
   },
   {
@@ -4850,6 +4958,23 @@ function getRenderedFeed (world) {
     world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
   }
   return world.renderedFeed
+}
+
+// Return the cached rendered HTML for the profile page's posts, computing it
+// on first use. Falls back to the failed-image set so a failed load can be
+// rendered deterministically through the same seam the browser uses.
+function getRenderedProfilePosts (world) {
+  if (!world.profilePage) {
+    throw new Error('No profile page is loaded.')
+  }
+  if (!world.renderedProfilePosts) {
+    world.renderedProfilePosts = world.profilePage.posts.map((post) =>
+      renderProfilePost(post.text, {
+        initialFailedImages: world.failedImages ? [...world.failedImages] : undefined
+      })
+    )
+  }
+  return world.renderedProfilePosts
 }
 
 // Fail when any rendered feed HTML contains an element matched by extract.
