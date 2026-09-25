@@ -89,6 +89,60 @@ describe('#TxIndexerHandoff', () => {
     assert.deepEqual(result.waits, [250, 250])
   })
 
+  it('should log each failed handoff with the endpoint, error, and retry interval', async () => {
+    const startTxIndexer = sandbox.stub().rejects(new Error('endpoint down'))
+    const sleep = sandbox.stub().resolves()
+    const logs = []
+    const uut = new TxIndexerHandoff({
+      startTxIndexer,
+      sleep,
+      retryIntervalMs: 5000,
+      endpoint: () => ({ ip: '10.0.0.7', port: 5456 }),
+      log: (message) => logs.push(message)
+    })
+
+    await uut.run({ maxRetries: 2 })
+
+    assert.equal(logs.length, 3)
+    for (const line of logs) {
+      assert.include(line, 'TX indexer handoff failed for IP 10.0.0.7 port 5456: endpoint down')
+      assert.include(line, 'Retrying in 5000 milliseconds')
+    }
+  })
+
+  it('should not log when the first handoff attempt succeeds', async () => {
+    const startTxIndexer = sandbox.stub().resolves(true)
+    const sleep = sandbox.stub().resolves()
+    const log = sandbox.stub()
+    const uut = new TxIndexerHandoff({
+      startTxIndexer,
+      sleep,
+      log,
+      endpoint: () => ({ ip: '10.0.0.7', port: 5456 })
+    })
+
+    await uut.run()
+
+    assert.equal(log.callCount, 0)
+  })
+
+  it('should tolerate a missing endpoint description when logging', async () => {
+    const startTxIndexer = sandbox.stub().rejects(new Error('endpoint down'))
+    const sleep = sandbox.stub().resolves()
+    const logs = []
+    const uut = new TxIndexerHandoff({
+      startTxIndexer,
+      sleep,
+      retryIntervalMs: 1000,
+      log: (message) => logs.push(message)
+    })
+
+    await uut.run({ maxRetries: 0 })
+
+    assert.equal(logs.length, 1)
+    assert.include(logs[0], 'IP undefined port undefined')
+  })
+
   it('should fall back to the real setTimeout sleep', async () => {
     let calls = 0
     const startTxIndexer = sandbox.stub().callsFake(async () => {

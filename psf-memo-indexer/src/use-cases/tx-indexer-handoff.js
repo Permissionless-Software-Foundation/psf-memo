@@ -25,9 +25,12 @@ class TxIndexerHandoff {
     }
     this.startTxIndexer = localConfig.startTxIndexer
     this.sleep = localConfig.sleep || defaultSleep
+    this.endpoint = localConfig.endpoint || (() => ({}))
+    this.log = localConfig.log || (() => {})
     this.retryIntervalMs =
       localConfig.retryIntervalMs ?? config.txIndexerHandoffRetryMs
     this.run = this.run.bind(this)
+    this.logFailure = this.logFailure.bind(this)
     this.startInBackground = this.startInBackground.bind(this)
   }
 
@@ -43,7 +46,9 @@ class TxIndexerHandoff {
         await this.startTxIndexer()
         return { started: true, attempts, retries, waits }
       } catch (err) {
-        // Failure is expected while the TX indexer is not ready; retry below.
+        // Failure is expected while the TX indexer is not ready. Never fail
+        // silently: name the endpoint and announce the automatic retry.
+        this.logFailure(err, interval)
       }
 
       if (maxRetries !== undefined && maxRetries !== null && retries >= maxRetries) {
@@ -54,6 +59,14 @@ class TxIndexerHandoff {
       waits.push(interval)
       await this.sleep(interval)
     }
+  }
+
+  logFailure (err, interval) {
+    const { ip, port } = this.endpoint()
+    this.log(
+      `TX indexer handoff failed for IP ${ip} port ${port}: ${err.message}. ` +
+        `Retrying in ${interval} milliseconds.`
+    )
   }
 
   // Fire-and-forget entry point for the block indexer. A failed handoff must

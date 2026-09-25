@@ -16,12 +16,19 @@ class TxIndexerAdapter {
   }
 
   async startTxIndexer () {
+    const { ip, port } = this.endpoint()
     const response = await this.axios.get(
-      `http://${this.config.txRestApiIp}:${this.config.txRestApiPort}/tx-start`,
+      `http://${ip}:${port}/tx-start`,
       { timeout: this.config.txIndexerHandoffTimeoutMs }
     )
     console.log('TX indexer start response:', response.data)
     return true
+  }
+
+  // Describe the control endpoint so the retry loop can name it when a handoff
+  // attempt fails.
+  endpoint () {
+    return { ip: this.config.txRestApiIp, port: this.config.txRestApiPort }
   }
 }
 

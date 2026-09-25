@@ -49,6 +49,10 @@ describe('#TxIndexerAdapter', () => {
     })
   })
 
+  it('should report the configured control endpoint', () => {
+    assert.deepEqual(uut.endpoint(), { ip: 'tx.example', port: 5455 })
+  })
+
   it('should propagate a request failure', async () => {
     get.rejects(new Error('TX indexer unreachable'))
 

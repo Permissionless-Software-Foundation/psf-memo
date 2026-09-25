@@ -19,7 +19,9 @@ class UseCases {
     this.txIndexerHandoff = new TxIndexerHandoff({
       startTxIndexer: this.adapters.txIndexerAdapter.startTxIndexer.bind(
         this.adapters.txIndexerAdapter
-      )
+      ),
+      endpoint: () => this.adapters.txIndexerAdapter.endpoint(),
+      log: (message) => console.error(message)
     })
     this.initUseCases = this.initUseCases.bind(this)
   }

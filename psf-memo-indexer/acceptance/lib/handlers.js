@@ -1204,7 +1204,8 @@ const muteHandlers = [
         requestCount: 0,
         requests: [],
         result: null,
-        backgroundPromise: null
+        backgroundPromise: null,
+        logs: []
       }
       world.txConfig = { ...config }
       world.txControl = {
@@ -1227,6 +1228,11 @@ const muteHandlers = [
       })
       world.txHandoff.handoff = new TxIndexerHandoff({
         startTxIndexer: () => world.txIndexerAdapter.startTxIndexer(),
+        endpoint: () => ({
+          ip: world.txConfig.txRestApiIp,
+          port: world.txConfig.txRestApiPort
+        }),
+        log: (message) => world.txHandoff.logs.push(String(message)),
         sleep: (ms) => {
           world.txHandoff.waits.push(ms)
           if (world.txHandoff.parkSleeps) return new Promise(() => {})
@@ -1247,6 +1253,14 @@ const muteHandlers = [
     pattern: /^the TX indexer control endpoint is unreachable$/,
     run (m, example, world) {
       world.txHandoff.unreachable = true
+    }
+  },
+  {
+    name: 'TX indexer control endpoint at IP and port',
+    pattern: /^the TX indexer control endpoint is at IP (.+) and port (.+)$/,
+    run (m, example, world) {
+      world.txConfig.txRestApiIp = resolveParam(m[1], example)
+      world.txConfig.txRestApiPort = parseInt(resolveParam(m[2], example), 10)
     }
   },
   {
@@ -1325,6 +1339,41 @@ const muteHandlers = [
     run (m, example, world) {
       if (world.txHandoff.result?.started !== true) {
         throw new Error('Expected the TX indexer handoff to start the TX indexer')
+      }
+    }
+  },
+  {
+    name: 'indexer logged a failed handoff for endpoint and retry',
+    pattern: /^the indexer logged a failed handoff for IP (.+) and port (.+) with a retry in (.+) milliseconds$/,
+    run (m, example, world) {
+      const ip = resolveParam(m[1], example)
+      const port = resolveParam(m[2], example)
+      const interval = resolveParam(m[3], example)
+      const found = world.txHandoff.logs.some((line) => {
+        return (
+          line.includes(`TX indexer handoff failed for IP ${ip} port ${port}`) &&
+          line.includes(`Retrying in ${interval} milliseconds`)
+        )
+      })
+      if (!found) {
+        throw new Error(
+          `Expected a logged failed handoff for IP ${ip} port ${port} retrying in ${interval}ms, got ${JSON.stringify(world.txHandoff.logs)}`
+        )
+      }
+    }
+  },
+  {
+    name: 'indexer logged the failed handoff',
+    pattern: /^the indexer logged the failed handoff (.+) time\(s\)$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const matching = world.txHandoff.logs.filter((line) =>
+        line.includes('TX indexer handoff failed')
+      )
+      if (matching.length !== expected) {
+        throw new Error(
+          `Expected ${expected} logged failed handoff(s), got ${matching.length}`
+        )
       }
     }
   }
