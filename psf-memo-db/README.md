@@ -61,7 +61,7 @@ npm test
 
 ## Production (Docker)
 
-The production Docker setup is in [psf-memo-indexer/production/docker](../psf-memo-indexer/production/docker/). Compose builds `memo-db` by copying this package from the monorepo root.
+The production Docker setup is in [production/docker](../production/docker/). Compose builds `memo-db` by copying this package from the monorepo root.
 
 ## License
 

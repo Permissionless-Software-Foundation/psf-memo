@@ -19,6 +19,6 @@ Protocol reference: [memo-protocol.md](../../memo-protocol.md). Reference implem
 
 ## Related material
 
-- Production deployment: [production/docker](../production/docker/)
+- Production deployment: [production/docker](../../production/docker/)
 - SLP analogue: [psf-slp-indexer-g2](https://github.com/Permissionless-Software-Foundation/psf-slp-indexer-g2) and [psf-slp-db](https://github.com/Permissionless-Software-Foundation/psf-slp-db)
 - Clean Architecture primer: [Chris Troutner — Clean Architecture](https://christroutner.github.io/trouts-blog/blog/clean-architecture)

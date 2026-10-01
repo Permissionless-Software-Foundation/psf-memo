@@ -26,7 +26,7 @@ WORKDIR /home/safeuser/psf-memo-client
 
 # Create React App reads REACT_APP_* from this .env at build time.
 # Edit production/docker/memo-client/.env before building.
-COPY psf-memo-indexer/production/docker/memo-client/.env .env
+COPY production/docker/memo-client/.env .env
 
 # Install dependencies
 RUN npm install
@@ -42,4 +42,4 @@ EXPOSE 80
 COPY --from=builder /home/safeuser/psf-memo-client/build /usr/share/nginx/html
 
 # Copy the NGINX configuration file.
-COPY psf-memo-indexer/production/docker/memo-client/default.conf /etc/nginx/conf.d/default.conf
+COPY production/docker/memo-client/default.conf /etc/nginx/conf.d/default.conf

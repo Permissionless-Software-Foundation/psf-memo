@@ -84,4 +84,4 @@ cd psf-memo-indexer && npm run block-indexer
 cd psf-memo-indexer && npm run tx-indexer
 ```
 
-Production uses [production/docker](../production/docker/) with the same three logical services.
+Production uses [production/docker](../../production/docker/) with the same three logical services.

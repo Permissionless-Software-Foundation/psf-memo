@@ -135,7 +135,7 @@ This document records **why** the Memo indexer stack looks the way it does, incl
 
 ## 13. Docker layout under `production/docker`
 
-**Decision:** Dockerfiles live in `psf-memo-indexer/production/docker/{memo-db,block-indexer,tx-indexer,memo-client}/`, not package roots—matching the psf-slp-indexer-g2 layout, adapted for the monorepo.
+**Decision:** Dockerfiles live in `production/docker/{memo-db,block-indexer,tx-indexer,memo-client}/` at the monorepo root, not package roots—matching the psf-slp-indexer-g2 layout, adapted for the monorepo.
 
 **Reason:** Single compose file orchestrates all services; build context is the monorepo root so each Dockerfile can `COPY` its package (`psf-memo-db`, `psf-memo-indexer`, `psf-memo-client`) from the local checkout.
 

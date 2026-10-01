@@ -15,8 +15,8 @@ specs
 **/tmp
 **/target
 **/.env
-!psf-memo-indexer/production/docker/**/.env
+!production/docker/**/.env
 psf-memo-client/build
-psf-memo-indexer/production/data
+production/data
 *.md
 !README.md

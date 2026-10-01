@@ -115,7 +115,6 @@ Level CRUD bypasses use cases intentionally—same as `psf-slp-db`’s `/level` 
 | `src/adapters/` | External systems |
 | `src/use-cases/` | Indexing orchestration and handlers |
 | `src/controllers/` | HTTP and keyboard |
-| `production/docker/` | Docker Compose, per-service Dockerfile and `.env` |
 | `test/unit/` | Mocha + c8 |
 
 ## Repository layout (database)
@@ -167,12 +166,12 @@ Each store is a separate LevelDB with JSON values. Keys are txids, addresses, or
 ## Deployment topology
 
 ```text
-production/docker/
-├── docker-compose.yml   → build context: monorepo root (../../..)
+production/docker/          (monorepo root)
+├── docker-compose.yml   → build context: monorepo root (../..)
 ├── memo-db/             → COPY psf-memo-db/
 ├── block-indexer/       → COPY psf-memo-indexer/
 ├── tx-indexer/          → COPY psf-memo-indexer/
 └── memo-client/         → COPY psf-memo-client/
 ```
 
-Volumes mount `.env` and start scripts per service, matching the SLP production pattern. LevelDB data can persist under `production/data/leveldb`.
+Volumes mount `.env` and start scripts per service, matching the SLP production pattern. LevelDB data can persist under `production/data/leveldb` at the monorepo root.

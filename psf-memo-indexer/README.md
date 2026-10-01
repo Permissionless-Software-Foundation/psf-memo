@@ -73,7 +73,7 @@ npm test
 
 ## Production (Docker)
 
-Docker Compose under [production/docker](./production/docker) runs the full stack. Build context is the [psf-memo](https://github.com/Permissionless-Software-Foundation/psf-memo) monorepo root; each image copies its package (`psf-memo-db`, `psf-memo-indexer`, or `psf-memo-client`) from the local checkout.
+Docker Compose under [production/docker](../production/docker) (monorepo root) runs the full stack. Build context is the [psf-memo](https://github.com/Permissionless-Software-Foundation/psf-memo) monorepo root; each image copies its package (`psf-memo-db`, `psf-memo-indexer`, or `psf-memo-client`) from the local checkout.
 
 ### Services
 
@@ -84,7 +84,7 @@ Docker Compose under [production/docker](./production/docker) runs the full stac
 | `tx-indexer` | `memo-tx-indexer` | `5455` | Mempool TX indexing (`/tx-start` control API) |
 | `memo-client` | `memo-client` | `3000` | React SPA (`psf-memo-client/`), nginx |
 
-LevelDB data persists on the host at `production/data/leveldb`.
+LevelDB data persists on the host at `production/data/leveldb` (relative to the monorepo root).
 
 ### Prerequisites
 
@@ -95,7 +95,7 @@ LevelDB data persists on the host at `production/data/leveldb`.
 ### 1. Configure environment files
 
 ```bash
-cd production/docker
+cd ../production/docker
 
 cp memo-db/.env-example memo-db/.env
 cp block-indexer/.env-example block-indexer/.env
@@ -147,7 +147,7 @@ Changing `REACT_APP_MEMO_DB_URL` requires rebuilding the `memo-client` image (se
 ### 2. Build images
 
 ```bash
-cd production/docker
+cd ../production/docker
 docker compose build
 ```
 
@@ -167,7 +167,7 @@ docker compose build memo-db
 Preferred order: database first, then indexers, then the client.
 
 ```bash
-cd production/docker
+cd ../production/docker
 
 docker compose up -d memo-db
 docker compose up -d block-indexer tx-indexer

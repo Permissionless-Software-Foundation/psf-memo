@@ -8,5 +8,6 @@ logs/
 .env
 coverage/
 data/
+production/data/
 
 .gitsigners

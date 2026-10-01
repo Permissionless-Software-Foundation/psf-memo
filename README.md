@@ -16,6 +16,7 @@ In addition to the three core pieces of infrastructure above, this repository in
 psf-memo-client/    React SPA for reading/writing Memo actions
 psf-memo-indexer/   BCH block + mempool indexer for the Memo protocol
 psf-memo-db/        LevelDB REST API (indexer writes, client reads)
+production/         Docker Compose stack for deploying the monorepo
 specs/              Cross-component backlog and specification notes
 swarmforge/         SwarmForge constitution, roles, scripts, and config
 ```
@@ -42,10 +43,10 @@ See each component's `README.md` and `dev-docs/` for architecture details.
 
 ### Production (Docker)
 
-Compose under [`psf-memo-indexer/production/docker`](psf-memo-indexer/production/docker/) builds all four services from this monorepo (no separate GitHub clones):
+Compose under [`production/docker`](production/docker/) builds all four services from this monorepo (no separate GitHub clones):
 
 ```bash
-cd psf-memo-indexer/production/docker
+cd production/docker
 cp memo-db/.env-example memo-db/.env
 cp block-indexer/.env-example block-indexer/.env
 cp tx-indexer/.env-example tx-indexer/.env
