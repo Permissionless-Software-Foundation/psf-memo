@@ -11,7 +11,7 @@ import { Nav, Navbar, Image } from 'react-bootstrap' // Used for Navbar Style an
 import { NavLink, Link } from 'react-router-dom' // Used to navigate between routes
 
 // Assets
-import Logo from './psf-logo.png'
+const Logo = '/blippost-logo-assets/png/white-on-green/blippost-white-on-green-128.png'
 
 function NavMenu (props) {
   // Get the current path
@@ -31,7 +31,7 @@ function NavMenu (props) {
       <Navbar expanded={expanded} onToggle={setExpanded} expand='xxxl' bg='dark' variant='dark' style={{ paddingRight: '20px' }}>
         <Navbar.Brand as={Link} to='/posts/recent' style={{ paddingLeft: '20px' }} onClick={handleClickEvent}>
           <Image src={Logo} thumbnail width='50' />{' '}
-          Memo BCH
+          Blip Post
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls='responsive-navbar-nav' />
