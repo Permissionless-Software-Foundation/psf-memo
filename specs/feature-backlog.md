@@ -31,19 +31,32 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **TikTok Embed (spec approved 2026-10-02):** embed TikTok video links in
-  post text as the self-contained player frame
-  (`https://www.tiktok.com/player/v1/<video_id>`), preserving surrounding text.
-  Canonical links (`tiktok.com/@user/video/<id>`, `m.tiktok.com/v/<id>.html`,
-  `/player/v1/<id>`, `/embed/v2/<id>`) carry the id; short links
-  (`vt.tiktok.com/<code>`, `vm.tiktok.com/<code>`, `tiktok.com/t/<code>`) are
-  resolved through TikTok's CORS-enabled oEmbed `embed_product_id` before the
-  player is shown, and a link that cannot be resolved stays an ordinary link.
-  Client-only read rendering through the shared `PostContent` renderer (feed +
-  profile page). Spec: `psf-memo-client/specs/tiktok-embed.feature`; task
-  `tiktok-embed`. No DB/indexer change.
+- None.
 
 ## Recently completed
+
+- **TikTok Embed (2026-10-02):** posts containing a TikTok video link now
+  render the video in an embedded player
+  (`https://www.tiktok.com/player/v1/<video_id>`) instead of the raw URL, with
+  surrounding text preserved and non-video tiktok.com links left as ordinary
+  links. Canonical links carry the numeric id; short links (`vt.tiktok.com`,
+  `vm.tiktok.com`, `tiktok.com/t/`) are resolved through TikTok's CORS-enabled
+  oEmbed `embed_product_id` before the player shows, via the injectable-fetch
+  resolver `psf-memo-client/src/services/tiktok-oembed.js` and the pure parser
+  `src/services/tiktok-embed.js`; an unresolved short link stays a plain link.
+  Client-only read rendering through the shared `PostContent` renderer (feed +
+  profile page). Spec: `psf-memo-client/specs/tiktok-embed.feature`. Merged to
+  `master` at `3d2dbbb` (architect review commit `98aff8d`; the later docs-only
+  `8adb27a` adds the record and summary, so
+  `docs/reviews/tiktok-embed-verification.json` is valid for the merged tree).
+  Independent acceptance check after merge: 20/20 example executions.
+  `verify.sh client` pass 5/5 at `98aff8d` (unit 705/0, property 200/0,
+  acceptance 44 suites, lint ok, build ok); language mutation 8/8
+  (`tiktok-embed.js`), 3/3 (`tiktok-oembed.js`), 11/11 (`post-content.js`);
+  soft Gherkin mutation 38 total / 26 killed / 12 intrinsic survivors
+  (case-insensitive URL parts, self-consistent values, unasserted text);
+  max CC 6 / CRAP 6.0. Architect summary:
+  `docs/reviews/tiktok-embed-summary.md`.
 
 - **X Post Embed (2026-10-02):** posts containing an x.com or twitter.com
   status link (`/status/<numeric id>`) now render the linked post in an
