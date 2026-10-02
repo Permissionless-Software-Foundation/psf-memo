@@ -31,7 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Account page layout (2026-10-02):** the `/account` page gets the same
+  sidebar as `/profile/:addr` — avatar (jdenticon fallback), bio, copyable BCH
+  address, and SLP token icons — with the existing Set Name / Set Bio / Set
+  Avatar URL controls on the right, each preceded by a short description of what
+  it does. Client-only; no DB/indexer change. Spec:
+  `psf-memo-client/specs/account-page-layout.feature` (15 scenarios).
+  `psf-memo-client/specs/account-avatar-display.feature` (jdenticon fallback)
+  and the `set-avatar-url.feature` scenario 1 assertion were updated to match.
 
 ## Recently completed
 
