@@ -31,7 +31,12 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Feed pagination scroll (specified 2026-10-02):** the `/posts/recent` feed
+  scrolls back to the top whenever a page loads via the Next or Previous button
+  or when the active Recent/Following tab changes. Applies to both the Recent
+  and Following tabs. Client-only; no DB/indexer change. Spec:
+  `psf-memo-client/specs/feed-pagination-scroll.feature`. Handed off to the
+  coder at `d067d8e8c7`; awaiting implementation.
 
 ## Recently completed
 
