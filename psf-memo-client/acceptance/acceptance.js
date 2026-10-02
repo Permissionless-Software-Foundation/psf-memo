@@ -18,6 +18,7 @@ const { execFileSync } = require('node:child_process')
 const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
+const { resolveApsDir } = require('../../swarmforge/scripts/lib/aps-dir.cjs')
 
 const root = path.resolve(__dirname, '..')
 const specsDir = path.join(root, 'specs')
@@ -25,7 +26,7 @@ const buildDir = path.join(root, 'build', 'acceptance')
 const irDir = path.join(buildDir, 'ir')
 const genDir = path.join(buildDir, 'generated')
 const repoRoot = path.resolve(root, '..')
-const apsDir = path.join(repoRoot, 'tmp', 'aps')
+let apsDir = path.join(repoRoot, 'tmp', 'aps')
 const APS_URL = 'https://github.com/unclebob/Acceptance-Pipeline-Specification.git'
 
 function sh (cmd, args, opts = {}) {
@@ -35,14 +36,16 @@ function sh (cmd, args, opts = {}) {
   }).toString()
 }
 
-// Ensure the single canonical APS checkout (tmp/aps) is present.
+// Ensure the single canonical APS checkout is present. When the shared
+// ensure-aps.sh script exists, use the path it prints: worktrees share one
+// checkout at the repository root, not a worktree-local tmp/aps.
 function ensureAps () {
-  if (fs.existsSync(path.join(apsDir, 'bb.edn'))) return
   const shared = path.join(repoRoot, 'swarmforge', 'scripts', 'ensure-aps.sh')
-  if (fs.existsSync(shared)) {
-    sh('/bin/bash', [shared])
-    return
-  }
+  const sharedExists = fs.existsSync(shared)
+  if (!sharedExists && fs.existsSync(path.join(apsDir, 'bb.edn'))) return
+  const sharedOutput = sharedExists ? sh('/bin/bash', [shared]) : ''
+  apsDir = resolveApsDir({ repoRoot, sharedExists, sharedOutput })
+  if (fs.existsSync(path.join(apsDir, 'bb.edn'))) return
   fs.mkdirSync(path.dirname(apsDir), { recursive: true })
   sh('git', ['clone', '--depth', '1', APS_URL, apsDir])
 }
