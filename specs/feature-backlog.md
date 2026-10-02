@@ -31,7 +31,17 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **TikTok Embed (spec approved 2026-10-02):** embed TikTok video links in
+  post text as the self-contained player frame
+  (`https://www.tiktok.com/player/v1/<video_id>`), preserving surrounding text.
+  Canonical links (`tiktok.com/@user/video/<id>`, `m.tiktok.com/v/<id>.html`,
+  `/player/v1/<id>`, `/embed/v2/<id>`) carry the id; short links
+  (`vt.tiktok.com/<code>`, `vm.tiktok.com/<code>`, `tiktok.com/t/<code>`) are
+  resolved through TikTok's CORS-enabled oEmbed `embed_product_id` before the
+  player is shown, and a link that cannot be resolved stays an ordinary link.
+  Client-only read rendering through the shared `PostContent` renderer (feed +
+  profile page). Spec: `psf-memo-client/specs/tiktok-embed.feature`; task
+  `tiktok-embed`. No DB/indexer change.
 
 ## Recently completed
 
