@@ -580,7 +580,14 @@ function createWorld () {
   // Read-only page controllers backed by the fake psf-memo-db API.
   world.recentFeedPage = new RecentFeedPage({ memoDb, wallet })
   world.followingFeedPage = new FollowingFeedPage({ memoDb, wallet })
-  world.feedTabsPage = new FeedTabsPage({ memoDb, wallet })
+  // The feed resets its scroll position through this adapter; the fake
+  // viewport below records the resulting position for the scroll steps.
+  world.feedScrollTop = 0
+  world.feedTabsPage = new FeedTabsPage({
+    memoDb,
+    wallet,
+    scrollToTop: () => { world.feedScrollTop = 0 }
+  })
   world.notificationsPage = new NotificationsPage({ memoDb, wallet })
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
@@ -652,6 +659,13 @@ function createWorld () {
   })
 
   return world
+}
+
+// The browser keeps the feed's previous scroll position when a page loads or
+// the tab changes. Simulate that state before an action so the feed's
+// scroll-to-top reset is observable.
+function scrolledAwayFromFeedTop (world) {
+  world.feedScrollTop = 1200
 }
 
 // Decode a raw reply payload into its parent txid (hex) and reply text.
@@ -2287,6 +2301,7 @@ const handlers = [
     name: 'click Recent tab',
     pattern: /^I click the Recent tab$/,
     async run (m, example, world) {
+      scrolledAwayFromFeedTop(world)
       await world.feedTabsPage.selectTab('Recent')
     }
   },
@@ -2294,6 +2309,7 @@ const handlers = [
     name: 'click Following tab',
     pattern: /^I click the Following tab$/,
     async run (m, example, world) {
+      scrolledAwayFromFeedTop(world)
       await world.feedTabsPage.selectTab('Following')
     }
   },
@@ -2361,7 +2377,25 @@ const handlers = [
     name: 'click Next page button',
     pattern: /^I click the Next page button$/,
     async run (m, example, world) {
+      scrolledAwayFromFeedTop(world)
       await world.feedTabsPage.nextPage()
+    }
+  },
+  {
+    name: 'click Previous page button',
+    pattern: /^I click the Previous page button$/,
+    async run (m, example, world) {
+      scrolledAwayFromFeedTop(world)
+      await world.feedTabsPage.previousPage()
+    }
+  },
+  {
+    name: 'posts feed is scrolled to the top',
+    pattern: /^the posts feed is scrolled to the top$/,
+    run (m, example, world) {
+      if (world.feedScrollTop !== 0) {
+        throw new Error(`Expected the posts feed to be scrolled to the top, got scrollTop ${world.feedScrollTop}.`)
+      }
     }
   },
   {

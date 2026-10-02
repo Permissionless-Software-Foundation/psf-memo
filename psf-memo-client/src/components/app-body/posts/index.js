@@ -77,7 +77,13 @@ function RecentPosts (props) {
       setProfiles({})
 
       try {
-        const page = new FeedTabsPage({ memoDb: new MemoDb(), wallet })
+        const page = new FeedTabsPage({
+          memoDb: new MemoDb(),
+          wallet,
+          // Keep the new page's first post in view after a page load or tab
+          // change; the controller decides when a reset is needed.
+          scrollToTop: () => window.scrollTo({ top: 0, left: 0 })
+        })
         pageRef.current = page
         await page.open({ limit: PAGE_SIZE, offset: 0 })
 

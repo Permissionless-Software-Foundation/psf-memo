@@ -7,7 +7,9 @@
   tab, otherwise the Recent tab. Changing tabs resets the feed to its first
   page. Loading is delegated to the existing recent and following page
   controllers so this module stays a thin, testable coordinator free of UI or
-  network concerns.
+  network concerns. Whenever a page finishes loading, the coordinator asks the
+  injected scrollToTop adapter to reset the view to the top, so the first post
+  of the new page is visible.
 */
 
 const RecentFeedPage = require('./recent-feed-page')
@@ -24,6 +26,7 @@ class FeedTabsPage {
     this.recentPage = deps.recentPage || new RecentFeedPage({ memoDb: this.memoDb, wallet: this.wallet })
     this.followingPage = deps.followingPage || new FollowingFeedPage({ memoDb: this.memoDb, wallet: this.wallet })
     this.tabs = [...TABS]
+    this.scrollToTop = typeof deps.scrollToTop === 'function' ? deps.scrollToTop : () => {}
     this.mode = null
     this.pageSize = 50
     this.offset = 0
@@ -81,6 +84,10 @@ class FeedTabsPage {
     this.posts = data.posts || []
     this.pagination = data.pagination || null
     this.emptyBecauseNoFollows = this._isEmptyFollowing()
+
+    // A new page is visible, so reset the viewer to the top. No-op actions
+    // (same tab, no next/previous page) return before reaching this point.
+    this.scrollToTop()
   }
 
   _pageFor (mode) {

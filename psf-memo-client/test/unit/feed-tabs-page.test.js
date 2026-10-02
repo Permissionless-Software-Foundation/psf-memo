@@ -292,3 +292,87 @@ test('getPost returns a loaded post by txid', async () => {
   assert.equal(page.getPost(post.txid), post)
   assert.equal(page.getPost('e'.repeat(64)), null)
 })
+
+// The feed resets its scroll position whenever it loads a page or changes
+// tab. The reset is requested through the injected scrollToTop adapter so the
+// controller stays free of DOM concerns; these tests count the requests.
+function makeScrollCounter () {
+  const counter = { count: 0 }
+  counter.scrollToTop = () => { counter.count++ }
+  return counter
+}
+
+test('open requests a scroll to the top when a page loads', async () => {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb: makeMemoDb(), wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open()
+
+  assert.equal(scroll.count, 1)
+})
+
+test('selecting a different tab requests a scroll to the top', async () => {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb: makeMemoDb({ following: [ALICE] }), wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open()
+  await page.selectTab('Recent')
+
+  assert.equal(scroll.count, 2)
+})
+
+test('selecting the already active tab does not request a scroll to the top', async () => {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb: makeMemoDb({ following: [] }), wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open()
+  await page.selectTab('Recent')
+
+  assert.equal(scroll.count, 1)
+})
+
+test('nextPage requests a scroll to the top when it loads another page', async () => {
+  const memoDb = makeMemoDb({ following: [] })
+  memoDb.getRecentPosts = async (opts) => {
+    memoDb.calls.getRecentPosts.push(opts)
+    return { posts: [], pagination: { total: 1, limit: opts.limit, offset: opts.offset, hasMore: opts.offset === 0 } }
+  }
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb, wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open({ limit: 2 })
+  await page.nextPage()
+
+  assert.equal(scroll.count, 2)
+})
+
+test('nextPage on the last page does not request a scroll to the top', async () => {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb: makeMemoDb({ following: [] }), wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open({ limit: 2 })
+  await page.nextPage()
+
+  assert.equal(scroll.count, 1)
+})
+
+test('previousPage requests a scroll to the top when it loads an earlier page', async () => {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb: makeMemoDb({ following: [] }), wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open({ limit: 2 })
+  page.offset = 4
+  await page.previousPage()
+
+  assert.equal(scroll.count, 2)
+})
+
+test('previousPage on the first page does not request a scroll to the top', async () => {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb: makeMemoDb({ following: [] }), wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+
+  await page.open({ limit: 2 })
+  await page.previousPage()
+
+  assert.equal(scroll.count, 1)
+})
