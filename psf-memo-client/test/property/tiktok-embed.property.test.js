@@ -17,7 +17,7 @@
 'use strict'
 
 const test = require('node:test')
-const { seededRandom, forAll, intGen, randomNumericId } = require('./harness')
+const { seededRandom, forAll, randomFrom, randomNumericId } = require('./harness')
 const {
   extractTikTokVideoId,
   extractTikTokShortCode
@@ -31,23 +31,16 @@ const OTHER_HOSTS = ['example.com', 'tiktok.com.evil.test', 'not-tiktok.com']
 
 const SAFE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
 
-function randomFrom (alphabet, min, max) {
-  const length = intGen(rng, min, max)()
-  let out = ''
-  for (let i = 0; i < length; i++) out += alphabet[Math.floor(rng() * alphabet.length)]
-  return out
-}
-
 function randomId () {
   return randomNumericId(rng)
 }
 
 function randomCode () {
-  return randomFrom(SAFE_ALPHABET, 1, 12)
+  return randomFrom(rng, SAFE_ALPHABET, 1, 12)
 }
 
 function randomUser () {
-  return randomFrom('abcdefghijklmnopqrstuvwxyz0123456789._', 1, 10)
+  return randomFrom(rng, 'abcdefghijklmnopqrstuvwxyz0123456789._', 1, 10)
 }
 
 function randomTail () {
@@ -76,21 +69,26 @@ function randomShortUrl () {
   return { url: `https://www.tiktok.com/t/${code}/`, code }
 }
 
-test('canonical TikTok video URLs round-trip to their numeric id', async () => {
-  await forAll(
-    () => randomCanonicalUrl(),
-    async ({ url, id }) => extractTikTokVideoId(url) === id,
-    { label: 'tiktok canonical id round trip', samples: 2000 }
-  )
-})
+const ROUND_TRIPS = [
+  {
+    name: 'canonical TikTok video URLs round-trip to their numeric id',
+    generate: randomCanonicalUrl,
+    holds: ({ url, id }) => extractTikTokVideoId(url) === id,
+    label: 'tiktok canonical id round trip'
+  },
+  {
+    name: 'short TikTok links round-trip to their opaque code',
+    generate: randomShortUrl,
+    holds: ({ url, code }) => extractTikTokShortCode(url) === code,
+    label: 'tiktok short code round trip'
+  }
+]
 
-test('short TikTok links round-trip to their opaque code', async () => {
-  await forAll(
-    () => randomShortUrl(),
-    async ({ url, code }) => extractTikTokShortCode(url) === code,
-    { label: 'tiktok short code round trip', samples: 2000 }
-  )
-})
+for (const roundTrip of ROUND_TRIPS) {
+  test(roundTrip.name, async () => {
+    await forAll(roundTrip.generate, roundTrip.holds, { label: roundTrip.label, samples: 2000 })
+  })
+}
 
 test('canonical and short forms are mutually exclusive', async () => {
   await forAll(

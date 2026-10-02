@@ -55,3 +55,7 @@ module.exports = {
   tiktokOEmbedUrl,
   resolveTikTokVideoId
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T14:10:42.736Z","module_hash":"db2ebb36d170b0c2d795a095c11ff4e4591baaf5d435395f27277b6ab443be3e","functions":[{"id":"func/tiktokOEmbedUrl","name":"tiktokOEmbedUrl","line":14,"end_line":16,"hash":"5b48d6d20edeab27c3ef0ab1c61ccc1535ff3c7d894709c72ffdabeac5180574"},{"id":"func/pickFetch","name":"pickFetch","line":19,"end_line":22,"hash":"f134a5f089dad9aeab085e2d3065041274a974c486d379d625e72e9caa1ba8c1"},{"id":"func/isOkResponse","name":"isOkResponse","line":25,"end_line":27,"hash":"e6c663732a01808fe747170fc53544dcf915cf9320abc13f8df5790cb834c5d4"},{"id":"func/videoIdFromMetadata","name":"videoIdFromMetadata","line":30,"end_line":33,"hash":"9f9c229a8478a26e4d4aefee7453ebaa86b6e9c47af5fd93c98f3fd0425c6bdb"},{"id":"func/resolveTikTokVideoId","name":"resolveTikTokVideoId","line":40,"end_line":51,"hash":"c36a8316d3ddaf86e74a404dcff57d9bcf3e0e2fb6c1060ccb0938745f515ef6"}]}
+// mutate4javascript-manifest-end

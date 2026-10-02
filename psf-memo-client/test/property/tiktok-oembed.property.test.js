@@ -14,7 +14,7 @@
 'use strict'
 
 const test = require('node:test')
-const { seededRandom, forAll, intGen, randomNumericId } = require('./harness')
+const { seededRandom, forAll, randomFrom, randomNumericId } = require('./harness')
 const {
   TIKTOK_OEMBED_ENDPOINT,
   tiktokOEmbedUrl,
@@ -26,16 +26,9 @@ const rng = seededRandom(20261002)
 const SAFE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
 const SHORT_HOSTS = ['vt.tiktok.com', 'vm.tiktok.com']
 
-function randomFrom (alphabet, min, max) {
-  const length = intGen(rng, min, max)()
-  let out = ''
-  for (let i = 0; i < length; i++) out += alphabet[Math.floor(rng() * alphabet.length)]
-  return out
-}
-
 function randomShortUrl () {
   const host = SHORT_HOSTS[Math.floor(rng() * SHORT_HOSTS.length)]
-  return `https://${host}/${randomFrom(SAFE_ALPHABET, 1, 12)}/`
+  return `https://${host}/${randomFrom(rng, SAFE_ALPHABET, 1, 12)}/`
 }
 
 test('tiktokOEmbedUrl round-trips the video URL through the url query parameter', async () => {

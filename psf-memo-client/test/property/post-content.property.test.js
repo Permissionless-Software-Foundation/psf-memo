@@ -17,7 +17,7 @@
 const test = require('node:test')
 const React = require('react')
 const ReactDOMServer = require('react-dom/server')
-const { seededRandom, forAll, intGen, randomNumericId } = require('./harness')
+const { seededRandom, forAll, intGen, randomFrom, randomNumericId } = require('./harness')
 const PostContent = require('../../src/components/post-feed/post-content')
 
 const rng = seededRandom(20260916)
@@ -31,11 +31,7 @@ function render (text, props = {}) {
 }
 
 function randomName () {
-  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  const n = intGen(rng, 1, 8)()
-  let out = ''
-  for (let i = 0; i < n; i++) out += alphabet[Math.floor(rng() * alphabet.length)]
-  return out
+  return randomFrom(rng, 'abcdefghijklmnopqrstuvwxyz0123456789', 1, 8)
 }
 
 function randomHost () {
@@ -98,6 +94,18 @@ function plainAnchorProperty (url, forbiddenTag) {
   return visibleText(html).includes('before') && visibleText(html).includes('after')
 }
 
+// Render text around a URL and assert it became an embedded frame whose iframe
+// src matches `iframeSrcRe` and contains `srcNeedle`, with no raw anchor and no
+// visible raw URL.
+function frameEmbedProperty (url, iframeSrcRe, srcNeedle) {
+  const html = render(`before ${url} after`)
+  if (!iframeSrcRe.test(html)) return false
+  if (!html.includes(srcNeedle)) return false
+  if (html.includes(`href="${url}"`)) return false
+  const text = visibleText(html)
+  return text.includes('before') && text.includes('after') && !text.includes(url)
+}
+
 test('an image URL renders as an <img> in a new-tab anchor and never as visible text', async () => {
   await forAll(
     () => randomImageUrl(),
@@ -122,42 +130,43 @@ test('a non-image URL renders as a plain new-tab anchor with no image', async ()
   )
 })
 
-test('an X status URL renders as an embedded tweet frame, not a raw anchor', async () => {
-  await forAll(
-    () => randomXStatusUrl(),
-    async (url) => {
-      const id = url.match(/\/status\/(\d+)/)[1]
-      const html = render(`before ${url} after`)
-      if (!html.includes(`Tweet.html?id=${id}`)) return false
-      if (!/<iframe[^>]+src="https:\/\/platform\.twitter\.com\/embed\/Tweet\.html\?id=/.test(html)) return false
-      if (html.includes(`href="${url}"`)) return false
-      const text = visibleText(html)
-      return text.includes('before') && text.includes('after') && !text.includes(url)
-    },
-    { label: 'post-content X embed', samples: 300 }
-  )
-})
+const FRAME_EMBEDS = [
+  {
+    name: 'an X status URL renders as an embedded tweet frame, not a raw anchor',
+    generate: randomXStatusUrl,
+    idPattern: /\/status\/(\d+)/,
+    iframeSrcRe: /<iframe[^>]+src="https:\/\/platform\.twitter\.com\/embed\/Tweet\.html\?id=/,
+    needle: (id) => `Tweet.html?id=${id}`,
+    label: 'post-content X embed'
+  },
+  {
+    name: 'a canonical TikTok URL renders as an embedded player, not a raw anchor',
+    generate: randomTikTokCanonicalUrl,
+    idPattern: /\/video\/(\d+)/,
+    iframeSrcRe: /<iframe[^>]+src="https:\/\/www\.tiktok\.com\/player\/v1\//,
+    needle: (id) => `tiktok.com/player/v1/${id}`,
+    label: 'post-content TikTok canonical embed'
+  }
+]
+
+for (const embed of FRAME_EMBEDS) {
+  test(embed.name, async () => {
+    await forAll(
+      embed.generate,
+      async (url) => {
+        const id = url.match(embed.idPattern)[1]
+        return frameEmbedProperty(url, embed.iframeSrcRe, embed.needle(id))
+      },
+      { label: embed.label, samples: 300 }
+    )
+  })
+}
 
 test('a non-status x.com link renders as a plain new-tab anchor with no frame', async () => {
   await forAll(
     () => randomNonStatusXUrl(),
     async (url) => plainAnchorProperty(url, '<iframe'),
     { label: 'post-content non-status X link', samples: 300 }
-  )
-})
-
-test('a canonical TikTok URL renders as an embedded player, not a raw anchor', async () => {
-  await forAll(
-    () => randomTikTokCanonicalUrl(),
-    async (url) => {
-      const id = url.match(/\/video\/(\d+)/)[1]
-      const html = render(`before ${url} after`)
-      if (!html.includes(`tiktok.com/player/v1/${id}`)) return false
-      if (html.includes(`href="${url}"`)) return false
-      const text = visibleText(html)
-      return text.includes('before') && text.includes('after') && !text.includes(url)
-    },
-    { label: 'post-content TikTok canonical embed', samples: 300 }
   )
 })
 

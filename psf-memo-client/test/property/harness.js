@@ -36,6 +36,14 @@ export function intGen (rng, min, max) {
   return () => min + Math.floor(rng() * (max - min + 1))
 }
 
+// A random string of `min`..`max` characters drawn from `alphabet`.
+export function randomFrom (rng, alphabet, min, max) {
+  const length = intGen(rng, min, max)()
+  let out = ''
+  for (let i = 0; i < length; i++) out += alphabet[Math.floor(rng() * alphabet.length)]
+  return out
+}
+
 // A random numeric id: 1..19 digits with no leading zero.
 export function randomNumericId (rng) {
   const length = intGen(rng, 1, 19)()

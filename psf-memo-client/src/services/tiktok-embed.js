@@ -100,3 +100,7 @@ module.exports = {
   extractTikTokVideoId,
   extractTikTokShortCode
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T14:10:25.728Z","module_hash":"3e12890aea0d91a02d6849b430c3141a6a8f81415aa4b0f867152ddd424313c0","functions":[{"id":"func/parseCandidate","name":"parseCandidate","line":37,"end_line":47,"hash":"3f786f97fce6571e183216116141797e77c6258310b48af31bd24b8576059fa9"},{"id":"func/isTikTokHost","name":"isTikTokHost","line":49,"end_line":51,"hash":"352215ab45c7083062ccd2bb3881a36fd18e97293a65246b15ec7e611a1bda78"},{"id":"func/isTikTokShortHost","name":"isTikTokShortHost","line":53,"end_line":55,"hash":"d772c63f17e35c94df173e4cdac5e171ee718316098940dd894e41c021e4baa8"},{"id":"func/extractTikTokVideoId","name":"extractTikTokVideoId","line":61,"end_line":70,"hash":"72b992a96dc6cc578c2fa970e4c73afd6c4fa02f4a7b036e1040b52f59e858de"},{"id":"func/firstPathSegment","name":"firstPathSegment","line":73,"end_line":75,"hash":"3395c10170053fdb1a2f50798547016bf421c1c275a44211ed968d7946232f84"},{"id":"func/extractTikTokShortCode","name":"extractTikTokShortCode","line":81,"end_line":96,"hash":"8c1e95eb4579178f21b979be01c00f66bfc1a34d2acdcd3425d6819f5315f74e"}]}
+// mutate4javascript-manifest-end
