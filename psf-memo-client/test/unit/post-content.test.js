@@ -95,3 +95,45 @@ test('falls back to a plain link when the image fails to load', () => {
   assert.match(html, />https:\/\/i\.imgur\.com\/swCI56T\.jpeg<\/a>/)
   assert.match(html, /basil leaves/)
 })
+
+test('renders an X status link as an embedded post instead of a raw link', () => {
+  const html = render('https://x.com/donatello/status/2105979472067297387')
+
+  assert.match(
+    html,
+    /<iframe[^>]+src="https:\/\/platform\.twitter\.com\/embed\/Tweet\.html\?id=2105979472067297387"/
+  )
+  assert.doesNotMatch(html, /x\.com\/donatello\/status/)
+})
+
+test('renders a twitter.com status link as an embedded post', () => {
+  const html = render('https://twitter.com/bob/status/2222222222222222222')
+
+  assert.match(
+    html,
+    /<iframe[^>]+src="https:\/\/platform\.twitter\.com\/embed\/Tweet\.html\?id=2222222222222222222"/
+  )
+  assert.doesNotMatch(html, /twitter\.com\/bob\/status/)
+})
+
+test('preserves surrounding text around an embedded X post', () => {
+  const html = render('check this out https://x.com/donatello/status/2105979472067297387')
+
+  assert.match(html, /check this out/)
+  assert.match(html, /<iframe[^>]+src="[^"]*Tweet\.html\?id=2105979472067297387"/)
+})
+
+test('leaves an x.com profile link as a normal new-tab anchor', () => {
+  const html = render('follow https://x.com/donatello')
+
+  assert.match(html, /<a[^>]+href="https:\/\/x\.com\/donatello"/)
+  assert.match(html, /<a[^>]+target="_blank"/)
+  assert.doesNotMatch(html, /<iframe/)
+})
+
+test('leaves a malformed x.com status link as a normal new-tab anchor', () => {
+  const html = render('https://x.com/donatello/status/notanumber')
+
+  assert.match(html, /<a[^>]+href="https:\/\/x\.com\/donatello\/status\/notanumber"/)
+  assert.doesNotMatch(html, /<iframe/)
+})
