@@ -16,6 +16,7 @@ const {
   isImageUrl,
   imageAltText
 } = require('../../services/post-links')
+const { X_EMBED_BASE_URL, extractXStatusId } = require('../../services/x-embed')
 const { addFailedImage } = require('../../services/failed-images')
 
 // A post image that falls back to a plain link if the image fails to load.
@@ -95,6 +96,27 @@ function PostContent ({ text = '', initialFailedImages }) {
             failed: failedImages.has(link.href),
             onError: () => failImage(link.href)
           })
+        )
+        continue
+      }
+
+      const xStatusId = extractXStatusId(link.href)
+      if (xStatusId) {
+        children.push(
+          React.createElement(
+            'div',
+            {
+              className: 'posts-feed-item-x-embed'
+            },
+            React.createElement('iframe', {
+              src: `${X_EMBED_BASE_URL}?id=${xStatusId}`,
+              title: `X post ${xStatusId}`,
+              allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share',
+              referrerPolicy: 'strict-origin-when-cross-origin',
+              allowFullScreen: true,
+              frameBorder: '0'
+            })
+          )
         )
         continue
       }
