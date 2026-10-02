@@ -3,14 +3,18 @@
 
   The icon is filled when the post has been liked in the current session and
   outlined otherwise. The count is displayed next to the icon.
+
+  Written in plain React.createElement style so the same module can be used by
+  the JSX components in the browser build and by the acceptance adapter that
+  renders HTML under Node.
 */
 
-import React from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons'
-import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons'
-
-import './post-feed.css'
+const React = require('react')
+const { FontAwesomeIcon } = require('@fortawesome/react-fontawesome')
+// Require the individual icon modules (not the barrel index) so a CommonJS
+// consumer does not pull in every icon and defeat tree-shaking.
+const { faHeart: faHeartSolid } = require('@fortawesome/free-solid-svg-icons/faHeart')
+const { faHeart: faHeartRegular } = require('@fortawesome/free-regular-svg-icons/faHeart')
 
 function LikeButton ({ count = 0, liked = false, onClick, readOnly = false }) {
   const label = count === 1 ? '1 like' : `${count} likes`
@@ -20,31 +24,32 @@ function LikeButton ({ count = 0, liked = false, onClick, readOnly = false }) {
     liked ? 'post-like-button-liked' : ''
   ].filter(Boolean).join(' ')
 
+  const children = [
+    React.createElement(FontAwesomeIcon, {
+      key: 'icon',
+      icon,
+      className: 'post-like-button-icon'
+    }),
+    React.createElement(
+      'span',
+      { key: 'count', className: 'post-like-button-count' },
+      count
+    )
+  ]
+
   if (readOnly) {
-    return (
-      <span
-        className={className}
-        aria-label={label}
-        title={label}
-      >
-        <FontAwesomeIcon icon={icon} className='post-like-button-icon' />
-        <span className='post-like-button-count'>{count}</span>
-      </span>
+    return React.createElement(
+      'span',
+      { className, 'aria-label': label, title: label },
+      children
     )
   }
 
-  return (
-    <button
-      type='button'
-      className={className}
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-    >
-      <FontAwesomeIcon icon={icon} className='post-like-button-icon' />
-      <span className='post-like-button-count'>{count}</span>
-    </button>
+  return React.createElement(
+    'button',
+    { type: 'button', className, 'aria-label': label, title: label, onClick },
+    children
   )
 }
 
-export default LikeButton
+module.exports = LikeButton
