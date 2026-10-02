@@ -74,10 +74,13 @@ async function loadTokenData (page) {
   return applyTokenIcons(page, await resolveTokens(page.tokenSource, page.tokens))
 }
 
+// Only the two phase entry points are public; the list/resolve/apply steps are
+// implementation details shared by them.
 module.exports = {
-  listTokens,
-  resolveTokens,
-  applyTokenIcons,
   loadTokenIcons,
   loadTokenData
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T16:08:48.151Z","module_hash":"59c796697610d5933f845ab67902a40a848e3c847b4ef9bde21b893c51f33020","functions":[{"id":"func/listTokens","name":"listTokens","line":19,"end_line":30,"hash":"0e9449da81d9cf396910a5910cbfbac07059fb419f7b85c47c3f2040f8109407"},{"id":"func/resolveTokens","name":"resolveTokens","line":35,"end_line":53,"hash":"0abbdf6c7b7dd551e5b54cb2d66c3c87b78fd264922ddff0c465db55dd7c6a1b"},{"id":"func/applyTokenIcons","name":"applyTokenIcons","line":57,"end_line":62,"hash":"fa47a089ba34a6d8063d791cf570ded983d711370af79e0868da58baf4f12aba"},{"id":"func/loadTokenIcons","name":"loadTokenIcons","line":65,"end_line":67,"hash":"181bc776372352508a96850f338e160901dc095d18eeb1beb641b81faeba70e7"},{"id":"func/loadTokenData","name":"loadTokenData","line":71,"end_line":75,"hash":"c9d95f5bb48621b17574c88f223ad8a8f9812b676e3ad2f4cfb546601d51f69c"}]}
+// mutate4javascript-manifest-end

@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-09-05T20:15:33.828984609Z","feature_name":"Account Avatar Display","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/account-avatar-display.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[]}
+# {"version":1,"tested_at":"2026-10-02T16:11:12.415737679Z","feature_name":"Account Avatar Display","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/account-avatar-display.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
 # acceptance-mutation-manifest-end
 
 # Scenarios: Account Avatar Display - 1, Account Avatar Display - 2

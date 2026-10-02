@@ -54,3 +54,7 @@ function AccountSidebar ({
 AccountSidebar.NO_BIO_TEXT = NO_BIO_TEXT
 
 module.exports = AccountSidebar
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T16:08:35.248Z","module_hash":"02e1b6997414b5d9a0e64464bc46a126b54fcd65711521b75bf0b8ef96d7120c","functions":[{"id":"func/AccountSidebar","name":"AccountSidebar","line":18,"end_line":52,"hash":"2d844fe533880666f76f47fbd323403d7abc0ff208f960d24621d055dd0749d2"}]}
+// mutate4javascript-manifest-end

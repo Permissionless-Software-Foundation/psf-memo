@@ -93,3 +93,9 @@ test('renders a copy confirmation when copied is true', () => {
 
   assert.ok(html.includes('Copied to clipboard'))
 })
+
+test('does not render a copy confirmation by default', () => {
+  const html = renderSidebar()
+
+  assert.ok(!html.includes('Copied to clipboard'))
+})

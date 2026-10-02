@@ -30,3 +30,7 @@ function AccountAvatar ({ addr = '', url = null }) {
 AccountAvatar.AVATAR_SIZE = AVATAR_SIZE
 
 module.exports = AccountAvatar
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T16:07:55.340Z","module_hash":"3c6a9c90ff8bfddc4542987f1b64b8961a03510b59d792f61809b02cded08aa3","functions":[{"id":"func/AccountAvatar","name":"AccountAvatar","line":18,"end_line":28,"hash":"6376c8edb939ecceb0b8e3e141eafc20f80c7440c2d5ed7153c8c2697a60fce5"}]}
+// mutate4javascript-manifest-end
