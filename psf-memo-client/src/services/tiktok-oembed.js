@@ -15,23 +15,36 @@ function tiktokOEmbedUrl (videoUrl) {
   return `${TIKTOK_OEMBED_ENDPOINT}?url=${encodeURIComponent(videoUrl)}`
 }
 
+// Prefer an injected fetch, then the global fetch, then nothing.
+function pickFetch (options) {
+  if (options.fetchImpl !== undefined) return options.fetchImpl
+  return typeof fetch === 'function' ? fetch : null
+}
+
+// A response is usable unless it is missing or explicitly not ok.
+function isOkResponse (response) {
+  return Boolean(response) && response.ok !== false
+}
+
+// Pull the video id out of oEmbed metadata, or null when it is absent.
+function videoIdFromMetadata (data) {
+  const id = data && data.embed_product_id
+  return id ? String(id) : null
+}
+
 /**
  * Resolve a TikTok video URL to its numeric video id via the oEmbed endpoint.
  * Returns null for a non-ok response, missing metadata, or any network or
  * parsing failure, so callers can fall back to a plain link.
  */
 async function resolveTikTokVideoId (videoUrl, options = {}) {
-  const fetchImpl = options.fetchImpl === undefined
-    ? (typeof fetch === 'function' ? fetch : null)
-    : options.fetchImpl
+  const fetchImpl = pickFetch(options)
   if (typeof fetchImpl !== 'function') return null
 
   try {
     const response = await fetchImpl(tiktokOEmbedUrl(videoUrl))
-    if (!response || response.ok === false) return null
-    const data = await response.json()
-    const id = data && data.embed_product_id
-    return id ? String(id) : null
+    if (!isOkResponse(response)) return null
+    return videoIdFromMetadata(await response.json())
   } catch (err) {
     return null
   }

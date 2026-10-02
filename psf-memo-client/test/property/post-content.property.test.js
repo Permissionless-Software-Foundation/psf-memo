@@ -24,9 +24,9 @@ const rng = seededRandom(20260916)
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
 
-function render (text) {
+function render (text, props = {}) {
   return ReactDOMServer.renderToStaticMarkup(
-    React.createElement(PostContent, { text })
+    React.createElement(PostContent, { text, ...props })
   )
 }
 
@@ -71,6 +71,17 @@ function randomXStatusUrl () {
 
 function randomNonStatusXUrl () {
   return `https://${X_HOSTS[Math.floor(rng() * X_HOSTS.length)]}/user${randomTail()}`
+}
+
+const TIKTOK_HOSTS = ['tiktok.com', 'www.tiktok.com', 'm.tiktok.com']
+const TIKTOK_SHORT_HOSTS = ['vt.tiktok.com', 'vm.tiktok.com']
+
+function randomTikTokCanonicalUrl () {
+  return `https://${TIKTOK_HOSTS[Math.floor(rng() * TIKTOK_HOSTS.length)]}/@${randomName()}/video/${randomNumericId(rng)}`
+}
+
+function randomTikTokShortUrl () {
+  return `https://${TIKTOK_SHORT_HOSTS[Math.floor(rng() * TIKTOK_SHORT_HOSTS.length)]}/${randomName()}`
 }
 
 function visibleText (html) {
@@ -132,6 +143,41 @@ test('a non-status x.com link renders as a plain new-tab anchor with no frame', 
     () => randomNonStatusXUrl(),
     async (url) => plainAnchorProperty(url, '<iframe'),
     { label: 'post-content non-status X link', samples: 300 }
+  )
+})
+
+test('a canonical TikTok URL renders as an embedded player, not a raw anchor', async () => {
+  await forAll(
+    () => randomTikTokCanonicalUrl(),
+    async (url) => {
+      const id = url.match(/\/video\/(\d+)/)[1]
+      const html = render(`before ${url} after`)
+      if (!html.includes(`tiktok.com/player/v1/${id}`)) return false
+      if (html.includes(`href="${url}"`)) return false
+      const text = visibleText(html)
+      return text.includes('before') && text.includes('after') && !text.includes(url)
+    },
+    { label: 'post-content TikTok canonical embed', samples: 300 }
+  )
+})
+
+test('a TikTok short link renders as a player when resolved and an anchor otherwise', async () => {
+  await forAll(
+    () => randomTikTokShortUrl(),
+    async (url) => {
+      const id = randomNumericId(rng)
+
+      const unresolved = render(`before ${url} after`)
+      if (unresolved.includes('<iframe')) return false
+      if (!unresolved.includes(`href="${url}"`)) return false
+
+      const resolved = render(`before ${url} after`, { tiktokVideoIds: { [url]: id } })
+      if (!resolved.includes(`tiktok.com/player/v1/${id}`)) return false
+      if (resolved.includes(`href="${url}"`)) return false
+
+      return visibleText(resolved).includes('before') && visibleText(resolved).includes('after')
+    },
+    { label: 'post-content TikTok short-link resolution', samples: 200 }
   )
 })
 
