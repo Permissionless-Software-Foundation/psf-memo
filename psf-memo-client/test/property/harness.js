@@ -35,3 +35,11 @@ export async function forAll (gen, check, { samples = 500, label = 'property' } 
 export function intGen (rng, min, max) {
   return () => min + Math.floor(rng() * (max - min + 1))
 }
+
+// A random numeric id: 1..19 digits with no leading zero.
+export function randomNumericId (rng) {
+  const length = intGen(rng, 1, 19)()
+  let id = String(intGen(rng, 1, 9)())
+  for (let i = 1; i < length; i++) id += String(intGen(rng, 0, 9)())
+  return id
+}

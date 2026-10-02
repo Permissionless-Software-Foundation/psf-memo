@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-02T13:31:40.494462827Z","feature_name":"X Post Embed","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/x-post-embed.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[{"index":2,"name":"X Post Embed - 3 an x.com link that is not a status post stays an ordinary link","scenario_hash":"3cc7d6d1a82bfbfc629bd4339e939c46a8a16ad8539110b7c035907bfb4ca519","mutation_count":10,"result":{"Total":10,"Killed":10,"Survived":0,"Errors":0},"tested_at":"2026-10-02T13:31:40.494462827Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: X Post Embed - 1, X Post Embed - 2, X Post Embed - 3, X Post Embed - 4, X Post Embed - 5
 #
 # When a post's text contains an x.com or twitter.com status link (a
