@@ -22,7 +22,7 @@ import ProfileAddress from './profile-address'
 import ProfilePostContent from './profile-post-content'
 import ProfilePostLike from './profile-post-like'
 import ProfileTokenIcons from './profile-token-icons'
-import { initialLikeState, reflectLike } from '../../../services/profile-post-like'
+import { selectLikeState, applyLike } from '../../../services/profile-post-like'
 import '../../../App.css'
 import './profile.css'
 
@@ -143,15 +143,12 @@ function Profile (props) {
 
   const muteSucceeded = Boolean(muteResult && muteResult.ok)
 
-  const likeStateFor = (post) => likes[post.txid] || initialLikeState(post)
+  const likeStateFor = (post) => selectLikeState(likes, post)
 
   const handleLikeSuccess = () => {
     if (!likeTarget) return
     const target = likeTarget
-    setLikes((prev) => ({
-      ...prev,
-      [target.txid]: reflectLike(prev[target.txid] || initialLikeState(target))
-    }))
+    setLikes((prev) => applyLike(prev, target))
   }
 
   useEffect(() => {

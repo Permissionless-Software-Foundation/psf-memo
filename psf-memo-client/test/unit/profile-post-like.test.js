@@ -15,7 +15,12 @@ const assert = require('node:assert/strict')
 const React = require('react')
 const ReactDOMServer = require('react-dom/server')
 const ProfilePostLike = require('../../src/components/app-body/profile/profile-post-like')
-const { initialLikeState, reflectLike } = require('../../src/services/profile-post-like')
+const {
+  initialLikeState,
+  reflectLike,
+  selectLikeState,
+  applyLike
+} = require('../../src/services/profile-post-like')
 
 const TXID = '1111111111111111111111111111111111111111111111111111111111111111'
 
@@ -45,6 +50,36 @@ test('reflectLike does not mutate the input state', () => {
   const state = { liked: false, count: 4 }
   reflectLike(state)
   assert.deepEqual(state, { liked: false, count: 4 })
+})
+
+test('selectLikeState prefers the stored state once a post has been liked', () => {
+  const post = { txid: TXID, likeCount: 17 }
+  const stored = { liked: true, count: 18 }
+
+  assert.equal(selectLikeState({ [TXID]: stored }, post), stored)
+})
+
+test('selectLikeState falls back to the initial state for an unliked post', () => {
+  assert.deepEqual(selectLikeState({}, { txid: TXID, likeCount: 17 }), { liked: false, count: 17 })
+})
+
+test('applyLike folds a like into a copy of the likes map', () => {
+  const post = { txid: TXID, likeCount: 17 }
+  const other = { liked: true, count: 2 }
+  const likes = { other }
+
+  const next = applyLike(likes, post)
+
+  assert.deepEqual(next[TXID], { liked: true, count: 18 })
+  assert.deepEqual(next.other, other)
+  assert.deepEqual(likes, { other })
+})
+
+test('applyLike increments a post that was already liked in the session', () => {
+  const post = { txid: TXID, likeCount: 17 }
+  const likes = { [TXID]: { liked: true, count: 18 } }
+
+  assert.deepEqual(applyLike(likes, post)[TXID], { liked: true, count: 19 })
 })
 
 test('renders an interactive like button with the count', () => {

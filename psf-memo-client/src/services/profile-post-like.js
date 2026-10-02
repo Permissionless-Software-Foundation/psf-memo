@@ -1,10 +1,10 @@
 /*
-  Pure state for a profile post's interactive like control.
+  Pure state for a post's interactive like control.
 
-  The profile post card shows a heart that reflects whether the post has been
-  liked in the current session and the post's like count. The transitions are
-  pure so they can be verified without a browser; the React profile page owns
-  the per-post state map and the like/tip modal.
+  A post card shows a heart that reflects whether the post has been liked in
+  the current session and the post's like count. The transitions and the
+  per-post likes map are pure so they can be verified without a browser; the
+  React components own only the React state and the like/tip modal.
 */
 
 // The initial liked/count state for a post.
@@ -17,4 +17,15 @@ function reflectLike (state) {
   return { liked: true, count: state.count + 1 }
 }
 
-module.exports = { initialLikeState, reflectLike }
+// The displayed state for a post: the reflected state when the post has
+// already been liked in the current session, otherwise the initial state.
+function selectLikeState (likes, post) {
+  return likes[post.txid] || initialLikeState(post)
+}
+
+// Fold a successful like into the per-post likes map without mutating it.
+function applyLike (likes, post) {
+  return { ...likes, [post.txid]: reflectLike(selectLikeState(likes, post)) }
+}
+
+module.exports = { initialLikeState, reflectLike, selectLikeState, applyLike }

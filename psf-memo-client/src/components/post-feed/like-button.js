@@ -16,7 +16,7 @@ const { FontAwesomeIcon } = require('@fortawesome/react-fontawesome')
 const { faHeart: faHeartSolid } = require('@fortawesome/free-solid-svg-icons/faHeart')
 const { faHeart: faHeartRegular } = require('@fortawesome/free-regular-svg-icons/faHeart')
 
-function LikeButton ({ count = 0, liked = false, onClick, readOnly = false }) {
+function LikeButton ({ count = 0, liked = false, onClick }) {
   const label = count === 1 ? '1 like' : `${count} likes`
   const icon = liked ? faHeartSolid : faHeartRegular
   const className = [
@@ -36,14 +36,6 @@ function LikeButton ({ count = 0, liked = false, onClick, readOnly = false }) {
       count
     )
   ]
-
-  if (readOnly) {
-    return React.createElement(
-      'span',
-      { className, 'aria-label': label, title: label },
-      children
-    )
-  }
 
   return React.createElement(
     'button',
