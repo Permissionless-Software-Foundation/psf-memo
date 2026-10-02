@@ -58,7 +58,9 @@ const PollVotePage = require('../../src/services/poll-vote-page')
 const { renderPostText } = require('./render-post')
 const { renderProfilePost } = require('./render-profile-post')
 const { renderProfilePostLike } = require('./render-profile-post-like')
-const { renderAccountAvatar } = require('./render-account-avatar')
+const { renderAccountAvatar, renderAccountAvatarView } = require('./render-account-avatar')
+const { renderAccountControls } = require('./render-account-controls')
+const { renderAccountSidebar } = require('./render-account-sidebar')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
 const { renderMuteResult } = require('./render-mute-result')
@@ -557,6 +559,7 @@ function createWorld () {
 
   const world = {
     wallet,
+    profiles,
     feed,
     thread,
     memoPost,
@@ -635,7 +638,11 @@ function createWorld () {
   world.accountPage = new AccountPage({
     wallet,
     profiles,
-    navigate: (path) => { world.currentPath = path }
+    navigate: (path) => { world.currentPath = path },
+    tokenSource: wallet,
+    copyToClipboard: async (text) => { world.clipboard = text },
+    onAddressCopyChange: (copied) => { world.accountAddressCopied = copied },
+    onTokenIconsChange: (icons) => { world.accountTokenIcons = icons }
   })
 
   // The Poll Create Page controller wraps the memo poll create behavior.
@@ -854,12 +861,13 @@ function makeProfilePage (world, addr, myAddr) {
   })
 }
 
-// The token icon view model for the SLP token with the given id.
-function profileTokenIconFor (world, tokenId) {
-  if (!world.profilePage) {
-    throw new Error('No profile page is loaded.')
+// The token icon view model for the SLP token with the given id. Defaults to
+// the profile page; account-page steps pass the account page explicitly.
+function profileTokenIconFor (world, tokenId, page = world.profilePage, pageName = 'profile') {
+  if (!page) {
+    throw new Error(`No ${pageName} page is loaded.`)
   }
-  const icon = world.profilePage.getTokenIcons().find((candidate) => candidate.tokenId === tokenId)
+  const icon = page.getTokenIcons().find((candidate) => candidate.tokenId === tokenId)
   if (!icon) {
     throw new Error(`No token icon for the SLP token ${tokenId}.`)
   }
@@ -868,11 +876,11 @@ function profileTokenIconFor (world, tokenId) {
 
 // Assert a token icon view-model field equals the expected example value and
 // that the rendered icon carries the matching HTML attribute. `label` names
-// the field in failure messages.
-function assertTokenIconField (world, m, example, field, attribute, label) {
+// the field in failure messages. `page` defaults to the profile page.
+function assertTokenIconField (world, m, example, field, attribute, label, page = world.profilePage, pageName = 'profile') {
   const tokenId = resolveParam(m[1], example)
   const expected = resolveText(m[2], example)
-  const icon = profileTokenIconFor(world, tokenId)
+  const icon = profileTokenIconFor(world, tokenId, page, pageName)
   if (icon[field] !== expected) {
     throw new Error(`Expected the token icon for ${tokenId} to have ${label} "${expected}", got "${icon[field]}".`)
   }
@@ -1666,6 +1674,242 @@ const handlers = [
     run (m, example, world) {
       if (!world.accountPage.hasSetBioButton()) {
         throw new Error('Account page does not show a Set Bio button.')
+      }
+    }
+  },
+  {
+    name: 'authenticated account has a name',
+    pattern: /^the authenticated account has a name "([^"]+)"$/,
+    run (m, example, world) {
+      const value = resolveText(m[1], example)
+      world.profiles.setName(world.wallet.walletInfo.cashAddress, value)
+    }
+  },
+  {
+    name: 'authenticated account has a bio',
+    pattern: /^the authenticated account has a bio "([^"]+)"$/,
+    run (m, example, world) {
+      const value = resolveText(m[1], example)
+      world.profiles.setBio(world.wallet.walletInfo.cashAddress, value)
+    }
+  },
+  {
+    name: 'authenticated account has an avatar URL',
+    pattern: /^the authenticated account has an avatar URL "([^"]+)"$/,
+    run (m, example, world) {
+      const value = resolveText(m[1], example)
+      world.profiles.setAvatarUrl(world.wallet.walletInfo.cashAddress, value)
+    }
+  },
+  {
+    name: 'open account page',
+    pattern: /^I open the account page$/,
+    async run (m, example, world) {
+      await world.accountPage.load()
+      world.currentPath = AccountPage.ACCOUNT_PATH
+    }
+  },
+  {
+    name: 'account page shows the account address',
+    pattern: /^the account page shows the account address (.+)$/,
+    run (m, example, world) {
+      const addr = resolveParam(m[1], example)
+      if (world.accountPage.getAddress() !== addr) {
+        throw new Error(`Expected the account page address ${addr}, got ${world.accountPage.getAddress()}.`)
+      }
+      if (!renderProfileAddress({ address: addr }).includes(addr)) {
+        throw new Error(`The rendered account page does not show the address ${addr}.`)
+      }
+    }
+  },
+  {
+    name: 'click the account address',
+    pattern: /^I click the account address$/,
+    async run (m, example, world) {
+      await world.accountPage.copyAddress()
+    }
+  },
+  {
+    name: 'account page shows address copy confirmation with text',
+    pattern: /^the account page shows an address copy confirmation with the text "([^"]+)"$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      if (!world.accountPage.isShowingAddressCopyConfirmation()) {
+        throw new Error('Expected the account page to show an address copy confirmation.')
+      }
+      const html = renderProfileAddress({
+        address: world.accountPage.getAddress(),
+        copied: true
+      })
+      if (!html.includes(expected)) {
+        throw new Error(`The rendered account address copy confirmation does not show "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'account page shows address copy confirmation',
+    pattern: /^the account page shows an address copy confirmation$/,
+    run (m, example, world) {
+      if (!world.accountPage.isShowingAddressCopyConfirmation()) {
+        throw new Error('Expected the account page to show an address copy confirmation.')
+      }
+    }
+  },
+  {
+    name: 'account page does not show address copy confirmation',
+    pattern: /^the account page does not show an address copy confirmation$/,
+    run (m, example, world) {
+      if (world.accountPage.isShowingAddressCopyConfirmation()) {
+        throw new Error('Did not expect the account page to show an address copy confirmation.')
+      }
+    }
+  },
+  {
+    name: 'account address copy confirmation timeout elapses',
+    pattern: /^the account address copy confirmation timeout elapses$/,
+    run (m, example, world) {
+      world.accountPage.addressCopyTimeoutElapsed()
+    }
+  },
+  {
+    name: 'account page shows the text',
+    pattern: /^the account page shows the text "([^"]+)"$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const html = renderAccountSidebar({
+        addr: world.accountPage.getAddress(),
+        bio: world.accountPage.getBio() || ''
+      })
+      if (!html.includes(expected)) {
+        throw new Error(`The rendered account page does not show the text "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'account page shows the truncated address',
+    pattern: /^the account page shows the truncated address (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      const actual = world.accountPage.getTruncatedAddress()
+      if (actual !== expected) {
+        throw new Error(`Expected the truncated address ${expected}, got ${actual}.`)
+      }
+      if (world.accountPage.getDisplayName() !== expected) {
+        throw new Error(`Expected the account display name ${expected}, got ${world.accountPage.getDisplayName()}.`)
+      }
+    }
+  },
+  {
+    name: 'account page shows a jdenticon avatar',
+    pattern: /^the account page shows a jdenticon avatar$/,
+    run (m, example, world) {
+      const addr = world.accountPage.getAddress()
+      if (!world.accountPage.showsJdenticon()) {
+        throw new Error('Expected the account page to show a jdenticon avatar.')
+      }
+      const html = renderAccountAvatarView({
+        addr,
+        url: world.accountPage.getAvatarImageUrl()
+      })
+      if (html.includes('<img') || !html.includes(`data-jdenticon-value="${addr}"`)) {
+        throw new Error('The rendered account page does not show a jdenticon avatar.')
+      }
+    }
+  },
+  {
+    name: 'account page shows description above button',
+    pattern: /^the account page shows the description "([^"]+)" above the "([^"]+)" button$/,
+    run (m, example, world) {
+      const description = resolveText(m[1], example)
+      const label = resolveText(m[2], example)
+      const control = world.accountPage.getControls().find((candidate) => candidate.label === label)
+      if (!control) {
+        throw new Error(`The account page does not have a ${label} control.`)
+      }
+      if (control.description !== description) {
+        throw new Error(`Expected the ${label} description "${description}", got "${control.description}".`)
+      }
+      const html = renderAccountControls([control])
+      const descriptionIndex = html.indexOf(description)
+      const buttonIndex = html.indexOf(`>${label}<`)
+      if (descriptionIndex < 0 || buttonIndex < 0 || descriptionIndex >= buttonIndex) {
+        throw new Error(`The rendered account page does not show the description above the ${label} button.`)
+      }
+    }
+  },
+  {
+    name: 'account page shows sidebar sections in order',
+    pattern: /^the account page shows the sidebar sections in the order avatar, bio, address, tokens$/,
+    run (m, example, world) {
+      const expected = ['avatar', 'bio', 'address', 'tokens']
+      const actual = world.accountPage.getSidebarSections()
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(`Expected the account sidebar sections ${expected.join(', ')}, got ${actual.join(', ')}.`)
+      }
+      const html = renderAccountSidebar({ addr: world.accountPage.getAddress() })
+      const order = []
+      const re = /data-section="([^"]+)"/g
+      let match
+      while ((match = re.exec(html)) !== null) order.push(match[1])
+      if (JSON.stringify(order) !== JSON.stringify(expected)) {
+        throw new Error(`The rendered account sidebar sections are ${order.join(', ')}, expected ${expected.join(', ')}.`)
+      }
+    }
+  },
+  {
+    name: 'account token data is retrieved',
+    pattern: /^the account token data is retrieved$/,
+    async run (m, example, world) {
+      await world.accountPage.loadTokenData()
+    }
+  },
+  {
+    name: 'account page shows N token icons',
+    pattern: /^the account page shows (\d+) token icons$/,
+    run (m, example, world) {
+      const expected = parseInt(m[1], 10)
+      const icons = world.accountPage.getTokenIcons()
+      if (icons.length !== expected) {
+        throw new Error(`Expected the account page to show ${expected} token icons, got ${icons.length}.`)
+      }
+      const rendered = (renderProfileTokenIcons(icons).match(/data-token-id=/g) || []).length
+      if (rendered !== expected) {
+        throw new Error(`Rendered account page shows ${rendered} token icons, expected ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'account page shows a token icon with the image',
+    pattern: /^the account page shows a token icon for the SLP token (.+) with the image (.+)$/,
+    run (m, example, world) {
+      assertTokenIconField(world, m, example, 'imageUrl', 'src', 'image', world.accountPage, 'account')
+    }
+  },
+  {
+    name: 'account page shows a jdenticon token icon',
+    pattern: /^the account page shows a jdenticon token icon for the SLP token (.+)$/,
+    run (m, example, world) {
+      const tokenId = resolveParam(m[1], example)
+      const icon = profileTokenIconFor(world, tokenId, world.accountPage, 'account')
+      if (!icon.isJdenticon) {
+        throw new Error(`Expected the account token icon for ${tokenId} to be a jdenticon, got image "${icon.imageUrl}".`)
+      }
+      const html = renderProfileTokenIcon(icon)
+      if (!html.includes(`data-jdenticon-value="${tokenId}"`) || html.includes('<img')) {
+        throw new Error(`Rendered account token icon for ${tokenId} is not a jdenticon.`)
+      }
+    }
+  },
+  {
+    name: 'account page shows no token icons',
+    pattern: /^the account page shows no token icons$/,
+    run (m, example, world) {
+      const icons = world.accountPage.getTokenIcons()
+      if (icons.length !== 0) {
+        throw new Error(`Expected no account token icons, got ${icons.length}.`)
+      }
+      if (renderProfileTokenIcons(icons) !== '') {
+        throw new Error('Rendered account page unexpectedly shows token icons.')
       }
     }
   },
