@@ -17,6 +17,9 @@
       Following tab when the viewer follows no one.
     - state/lookup: getState mirrors the controller and getPost finds a
       loaded post by txid and returns null otherwise.
+    - scroll reset: every completed page load requests exactly one scroll to
+      the top through the injected adapter, and no-op actions request none, so
+      the scroll-request count equals the number of successful feed loads.
 */
 
 'use strict'
@@ -73,6 +76,7 @@ function scenarioGen () {
 
 function makeHarness (scenario) {
   const calls = { getFollowing: [], getRecentPosts: [], getFollowingFeed: [] }
+  const scroll = { count: 0 }
   const memoDb = {
     async getFollowing (addr) {
       calls.getFollowing.push(addr)
@@ -87,7 +91,42 @@ function makeHarness (scenario) {
       return scenario.followingFeed
     }
   }
-  return { page: new FeedTabsPage({ memoDb, wallet: scenario.wallet }), calls }
+  return {
+    page: new FeedTabsPage({
+      memoDb,
+      wallet: scenario.wallet,
+      scrollToTop: () => { scroll.count++ }
+    }),
+    calls,
+    scroll
+  }
+}
+
+// The number of page loads that reached the controllers, whether through open,
+// a tab switch, nextPage, or previousPage.
+function loadedPages (calls) {
+  return calls.getRecentPosts.length + calls.getFollowingFeed.length
+}
+
+// Actions the feed exposes to the viewer, indexed for random generation: open,
+// select Recent, select Following, next page, previous page.
+const ACTIONS = [
+  (page) => page.open({ limit: 2, offset: 0 }),
+  (page) => page.selectTab('Recent'),
+  (page) => page.selectTab('Following'),
+  (page) => page.nextPage(),
+  (page) => page.previousPage()
+]
+
+// Run a random action without letting the wallet-less Following failure escape;
+// that failure is an action-level error, not a completed load, so it must leave
+// the scroll-request count unchanged.
+async function runAction (page, action) {
+  try {
+    await ACTIONS[action](page)
+  } catch {
+    // Ignore action-level failures (for example, Following without a wallet).
+  }
 }
 
 function expectsFollowing (scenario) {
@@ -282,5 +321,117 @@ test('getPost returns a loaded post by txid and null otherwise', async () => {
         page.getPost('not-a-txid') === null
     },
     { label: 'getPost lookup' }
+  )
+})
+
+// The feed resets the viewport after a page load by calling the injected
+// scrollToTop adapter. These properties tie that request to the loads that
+// actually happened, so the reset can never drift from the pagination state.
+test('open requests exactly one scroll to the top', async () => {
+  await forAll(
+    scenarioGen(),
+    async (scenario) => {
+      const { page, scroll } = makeHarness(scenario)
+      await page.open({ limit: scenario.limit, offset: scenario.offset })
+
+      return scroll.count === 1
+    },
+    { label: 'open scroll reset' }
+  )
+})
+
+test('selecting the active tab requests no scroll and switching tabs requests exactly one', async () => {
+  await forAll(
+    scenarioGen(),
+    async (scenario) => {
+      const { page, scroll } = makeHarness(scenario)
+      await page.open({ limit: scenario.limit, offset: scenario.offset })
+
+      const active = page.isFollowing() ? 'Following' : 'Recent'
+      const before = scroll.count
+      await page.selectTab(active)
+      if (scroll.count !== before) return false
+
+      if (page.isFollowing()) {
+        // Following -> Recent always loads and resets the viewport.
+        await page.selectTab('Recent')
+        return scroll.count === before + 1
+      }
+
+      if (!scenario.wallet) {
+        // Recent -> Following needs an authenticated wallet to load; the
+        // failure must not request a scroll.
+        try {
+          await page.selectTab('Following')
+        } catch {
+          return scroll.count === before
+        }
+        return false
+      }
+
+      await page.selectTab('Following')
+      return scroll.count === before + 1
+    },
+    { label: 'tab switch scroll reset' }
+  )
+})
+
+test('nextPage requests one scroll exactly when it advances a page', async () => {
+  await forAll(
+    scenarioGen(),
+    async (scenario) => {
+      const { page, calls, scroll } = makeHarness(scenario)
+      await page.open({ limit: scenario.limit, offset: scenario.offset })
+
+      const before = scroll.count
+      const hadMore = page.canLoadMore()
+      const loadsBefore = loadedPages(calls)
+      await page.nextPage()
+
+      if (hadMore) {
+        return scroll.count === before + 1 && loadedPages(calls) === loadsBefore + 1
+      }
+      return scroll.count === before && loadedPages(calls) === loadsBefore
+    },
+    { label: 'nextPage scroll reset' }
+  )
+})
+
+test('previousPage requests one scroll exactly when it moves off the first page', async () => {
+  await forAll(
+    scenarioGen(),
+    async (scenario) => {
+      const { page, calls, scroll } = makeHarness(scenario)
+      await page.open({ limit: scenario.limit, offset: scenario.offset })
+
+      const before = scroll.count
+      const hadOffset = page.offset > 0
+      const loadsBefore = loadedPages(calls)
+      await page.previousPage()
+
+      if (hadOffset) {
+        return scroll.count === before + 1 && loadedPages(calls) === loadsBefore + 1
+      }
+      return scroll.count === before && loadedPages(calls) === loadsBefore
+    },
+    { label: 'previousPage scroll reset' }
+  )
+})
+
+test('scroll requests equal successful feed loads across random action sequences', async () => {
+  await forAll(
+    scenarioGen(),
+    async (scenario) => {
+      const { page, calls, scroll } = makeHarness(scenario)
+      const steps = intGen(rng, 1, 12)()
+
+      for (let i = 0; i < steps; i++) {
+        await runAction(page, intGen(rng, 0, ACTIONS.length - 1)())
+        if (scroll.count !== loadedPages(calls)) return false
+      }
+
+      return true
+    },
+    { label: 'scroll/load conservation' }
   )
 })
