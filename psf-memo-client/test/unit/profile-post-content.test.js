@@ -76,3 +76,13 @@ test('falls back to a plain link when the image fails to load', () => {
   assert.doesNotMatch(html, /<img/)
   assert.match(html, /<a[^>]+href="https:\/\/example\.com\/img\/photo\.png"[^>]*>https:\/\/example\.com\/img\/photo\.png<\/a>/)
 })
+
+test('embeds an X status link instead of showing the raw URL', () => {
+  const html = render('https://x.com/donatello/status/2105979472067297387')
+
+  assert.match(
+    html,
+    /<iframe[^>]+src="https:\/\/platform\.twitter\.com\/embed\/Tweet\.html\?id=2105979472067297387"/
+  )
+  assert.doesNotMatch(html, /x\.com\/donatello\/status/)
+})

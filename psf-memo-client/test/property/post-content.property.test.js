@@ -63,6 +63,23 @@ function randomNonImageUrl () {
   return `https://${randomHost()}/${randomName()}.svg${randomTail()}`
 }
 
+const X_HOSTS = ['x.com', 'twitter.com', 'www.x.com', 'mobile.twitter.com']
+
+function randomNumericId () {
+  const length = intGen(rng, 1, 19)()
+  let id = String(intGen(rng, 1, 9)())
+  for (let i = 1; i < length; i++) id += String(intGen(rng, 0, 9)())
+  return id
+}
+
+function randomXStatusUrl () {
+  return `https://${X_HOSTS[Math.floor(rng() * X_HOSTS.length)]}/user/status/${randomNumericId()}`
+}
+
+function randomNonStatusXUrl () {
+  return `https://${X_HOSTS[Math.floor(rng() * X_HOSTS.length)]}/user${randomTail()}`
+}
+
 function visibleText (html) {
   return html.replace(/<[^>]+>/g, '')
 }
@@ -94,6 +111,36 @@ test('a non-image URL renders as a plain new-tab anchor with no image', async ()
       return visibleText(html).includes('before') && visibleText(html).includes('after')
     },
     { label: 'post-content non-image rendering', samples: 300 }
+  )
+})
+
+test('an X status URL renders as an embedded tweet frame, not a raw anchor', async () => {
+  await forAll(
+    () => randomXStatusUrl(),
+    async (url) => {
+      const id = url.match(/\/status\/(\d+)/)[1]
+      const html = render(`before ${url} after`)
+      if (!html.includes(`Tweet.html?id=${id}`)) return false
+      if (!/<iframe[^>]+src="https:\/\/platform\.twitter\.com\/embed\/Tweet\.html\?id=/.test(html)) return false
+      if (html.includes(`href="${url}"`)) return false
+      const text = visibleText(html)
+      return text.includes('before') && text.includes('after') && !text.includes(url)
+    },
+    { label: 'post-content X embed', samples: 300 }
+  )
+})
+
+test('a non-status x.com link renders as a plain new-tab anchor with no frame', async () => {
+  await forAll(
+    () => randomNonStatusXUrl(),
+    async (url) => {
+      const html = render(`before ${url} after`)
+      if (html.includes('<iframe')) return false
+      if (!html.includes(`href="${url}"`)) return false
+      if (!/<a[^>]+target="_blank"/.test(html)) return false
+      return visibleText(html).includes('before') && visibleText(html).includes('after')
+    },
+    { label: 'post-content non-status X link', samples: 300 }
   )
 })
 

@@ -690,6 +690,18 @@
   font-size: 0.9rem;
 }
 
+.posts-feed-item-x-embed {
+  margin-top: 12px;
+}
+
+.posts-feed-item-x-embed iframe {
+  width: 100%;
+  min-height: 320px;
+  border: 0;
+  border-radius: var(--ig-radius);
+  background: #fff;
+}
+
 .posts-feed-item-youtube {
   position: relative;
   width: 100%;

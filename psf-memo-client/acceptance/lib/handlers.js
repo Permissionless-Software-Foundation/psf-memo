@@ -71,6 +71,7 @@ const { renderProfileTokenIcons, renderProfileTokenIcon } = require('./render-pr
 const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
+const { X_EMBED_BASE_URL } = require('../../src/services/x-embed')
 const { toPushBuffer } = require('../../src/services/memo-multipush')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
@@ -4501,6 +4502,20 @@ const handlers = [
     }
   },
   {
+    name: 'feed shows embedded X post',
+    pattern: /^the feed shows an embedded X post for status (.+)$/,
+    run (m, example, world) {
+      assertRenderedEmbedsXPost(getRenderedFeed(world), resolveParam(m[1], example), 'Feed')
+    }
+  },
+  {
+    name: 'feed does not show embedded X post',
+    pattern: /^the feed does not show an embedded X post$/,
+    run (m, example, world) {
+      assertRenderedHasNoXEmbed(getRenderedFeed(world), 'Feed')
+    }
+  },
+  {
     name: 'feed shows an image',
     pattern: /^the feed shows an image with the URL (.+) and alt text (.+)$/,
     run (m, example, world) {
@@ -4540,6 +4555,13 @@ const handlers = [
     pattern: /^the profile page shows an embedded YouTube player for the video (.+)$/,
     run (m, example, world) {
       assertRenderedEmbedsVideo(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
+    }
+  },
+  {
+    name: 'profile page shows embedded X post',
+    pattern: /^the profile page shows an embedded X post for status (.+)$/,
+    run (m, example, world) {
+      assertRenderedEmbedsXPost(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
     }
   },
   {
@@ -4888,6 +4910,27 @@ function assertRenderedEmbedsVideo (rendered, videoId, label) {
   const found = rendered.some((html) => html.includes(needle))
   if (!found) {
     throw new Error(`${label} does not show an embedded YouTube player for ${videoId}.`)
+  }
+}
+
+// The src of the self-contained X tweet frame for a status id.
+function xEmbedNeedle (statusId) {
+  return `${X_EMBED_BASE_URL}?id=${statusId}`
+}
+
+// Fail unless a rendered post embeds the X tweet frame for `statusId`.
+function assertRenderedEmbedsXPost (rendered, statusId, label) {
+  const found = rendered.some((html) => html.includes(xEmbedNeedle(statusId)))
+  if (!found) {
+    throw new Error(`${label} does not show an embedded X post for status ${statusId}.`)
+  }
+}
+
+// Fail when a rendered post embeds any X tweet frame.
+function assertRenderedHasNoXEmbed (rendered, label) {
+  const found = rendered.some((html) => html.includes(`${X_EMBED_BASE_URL}?id=`))
+  if (found) {
+    throw new Error(`${label} unexpectedly shows an embedded X post.`)
   }
 }
 
