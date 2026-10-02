@@ -19,28 +19,23 @@ const {
   listGeneratedTests,
   generateTests
 } = require('../../../swarmforge/scripts/lib/acceptance-runner.cjs')
+const { makeTmpDir } = require('../support/tmp-dir')
 
-function tmpDir (name) {
-  const dir = path.join(__dirname, '..', '..', 'tmp', `acceptance-runner-${name}-${process.pid}`)
-  fs.rmSync(dir, { recursive: true, force: true })
-  fs.mkdirSync(dir, { recursive: true })
+const tmpDir = makeTmpDir('acceptance-runner')
+
+function writeFiles (dir, names) {
+  for (const name of names) fs.writeFileSync(path.join(dir, name), '')
   return dir
 }
 
 test('featureFiles selects only .feature files and sorts them', () => {
-  const specsDir = tmpDir('features')
-  fs.writeFileSync(path.join(specsDir, 'b.feature'), 'B')
-  fs.writeFileSync(path.join(specsDir, 'a.feature'), 'A')
-  fs.writeFileSync(path.join(specsDir, 'notes.txt'), 'nope')
+  const specsDir = writeFiles(tmpDir('features'), ['b.feature', 'a.feature', 'notes.txt'])
 
   assert.deepEqual(featureFiles(specsDir), ['a.feature', 'b.feature'])
 })
 
 test('listGeneratedTests selects only acceptance tests and sorts them', () => {
-  const genDir = tmpDir('generated')
-  fs.writeFileSync(path.join(genDir, 'z.acceptance.test.js'), '')
-  fs.writeFileSync(path.join(genDir, 'a.acceptance.test.js'), '')
-  fs.writeFileSync(path.join(genDir, 'helper.js'), '')
+  const genDir = writeFiles(tmpDir('generated'), ['z.acceptance.test.js', 'a.acceptance.test.js', 'helper.js'])
 
   assert.deepEqual(listGeneratedTests(genDir), [
     'a.acceptance.test.js',
