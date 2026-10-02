@@ -31,7 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **X Post Embed (spec approved 2026-10-02):** embed x.com and twitter.com
+  status links (`/status/<numeric id>`) in post text as the self-contained X
+  tweet frame (`https://platform.twitter.com/embed/Tweet.html?id=<status_id>`),
+  preserving surrounding text; non-status or malformed x.com/twitter.com links
+  stay ordinary links. Client-only read rendering through the shared
+  `PostContent` renderer (feed + profile page). Spec:
+  `psf-memo-client/specs/x-post-embed.feature`; task `x-post-embed`. No
+  DB/indexer change.
 
 ## Recently completed
 
