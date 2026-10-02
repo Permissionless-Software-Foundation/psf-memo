@@ -15,7 +15,8 @@ const PostContent = require('../../src/components/post-feed/post-content')
 function renderPostText (text, options = {}) {
   const element = React.createElement(PostContent, {
     text,
-    initialFailedImages: options.initialFailedImages
+    initialFailedImages: options.initialFailedImages,
+    tiktokVideoIds: options.tiktokVideoIds
   })
   return ReactDOMServer.renderToStaticMarkup(element)
 }

@@ -17,6 +17,12 @@ const {
   imageAltText
 } = require('../../services/post-links')
 const { X_EMBED_BASE_URL, extractXStatusId } = require('../../services/x-embed')
+const {
+  TIKTOK_EMBED_BASE_URL,
+  extractTikTokVideoId,
+  extractTikTokShortCode
+} = require('../../services/tiktok-embed')
+const { resolveTikTokVideoId } = require('../../services/tiktok-oembed')
 const { addFailedImage } = require('../../services/failed-images')
 
 // A post image that falls back to a plain link if the image fails to load.
@@ -87,9 +93,71 @@ function xEmbedNode (statusId) {
   )
 }
 
-// Render one parsed post link: an image, an embedded X post, or a plain
-// new-tab anchor.
-function linkNode (link, { failedImages, onImageError }) {
+// A self-contained embedded TikTok player.
+function tiktokEmbedNode (videoId) {
+  return React.createElement(
+    'div',
+    {
+      className: 'posts-feed-item-tiktok'
+    },
+    React.createElement('iframe', {
+      src: `${TIKTOK_EMBED_BASE_URL}/${videoId}`,
+      title: `TikTok video ${videoId}`,
+      allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      allowFullScreen: true,
+      frameBorder: '0'
+    })
+  )
+}
+
+// Every TikTok short-link URL in the post text, cleaned the same way the
+// renderer cleans rendered hrefs so resolution keys match the anchors.
+function collectTikTokShortLinks (text) {
+  const shortLinks = []
+  for (const segment of parsePostText(text)) {
+    if (segment.type !== 'text') continue
+    for (const link of parsePostLinks(segment.text)) {
+      if (link.type === 'link' && extractTikTokShortCode(link.href)) {
+        shortLinks.push(link.href)
+      }
+    }
+  }
+  return shortLinks
+}
+
+// Resolve the post's TikTok short links to video ids in the background.  The
+// initial map (used by tests and acceptance) is seeded synchronously; each
+// unresolved short link is fetched at most once per component instance.
+function useResolvedTikTokIds (shortLinks, initialIds, resolveTikTok) {
+  const [resolved, setResolved] = React.useState(() => ({ ...(initialIds || {}) }))
+  const attempted = React.useRef(new Set(Object.keys(initialIds || {})))
+  const shortLinksKey = shortLinks.join('\n')
+
+  React.useEffect(() => {
+    if (typeof resolveTikTok !== 'function') return undefined
+
+    const request = { cancelled: false }
+    for (const url of shortLinksKey ? shortLinksKey.split('\n') : []) {
+      if (attempted.current.has(url)) continue
+      attempted.current.add(url)
+      Promise.resolve(resolveTikTok(url))
+        .then((videoId) => {
+          if (request.cancelled || !videoId) return
+          setResolved((previous) => ({ ...previous, [url]: String(videoId) }))
+        })
+        .catch(() => {})
+    }
+
+    return () => { request.cancelled = true }
+  }, [shortLinksKey, resolveTikTok])
+
+  return resolved
+}
+
+// Render one parsed post link: an image, an embedded X post, an embedded
+// TikTok player, or a plain new-tab anchor.
+function linkNode (link, { failedImages, onImageError, tiktokVideoIds }) {
   if (isImageUrl(link.href)) {
     return React.createElement(PostImage, {
       href: link.href,
@@ -101,6 +169,10 @@ function linkNode (link, { failedImages, onImageError }) {
 
   const xStatusId = extractXStatusId(link.href)
   if (xStatusId) return xEmbedNode(xStatusId)
+
+  const tiktokVideoId = extractTikTokVideoId(link.href) ||
+    (tiktokVideoIds ? tiktokVideoIds[link.href] : null)
+  if (tiktokVideoId) return tiktokEmbedNode(tiktokVideoId)
 
   return React.createElement(
     'a',
@@ -114,10 +186,17 @@ function linkNode (link, { failedImages, onImageError }) {
   )
 }
 
-function PostContent ({ text = '', initialFailedImages }) {
+function PostContent ({
+  text = '',
+  initialFailedImages,
+  tiktokVideoIds,
+  resolveTikTok = resolveTikTokVideoId
+}) {
   const [failedImages, setFailedImages] = React.useState(
     () => new Set(initialFailedImages || [])
   )
+  const shortLinks = collectTikTokShortLinks(text)
+  const resolvedTikTokIds = useResolvedTikTokIds(shortLinks, tiktokVideoIds, resolveTikTok)
   const children = []
 
   const failImage = (href) => {
@@ -136,7 +215,11 @@ function PostContent ({ text = '', initialFailedImages }) {
         continue
       }
 
-      children.push(linkNode(link, { failedImages, onImageError: failImage }))
+      children.push(linkNode(link, {
+        failedImages,
+        onImageError: failImage,
+        tiktokVideoIds: resolvedTikTokIds
+      }))
     }
   }
 

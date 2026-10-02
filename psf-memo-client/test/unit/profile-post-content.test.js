@@ -86,3 +86,13 @@ test('embeds an X status link instead of showing the raw URL', () => {
   )
   assert.doesNotMatch(html, /x\.com\/donatello\/status/)
 })
+
+test('embeds a TikTok video link instead of showing the raw URL', () => {
+  const html = render('https://www.tiktok.com/@scout2015/video/6718335390845095173')
+
+  assert.match(
+    html,
+    /<iframe[^>]+src="https:\/\/www\.tiktok\.com\/player\/v1\/6718335390845095173"/
+  )
+  assert.doesNotMatch(html, /@scout2015\/video/)
+})

@@ -72,6 +72,7 @@ const { VIEW_POST_LABEL } = require('../../src/services/notification-entry')
 const PostOptions = require('../../src/services/post-options')
 const { YOUTUBE_EMBED_BASE_URL } = require('../../src/services/youtube-embed')
 const { X_EMBED_BASE_URL } = require('../../src/services/x-embed')
+const { TIKTOK_EMBED_BASE_URL } = require('../../src/services/tiktok-embed')
 const { toPushBuffer } = require('../../src/services/memo-multipush')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
@@ -1942,7 +1943,9 @@ const handlers = [
     async run (m, example, world) {
       await world.recentFeedPage.load()
       world.currentPath = RecentFeedPage.RECENT_FEED_PATH
-      world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
+      world.renderedFeed = world.recentFeedPage.posts.map((post) =>
+        renderPostText(post.text, { tiktokVideoIds: world.tiktokVideoIds })
+      )
     }
   },
   {
@@ -4516,6 +4519,37 @@ const handlers = [
     }
   },
   {
+    name: 'feed shows embedded TikTok player',
+    pattern: /^the feed shows an embedded TikTok player for the video (.+)$/,
+    run (m, example, world) {
+      assertRenderedEmbedsTikTok(getRenderedFeed(world), resolveParam(m[1], example), 'Feed')
+    }
+  },
+  {
+    name: 'feed does not show embedded TikTok player',
+    pattern: /^the feed does not show an embedded TikTok player$/,
+    run (m, example, world) {
+      assertRenderedHasNoTikTokEmbed(getRenderedFeed(world), 'Feed')
+    }
+  },
+  {
+    name: 'TikTok short link resolves to video',
+    pattern: /^the TikTok short link (.+) resolves to the video (.+)$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      const videoId = resolveParam(m[2], example)
+      world.tiktokVideoIds = { ...(world.tiktokVideoIds || {}), [url]: videoId }
+    }
+  },
+  {
+    name: 'TikTok short link cannot be resolved',
+    pattern: /^the TikTok short link (.+) cannot be resolved$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      world.tiktokVideoIds = { ...(world.tiktokVideoIds || {}), [url]: null }
+    }
+  },
+  {
     name: 'feed shows an image',
     pattern: /^the feed shows an image with the URL (.+) and alt text (.+)$/,
     run (m, example, world) {
@@ -4544,7 +4578,10 @@ const handlers = [
       world.failedImages = new Set([...(world.failedImages || []), url])
       world.renderedFeed = world.recentFeedPage
         ? world.recentFeedPage.posts.map((post) =>
-          renderPostText(post.text, { initialFailedImages: [...world.failedImages] })
+          renderPostText(post.text, {
+            initialFailedImages: [...world.failedImages],
+            tiktokVideoIds: world.tiktokVideoIds
+          })
         )
         : []
       world.renderedProfilePosts = null
@@ -4562,6 +4599,13 @@ const handlers = [
     pattern: /^the profile page shows an embedded X post for status (.+)$/,
     run (m, example, world) {
       assertRenderedEmbedsXPost(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
+    }
+  },
+  {
+    name: 'profile page shows embedded TikTok player',
+    pattern: /^the profile page shows an embedded TikTok player for the video (.+)$/,
+    run (m, example, world) {
+      assertRenderedEmbedsTikTok(getRenderedProfilePosts(world), resolveParam(m[1], example), 'Profile page')
     }
   },
   {
@@ -4878,7 +4922,9 @@ function findPostOnCurrentPage (txid, world) {
 // Return the cached rendered feed HTML, computing it on first use.
 function getRenderedFeed (world) {
   if (!world.renderedFeed) {
-    world.renderedFeed = world.recentFeedPage.posts.map((post) => renderPostText(post.text))
+    world.renderedFeed = world.recentFeedPage.posts.map((post) =>
+      renderPostText(post.text, { tiktokVideoIds: world.tiktokVideoIds })
+    )
   }
   return world.renderedFeed
 }
@@ -4893,7 +4939,8 @@ function getRenderedProfilePosts (world) {
   if (!world.renderedProfilePosts) {
     world.renderedProfilePosts = world.profilePage.posts.map((post) =>
       renderProfilePost(post.text, {
-        initialFailedImages: world.failedImages ? [...world.failedImages] : undefined
+        initialFailedImages: world.failedImages ? [...world.failedImages] : undefined,
+        tiktokVideoIds: world.tiktokVideoIds
       })
     )
   }
@@ -4934,6 +4981,23 @@ function assertRenderedHasNoXEmbed (rendered, label) {
   }
 }
 
+// Fail unless a rendered post embeds the TikTok player for `videoId`.
+function assertRenderedEmbedsTikTok (rendered, videoId, label) {
+  const needle = `${TIKTOK_EMBED_BASE_URL}/${videoId}`
+  const found = rendered.some((html) => html.includes(needle))
+  if (!found) {
+    throw new Error(`${label} does not show an embedded TikTok player for ${videoId}.`)
+  }
+}
+
+// Fail when a rendered post embeds any TikTok player frame.
+function assertRenderedHasNoTikTokEmbed (rendered, label) {
+  const found = rendered.some((html) => html.includes(`${TIKTOK_EMBED_BASE_URL}/`))
+  if (found) {
+    throw new Error(`${label} unexpectedly shows an embedded TikTok player.`)
+  }
+}
+
 // Fail unless a rendered post links `href` in a new tab.
 function assertRenderedLinksInNewTab (rendered, href, label) {
   const found = rendered.some((html) =>
@@ -4957,10 +5021,15 @@ function assertRenderedLinkText (rendered, text, label) {
   }
 }
 
-// Fail when a rendered post shows the raw URL `url`.
+// Fail when a rendered post shows the raw URL `url`. An embedded frame's src
+// attribute is markup, not something the reader sees, so only visible text and
+// anchor hrefs count as showing the URL.
 function assertRenderedHidesRawUrl (rendered, url, label) {
-  const found = rendered.some((html) => html.includes(url))
-  if (found) {
+  const shownAsText = rendered.some((html) => visibleText(html).includes(url))
+  const linked = rendered.some((html) =>
+    anchorsIn(html).some((anchor) => anchor.attrs.includes(`href="${url}"`))
+  )
+  if (shownAsText || linked) {
     throw new Error(`${label} unexpectedly shows the raw URL ${url}.`)
   }
 }

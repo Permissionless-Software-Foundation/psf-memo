@@ -15,7 +15,8 @@ const ProfilePostContent = require('../../src/components/app-body/profile/profil
 function renderProfilePost (text, options = {}) {
   const element = React.createElement(ProfilePostContent, {
     text,
-    initialFailedImages: options.initialFailedImages
+    initialFailedImages: options.initialFailedImages,
+    tiktokVideoIds: options.tiktokVideoIds
   })
   return ReactDOMServer.renderToStaticMarkup(element)
 }
