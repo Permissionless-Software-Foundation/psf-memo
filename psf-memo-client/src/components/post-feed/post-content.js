@@ -51,6 +51,69 @@ function PostImage ({ href, alt, failed, onError }) {
   )
 }
 
+// A self-contained embedded YouTube player.
+function youtubeEmbedNode (videoId) {
+  return React.createElement(
+    'div',
+    {
+      className: 'posts-feed-item-youtube'
+    },
+    React.createElement('iframe', {
+      src: `${YOUTUBE_EMBED_BASE_URL}/${videoId}`,
+      title: `YouTube video ${videoId}`,
+      allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      allowFullScreen: true,
+      frameBorder: '0'
+    })
+  )
+}
+
+// A self-contained embedded X (Twitter) post frame.
+function xEmbedNode (statusId) {
+  return React.createElement(
+    'div',
+    {
+      className: 'posts-feed-item-x-embed'
+    },
+    React.createElement('iframe', {
+      src: `${X_EMBED_BASE_URL}?id=${statusId}`,
+      title: `X post ${statusId}`,
+      allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share',
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      allowFullScreen: true,
+      frameBorder: '0'
+    })
+  )
+}
+
+// Render one parsed post link: an image, an embedded X post, or a plain
+// new-tab anchor.
+function linkNode (link, { failedImages, onImageError }) {
+  if (isImageUrl(link.href)) {
+    return React.createElement(PostImage, {
+      href: link.href,
+      alt: imageAltText(link.href),
+      failed: failedImages.has(link.href),
+      onError: () => onImageError(link.href)
+    })
+  }
+
+  const xStatusId = extractXStatusId(link.href)
+  if (xStatusId) return xEmbedNode(xStatusId)
+
+  return React.createElement(
+    'a',
+    {
+      href: link.href,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      className: 'posts-feed-item-link'
+    },
+    link.text
+  )
+}
+
 function PostContent ({ text = '', initialFailedImages }) {
   const [failedImages, setFailedImages] = React.useState(
     () => new Set(initialFailedImages || [])
@@ -63,22 +126,7 @@ function PostContent ({ text = '', initialFailedImages }) {
 
   for (const segment of parsePostText(text)) {
     if (segment.type === 'youtube') {
-      children.push(
-        React.createElement(
-          'div',
-          {
-            className: 'posts-feed-item-youtube'
-          },
-          React.createElement('iframe', {
-            src: `${YOUTUBE_EMBED_BASE_URL}/${segment.videoId}`,
-            title: `YouTube video ${segment.videoId}`,
-            allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
-            referrerPolicy: 'strict-origin-when-cross-origin',
-            allowFullScreen: true,
-            frameBorder: '0'
-          })
-        )
-      )
+      children.push(youtubeEmbedNode(segment.videoId))
       continue
     }
 
@@ -88,51 +136,7 @@ function PostContent ({ text = '', initialFailedImages }) {
         continue
       }
 
-      if (isImageUrl(link.href)) {
-        children.push(
-          React.createElement(PostImage, {
-            href: link.href,
-            alt: imageAltText(link.href),
-            failed: failedImages.has(link.href),
-            onError: () => failImage(link.href)
-          })
-        )
-        continue
-      }
-
-      const xStatusId = extractXStatusId(link.href)
-      if (xStatusId) {
-        children.push(
-          React.createElement(
-            'div',
-            {
-              className: 'posts-feed-item-x-embed'
-            },
-            React.createElement('iframe', {
-              src: `${X_EMBED_BASE_URL}?id=${xStatusId}`,
-              title: `X post ${xStatusId}`,
-              allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share',
-              referrerPolicy: 'strict-origin-when-cross-origin',
-              allowFullScreen: true,
-              frameBorder: '0'
-            })
-          )
-        )
-        continue
-      }
-
-      children.push(
-        React.createElement(
-          'a',
-          {
-            href: link.href,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            className: 'posts-feed-item-link'
-          },
-          link.text
-        )
-      )
+      children.push(linkNode(link, { failedImages, onImageError: failImage }))
     }
   }
 
