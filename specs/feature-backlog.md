@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-09-25
+**Last updated**: 2026-10-02
 
 ---
 
@@ -31,16 +31,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **X Post Embed (spec approved 2026-10-02):** embed x.com and twitter.com
-  status links (`/status/<numeric id>`) in post text as the self-contained X
-  tweet frame (`https://platform.twitter.com/embed/Tweet.html?id=<status_id>`),
-  preserving surrounding text; non-status or malformed x.com/twitter.com links
-  stay ordinary links. Client-only read rendering through the shared
-  `PostContent` renderer (feed + profile page). Spec:
-  `psf-memo-client/specs/x-post-embed.feature`; task `x-post-embed`. No
-  DB/indexer change.
+- None.
 
 ## Recently completed
+
+- **X Post Embed (2026-10-02):** posts containing an x.com or twitter.com
+  status link (`/status/<numeric id>`) now render the linked post in an
+  embedded X frame (`https://platform.twitter.com/embed/Tweet.html?id=<status_id>`)
+  instead of the raw URL; surrounding text is preserved, and non-status or
+  malformed x.com/twitter.com links stay ordinary links. Client-only read
+  rendering through the shared `PostContent` renderer, so the feed and the
+  profile page both get it. Spec: `psf-memo-client/specs/x-post-embed.feature`;
+  the pure parser is `psf-memo-client/src/services/x-embed.js`
+  (`extractXStatusId`) and the render-node extraction is in
+  `src/components/post-feed/post-content.js`. Merged to `master` at `3795645`
+  (architect review commit `3d38f14`; the later docs-only `9da218b` adds the
+  record and summary, so `docs/reviews/x-post-embed-verification.json` is valid
+  for the merged tree). Independent acceptance check after merge: 17/17 example
+  executions. `verify.sh client` pass 5/5 at `3d38f14` (unit 673/0, property
+  190/0, acceptance 43 suites, lint ok, build ok); language mutation 3/3
+  (`x-embed.js`) and 3/3 (`post-content.js`); soft Gherkin mutation 33 total /
+  26 killed / 7 intrinsic survivors (case-insensitive host/scheme and
+  self-consistent text values); max CC 6 / CRAP 6.0. Architect summary:
+  `docs/reviews/x-post-embed-summary.md`.
 
 - **Mute persistence (2026-09-25):** the indexer's mute writes now persist.
   `psf-memo-indexer` writes mutes through
