@@ -31,9 +31,43 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Account page layout (2026-10-02):** the `/account` page gets the same
+  sidebar as `/profile/:addr` — avatar (jdenticon fallback), bio, copyable BCH
+  address, and SLP token icons — with the existing Set Name / Set Bio / Set
+  Avatar URL controls on the right, each preceded by a short description of what
+  it does. Client-only; no DB/indexer change. Spec:
+  `psf-memo-client/specs/account-page-layout.feature` (15 scenarios).
+  `psf-memo-client/specs/account-avatar-display.feature` (jdenticon fallback)
+  and the `set-avatar-url.feature` scenario 1 assertion were updated to match.
 
 ## Recently completed
+
+- **Profile post like/tip (2026-10-02):** the heart on a `/profile/:addr`
+  post card is now the same interactive like/tip control as the `/posts/recent`
+  feed: clicking it opens the Like/Tip modal for that post, a pure like
+  broadcasts `0x6d04` (no tip), a like with a tip also pays the post author,
+  the post's like count and heart reflect the like, and the broadcast-result
+  modal stays open with the success message, like transaction id, and
+  block-explorer link until dismissed. The per-post like state is a pure
+  service (`psf-memo-client/src/services/profile-post-like.js`), the
+  presentational seam is
+  `src/components/app-body/profile/profile-post-like.js` (plain
+  `React.createElement`, shared with the Node adapter
+  `acceptance/lib/render-profile-post-like.js`), and the shared `LikeButton`
+  was converted to CommonJS `React.createElement` with its unused `readOnly`
+  span branch removed. Client-only. Spec:
+  `psf-memo-client/specs/profile-post-like.feature`. Merged to `master` at
+  `3653f80` (architect review commit `20bd05f`; the later docs-only `abc1f4c`
+  adds the record and summary, so
+  `docs/reviews/profile-post-like-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 10/10 example executions.
+  `verify.sh client` pass 5/5 at `20bd05f` (unit 718/0, property 207/0,
+  acceptance 45 suites, lint ok, build ok); language mutation 12 killed / 0
+  survived (`profile-post-like.js` 7, profile presentational component 2,
+  `like-button.js` 3); soft Gherkin mutation 12 total / 5 killed / 7 intrinsic
+  survivors (self-consistent txid/tip example values; invalid-hex txid
+  substitutions were killed). Architect summary:
+  `docs/reviews/profile-post-like-summary.md`.
 
 - **TikTok Embed (2026-10-02):** posts containing a TikTok video link now
   render the video in an embedded player

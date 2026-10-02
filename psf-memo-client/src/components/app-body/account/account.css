@@ -1,0 +1,31 @@
+.account-page {
+  max-width: 1200px;
+}
+
+.account-avatar-image,
+.account-avatar-jdenticon {
+  width: 120px;
+  height: 120px;
+  border-radius: 4px;
+}
+
+.account-avatar-image {
+  object-fit: cover;
+  display: block;
+}
+
+.account-avatar-jdenticon {
+  overflow: hidden;
+}
+
+.account-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-control-description {
+  margin-bottom: 0.25rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+}

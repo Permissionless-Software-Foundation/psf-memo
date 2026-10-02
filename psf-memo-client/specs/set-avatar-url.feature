@@ -15,7 +15,7 @@ Feature: Set Avatar URL
     When I submit the avatar URL
     Then the app broadcasts an OP_RETURN transaction with the Memo set-profile-picture prefix
     Then I navigate to the path /account
-    Then the account page shows my avatar URL as "<url>"
+    Then the account page displays the avatar image with the URL "<url>"
 
     Examples:
       | url |

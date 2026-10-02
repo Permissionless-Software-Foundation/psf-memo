@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-02T15:21:33.218135738Z","feature_name":"Profile Post Like / Tip","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/profile-post-like.feature","background_hash":"1714896143ae0425b1c9938c1bc926ef61183ee3e842aa76d8bfd0ec751fcc9c","implementation_hash":"unknown","scenarios":[{"index":2,"name":"Profile Post Like / Tip - 3 a like from the profile page broadcasts the Memo like action","scenario_hash":"9cc56309677cba3ddc69640db328c3dece2fb6e03be34f9ca8ea8eb4b253d2e0","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-10-02T15:21:33.218135738Z"}]}
+# acceptance-mutation-manifest-end
+
 # The heart on a /profile/:addr post card is an interactive like control, the
 # same as the heart on the /posts/recent feed post card. Clicking it opens the
 # like/tip modal for that post; submitting a like broadcasts the Memo like

@@ -1,31 +1,57 @@
 /*
-  Account Page behavior: show the authenticated user's display name and offer
-  a way to navigate to the Set Name page.
+  Account Page behavior: show the authenticated account's sidebar (avatar,
+  bio, copyable address, and SLP token icons) and the Set Name, Set Bio, and
+  Set Avatar URL controls with their descriptions.
 
   This is the testable controller behind the React "Account" page. It reads
-  the current name from an injected profile store and exposes a Set Name
-  button that navigates to the set-name path.
-
-  The wallet, profile store, and navigate concerns are injected so this module
-  stays free of UI/network concerns; environmentally unsuitable I/O lives behind
-  those small adapter boundaries.
+  the current name, bio, and avatar URL from an injected profile store,
+  exposes the navigation targets for the controls, loads the account's token
+  icons from an injected token source, and owns the transient address-copy
+  confirmation. The wallet, profile store, token source, clipboard, timer, and
+  navigate concerns are injected so this module stays free of UI/network
+  concerns; environmentally unsuitable I/O lives behind those small adapter
+  boundaries.
 */
+
+const { buildTokenIcons } = require('./profile-token-icons')
+const { resolveTokenData } = require('./token-mutable-data')
 
 const SET_NAME_PATH = '/memo/set-name'
 const SET_BIO_PATH = '/memo/set-bio'
 const SET_AVATAR_URL_PATH = '/memo/set-avatar-url'
 const ACCOUNT_PATH = '/account'
+const ADDRESS_COPY_CONFIRMATION_MS = 1500
+const SIDEBAR_SECTIONS = ['avatar', 'bio', 'address', 'tokens']
+const TRUNCATE_LENGTH = 24
+const CONTROL_DESCRIPTIONS = {
+  'Set Name': 'Set the name shown next to your posts and on your profile.',
+  'Set Bio': 'Write the profile text shown on your profile page.',
+  'Set Avatar URL': 'Set the URL of the image used as your profile picture.'
+}
+const CONTROL_LABELS = ['Set Name', 'Set Bio', 'Set Avatar URL']
 
 class AccountPage {
   constructor (deps = {}) {
     this.wallet = deps.wallet || null
     this.profiles = deps.profiles || null
     this.navigate = deps.navigate || (() => {})
+    this.addr = deps.addr || null
+    this.tokenSource = deps.tokenSource || null
+    this.onTokenIconsChange = deps.onTokenIconsChange || null
+    this.copyToClipboard = deps.copyToClipboard || null
+    this.onAddressCopyChange = deps.onAddressCopyChange || null
+    this.setTimer = deps.setTimer || ((fn, ms) => setTimeout(fn, ms))
+    this.clearTimer = deps.clearTimer || ((id) => clearTimeout(id))
+    this.tokens = []
+    this.tokenIcons = []
+    this.destroyed = false
+    this.addressCopied = false
+    this.addressCopyTimer = null
   }
 
   // The address of the authenticated wallet, or null when no wallet is present.
   getAddress () {
-    return this.wallet?.walletInfo?.cashAddress || null
+    return this.addr || this.wallet?.walletInfo?.cashAddress || null
   }
 
   // Read a profile field for the authenticated address. Falls back to null
@@ -69,6 +95,169 @@ class AccountPage {
     return this.getDisplayAvatarUrl(fallbackUrl)
   }
 
+  // Whether the account page should show a jdenticon instead of an avatar image.
+  showsJdenticon (fallbackUrl = null) {
+    return !this.hasAvatarImage(fallbackUrl)
+  }
+
+  // The account address shortened for compact display, or '' without one.
+  getTruncatedAddress () {
+    const addr = this.getAddress()
+    if (!addr || addr.length <= TRUNCATE_LENGTH) return addr || ''
+    const half = Math.floor((TRUNCATE_LENGTH - 3) / 2)
+    return `${addr.slice(0, half)}...${addr.slice(-half)}`
+  }
+
+  // The display name to show: the stored name, then the fallback, then the
+  // truncated account address.
+  getDisplayName (fallback = null) {
+    return this.getName() || fallback || this.getTruncatedAddress()
+  }
+
+  // The description shown above the named control, or null when unknown.
+  getControlDescription (label) {
+    return CONTROL_DESCRIPTIONS[label] || null
+  }
+
+  // The account controls in display order, each with its description.
+  getControls () {
+    return CONTROL_LABELS.map((label) => ({
+      label,
+      description: this.getControlDescription(label)
+    }))
+  }
+
+  // The sidebar sections in display order: avatar, bio, address, tokens.
+  getSidebarSections () {
+    return SIDEBAR_SECTIONS.slice()
+  }
+
+  // Load the account page: list the account's SLP tokens and build their icons.
+  async load () {
+    await this.loadTokenIcons()
+    return { tokenIcons: this.tokenIcons, address: this.getAddress() }
+  }
+
+  // Phase one: list the SLP tokens held by the account address and render an
+  // icon for each immediately, with the token ID as its tooltip. A missing
+  // source or a token lookup failure is silent: the page simply shows no token
+  // icons.
+  async loadTokenIcons () {
+    this.tokens = []
+    const addr = this.getAddress()
+    if (!this.tokenSource || typeof this.tokenSource.listTokens !== 'function' || !addr) {
+      this._setTokenIcons([])
+      return this.tokenIcons
+    }
+
+    try {
+      const tokens = await this.tokenSource.listTokens(addr)
+      this.tokens = Array.isArray(tokens) ? tokens : []
+    } catch (err) {
+      this.tokens = []
+    }
+
+    this._setTokenIcons(buildTokenIcons(this.tokens))
+    return this.tokenIcons
+  }
+
+  // Phase two: retrieve each token's token data (its genesis name and
+  // mutable-data record) through the wallet and rebuild the icons, exactly as
+  // the profile page does. A per-token failure leaves that token's icon
+  // unchanged.
+  async loadTokenData () {
+    if (!Array.isArray(this.tokens) || this.tokens.length === 0) return this.tokenIcons
+    if (!this.tokenSource || typeof this.tokenSource.getTokenData !== 'function') return this.tokenIcons
+
+    const tokens = await Promise.all(this.tokens.map(async (token) => {
+      if (!token || token.genesisName || token.mutableData) return token
+      try {
+        const tokenData = await resolveTokenData(this.tokenSource, token.tokenId)
+        if (!tokenData) return token
+        return {
+          ...token,
+          genesisName: tokenData.name || null,
+          mutableData: tokenData.mutableData || null
+        }
+      } catch (err) {
+        return token
+      }
+    }))
+
+    this.tokens = tokens
+    this._setTokenIcons(buildTokenIcons(tokens))
+    return this.tokenIcons
+  }
+
+  getTokenIcons () {
+    return this.tokenIcons
+  }
+
+  // Record the current icon view models and notify the injected listener (the
+  // React shell) so it can re-render. A destroyed page does not notify.
+  _setTokenIcons (icons) {
+    this.tokenIcons = icons
+    if (!this.destroyed && this.onTokenIconsChange) this.onTokenIconsChange(icons)
+    return this.tokenIcons
+  }
+
+  // Copy the account address to the clipboard and show a transient
+  // confirmation. The clipboard write is delegated to the injected adapter so
+  // the controller stays free of browser APIs.
+  async copyAddress () {
+    const addr = this.getAddress()
+    if (!addr) {
+      throw new Error('Account page requires an address.')
+    }
+    if (!this.copyToClipboard) {
+      throw new Error('Account page requires a clipboard adapter.')
+    }
+    await this.copyToClipboard(addr)
+    this._setAddressCopied(true)
+    this._scheduleAddressCopyReset()
+    return addr
+  }
+
+  isShowingAddressCopyConfirmation () {
+    return this.addressCopied
+  }
+
+  // Clear the copy confirmation, as the confirmation timeout would. Exposed so
+  // tests and acceptance runs can elapse the timer deterministically.
+  addressCopyTimeoutElapsed () {
+    this._clearAddressCopyTimer()
+    this._setAddressCopied(false)
+    return this
+  }
+
+  // Stop the pending confirmation timer without changing the confirmation
+  // state. Used when the page unmounts.
+  destroy () {
+    this.destroyed = true
+    this._clearAddressCopyTimer()
+    return this
+  }
+
+  _setAddressCopied (copied) {
+    this.addressCopied = copied
+    if (this.onAddressCopyChange) this.onAddressCopyChange(copied)
+  }
+
+  _scheduleAddressCopyReset () {
+    this._clearAddressCopyTimer()
+    this.addressCopyTimer = this.setTimer(() => {
+      this.addressCopyTimer = null
+      this._setAddressCopied(false)
+    }, ADDRESS_COPY_CONFIRMATION_MS)
+  }
+
+  _clearAddressCopyTimer () {
+    if (this.addressCopyTimer !== null) {
+      this.clearTimer(this.addressCopyTimer)
+      this.addressCopyTimer = null
+    }
+  }
+
   // Whether the account page exposes a Set Name button.
   hasSetNameButton () {
     return true
@@ -104,6 +293,9 @@ AccountPage.SET_NAME_PATH = SET_NAME_PATH
 AccountPage.SET_BIO_PATH = SET_BIO_PATH
 AccountPage.SET_AVATAR_URL_PATH = SET_AVATAR_URL_PATH
 AccountPage.ACCOUNT_PATH = ACCOUNT_PATH
+AccountPage.ADDRESS_COPY_CONFIRMATION_MS = ADDRESS_COPY_CONFIRMATION_MS
+AccountPage.SIDEBAR_SECTIONS = SIDEBAR_SECTIONS
+AccountPage.CONTROL_DESCRIPTIONS = CONTROL_DESCRIPTIONS
 
 module.exports = AccountPage
 

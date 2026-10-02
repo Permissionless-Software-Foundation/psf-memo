@@ -26,3 +26,7 @@ function ProfilePostLike ({ post, liked = false, count, onClick }) {
 }
 
 module.exports = ProfilePostLike
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T15:20:40.932Z","module_hash":"7ef54f22a50dab60bb7e555d8ae20b36334a44da65fab6f556827b511bcab7f7","functions":[{"id":"func/ProfilePostLike","name":"ProfilePostLike","line":18,"end_line":26,"hash":"d0ffffd63b1435efb4487041a86c5a0b101c9894999794e238900b9abe90a6bf"}]}
+// mutate4javascript-manifest-end
