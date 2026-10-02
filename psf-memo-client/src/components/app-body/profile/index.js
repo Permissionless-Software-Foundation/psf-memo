@@ -23,6 +23,7 @@ import ProfilePostContent from './profile-post-content'
 import ProfilePostLike from './profile-post-like'
 import ProfileTokenIcons from './profile-token-icons'
 import { selectLikeState, applyLike } from '../../../services/profile-post-like'
+import '../../post-feed/post-feed.css'
 import '../../../App.css'
 import './profile.css'
 

@@ -45,3 +45,7 @@ function LikeButton ({ count = 0, liked = false, onClick }) {
 }
 
 module.exports = LikeButton
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T15:20:51.946Z","module_hash":"7cb1bc47232f031966001b97ca55589ac58185a84cf12fe53443d303736e1757","functions":[{"id":"func/LikeButton","name":"LikeButton","line":19,"end_line":45,"hash":"8920cbe6d047238c7892c47b18c364552359ba5a01698edb3df36299b251480c"}]}
+// mutate4javascript-manifest-end
