@@ -31,16 +31,33 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Account page layout (2026-10-02):** the `/account` page gets the same
-  sidebar as `/profile/:addr` — avatar (jdenticon fallback), bio, copyable BCH
-  address, and SLP token icons — with the existing Set Name / Set Bio / Set
-  Avatar URL controls on the right, each preceded by a short description of what
-  it does. Client-only; no DB/indexer change. Spec:
-  `psf-memo-client/specs/account-page-layout.feature` (15 scenarios).
-  `psf-memo-client/specs/account-avatar-display.feature` (jdenticon fallback)
-  and the `set-avatar-url.feature` scenario 1 assertion were updated to match.
+- None.
 
 ## Recently completed
+
+- **Account page layout (2026-10-02):** the `/account` page now shares the
+  `/profile/:addr` sidebar — avatar with a jdenticon fallback, bio (or
+  "No profile text"), the copyable BCH address with the transient "Copied to
+  clipboard" confirmation, and the account's SLP token icons — with the
+  existing Set Name / Set Bio / Set Avatar URL controls in the right column,
+  each preceded by a short description, in the profile section order. The
+  shared two-phase token-icon loading (`services/token-icon-loader.js`) and the
+  address-copy confirmation (`services/address-copy.js`) now back both page
+  controllers. Client-only; no DB/indexer change. Spec:
+  `psf-memo-client/specs/account-page-layout.feature` (15 scenarios);
+  `account-avatar-display.feature` (jdenticon fallback) and
+  `set-avatar-url.feature` scenario 1 (rendered avatar image) were updated.
+  Merged to `master` at `cf6310e` (fast-forward; architect review commit
+  `8836f4c634`; the later `cf6310e` is docs-only, so
+  `docs/reviews/account-page-layout-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 33 example executions across
+  the three touched features (account-page-layout 20, account-avatar-display 3,
+  set-avatar-url 10). `verify.sh client` pass 5/5 at `8836f4c634` (unit 758/0,
+  property 207/0, acceptance 46 suites, lint ok, build ok); language mutation 89
+  killed / 0 survived; soft Gherkin mutation account-page-layout 14/10,
+  account-avatar-display 2/0, set-avatar-url 13/7, all survivors intrinsic
+  case/same-length-equivalent substitutions; max CC 6 / CRAP 6.0. Architect
+  summary: `docs/reviews/account-page-layout-summary.md`.
 
 - **Profile post like/tip (2026-10-02):** the heart on a `/profile/:addr`
   post card is now the same interactive like/tip control as the `/posts/recent`

@@ -853,6 +853,21 @@ that a single user-facing feature may require specs in more than one component.
     and corrupted the worker's newline-delimited JSON channel (see
     `docs/architect-process-notes.md`).
 
+61. **The account and profile pages now share the sidebar loaders.** The
+    account-page-layout job extracted the two-phase SLP token-icon loading
+    (`psf-memo-client/src/services/token-icon-loader.js`) and the transient
+    address-copy confirmation (`psf-memo-client/src/services/address-copy.js`)
+    out of `ProfilePage` so `AccountPage` and `ProfilePage` share them; both
+    controllers expose the same duck-typed page fields the helpers expect. The
+    account page reuses `profile-address.js` and `profile-token-icons.js`
+    directly. The profile page still has an inline `ProfileAvatar` that
+    duplicates the account avatar/jdenticon rendering; the architect logged a
+    neutral shared avatar/sidebar component as a follow-up, not part of the
+    task. Soft Gherkin survivors are intrinsic (self-consistent case and
+    same-length substitutions), and the tool-written manifests in the three
+    touched feature files are committed as-is (#40). Spec:
+    `psf-memo-client/specs/account-page-layout.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -903,8 +918,23 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current `master` HEAD: `04275c4` (`Record mute persistence architect review and
-verification`). The DB record `docs/reviews/mute-persistence-verification.json`
+Latest session (2026-10-02): specified and merged `account-page-layout` — the
+`/account` page now shares the `/profile/:addr` sidebar (avatar with jdenticon
+fallback, bio, copyable address, SLP tokens) and shows the Set Name / Set Bio /
+Set Avatar URL controls in the right column, each preceded by a description.
+Spec `psf-memo-client/specs/account-page-layout.feature` (15 scenarios);
+`account-avatar-display.feature` (jdenticon fallback) and `set-avatar-url.feature`
+scenario 1 (rendered avatar image) were updated. Merged to `master` at `cf6310e`
+(fast-forward; architect review commit `8836f4c634`; the later `cf6310e` is
+docs-only, so `docs/reviews/account-page-layout-verification.json` is valid).
+Independent acceptance check after merge: 33 example executions across the three
+touched features (account-page-layout 20, account-avatar-display 3,
+set-avatar-url 10). Architect summary:
+`docs/reviews/account-page-layout-summary.md`.
+
+Current `master` HEAD: `cf6310e` (`Record account-page-layout architect review
+and verification`). Historical note — `mute-persistence` (merged at
+`04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
 only the record and summary, so the record is valid for the merged tree
 (extends #38). `mute-persistence` fixed the live bug where the indexer's
