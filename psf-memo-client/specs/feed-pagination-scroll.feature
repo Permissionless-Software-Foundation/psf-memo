@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-02T18:24:15.320651265Z","feature_name":"Feed Pagination Scroll","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/feed-pagination-scroll.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Feed Pagination Scroll - 1 clicking Next scrolls the recent posts feed to the top","scenario_hash":"422ed0b7dfd80b0a4dead66b02d2e0b8b3386b33fd91cbb5f84fdd4f4d64c6ea","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-10-02T18:24:15.320651265Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Feed Pagination Scroll - 1, Feed Pagination Scroll - 2, Feed Pagination Scroll - 3, Feed Pagination Scroll - 4
 #
 # The posts feed at /posts/recent shows its Previous and Next buttons at the
