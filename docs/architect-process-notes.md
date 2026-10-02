@@ -214,6 +214,28 @@ the captured output before the tool's `System/exit`; the JSON report
   mutated file still contains `mutate4javascript-manifest-begin` before
   committing.
 
+- **A fresh worktree ships no `node_modules`; run `npm ci` in each component
+  before doing any tooling or verification work.** A newly created architect
+  worktree has only the tracked sources, so `psf-memo-client/node_modules/.bin/`
+  and the component test toolchains are absent until installed. `npm ci` in
+  `psf-memo-client` restores the language mutation/CRAP/DRY tools (github
+  devDependencies) and the client toolchain; `npm ci` in `psf-memo-db` and
+  `psf-memo-indexer` restores their suites. With the npm cache warm this is
+  ~20s each. Do this at startup before touching `verify.sh`, `mutate-file.sh`,
+  or any component test command.
+
+- **`architect-startup.sh`'s three `tmp/*4javascript` checks fail even when the
+  language tools are ready.** After `npm ci`, the script still reports
+  `tmp/crap4javascript`, `tmp/dry4javascript`, and `tmp/mutate4javascript`
+  missing because it looks for standalone `tmp/` git checkouts, while the
+  project installs those tools as npm devDependencies under
+  `psf-memo-client/node_modules/.bin/`. The language-tool checks pass, so an
+  exit-1 run with exactly those three `[FAIL]` lines (16 ok / 3 fail) is the
+  accepted healthy state in this setup; do not clone the repos into `tmp/`.
+  Only the `tmp/aps`, language-tool, APS, runner-adapter, and build-dir checks
+  determine readiness. Also create the `tmp/aps` symlink first (see the
+  worktree note below) or the APS checks fail on the relative path.
+
 ## Workflow observations
 
 - **`architect-startup.sh` checks `tmp/aps` relative to the worktree, but
