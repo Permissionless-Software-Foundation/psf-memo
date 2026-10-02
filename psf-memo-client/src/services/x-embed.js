@@ -52,3 +52,7 @@ function extractXStatusId (url) {
 }
 
 module.exports = { X_EMBED_BASE_URL, extractXStatusId }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-02T13:30:16.832Z","module_hash":"235076a6052904de68d4cf9db93ae009420f76b7d1171487ce75f83b975179e2","functions":[{"id":"func/isXHost","name":"isXHost","line":23,"end_line":26,"hash":"3dd15b684e698cb893604c9dbd664b018f4f215cca4938e1931eccc1c8c80817"},{"id":"func/parseCandidate","name":"parseCandidate","line":30,"end_line":37,"hash":"ac2f2793cae164b80d1e0460c1ab712d87a88889c4adbf71bd8a4d6fd5e9aafc"},{"id":"func/extractXStatusId","name":"extractXStatusId","line":43,"end_line":52,"hash":"d09967fdb9bf992f35d2c90983e95c6862252abc9d3f6914e2f76a2acc24c533"}]}
+// mutate4javascript-manifest-end

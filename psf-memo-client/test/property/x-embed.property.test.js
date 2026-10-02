@@ -15,7 +15,7 @@
 'use strict'
 
 const test = require('node:test')
-const { seededRandom, forAll, intGen } = require('./harness')
+const { seededRandom, forAll, randomNumericId } = require('./harness')
 const { extractXStatusId } = require('../../src/services/x-embed')
 
 const rng = seededRandom(20261002)
@@ -31,12 +31,9 @@ const X_HOSTS = [
 
 const OTHER_HOSTS = ['example.com', 'x.com.evil.test', 'notx.com', 'twitter.org']
 
-// A numeric status id: no leading zero, 1..19 digits.
+// A numeric status id.
 function randomStatusId () {
-  const length = intGen(rng, 1, 19)()
-  let id = String(intGen(rng, 1, 9)())
-  for (let i = 1; i < length; i++) id += String(intGen(rng, 0, 9)())
-  return id
+  return randomNumericId(rng)
 }
 
 function randomUser () {
