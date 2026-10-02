@@ -58,6 +58,17 @@ function RecentPosts (props) {
     setProfiles(profileMap)
   }
 
+  // After a failed load, show the message and the empty feed, regardless of
+  // whether the failure came from the initial open or a later page action.
+  const resetFeedState = (message) => {
+    setError(message || 'Failed to load posts')
+    setPosts([])
+    setProfiles({})
+    setPagination(null)
+    setEmptyBecauseNoFollows(false)
+    setOffset(0)
+  }
+
   const openThread = (txid) => {
     setThreadTxid(txid)
     setShowThreadModal(true)
@@ -77,7 +88,13 @@ function RecentPosts (props) {
       setProfiles({})
 
       try {
-        const page = new FeedTabsPage({ memoDb: new MemoDb(), wallet })
+        const page = new FeedTabsPage({
+          memoDb: new MemoDb(),
+          wallet,
+          // Keep the new page's first post in view after a page load or tab
+          // change; the controller decides when a reset is needed.
+          scrollToTop: () => window.scrollTo({ top: 0, left: 0 })
+        })
         pageRef.current = page
         await page.open({ limit: PAGE_SIZE, offset: 0 })
 
@@ -85,12 +102,7 @@ function RecentPosts (props) {
         await showPage(page)
       } catch (err) {
         if (cancelled) return
-        setError(err.message || 'Failed to load posts')
-        setPosts([])
-        setProfiles({})
-        setPagination(null)
-        setEmptyBecauseNoFollows(false)
-        setOffset(0)
+        resetFeedState(err.message)
       }
 
       if (!cancelled) setLoading(false)
@@ -111,12 +123,7 @@ function RecentPosts (props) {
       await action(page)
       await showPage(page)
     } catch (err) {
-      setError(err.message || 'Failed to load posts')
-      setPosts([])
-      setProfiles({})
-      setPagination(null)
-      setEmptyBecauseNoFollows(false)
-      setOffset(0)
+      resetFeedState(err.message)
     }
     setLoading(false)
   }

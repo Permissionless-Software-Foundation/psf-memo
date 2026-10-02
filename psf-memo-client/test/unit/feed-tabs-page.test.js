@@ -292,3 +292,51 @@ test('getPost returns a loaded post by txid', async () => {
   assert.equal(page.getPost(post.txid), post)
   assert.equal(page.getPost('e'.repeat(64)), null)
 })
+
+// The feed resets its scroll position whenever it loads a page or changes
+// tab. The reset is requested through the injected scrollToTop adapter so the
+// controller stays free of DOM concerns; these tests count the requests.
+function makeScrollCounter () {
+  const counter = { count: 0 }
+  counter.scrollToTop = () => { counter.count++ }
+  return counter
+}
+
+// Build a feed page whose scroll resets are counted so each case below can
+// assert the request count without repeating the controller construction.
+function makeScrollPage (memoDb = makeMemoDb()) {
+  const scroll = makeScrollCounter()
+  const page = new FeedTabsPage({ memoDb, wallet: makeWallet(), scrollToTop: scroll.scrollToTop })
+  return { page, scroll }
+}
+
+// A memo db whose Recent feed reports one extra page, so nextPage advances.
+function makePagedMemoDb () {
+  const memoDb = makeMemoDb({ following: [] })
+  memoDb.getRecentPosts = async (opts) => {
+    memoDb.calls.getRecentPosts.push(opts)
+    return { posts: [], pagination: { total: 1, limit: opts.limit, offset: opts.offset, hasMore: opts.offset === 0 } }
+  }
+  return memoDb
+}
+
+// Each case names a viewer action and the scroll resets it should request. A
+// no-op action (same tab, no next/previous page) must not reset the viewport,
+// so the request count tracks exactly the page loads that reached a feed.
+test('the feed requests a scroll to the top exactly when a new page becomes visible', async () => {
+  const cases = [
+    ['open loads the first page', makeMemoDb(), async (page) => { await page.open() }, 1],
+    ['switching tabs reloads the feed', makeMemoDb({ following: [ALICE] }), async (page) => { await page.open(); await page.selectTab('Recent') }, 2],
+    ['selecting the active tab is a no-op', makeMemoDb({ following: [] }), async (page) => { await page.open(); await page.selectTab('Recent') }, 1],
+    ['next loads another page', makePagedMemoDb(), async (page) => { await page.open({ limit: 2 }); await page.nextPage() }, 2],
+    ['next on the last page is a no-op', makeMemoDb({ following: [] }), async (page) => { await page.open({ limit: 2 }); await page.nextPage() }, 1],
+    ['previous loads an earlier page', makeMemoDb({ following: [] }), async (page) => { await page.open({ limit: 2 }); page.offset = 4; await page.previousPage() }, 2],
+    ['previous on the first page is a no-op', makeMemoDb({ following: [] }), async (page) => { await page.open({ limit: 2 }); await page.previousPage() }, 1]
+  ]
+
+  for (const [label, memoDb, run, expected] of cases) {
+    const { page, scroll } = makeScrollPage(memoDb)
+    await run(page)
+    assert.equal(scroll.count, expected, label)
+  }
+})
