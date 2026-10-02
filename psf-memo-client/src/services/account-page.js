@@ -13,8 +13,8 @@
   boundaries.
 */
 
-const { buildTokenIcons } = require('./profile-token-icons')
-const { resolveTokenData } = require('./token-mutable-data')
+const { setAddressCopied, scheduleAddressCopyReset, clearAddressCopyTimer } = require('./address-copy')
+const { loadTokenIcons: loadTokenIconsFor, loadTokenData: loadTokenDataFor } = require('./token-icon-loader')
 
 const SET_NAME_PATH = '/memo/set-name'
 const SET_BIO_PATH = '/memo/set-bio'
@@ -143,22 +143,7 @@ class AccountPage {
   // source or a token lookup failure is silent: the page simply shows no token
   // icons.
   async loadTokenIcons () {
-    this.tokens = []
-    const addr = this.getAddress()
-    if (!this.tokenSource || typeof this.tokenSource.listTokens !== 'function' || !addr) {
-      this._setTokenIcons([])
-      return this.tokenIcons
-    }
-
-    try {
-      const tokens = await this.tokenSource.listTokens(addr)
-      this.tokens = Array.isArray(tokens) ? tokens : []
-    } catch (err) {
-      this.tokens = []
-    }
-
-    this._setTokenIcons(buildTokenIcons(this.tokens))
-    return this.tokenIcons
+    return loadTokenIconsFor(this, this.getAddress())
   }
 
   // Phase two: retrieve each token's token data (its genesis name and
@@ -166,38 +151,10 @@ class AccountPage {
   // the profile page does. A per-token failure leaves that token's icon
   // unchanged.
   async loadTokenData () {
-    if (!Array.isArray(this.tokens) || this.tokens.length === 0) return this.tokenIcons
-    if (!this.tokenSource || typeof this.tokenSource.getTokenData !== 'function') return this.tokenIcons
-
-    const tokens = await Promise.all(this.tokens.map(async (token) => {
-      if (!token || token.genesisName || token.mutableData) return token
-      try {
-        const tokenData = await resolveTokenData(this.tokenSource, token.tokenId)
-        if (!tokenData) return token
-        return {
-          ...token,
-          genesisName: tokenData.name || null,
-          mutableData: tokenData.mutableData || null
-        }
-      } catch (err) {
-        return token
-      }
-    }))
-
-    this.tokens = tokens
-    this._setTokenIcons(buildTokenIcons(tokens))
-    return this.tokenIcons
+    return loadTokenDataFor(this)
   }
 
   getTokenIcons () {
-    return this.tokenIcons
-  }
-
-  // Record the current icon view models and notify the injected listener (the
-  // React shell) so it can re-render. A destroyed page does not notify.
-  _setTokenIcons (icons) {
-    this.tokenIcons = icons
-    if (!this.destroyed && this.onTokenIconsChange) this.onTokenIconsChange(icons)
     return this.tokenIcons
   }
 
@@ -213,8 +170,8 @@ class AccountPage {
       throw new Error('Account page requires a clipboard adapter.')
     }
     await this.copyToClipboard(addr)
-    this._setAddressCopied(true)
-    this._scheduleAddressCopyReset()
+    setAddressCopied(this, true)
+    scheduleAddressCopyReset(this, ADDRESS_COPY_CONFIRMATION_MS)
     return addr
   }
 
@@ -225,8 +182,8 @@ class AccountPage {
   // Clear the copy confirmation, as the confirmation timeout would. Exposed so
   // tests and acceptance runs can elapse the timer deterministically.
   addressCopyTimeoutElapsed () {
-    this._clearAddressCopyTimer()
-    this._setAddressCopied(false)
+    clearAddressCopyTimer(this)
+    setAddressCopied(this, false)
     return this
   }
 
@@ -234,28 +191,8 @@ class AccountPage {
   // state. Used when the page unmounts.
   destroy () {
     this.destroyed = true
-    this._clearAddressCopyTimer()
+    clearAddressCopyTimer(this)
     return this
-  }
-
-  _setAddressCopied (copied) {
-    this.addressCopied = copied
-    if (this.onAddressCopyChange) this.onAddressCopyChange(copied)
-  }
-
-  _scheduleAddressCopyReset () {
-    this._clearAddressCopyTimer()
-    this.addressCopyTimer = this.setTimer(() => {
-      this.addressCopyTimer = null
-      this._setAddressCopied(false)
-    }, ADDRESS_COPY_CONFIRMATION_MS)
-  }
-
-  _clearAddressCopyTimer () {
-    if (this.addressCopyTimer !== null) {
-      this.clearTimer(this.addressCopyTimer)
-      this.addressCopyTimer = null
-    }
   }
 
   // Whether the account page exposes a Set Name button.

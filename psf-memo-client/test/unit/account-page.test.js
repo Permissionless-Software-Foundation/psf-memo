@@ -29,12 +29,31 @@ function makeWallet (address = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26
   return { walletInfo: { cashAddress: address } }
 }
 
-test('getName returns the stored display name', () => {
+// A page with an authenticated wallet and an in-memory profile store, plus the
+// store and wallet so a test can seed a profile field.
+function makePage (address) {
   const profiles = makeProfiles()
-  const wallet = makeWallet()
+  const wallet = makeWallet(address)
   const page = new AccountPage({ wallet, profiles })
+  return { profiles, wallet, page }
+}
 
-  profiles.setName(wallet.walletInfo.cashAddress, 'trout')
+// A page whose only dependency is a recorder of navigation targets.
+function makeNavigatingPage () {
+  const navigated = []
+  const page = new AccountPage({ navigate: (path) => navigated.push(path) })
+  return { navigated, page }
+}
+
+// A page whose profile store has one field set for the authenticated address.
+function makePageWithField (setter, value, address) {
+  const { profiles, wallet, page } = makePage(address)
+  profiles[setter](wallet.walletInfo.cashAddress, value)
+  return { profiles, wallet, page }
+}
+
+test('getName returns the stored display name', () => {
+  const { page } = makePageWithField('setName', 'trout')
 
   assert.equal(page.getName(), 'trout')
 })
@@ -54,11 +73,7 @@ test('getName returns null without a profile store', () => {
 })
 
 test('getBio returns the stored bio', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setBio(wallet.walletInfo.cashAddress, 'Building on BCH')
+  const { page } = makePageWithField('setBio', 'Building on BCH')
 
   assert.equal(page.getBio(), 'Building on BCH')
 })
@@ -90,8 +105,7 @@ test('hasSetBioButton is true', () => {
 })
 
 test('clickSetName navigates to the set-name page', () => {
-  const navigated = []
-  const page = new AccountPage({ navigate: (path) => navigated.push(path) })
+  const { navigated, page } = makeNavigatingPage()
 
   page.clickSetName()
 
@@ -99,8 +113,7 @@ test('clickSetName navigates to the set-name page', () => {
 })
 
 test('clickSetBio navigates to the set-bio page', () => {
-  const navigated = []
-  const page = new AccountPage({ navigate: (path) => navigated.push(path) })
+  const { navigated, page } = makeNavigatingPage()
 
   page.clickSetBio()
 
@@ -108,11 +121,7 @@ test('clickSetBio navigates to the set-bio page', () => {
 })
 
 test('getAvatarUrl returns the stored avatar URL', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+  const { page } = makePageWithField('setAvatarUrl', 'https://example.com/avatar.png')
 
   assert.equal(page.getAvatarUrl(), 'https://example.com/avatar.png')
 })
@@ -138,8 +147,7 @@ test('hasSetAvatarUrlButton is true', () => {
 })
 
 test('clickSetAvatarUrl navigates to the set-avatar-url page', () => {
-  const navigated = []
-  const page = new AccountPage({ navigate: (path) => navigated.push(path) })
+  const { navigated, page } = makeNavigatingPage()
 
   page.clickSetAvatarUrl()
 
@@ -147,27 +155,19 @@ test('clickSetAvatarUrl navigates to the set-avatar-url page', () => {
 })
 
 test('hasAvatarImage returns true when an avatar URL is set', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+  const { page } = makePageWithField('setAvatarUrl', 'https://example.com/avatar.png')
 
   assert.equal(page.hasAvatarImage(), true)
 })
 
 test('hasAvatarImage returns true when only a fallback URL is provided', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
+  const { page } = makePage()
 
   assert.equal(page.hasAvatarImage('https://fallback.com/avatar.png'), true)
 })
 
 test('hasAvatarImage returns false when no avatar URL is set', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
+  const { page } = makePage()
 
   assert.equal(page.hasAvatarImage(), false)
 })
@@ -180,54 +180,37 @@ test('hasAvatarImage returns false without a wallet', () => {
 })
 
 test('getAvatarImageUrl returns the stored avatar URL', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+  const { page } = makePageWithField('setAvatarUrl', 'https://example.com/avatar.png')
 
   assert.equal(page.getAvatarImageUrl(), 'https://example.com/avatar.png')
 })
 
 test('getAvatarImageUrl returns the fallback URL when no profile URL is set', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
+  const { page } = makePage()
 
   assert.equal(page.getAvatarImageUrl('https://fallback.com/avatar.png'), 'https://fallback.com/avatar.png')
 })
 
 test('getAvatarImageUrl returns null when no avatar URL is set', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
+  const { page } = makePage()
 
   assert.equal(page.getAvatarImageUrl(), null)
 })
 
 test('getDisplayAvatarUrl prefers the profile store over the fallback', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://profile.com/avatar.png')
+  const { page } = makePageWithField('setAvatarUrl', 'https://profile.com/avatar.png')
 
   assert.equal(page.getDisplayAvatarUrl('https://fallback.com/avatar.png'), 'https://profile.com/avatar.png')
 })
 
 test('showsJdenticon is true when no avatar URL is set', () => {
-  const profiles = makeProfiles()
-  const page = new AccountPage({ wallet: makeWallet(), profiles })
+  const { page } = makePage()
 
   assert.equal(page.showsJdenticon(), true)
 })
 
 test('showsJdenticon is false when an avatar URL is set', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setAvatarUrl(wallet.walletInfo.cashAddress, 'https://example.com/avatar.png')
+  const { page } = makePageWithField('setAvatarUrl', 'https://example.com/avatar.png')
 
   assert.equal(page.showsJdenticon(), false)
 })
@@ -247,11 +230,7 @@ test('getDisplayName falls back to the truncated address when no name is set', (
 })
 
 test('getDisplayName prefers the stored name over the truncated address', () => {
-  const profiles = makeProfiles()
-  const wallet = makeWallet()
-  const page = new AccountPage({ wallet, profiles })
-
-  profiles.setName(wallet.walletInfo.cashAddress, 'trout')
+  const { page } = makePageWithField('setName', 'trout')
 
   assert.equal(page.getDisplayName(), 'trout')
 })
@@ -438,4 +417,50 @@ test('copyAddress notifies the address copy change callback', async () => {
   page.addressCopyTimeoutElapsed()
 
   assert.deepEqual(changes, [true, false])
+})
+
+test('copyAddress throws when the account has no address', async () => {
+  const page = new AccountPage({ copyToClipboard: async () => {} })
+
+  await assert.rejects(
+    () => page.copyAddress(),
+    /requires an address/
+  )
+})
+
+test('copyAddress throws when no clipboard adapter is provided', async () => {
+  const page = new AccountPage({ wallet: makeWallet() })
+
+  await assert.rejects(
+    () => page.copyAddress(),
+    /requires a clipboard adapter/
+  )
+})
+
+test('destroy clears the pending copy confirmation timer', async () => {
+  const cleared = []
+  const page = new AccountPage({
+    wallet: makeWallet(),
+    copyToClipboard: async () => {},
+    setTimer: () => 7,
+    clearTimer: (id) => cleared.push(id)
+  })
+
+  await page.copyAddress()
+  const returned = page.destroy()
+
+  assert.equal(returned, page)
+  assert.deepEqual(cleared, [7])
+  assert.equal(page.isShowingAddressCopyConfirmation(), true)
+})
+
+test('destroy is safe when no copy confirmation timer is pending', () => {
+  const cleared = []
+  const page = new AccountPage({
+    wallet: makeWallet(),
+    clearTimer: (id) => cleared.push(id)
+  })
+
+  assert.doesNotThrow(() => page.destroy())
+  assert.deepEqual(cleared, [])
 })
