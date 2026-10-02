@@ -137,3 +137,44 @@ test('leaves a malformed x.com status link as a normal new-tab anchor', () => {
   assert.match(html, /<a[^>]+href="https:\/\/x\.com\/donatello\/status\/notanumber"/)
   assert.doesNotMatch(html, /<iframe/)
 })
+
+test('renders a canonical TikTok video link as an embedded player', () => {
+  const html = render('https://www.tiktok.com/@scout2015/video/6718335390845095173')
+
+  assert.match(
+    html,
+    /<iframe[^>]+src="https:\/\/www\.tiktok\.com\/player\/v1\/6718335390845095173"/
+  )
+  assert.doesNotMatch(html, /href="https:\/\/www\.tiktok\.com\/@scout2015\/video/)
+})
+
+test('renders a resolved TikTok short link as an embedded player', () => {
+  const url = 'https://vt.tiktok.com/ZSbUFKGVC/'
+  const html = render(url, { tiktokVideoIds: { [url]: '7691425928601242902' } })
+
+  assert.match(html, /<iframe[^>]+src="https:\/\/www\.tiktok\.com\/player\/v1\/7691425928601242902"/)
+  assert.doesNotMatch(html, /href="https:\/\/vt\.tiktok\.com\/ZSbUFKGVC\//)
+})
+
+test('leaves an unresolved TikTok short link as a normal new-tab anchor', () => {
+  const html = render('https://vt.tiktok.com/ZSbUFKGVC/')
+
+  assert.match(html, /<a[^>]+href="https:\/\/vt\.tiktok\.com\/ZSbUFKGVC\//)
+  assert.match(html, /<a[^>]+target="_blank"/)
+  assert.doesNotMatch(html, /tiktok\.com\/player\/v1/)
+})
+
+test('preserves surrounding text around an embedded TikTok player', () => {
+  const html = render('check this out https://www.tiktok.com/@alice/video/1234567890123456789 so good')
+
+  assert.match(html, /check this out/)
+  assert.match(html, /so good/)
+  assert.match(html, /<iframe[^>]+src="[^"]*player\/v1\/1234567890123456789"/)
+})
+
+test('leaves a non-video TikTok link as a normal new-tab anchor', () => {
+  const html = render('browse https://www.tiktok.com/tag/chess')
+
+  assert.match(html, /<a[^>]+href="https:\/\/www\.tiktok\.com\/tag\/chess"/)
+  assert.doesNotMatch(html, /<iframe/)
+})

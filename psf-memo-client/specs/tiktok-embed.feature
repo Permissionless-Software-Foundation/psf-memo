@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-02T14:13:42.864881219Z","feature_name":"TikTok Embed","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/tiktok-embed.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: TikTok Embed - 1, TikTok Embed - 2, TikTok Embed - 3, TikTok Embed - 4, TikTok Embed - 5, TikTok Embed - 6
 #
 # When a post's text contains a TikTok video link, the client renders that

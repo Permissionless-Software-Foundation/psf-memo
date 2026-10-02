@@ -11,11 +11,11 @@
 const React = require('react')
 const PostContent = require('../../post-feed/post-content')
 
-function ProfilePostContent ({ text = '', initialFailedImages }) {
+function ProfilePostContent ({ text = '', initialFailedImages, tiktokVideoIds }) {
   return React.createElement(
     'p',
     { className: 'profile-post-text card-text' },
-    React.createElement(PostContent, { text, initialFailedImages })
+    React.createElement(PostContent, { text, initialFailedImages, tiktokVideoIds })
   )
 }
 
