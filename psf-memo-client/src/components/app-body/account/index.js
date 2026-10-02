@@ -94,7 +94,7 @@ function Account (props) {
     return () => {
       if (page) page.destroy()
     }
-  }, [address])
+  }, [address, appData?.profiles, navigate, wallet])
 
   const displayName = accountPage
     ? accountPage.getDisplayName(name)
