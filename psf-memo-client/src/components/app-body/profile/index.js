@@ -14,13 +14,16 @@ import ProfilePage from '../../../services/profile-page'
 import { getViewerAddress } from '../../../services/profile-wallet'
 import AppUtil from '../../../util'
 import PostReplyCount from '../../post-reply-count'
-import LikeButton from '../../post-feed/like-button'
+import LikeTipModal from '../../post-feed/like-tip-modal'
 import PostOptionsMenu from '../../post-feed/post-options-menu'
 import PostThreadModal from '../../post-thread-modal'
 import MuteResult from './mute-result'
 import ProfileAddress from './profile-address'
 import ProfilePostContent from './profile-post-content'
+import ProfilePostLike from './profile-post-like'
 import ProfileTokenIcons from './profile-token-icons'
+import { selectLikeState, applyLike } from '../../../services/profile-post-like'
+import '../../post-feed/post-feed.css'
 import '../../../App.css'
 import './profile.css'
 
@@ -79,6 +82,8 @@ function Profile (props) {
   const [muteResult, setMuteResult] = useState(null)
   const [addressCopied, setAddressCopied] = useState(false)
   const [tokenIcons, setTokenIcons] = useState([])
+  const [likes, setLikes] = useState({})
+  const [likeTarget, setLikeTarget] = useState(null)
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -138,6 +143,14 @@ function Profile (props) {
   }
 
   const muteSucceeded = Boolean(muteResult && muteResult.ok)
+
+  const likeStateFor = (post) => selectLikeState(likes, post)
+
+  const handleLikeSuccess = () => {
+    if (!likeTarget) return
+    const target = likeTarget
+    setLikes((prev) => applyLike(prev, target))
+  }
 
   useEffect(() => {
     let page = null
@@ -324,7 +337,12 @@ function Profile (props) {
                   </div>
                   <ProfilePostContent text={post.text} />
                   <div className='profile-post-actions d-flex gap-3 align-items-center'>
-                    <LikeButton count={post.likeCount ?? 0} liked={false} readOnly />
+                    <ProfilePostLike
+                      post={post}
+                      liked={likeStateFor(post).liked}
+                      count={likeStateFor(post).count}
+                      onClick={() => setLikeTarget(post)}
+                    />
                     <PostReplyCount
                       count={post.replyCount ?? 0}
                       onClick={() => openThread(post.txid)}
@@ -363,6 +381,15 @@ function Profile (props) {
         onHide={closeThread}
         wallet={appData?.wallet}
         profiles={profiles}
+      />
+
+      <LikeTipModal
+        show={Boolean(likeTarget)}
+        post={likeTarget}
+        wallet={wallet}
+        profiles={profiles}
+        onHide={() => setLikeTarget(null)}
+        onSuccess={handleLikeSuccess}
       />
 
       <Modal show={showMuteResultModal} onHide={handleDismissMuteResult} centered>

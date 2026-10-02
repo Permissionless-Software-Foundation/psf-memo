@@ -57,6 +57,7 @@ const MemoPollVote = require('../../src/services/memo-poll-vote')
 const PollVotePage = require('../../src/services/poll-vote-page')
 const { renderPostText } = require('./render-post')
 const { renderProfilePost } = require('./render-profile-post')
+const { renderProfilePostLike } = require('./render-profile-post-like')
 const { renderAccountAvatar } = require('./render-account-avatar')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
@@ -536,17 +537,23 @@ function makeMemoDb () {
 function createWorld () {
   const wallet = makeWallet('bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d')
   const feed = makeFeed()
+  const memoDb = makeMemoDb()
   const profiles = makeProfiles()
   const memoPost = new MemoPost({ wallet, feed })
   const thread = makeThread()
   const memoReply = new MemoReply({ wallet, thread })
-  const memoLike = new MemoLike({ wallet, feed })
+  // The like reflection must update whichever store holds the liked post: the
+  // feed posts added by the feed specs and the profile posts served by the
+  // fake psf-memo-db API. Expose both as the memo like feed.
+  const memoLike = new MemoLike({
+    wallet,
+    feed: { get posts () { return feed.posts.concat(memoDb.posts) } }
+  })
   const memoFollow = new MemoFollow({ wallet, profiles })
   const memoMute = new MemoMute({ wallet, profiles })
   const memoTopicFollow = new MemoTopicFollow({ wallet, profiles })
   const polls = makePolls()
   const memoPollCreate = new MemoPollCreate({ wallet, polls })
-  const memoDb = makeMemoDb()
 
   const world = {
     wallet,
@@ -730,6 +737,9 @@ function findDisplayedPost (txid, world) {
 
   const fromFeed = world.recentFeedPage.getPost(txid)
   if (fromFeed) return fromFeed
+
+  const fromLocalFeed = world.feed.posts.find((p) => p.txid === txid)
+  if (fromLocalFeed) return fromLocalFeed
 
   return null
 }
@@ -1702,11 +1712,26 @@ const handlers = [
     }
   },
   {
+    name: 'profile post shows interactive like button',
+    pattern: /^the profile post with txid (.+) shows an interactive like button$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const post = world.profilePage.getPost(txid)
+      if (!post) {
+        throw new Error(`No profile post found for txid ${txid}.`)
+      }
+      const html = renderProfilePostLike({ post, wallet: world.wallet })
+      if (!/^<button[^>]*class="post-like-button/.test(html)) {
+        throw new Error(`The profile post with txid ${txid} does not show an interactive like button.`)
+      }
+    }
+  },
+  {
     name: 'click heart icon on post',
     pattern: /^I click the heart icon on the post with txid (.+)$/,
     run (m, example, world) {
       const txid = resolveParam(m[1], example)
-      const post = world.feed.posts.find((p) => p.txid === txid)
+      const post = findDisplayedPost(txid, world)
       const authorAddress = post ? post.addr : AUTHOR_ADDRESS
       world.likeTipPage.open(txid, authorAddress)
     }
@@ -1804,7 +1829,7 @@ const handlers = [
       if (tipOutput.amountSat !== expectedTip) {
         throw new Error(`Expected tip ${expectedTip} sats, got ${tipOutput.amountSat}.`)
       }
-      const post = world.feed.posts.find((p) => p.txid === world.likeTipPage.postTxid)
+      const post = findDisplayedPost(world.likeTipPage.postTxid, world)
       const expectedAddress = post ? post.addr : AUTHOR_ADDRESS
       if (tipOutput.address !== expectedAddress) {
         throw new Error(`Expected tip to ${expectedAddress}, got ${tipOutput.address}.`)
@@ -1816,9 +1841,9 @@ const handlers = [
     pattern: /^the like count on the post increases by one$/,
     run (m, example, world) {
       const postTxid = world.likeTipPage.postTxid
-      const post = world.feed.posts.find((p) => p.txid === postTxid)
+      const post = findDisplayedPost(postTxid, world)
       if (!post) {
-        throw new Error(`Post ${postTxid} not found in feed.`)
+        throw new Error(`Post ${postTxid} not found.`)
       }
       if (post.likeCount !== 1) {
         throw new Error(`Expected like count to be 1, got ${post.likeCount}.`)
