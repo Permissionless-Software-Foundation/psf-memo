@@ -31,14 +31,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Feed pagination scroll (specified 2026-10-02):** the `/posts/recent` feed
-  scrolls back to the top whenever a page loads via the Next or Previous button
-  or when the active Recent/Following tab changes. Applies to both the Recent
-  and Following tabs. Client-only; no DB/indexer change. Spec:
-  `psf-memo-client/specs/feed-pagination-scroll.feature`. Handed off to the
-  coder at `d067d8e8c7`; awaiting implementation.
+- None.
 
 ## Recently completed
+
+- **Feed pagination scroll (2026-10-02):** the `/posts/recent` posts feed now
+  scrolls back to the top whenever a page loads (the Next or Previous buttons)
+  or the active Recent/Following tab changes, so the viewer starts at the first
+  post of the new page. The scroll is decided by the pure `FeedTabsPage`
+  coordinator through an injected `scrollToTop` adapter (no-op by default); the
+  React posts view supplies `window.scrollTo({ top: 0, left: 0 })`. No-op paths
+  (selecting the active tab, Next/Previous with no target page) do not scroll.
+  Client-only; no DB/indexer change. Spec:
+  `psf-memo-client/specs/feed-pagination-scroll.feature` (4 scenarios, 7 example
+  executions). Merged to `master` at `ffb063f` (merge commit; architect review
+  commit `181709a7e0`; the later `b7476d7` adds only the record and summary, so
+  `docs/reviews/feed-pagination-scroll-verification.json` is valid for the merged
+  tree). Independent acceptance check after merge: 7/7 example executions.
+  `verify.sh client` pass 5/5 at `181709a7e0` (unit 759/0, property 212/0,
+  acceptance 47 suites, lint ok, build ok); language mutation 22 killed / 0
+  survived (`feed-tabs-page.js`); soft Gherkin mutation 14 total / 9 killed / 5
+  intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
+  and CRAP 5.0. Architect summary:
+  `docs/reviews/feed-pagination-scroll-summary.md`.
 
 - **Account page layout (2026-10-02):** the `/account` page now shares the
   `/profile/:addr` sidebar — avatar with a jdenticon fallback, bio (or

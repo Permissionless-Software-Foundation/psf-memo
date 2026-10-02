@@ -868,6 +868,20 @@ that a single user-facing feature may require specs in more than one component.
     touched feature files are committed as-is (#40). Spec:
     `psf-memo-client/specs/account-page-layout.feature`.
 
+62. **Viewport/scroll resets are tested through an injected adapter, and the
+    harness must simulate a non-top position.** The `feed-pagination-scroll`
+    feature resets the feed to the top on each page load or tab change through
+    `FeedTabsPage`'s injected `scrollToTop` adapter (the React view wires
+    `window.scrollTo({ top: 0, left: 0 })`). The acceptance world records
+    `world.feedScrollTop`, and the Click Next/Previous and Click tab handlers
+    set it to a non-zero value (`scrolledAwayFromFeedTop`) *before* the action,
+    so the reset is observable; the `the posts feed is scrolled to the top`
+    step asserts 0. Without that pre-action simulation a reset assertion can
+    pass trivially from an earlier action. Soft Gherkin mutation was 14 total /
+    9 killed / 5 intrinsic survivors (a self-consistent `count` and address-case
+    values, #12 class); language mutation 22/22 on `feed-tabs-page.js`. Spec:
+    `psf-memo-client/specs/feed-pagination-scroll.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -918,22 +932,27 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-02): specified and merged `account-page-layout` — the
-`/account` page now shares the `/profile/:addr` sidebar (avatar with jdenticon
-fallback, bio, copyable address, SLP tokens) and shows the Set Name / Set Bio /
-Set Avatar URL controls in the right column, each preceded by a description.
-Spec `psf-memo-client/specs/account-page-layout.feature` (15 scenarios);
-`account-avatar-display.feature` (jdenticon fallback) and `set-avatar-url.feature`
-scenario 1 (rendered avatar image) were updated. Merged to `master` at `cf6310e`
-(fast-forward; architect review commit `8836f4c634`; the later `cf6310e` is
-docs-only, so `docs/reviews/account-page-layout-verification.json` is valid).
-Independent acceptance check after merge: 33 example executions across the three
-touched features (account-page-layout 20, account-avatar-display 3,
-set-avatar-url 10). Architect summary:
-`docs/reviews/account-page-layout-summary.md`.
+Latest session (2026-10-02): specified and merged `feed-pagination-scroll` —
+the `/posts/recent` feed now scrolls to the top whenever a page loads (the Next
+or Previous buttons) or the active Recent/Following tab changes, so the viewer
+starts at the first post of the new page. The scroll is decided by the pure
+`FeedTabsPage` coordinator through an injected `scrollToTop` adapter (no-op by
+default); the React posts view wires `window.scrollTo({ top: 0, left: 0 })`.
+Client-only; no DB/indexer change. Spec:
+`psf-memo-client/specs/feed-pagination-scroll.feature` (4 scenarios, 7 example
+executions). Merged to `master` at `ffb063f` (merge commit; architect review
+commit `181709a7e0`; the later `b7476d7` adds only the record and summary, so
+`docs/reviews/feed-pagination-scroll-verification.json` is valid for the merged
+tree). Independent acceptance check after merge: 7/7 example executions.
+`verify.sh client` pass 5/5 at `181709a7e0` (unit 759/0, property 212/0,
+acceptance 47 suites, lint ok, build ok); language mutation 22 killed / 0
+survived (`feed-tabs-page.js`); soft Gherkin mutation 14 total / 9 killed / 5
+intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
+and CRAP 5.0. Architect summary:
+`docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `cf6310e` (`Record account-page-layout architect review
-and verification`). Historical note — `mute-persistence` (merged at
+Current `master` HEAD: `ffb063f` (`Merge architect feed-pagination-scroll`).
+Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
 only the record and summary, so the record is valid for the merged tree
