@@ -69,12 +69,55 @@ describe('#send-tokens', () => {
 
       // Mock the wallet functions so we don't make network calls.
       sandbox.stub(uut.bchWallet, 'initialize').resolves()
-      sandbox.stub(uut.walletBalance, 'getTokenBalances').returns(mockTokenBalance)
+      sandbox.stub(uut, 'getTokenBalances').returns(mockTokenBalance)
       sandbox.stub(uut.bchWallet, 'sendTokens').resolves('fake-txid')
 
       const flags = {
         name: 'test123',
         qty: 0.01,
+        addr: 'bitcoincash:qr2zqrnqdulfmeqs2qe9c5p605lrwe90v5v735s2jl',
+        tokenId: '38e97c5d7d3585a2cbf3f9580c82ca33985f9cb0845d4dcce220cb709f9538b0'
+      }
+
+      const result = await uut.sendTokens(flags)
+
+      assert.equal(result, 'fake-txid')
+    })
+
+    it('should send the exact token balance', async () => {
+      // Instantiate the minimal-slp-wallet
+      uut.bchWallet = await walletUtil.instanceWallet('test123')
+
+      uut.bchWallet.utxos.utxoStore = {
+        slpUtxos: {
+          type1: {
+            tokens: []
+          },
+          group: {
+            tokens: []
+          },
+          nft: {
+            tokens: []
+          }
+        }
+      }
+
+      const mockTokenBalance = [
+        {
+          tokenId: '38e97c5d7d3585a2cbf3f9580c82ca33985f9cb0845d4dcce220cb709f9538b0',
+          qty: 0.5,
+          ticker: 'PSF'
+        }
+      ]
+
+      // Mock the wallet functions so we don't make network calls.
+      sandbox.stub(uut.bchWallet, 'initialize').resolves()
+      sandbox.stub(uut, 'getTokenBalances').returns(mockTokenBalance)
+      sandbox.stub(uut.bchWallet, 'sendTokens').resolves('fake-txid')
+
+      const flags = {
+        name: 'test123',
+        qty: 0.5,
         addr: 'bitcoincash:qr2zqrnqdulfmeqs2qe9c5p605lrwe90v5v735s2jl',
         tokenId: '38e97c5d7d3585a2cbf3f9580c82ca33985f9cb0845d4dcce220cb709f9538b0'
       }
@@ -113,7 +156,7 @@ describe('#send-tokens', () => {
 
         // Mock the wallet functions so we don't make network calls.
         sandbox.stub(uut.bchWallet, 'initialize').resolves()
-        sandbox.stub(uut.walletBalance, 'getTokenBalances').returns(mockTokenBalance)
+        sandbox.stub(uut, 'getTokenBalances').returns(mockTokenBalance)
         sandbox.stub(uut.bchWallet, 'sendTokens').resolves('fake-txid')
 
         const flags = {
@@ -154,7 +197,7 @@ describe('#send-tokens', () => {
 
         // Mock the wallet functions so we don't make network calls.
         sandbox.stub(uut.bchWallet, 'initialize').resolves()
-        sandbox.stub(uut.walletBalance, 'getTokenBalances').returns(mockTokenBalance)
+        sandbox.stub(uut, 'getTokenBalances').returns(mockTokenBalance)
         sandbox.stub(uut.bchWallet, 'sendTokens').resolves('fake-txid')
 
         const flags = {
@@ -201,7 +244,7 @@ describe('#send-tokens', () => {
 
         // Mock the wallet functions so we don't make network calls.
         sandbox.stub(uut.bchWallet, 'initialize').resolves()
-        sandbox.stub(uut.walletBalance, 'getTokenBalances').returns(mockTokenBalance)
+        sandbox.stub(uut, 'getTokenBalances').returns(mockTokenBalance)
         sandbox.stub(uut.bchWallet, 'sendTokens').resolves('fake-txid')
 
         const flags = {

@@ -58,6 +58,7 @@ const COMPONENTS = {
     dir: 'psf-memo-cli',
     commands: [
       ['unit', ['test']],
+      ['property', ['run', 'property']],
       ['lint', ['run', 'lint']]
     ]
   }

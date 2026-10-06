@@ -4,7 +4,6 @@
 
 // Global npm libraries
 import BchWallet from 'minimal-slp-wallet'
-import collect from 'collect.js'
 import fs from 'fs'
 
 // Local libraries
@@ -12,6 +11,7 @@ import WalletUtil from '../lib/wallet-util.js'
 import config from '../../config/index.js'
 import { bindMethods } from '../lib/bind-methods.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
+import { getTokenBalances } from '../lib/token-balances.js'
 
 class WalletBalance {
   constructor () {
@@ -20,15 +20,13 @@ class WalletBalance {
     this.walletUtil = new WalletUtil()
     this.config = config
     this.fs = fs
-    this.collect = collect
 
     // Bind 'this' object to all subfunctions.
     bindMethods(this, [
       'run',
       'validateFlags',
       'getBalances',
-      'displayBalance',
-      'getTokenBalances'
+      'displayBalance'
     ])
   }
 
@@ -105,10 +103,7 @@ class WalletBalance {
 
       // Print out SLP Type1 tokens
       console.log('\nTokens:')
-      const tokens = this.getTokenBalances(
-        // walletData.utxos.utxoStore.slpUtxos.type1.tokens
-        tokenUtxos
-      )
+      const tokens = getTokenBalances(tokenUtxos)
       for (let i = 0; i < tokens.length; i++) {
         const thisToken = tokens[i]
         console.log(`${thisToken.ticker} ${thisToken.qty} ${thisToken.tokenId}`)
@@ -149,66 +144,10 @@ class WalletBalance {
       throw err
     }
   }
-
-  // Add up the token balances.
-  // At the moment, minting batons, NFTs, and group tokens are not suported.
-  getTokenBalances (tokenUtxos) {
-    // console.log('tokenUtxos: ', tokenUtxos)
-
-    const tokens = []
-    const tokenIds = []
-
-    // Summarized token data into an array of token UTXOs.
-    for (let i = 0; i < tokenUtxos.length; i++) {
-      const thisUtxo = tokenUtxos[i]
-
-      const thisToken = {
-        ticker: thisUtxo.ticker,
-        tokenId: thisUtxo.tokenId,
-        qty: parseFloat(thisUtxo.qtyStr)
-      }
-
-      tokens.push(thisToken)
-
-      tokenIds.push(thisUtxo.tokenId)
-    }
-
-    // Create a unique collection of tokenIds
-    const collection = collect(tokenIds)
-    let unique = collection.unique()
-    unique = unique.toArray()
-
-    // Add up any duplicate entries.
-    // The finalTokenData array contains unique objects, one for each token,
-    // with a total quantity of tokens for the entire wallet.
-    const finalTokenData = []
-    for (let i = 0; i < unique.length; i++) {
-      const thisTokenId = unique[i]
-
-      const thisTokenData = {
-        tokenId: thisTokenId,
-        qty: 0
-      }
-
-      // Add up the UTXO quantities for the current token ID.
-      for (let j = 0; j < tokens.length; j++) {
-        const thisToken = tokens[j]
-
-        if (thisTokenId === thisToken.tokenId) {
-          thisTokenData.ticker = thisToken.ticker
-          thisTokenData.qty += thisToken.qty
-        }
-      }
-
-      finalTokenData.push(thisTokenData)
-    }
-
-    return finalTokenData
-  }
 }
 
 export default WalletBalance
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-06T22:20:09.031Z","module_hash":"c736cf6f102b1f7cf09fea351401ec21fa285a4f44804a052b7c16a2d1cbf3f1","functions":[{"id":"func/WalletBalance.constructor","name":"WalletBalance.constructor","line":15,"end_line":29,"hash":"37e6b320bd9acecf6d02869ce95d5068bc2278fe86797e863be2041083685ffb"},{"id":"func/WalletBalance.run","name":"WalletBalance.run","line":31,"end_line":50,"hash":"b450c5f66acf32ec889547c8b0cba87f832d6582799f427f491ccac186216318"},{"id":"func/WalletBalance.validateFlags","name":"WalletBalance.validateFlags","line":52,"end_line":60,"hash":"8e0b3d7d6ba8ea4bda31ccd48cbc4cbf2a535b43fb8f99622cb608c93b7aa529"},{"id":"func/WalletBalance.getBalances","name":"WalletBalance.getBalances","line":65,"end_line":85,"hash":"6ba2437de5c6057e7fb2063d978f5a2ead3dde566880c588881a9f301eeeb90e"},{"id":"func/WalletBalance.displayBalance","name":"WalletBalance.displayBalance","line":88,"end_line":151,"hash":"e44f65e1b05bd826b2c0d4578e737d73221814000fc8c5dc948d187f6ab6f5a1"},{"id":"func/WalletBalance.getTokenBalances","name":"WalletBalance.getTokenBalances","line":155,"end_line":207,"hash":"69e661ea12a0820945b7e5c3767f2f5872a49821345df700fc6a6c8dadcbccae"}]}
+// {"version":1,"tested_at":"2026-10-06T22:43:12.379Z","module_hash":"013461029c4dbae6917825c0e91e2ce7b28349721d120b05856ae167acf845b0","functions":[{"id":"func/WalletBalance.constructor","name":"WalletBalance.constructor","line":17,"end_line":31,"hash":"258fea4b9e8f04fd0deffaba24a7d4b0c1717477a5693a3023590f7e91ba03ba"},{"id":"func/WalletBalance.run","name":"WalletBalance.run","line":33,"end_line":52,"hash":"b450c5f66acf32ec889547c8b0cba87f832d6582799f427f491ccac186216318"},{"id":"func/WalletBalance.validateFlags","name":"WalletBalance.validateFlags","line":54,"end_line":58,"hash":"fac8d97b616886f6174debf90ef3507e12969edc27df3a844b5f027c242bc73d"},{"id":"func/WalletBalance.getBalances","name":"WalletBalance.getBalances","line":63,"end_line":83,"hash":"6ba2437de5c6057e7fb2063d978f5a2ead3dde566880c588881a9f301eeeb90e"},{"id":"func/WalletBalance.displayBalance","name":"WalletBalance.displayBalance","line":86,"end_line":146,"hash":"fb407f9ba5cf3d5bad761a73643c9f361d634f79cfc98b06feec0d81a345245b"}]}
 // mutate4javascript-manifest-end

@@ -17,6 +17,23 @@ const walletCreate = new WalletCreate()
 const __dirname = import.meta.dirname
 const filename = `${__dirname.toString()}/../../../.wallets/test123.json`
 
+// Build a minimal wallet-shaped object for displayBalance tests.
+function buildWalletData ({ tokens = [], mintBatons = [] } = {}) {
+  return {
+    satBalance: 0,
+    bchBalance: 0,
+    utxos: {
+      utxoStore: {
+        slpUtxos: {
+          type1: { tokens, mintBatons },
+          group: { tokens: [], mintBatons: [] },
+          nft: { tokens: [] }
+        }
+      }
+    }
+  }
+}
+
 describe('#wallet-balance', () => {
   let uut
   let sandbox
@@ -117,6 +134,49 @@ describe('#wallet-balance', () => {
 
       assert.equal(result, true)
     })
+
+    it('should print every token balance', () => {
+      const logged = []
+      sandbox.stub(console, 'log').callsFake((...args) => logged.push(args.join(' ')))
+
+      const walletData = buildWalletData({
+        tokens: [
+          { tokenId: 'a', ticker: 'AAA', qtyStr: '1' },
+          { tokenId: 'b', ticker: 'BBB', qtyStr: '2' }
+        ]
+      })
+
+      const result = uut.displayBalance(walletData)
+
+      assert.equal(result, true)
+      const output = logged.join('\n')
+      assert.include(output, 'AAA 1 a')
+      assert.include(output, 'BBB 2 b')
+    })
+
+    it('should not print a minting-batons section when there are none', () => {
+      const logged = []
+      sandbox.stub(console, 'log').callsFake((...args) => logged.push(args.join(' ')))
+
+      uut.displayBalance(buildWalletData())
+
+      assert.notInclude(logged.join('\n'), 'Minting Batons')
+    })
+
+    it('should print every minting baton', () => {
+      const logged = []
+      sandbox.stub(console, 'log').callsFake((...args) => logged.push(args.join(' ')))
+
+      const walletData = buildWalletData({
+        mintBatons: [{ ticker: 'AAA', tokenType: 1, tokenId: 'a' }]
+      })
+
+      uut.displayBalance(walletData)
+
+      const output = logged.join('\n')
+      assert.include(output, 'Minting Batons')
+      assert.include(output, 'AAA (Fungible) a')
+    })
   })
 
   describe('#getBalances', () => {
@@ -131,6 +191,8 @@ describe('#wallet-balance', () => {
       assert.property(result, 'walletInfo')
       assert.property(result, 'utxos')
       assert.property(result.utxos, 'utxoStore')
+      assert.equal(result.satBalance, 20406)
+      assert.isNumber(result.bchBalance)
     })
 
     it('should catch and throw errors', async () => {

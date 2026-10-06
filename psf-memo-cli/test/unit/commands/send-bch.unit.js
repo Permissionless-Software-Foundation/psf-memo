@@ -84,6 +84,26 @@ describe('#send-bch', () => {
         assert.include(err.message, 'Insufficient funds.')
       }
     })
+
+    it('should allow sending the entire wallet balance', async () => {
+      // Instantiate the minimal-slp-wallet
+      uut.bchWallet = await walletUtil.instanceWallet('test123')
+
+      // Mock the wallet functions so we don't make network calls.
+      sandbox.stub(uut.bchWallet, 'initialize').resolves()
+      sandbox.stub(uut.bchWallet, 'getBalance').resolves(0.5)
+      sandbox.stub(uut.bchWallet, 'send').resolves('fake-txid')
+
+      const flags = {
+        name: 'test123',
+        qty: 0.5,
+        addr: 'bitcoincash:qr2zqrnqdulfmeqs2qe9c5p605lrwe90v5v735s2jl'
+      }
+
+      const result = await uut.sendBch(flags)
+
+      assert.equal(result, 'fake-txid')
+    })
   })
 
   describe('#validateFlags()', () => {

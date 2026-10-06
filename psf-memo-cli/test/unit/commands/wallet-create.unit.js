@@ -43,6 +43,33 @@ describe('#wallet-create', () => {
       }
     })
 
+    it('should reject a non-string filename.', async () => {
+      try {
+        await uut.createWallet(123)
+
+        assert.fail('Unexpected result')
+      } catch (err) {
+        assert.equal(err.message, 'filename required.')
+      }
+    })
+
+    it('should disable wallet auto-update while creating a wallet', async () => {
+      let capturedConfig
+      class FakeWallet {
+        constructor (mnemonic, advancedConfig) {
+          capturedConfig = advancedConfig
+          this.walletInfoPromise = Promise.resolve()
+          this.walletInfo = { mnemonic: 'test' }
+        }
+      }
+      uut.BchWallet = FakeWallet
+      sandbox.stub(uut.walletUtil, 'saveWallet').resolves(true)
+
+      await uut.createWallet(filename, 'desc')
+
+      assert.deepEqual(capturedConfig, { noUpdate: true })
+    })
+
     it('should create a mainnet wallet file with the given name', async () => {
       // Mock dependencies
       uut.BchWallet = BchWalletMock

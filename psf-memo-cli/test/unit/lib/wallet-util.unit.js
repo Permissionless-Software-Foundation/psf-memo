@@ -69,5 +69,15 @@ describe('#wallet-util', () => {
         assert.include(err.message, 'walletName is required.')
       }
     })
+
+    it('should throw error if wallet name is not a string', async () => {
+      try {
+        await uut.instanceWallet(123)
+
+        assert.fail('Unexpected code path')
+      } catch (err) {
+        assert.include(err.message, 'walletName is required.')
+      }
+    })
   })
 })

@@ -4,17 +4,19 @@
 
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
-import WalletBalance from './wallet-balance.js'
 import { bindMethods } from '../lib/bind-methods.js'
 import { runSendCommand } from '../lib/send-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
+import { getTokenBalances } from '../lib/token-balances.js'
 
 class SendTokens {
   constructor () {
     // Encapsulate dependencies
     this.walletUtil = new WalletUtil()
     this.bchWallet = {} // Placeholder for instance of wallet.
-    this.walletBalance = new WalletBalance()
+    // Pure token-balance helper, injected so tests can stub it and so this
+    // command does not depend on the wallet-balance command.
+    this.getTokenBalances = getTokenBalances
 
     // Bind 'this' object to all subfunctions.
     bindMethods(this, ['run', 'validateFlags', 'sendTokens'])
@@ -26,7 +28,7 @@ class SendTokens {
       flags,
       send: this.sendTokens,
       explorerUrl: 'https://token.fullstack.cash/transactions/?txid=',
-      errorLabel: 'send-bch'
+      errorLabel: 'send-tokens'
     })
   }
 
@@ -53,9 +55,7 @@ class SendTokens {
       )
 
       // Isolate the token balances.
-      const tokens = this.walletBalance.getTokenBalances(
-        tokenUtxos
-      )
+      const tokens = this.getTokenBalances(tokenUtxos)
       // console.log(`tokens: ${JSON.stringify(tokens, null, 2)}`)
 
       if (!tokens.length) {
@@ -96,5 +96,5 @@ class SendTokens {
 export default SendTokens
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-06T22:19:29.280Z","module_hash":"08f72f8f49f47ef37de64efed57fbc2b71a149e9a4e630bc7f667a6e5ae8fc23","functions":[{"id":"func/SendTokens.constructor","name":"SendTokens.constructor","line":10,"end_line":20,"hash":"1bf9f2ad42c7e655a31558232d2c371195c8fb8a28d90822231bee4fb570a258"},{"id":"func/SendTokens.run","name":"SendTokens.run","line":22,"end_line":41,"hash":"4691864268caa2067ed4ec58e40040c51e158b093e28ab3b4143f165d5d4a070"},{"id":"func/SendTokens.validateFlags","name":"SendTokens.validateFlags","line":43,"end_line":69,"hash":"175cefdd35ceb1788d44992d11c22c1e11c33b08138e535d6611daa0099294c4"},{"id":"func/SendTokens.sendTokens","name":"SendTokens.sendTokens","line":71,"end_line":122,"hash":"646dc09c73bc36843d8b089360246b16eb560c7be98bae045a16f19fb52db6f1"}]}
+// {"version":1,"tested_at":"2026-10-06T22:43:41.451Z","module_hash":"170e9d3b6cd9e123aace011e30544d8163c202e1b262d8680beed5dee6ccf7a9","functions":[{"id":"func/SendTokens.constructor","name":"SendTokens.constructor","line":13,"end_line":23,"hash":"cb3798cccbe8aba1213931aa7041d32bfcc671ef5a42db32019c5bf7aff680fc"},{"id":"func/SendTokens.run","name":"SendTokens.run","line":25,"end_line":33,"hash":"f08ac6cab121baa0e3721b10dcfac575399d5713717ed469ef4ea3c44f515b07"},{"id":"func/SendTokens.validateFlags","name":"SendTokens.validateFlags","line":35,"end_line":42,"hash":"69cf8fe495bf21a56b5e5f87e2e57153cd35c6bae5723d7e0f6d4a43b8275aac"},{"id":"func/SendTokens.sendTokens","name":"SendTokens.sendTokens","line":44,"end_line":93,"hash":"7b3a1baf407fd27a08d230ebce8a41d889416dfd83b333bd24cbee740c5c2039"}]}
 // mutate4javascript-manifest-end

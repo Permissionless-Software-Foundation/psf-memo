@@ -1,5 +1,5 @@
 /*
-  Property tests for WalletBalance.getTokenBalances.
+  Property tests for the shared getTokenBalances helper.
 
   Unit tests cover a couple of fixed wallets. These properties exercise broad
   input ranges to confirm:
@@ -13,7 +13,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { seededRandom } from './harness.js'
-import WalletBalance from '../../src/commands/wallet-balance.js'
+import { getTokenBalances } from '../../src/lib/token-balances.js'
 
 const rng = seededRandom(20261007)
 const TOKEN_IDS = ['a'.repeat(64), 'b'.repeat(64), 'c'.repeat(64)]
@@ -39,11 +39,9 @@ function randomTokenUtxos () {
 }
 
 test('getTokenBalances conserves quantity and keeps token ids unique', () => {
-  const walletBalance = new WalletBalance()
-
   for (let i = 0; i < 300; i++) {
     const utxos = randomTokenUtxos()
-    const tokens = walletBalance.getTokenBalances(utxos)
+    const tokens = getTokenBalances(utxos)
 
     const ids = tokens.map((token) => token.tokenId)
     assert.equal(new Set(ids).size, ids.length, 'token ids are unique')

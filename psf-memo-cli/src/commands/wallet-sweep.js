@@ -42,7 +42,7 @@ class WalletSweep {
 
       return true
     } catch (err) {
-      console.error('Error in send-bch: ', err)
+      console.error('Error in wallet-sweep: ', err)
       return 0
     }
   }
@@ -83,5 +83,5 @@ class WalletSweep {
 export default WalletSweep
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-06T22:18:59.776Z","module_hash":"eee9747401aa67153b2135dd375a4279e49e093790735ac1cb7e9586bc6772ec","functions":[{"id":"func/WalletSweep.constructor","name":"WalletSweep.constructor","line":17,"end_line":26,"hash":"634c70929a1ed2d68aa7ef03426e9594d5d752aabe14ef2e85cd8e75aa432724"},{"id":"func/WalletSweep.run","name":"WalletSweep.run","line":28,"end_line":48,"hash":"53317a1764850cfad40a8d158636a8aeea961c367eaacf6c110b284bcba7b23c"},{"id":"func/WalletSweep.validateFlags","name":"WalletSweep.validateFlags","line":50,"end_line":64,"hash":"2628cee6404c194dedae16ad3c13e7fa19eab8b379e90d4b6373963ef3873b60"},{"id":"func/WalletSweep.sweepWif","name":"WalletSweep.sweepWif","line":66,"end_line":89,"hash":"790b7ea8f53fc3710561109ef974e0137b7eb126d936bb183a3084d95be0a776"}]}
+// {"version":1,"tested_at":"2026-10-06T22:44:29.799Z","module_hash":"5a2ef4d30f7e962142ec07ecbed536252262bb86fe027f6a05fef41a73c7f278","functions":[{"id":"func/WalletSweep.constructor","name":"WalletSweep.constructor","line":19,"end_line":26,"hash":"ab63c345e3fa0384d785e73d29d950e0c7b1ecdd9cde0c6a451ece98d4117ff1"},{"id":"func/WalletSweep.run","name":"WalletSweep.run","line":28,"end_line":48,"hash":"a6653c86af8e2fa1fc556ac791aef179622a27a5cc3314450572c100314389ca"},{"id":"func/WalletSweep.validateFlags","name":"WalletSweep.validateFlags","line":50,"end_line":55,"hash":"a3476b3118f86e162fdc8eef030d4d2b9af24b05f197346fed6bee59ea98fe87"},{"id":"func/WalletSweep.sweepWif","name":"WalletSweep.sweepWif","line":57,"end_line":80,"hash":"790b7ea8f53fc3710561109ef974e0137b7eb126d936bb183a3084d95be0a776"}]}
 // mutate4javascript-manifest-end

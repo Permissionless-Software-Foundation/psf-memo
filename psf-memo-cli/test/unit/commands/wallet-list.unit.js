@@ -41,7 +41,7 @@ describe('#wallet-list', () => {
       const testWallet = data.find(wallet => wallet[0].indexOf('test123') > -1)
       // console.log('testWallet: ', testWallet)
 
-      assert.include(testWallet[0], 'test123')
+      assert.equal(testWallet[0], 'test123')
 
       // Clean up
       await fs.rm(filename)
@@ -109,6 +109,8 @@ describe('#wallet-list', () => {
       const tableStr = uut.displayTable(walletData)
 
       assert.isString(tableStr)
+      assert.include(tableStr, 'msg1')
+      assert.include(tableStr, 'msg2')
     })
   })
 })

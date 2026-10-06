@@ -28,3 +28,7 @@ export async function runSendCommand ({ command, flags, send, explorerUrl, error
     return 0
   }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:42:24.693Z","module_hash":"73978e6f0d4cbda78be046c12db5b37e9af827d111a1a00f493303da661e1883","functions":[{"id":"func/runSendCommand","name":"runSendCommand","line":12,"end_line":30,"hash":"76a5214d98b79572ad5a855cb8afb1865a58809ab9afe60ab7b19d631529a904"}]}
+// mutate4javascript-manifest-end
