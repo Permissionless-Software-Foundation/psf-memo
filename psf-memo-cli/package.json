@@ -10,6 +10,7 @@
     "lint": "standard --env mocha --fix",
     "coverage": "c8 --reporter=html mocha --exit --timeout 15000 --recursive test/unit/",
     "property": "node --test \"test/property/*.test.js\"",
+    "acceptance": "node acceptance/acceptance.js",
     "crap": "crap4javascript",
     "dry": "dry4javascript src",
     "mutate": "mutate4javascript"
