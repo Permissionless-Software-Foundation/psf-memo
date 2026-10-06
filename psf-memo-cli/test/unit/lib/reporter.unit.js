@@ -18,15 +18,7 @@ import {
   EXIT_FAILURE,
   EXIT_USAGE
 } from '../../../src/lib/reporter.js'
-
-// A stream stand-in that accumulates everything written to it.
-function capture () {
-  const chunks = []
-  return {
-    stream: { write: (chunk) => { chunks.push(chunk) } },
-    text: () => chunks.join('')
-  }
-}
+import { captureStream } from '../../support/capture.js'
 
 // Temporarily replace the process streams so default-argument paths can be
 // observed without touching the real terminal.
@@ -49,9 +41,17 @@ function captureProcessStreams () {
 }
 
 describe('#reporter', () => {
+  describe('exit-code constants', () => {
+    it('pins the documented 0/1/2 contract', () => {
+      assert.equal(EXIT_SUCCESS, 0)
+      assert.equal(EXIT_FAILURE, 1)
+      assert.equal(EXIT_USAGE, 2)
+    })
+  })
+
   describe('Reporter.result', () => {
     it('writes the message to stdout in human mode and returns 0', () => {
-      const out = capture()
+      const out = captureStream()
       const reporter = new Reporter({ stdout: out.stream })
 
       assert.equal(reporter.result('hello'), EXIT_SUCCESS)
@@ -59,7 +59,7 @@ describe('#reporter', () => {
     })
 
     it('writes one JSON object carrying data in JSON mode', () => {
-      const out = capture()
+      const out = captureStream()
       const reporter = new Reporter({ json: true, stdout: out.stream })
 
       reporter.result('hello', { txid: 'abc' })
@@ -68,7 +68,7 @@ describe('#reporter', () => {
     })
 
     it('defaults the message and data', () => {
-      const out = capture()
+      const out = captureStream()
       const reporter = new Reporter({ json: true, stdout: out.stream })
 
       reporter.result()
@@ -77,47 +77,35 @@ describe('#reporter', () => {
     })
   })
 
-  describe('Reporter.fail', () => {
-    it('writes the error to stderr in human mode and returns 1', () => {
-      const err = capture()
-      const reporter = new Reporter({ stderr: err.stream })
+  describe('Reporter.fail and Reporter.usage', () => {
+    const cases = [
+      { method: 'fail', make: () => new Error('boom'), code: EXIT_FAILURE, message: 'boom' },
+      { method: 'usage', make: () => new UsageError('missing flag'), code: EXIT_USAGE, message: 'missing flag' }
+    ]
 
-      assert.equal(reporter.fail(new Error('boom')), EXIT_FAILURE)
-      assert.equal(err.text(), 'boom\n')
-    })
+    for (const { method, make, code, message } of cases) {
+      it(`Reporter.${method} writes the error to stderr in human mode and returns ${code}`, () => {
+        const err = captureStream()
+        const reporter = new Reporter({ stderr: err.stream })
 
-    it('writes one JSON error to stderr in JSON mode', () => {
-      const err = capture()
-      const reporter = new Reporter({ json: true, stderr: err.stream })
+        assert.equal(reporter[method](make()), code)
+        assert.equal(err.text(), `${message}\n`)
+      })
 
-      reporter.fail(new Error('boom'))
+      it(`Reporter.${method} writes one JSON error to stderr in JSON mode`, () => {
+        const err = captureStream()
+        const reporter = new Reporter({ json: true, stderr: err.stream })
 
-      assert.deepEqual(JSON.parse(err.text()), { error: 'boom' })
-    })
-  })
+        reporter[method](make())
 
-  describe('Reporter.usage', () => {
-    it('writes the error to stderr in human mode and returns 2', () => {
-      const err = capture()
-      const reporter = new Reporter({ stderr: err.stream })
-
-      assert.equal(reporter.usage(new UsageError('missing flag')), EXIT_USAGE)
-      assert.equal(err.text(), 'missing flag\n')
-    })
-
-    it('writes one JSON error to stderr in JSON mode', () => {
-      const err = capture()
-      const reporter = new Reporter({ json: true, stderr: err.stream })
-
-      reporter.usage(new UsageError('missing flag'))
-
-      assert.deepEqual(JSON.parse(err.text()), { error: 'missing flag' })
-    })
+        assert.deepEqual(JSON.parse(err.text()), { error: message })
+      })
+    }
   })
 
   describe('runCommand', () => {
     it('reports a successful result and returns 0', async () => {
-      const out = capture()
+      const out = captureStream()
 
       const code = await runCommand(async () => ({ message: 'done' }), { stdout: out.stream })
 
@@ -126,7 +114,7 @@ describe('#reporter', () => {
     })
 
     it('handles a command that returns nothing', async () => {
-      const out = capture()
+      const out = captureStream()
 
       const code = await runCommand(async () => {}, { stdout: out.stream })
 
@@ -134,27 +122,23 @@ describe('#reporter', () => {
       assert.equal(out.text(), '\n')
     })
 
-    it('reports a runtime error and returns 1', async () => {
-      const err = capture()
+    const errorCases = [
+      { make: () => new Error('boom'), code: EXIT_FAILURE, message: 'boom' },
+      { make: () => new UsageError('missing flag'), code: EXIT_USAGE, message: 'missing flag' }
+    ]
 
-      const code = await runCommand(async () => {
-        throw new Error('boom')
-      }, { stderr: err.stream, stdout: capture().stream })
+    for (const { make, code, message } of errorCases) {
+      it(`reports a failed command as exit ${code}`, async () => {
+        const err = captureStream()
 
-      assert.equal(code, EXIT_FAILURE)
-      assert.equal(err.text(), 'boom\n')
-    })
+        const exit = await runCommand(async () => {
+          throw make()
+        }, { stderr: err.stream, stdout: captureStream().stream })
 
-    it('reports a usage error and returns 2', async () => {
-      const err = capture()
-
-      const code = await runCommand(async () => {
-        throw new UsageError('missing flag')
-      }, { stderr: err.stream, stdout: capture().stream })
-
-      assert.equal(code, EXIT_USAGE)
-      assert.equal(err.text(), 'missing flag\n')
-    })
+        assert.equal(exit, code)
+        assert.equal(err.text(), `${message}\n`)
+      })
+    }
 
     it('uses the process streams by default', async () => {
       const processStreams = captureProcessStreams()

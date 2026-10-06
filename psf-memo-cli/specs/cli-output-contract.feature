@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-06T23:54:39.353565728Z","feature_name":"CLI Output Contract","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/cli-output-contract.feature","background_hash":"c6b86bc865e53399ed6e0ffd3bbc034e4e3c4101bb8ac375267d90ccf00cac34","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: CLI Output Contract - 1, CLI Output Contract - 2, CLI Output Contract - 3, CLI Output Contract - 4, CLI Output Contract - 5
 # F5: the shared output and exit-code contract that every memo-* command
 # adopts through one reporter. In human mode a command prints a readable result

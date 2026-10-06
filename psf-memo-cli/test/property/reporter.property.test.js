@@ -20,6 +20,7 @@ import {
   EXIT_FAILURE,
   EXIT_USAGE
 } from '../../src/lib/reporter.js'
+import { captureStream } from '../support/capture.js'
 
 const rng = seededRandom(20261008)
 
@@ -36,18 +37,10 @@ function randomText () {
   return text
 }
 
-function capture () {
-  let text = ''
-  return {
-    stream: { write: (chunk) => { text += chunk } },
-    text: () => text
-  }
-}
-
 test('JSON results round-trip the message and exit 0', () => {
   for (let i = 0; i < 200; i++) {
     const message = randomText()
-    const out = capture()
+    const out = captureStream()
     const reporter = new Reporter({ json: true, stdout: out.stream })
 
     const code = reporter.result(message, { index: i })
@@ -63,7 +56,7 @@ test('JSON errors round-trip the message with the matching exit code', () => {
   for (let i = 0; i < 200; i++) {
     const message = randomText()
     const usage = rng() < 0.5
-    const err = capture()
+    const err = captureStream()
     const reporter = new Reporter({ json: true, stderr: err.stream })
 
     const code = usage
@@ -79,8 +72,8 @@ test('runCommand maps every outcome to its exit code and channel', async () => {
   for (let i = 0; i < 300; i++) {
     const message = randomText()
     const kind = Math.floor(rng() * 3)
-    const out = capture()
-    const err = capture()
+    const out = captureStream()
+    const err = captureStream()
 
     const code = await runCommand(async () => {
       if (kind === 0) return { message }
