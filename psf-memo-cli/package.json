@@ -8,6 +8,7 @@
     "test": "c8 --reporter=text mocha --exit --timeout 15000 --recursive test/unit",
     "lint": "standard --env mocha --fix",
     "coverage": "c8 --reporter=html mocha --exit --timeout 15000 --recursive test/unit/",
+    "property": "node --test \"test/property/*.test.js\"",
     "crap": "crap4javascript",
     "dry": "dry4javascript src",
     "mutate": "mutate4javascript"

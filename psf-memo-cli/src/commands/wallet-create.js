@@ -7,6 +7,8 @@ import BchWallet from 'minimal-slp-wallet'
 
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
+import { bindMethods } from '../lib/bind-methods.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 // Global variables
 const __dirname = import.meta.dirname
@@ -18,9 +20,7 @@ class WalletCreate {
     this.walletUtil = new WalletUtil()
 
     // Bind 'this' object to all subfunctions
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.createWallet = this.createWallet.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'createWallet'])
   }
 
   async run (flags) {
@@ -47,13 +47,9 @@ class WalletCreate {
   }
 
   validateFlags (flags) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.']
+    ])
   }
 
   // Create a new wallet file.

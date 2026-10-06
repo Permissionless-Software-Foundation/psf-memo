@@ -6,6 +6,9 @@
 
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
+import { bindMethods } from '../lib/bind-methods.js'
+import { runSendCommand } from '../lib/send-command.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class SendBch {
   constructor () {
@@ -14,52 +17,25 @@ class SendBch {
     this.bchWallet = {} // Placeholder for instance of wallet.
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.sendBch = this.sendBch.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'sendBch'])
   }
 
   async run (flags) {
-    try {
-      this.validateFlags(flags)
-
-      // Initialize the wallet.
-      this.bchWallet = await this.walletUtil.instanceWallet(flags.name)
-
-      // Send the BCH
-      const txid = await this.sendBch(flags)
-
-      console.log(`TXID: ${txid}`)
-      console.log('\nView this transaction on a block explorer:')
-      console.log(`https://bch.loping.net/tx/${txid}`)
-
-      return true
-    } catch (err) {
-      console.error('Error in send-bch: ', err)
-      return 0
-    }
+    return runSendCommand({
+      command: this,
+      flags,
+      send: this.sendBch,
+      explorerUrl: 'https://bch.loping.net/tx/',
+      errorLabel: 'send-bch'
+    })
   }
 
   validateFlags (flags = {}) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    // Exit if wallet not specified.
-    const addr = flags.addr
-    if (!addr || addr === '') {
-      throw new Error('You must specify a receiver address with the -a flag.')
-    }
-
-    // Exit if quantity not specified.
-    const qty = flags.qty
-    if (!qty || qty === '') {
-      throw new Error('You must specify a quantity in BCH with the -q flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.'],
+      [flags.addr, 'You must specify a receiver address with the -a flag.'],
+      [flags.qty, 'You must specify a quantity in BCH with the -q flag.']
+    ])
   }
 
   // Give an instance of a wallet, an address, and a quantity, send the BCH.

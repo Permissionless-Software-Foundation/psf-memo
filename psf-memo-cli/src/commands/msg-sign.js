@@ -6,6 +6,8 @@
 
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
+import { bindMethods } from '../lib/bind-methods.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class MsgSign {
   constructor () {
@@ -13,9 +15,7 @@ class MsgSign {
     this.walletUtil = new WalletUtil()
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.sign = this.sign.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'sign'])
   }
 
   async run (flags) {
@@ -41,19 +41,10 @@ class MsgSign {
   }
 
   validateFlags (flags = {}) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    // Exit if wallet not specified.
-    const msg = flags.msg
-    if (!msg || msg === '') {
-      throw new Error('You must specify a message to sign with the -m flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.'],
+      [flags.msg, 'You must specify a message to sign with the -m flag.']
+    ])
   }
 
   async sign (flags) {

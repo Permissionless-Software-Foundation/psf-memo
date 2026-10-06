@@ -10,6 +10,8 @@ import fs from 'fs'
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
 import config from '../../config/index.js'
+import { bindMethods } from '../lib/bind-methods.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class WalletBalance {
   constructor () {
@@ -21,11 +23,13 @@ class WalletBalance {
     this.collect = collect
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.getBalances = this.getBalances.bind(this)
-    this.displayBalance = this.displayBalance.bind(this)
-    this.getTokenBalances = this.getTokenBalances.bind(this)
+    bindMethods(this, [
+      'run',
+      'validateFlags',
+      'getBalances',
+      'displayBalance',
+      'getTokenBalances'
+    ])
   }
 
   async run (flags) {
@@ -50,13 +54,9 @@ class WalletBalance {
   }
 
   validateFlags (flags) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.']
+    ])
   }
 
   // Generate a new wallet instance and update it's balance. This function returns

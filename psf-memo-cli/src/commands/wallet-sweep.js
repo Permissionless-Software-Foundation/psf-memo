@@ -12,6 +12,8 @@ import BchTokenSweep from 'bch-token-sweep'
 
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
+import { bindMethods } from '../lib/bind-methods.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class WalletSweep {
   constructor () {
@@ -20,9 +22,7 @@ class WalletSweep {
     this.walletUtil = new WalletUtil()
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.sweepWif = this.sweepWif.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'sweepWif'])
   }
 
   async run (flags) {
@@ -48,19 +48,10 @@ class WalletSweep {
   }
 
   validateFlags (flags = {}) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    // Exit if wallet not specified.
-    const wif = flags.wif
-    if (!wif || wif === '') {
-      throw new Error('You must specify a private key to sweep with the -w flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.'],
+      [flags.wif, 'You must specify a private key to sweep with the -w flag.']
+    ])
   }
 
   async sweepWif (flags) {

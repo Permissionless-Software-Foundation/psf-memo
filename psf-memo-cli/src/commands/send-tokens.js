@@ -5,6 +5,9 @@
 // Local libraries
 import WalletUtil from '../lib/wallet-util.js'
 import WalletBalance from './wallet-balance.js'
+import { bindMethods } from '../lib/bind-methods.js'
+import { runSendCommand } from '../lib/send-command.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class SendTokens {
   constructor () {
@@ -14,58 +17,26 @@ class SendTokens {
     this.walletBalance = new WalletBalance()
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.sendTokens = this.sendTokens.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'sendTokens'])
   }
 
   async run (flags) {
-    try {
-      this.validateFlags(flags)
-
-      // Initialize the wallet.
-      this.bchWallet = await this.walletUtil.instanceWallet(flags.name)
-
-      // Send the BCH
-      const txid = await this.sendTokens(flags)
-
-      console.log(`TXID: ${txid}`)
-      console.log('\nView this transaction on a block explorer:')
-      console.log(`https://token.fullstack.cash/transactions/?txid=${txid}`)
-
-      return true
-    } catch (err) {
-      console.error('Error in send-bch: ', err)
-      return 0
-    }
+    return runSendCommand({
+      command: this,
+      flags,
+      send: this.sendTokens,
+      explorerUrl: 'https://token.fullstack.cash/transactions/?txid=',
+      errorLabel: 'send-bch'
+    })
   }
 
   validateFlags (flags = {}) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    // Exit if wallet not specified.
-    const addr = flags.addr
-    if (!addr || addr === '') {
-      throw new Error('You must specify a receiver address with the -a flag.')
-    }
-
-    // Exit if quantity not specified.
-    const qty = flags.qty
-    if (!qty || qty === '') {
-      throw new Error('You must specify a quantity in BCH with the -q flag.')
-    }
-
-    // Exit if token ID not specified.
-    const tokenId = flags.tokenId
-    if (!tokenId || tokenId === '') {
-      throw new Error('You must specify a token ID with the -t flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.'],
+      [flags.addr, 'You must specify a receiver address with the -a flag.'],
+      [flags.qty, 'You must specify a quantity in BCH with the -q flag.'],
+      [flags.tokenId, 'You must specify a token ID with the -t flag.']
+    ])
   }
 
   async sendTokens (flags) {

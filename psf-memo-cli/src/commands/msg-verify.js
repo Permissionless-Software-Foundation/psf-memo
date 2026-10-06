@@ -7,15 +7,15 @@
 
 // Local libraries
 import BchWallet from 'minimal-slp-wallet'
+import { bindMethods } from '../lib/bind-methods.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class MsgVerify {
   constructor () {
     // Encapsulate Dependencies
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.verify = this.verify.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'verify'])
   }
 
   async run (flags) {
@@ -41,25 +41,11 @@ class MsgVerify {
   }
 
   validateFlags (flags = {}) {
-    // Exit if address not specified.
-    const addr = flags.addr
-    if (!addr || addr === '') {
-      throw new Error('You must specify an address with the -a flag.')
-    }
-
-    // Exit if wallet not specified.
-    const msg = flags.msg
-    if (!msg || msg === '') {
-      throw new Error('You must specify a message to sign with the -m flag.')
-    }
-
-    // Exit if signature not specified.
-    const sig = flags.sig
-    if (!sig || sig === '') {
-      throw new Error('You must specify a signature with the -s flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.addr, 'You must specify an address with the -a flag.'],
+      [flags.msg, 'You must specify a message to sign with the -m flag.'],
+      [flags.sig, 'You must specify a signature with the -s flag.']
+    ])
   }
 
   async verify (flags) {

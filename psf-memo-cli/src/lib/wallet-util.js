@@ -9,6 +9,7 @@ import BchWallet from 'minimal-slp-wallet'
 
 // Local libraries
 import config from '../../config/index.js'
+import { bindMethods } from './bind-methods.js'
 
 // Global variables
 const __dirname = import.meta.dirname
@@ -21,7 +22,7 @@ class WalletUtil {
     this.BchWallet = BchWallet
 
     // Bind 'this' object to all subfunctions.
-    this.saveWallet = this.saveWallet.bind(this)
+    bindMethods(this, ['saveWallet'])
   }
 
   // Save wallet data to a JSON file.

@@ -6,6 +6,7 @@
 import shelljs from 'shelljs'
 import Table from 'cli-table'
 import { readFile } from 'fs/promises'
+import { bindMethods } from '../lib/bind-methods.js'
 
 // Global variables
 const __dirname = import.meta.dirname
@@ -17,9 +18,7 @@ class WalletList {
     this.Table = Table
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.parseWallets = this.parseWallets.bind(this)
-    this.displayTable = this.displayTable.bind(this)
+    bindMethods(this, ['run', 'parseWallets', 'displayTable'])
   }
 
   async run (flags) {

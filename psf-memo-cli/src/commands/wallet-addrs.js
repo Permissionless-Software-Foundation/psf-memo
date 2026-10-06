@@ -5,6 +5,8 @@
 // Global npm libraries
 import shelljs from 'shelljs'
 import { readFile } from 'fs/promises'
+import { bindMethods } from '../lib/bind-methods.js'
+import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 // Global variables
 const __dirname = import.meta.dirname
@@ -15,9 +17,7 @@ class WalletAddrs {
     this.shelljs = shelljs
 
     // Bind 'this' object to all subfunctions.
-    this.run = this.run.bind(this)
-    this.validateFlags = this.validateFlags.bind(this)
-    this.getAddrs = this.getAddrs.bind(this)
+    bindMethods(this, ['run', 'validateFlags', 'getAddrs'])
   }
 
   async run (flags) {
@@ -37,13 +37,9 @@ class WalletAddrs {
   }
 
   validateFlags (flags) {
-    // Exit if wallet not specified.
-    const name = flags.name
-    if (!name || name === '') {
-      throw new Error('You must specify a wallet name with the -n flag.')
-    }
-
-    return true
+    return validateRequiredFlags([
+      [flags.name, 'You must specify a wallet name with the -n flag.']
+    ])
   }
 
   async getAddrs (filename) {
