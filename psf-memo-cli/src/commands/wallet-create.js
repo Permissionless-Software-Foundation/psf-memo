@@ -94,3 +94,7 @@ class WalletCreate {
 }
 
 export default WalletCreate
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:18:46.180Z","module_hash":"2cb950ce9fbdf1768d1741120c4dbb7749d72603ada31700e975d7e9d7924262","functions":[{"id":"func/WalletCreate.constructor","name":"WalletCreate.constructor","line":15,"end_line":24,"hash":"ec75151282efe6903824e2badd51264b6f5eef27e5f050e18dfcc1ac129c74ac"},{"id":"func/WalletCreate.run","name":"WalletCreate.run","line":26,"end_line":47,"hash":"f555d068ea38a099185c98c6086744c6c04cc952bffc90a99a286a8d89c357aa"},{"id":"func/WalletCreate.validateFlags","name":"WalletCreate.validateFlags","line":49,"end_line":57,"hash":"8e0b3d7d6ba8ea4bda31ccd48cbc4cbf2a535b43fb8f99622cb608c93b7aa529"},{"id":"func/WalletCreate.createWallet","name":"WalletCreate.createWallet","line":60,"end_line":93,"hash":"7ead5cad3bd1d0ef9da35774044f014dc620de9110858300bab7410fbef3b20a"}]}
+// mutate4javascript-manifest-end

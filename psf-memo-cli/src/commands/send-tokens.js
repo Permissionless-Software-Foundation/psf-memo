@@ -123,3 +123,7 @@ class SendTokens {
 }
 
 export default SendTokens
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:19:29.280Z","module_hash":"08f72f8f49f47ef37de64efed57fbc2b71a149e9a4e630bc7f667a6e5ae8fc23","functions":[{"id":"func/SendTokens.constructor","name":"SendTokens.constructor","line":10,"end_line":20,"hash":"1bf9f2ad42c7e655a31558232d2c371195c8fb8a28d90822231bee4fb570a258"},{"id":"func/SendTokens.run","name":"SendTokens.run","line":22,"end_line":41,"hash":"4691864268caa2067ed4ec58e40040c51e158b093e28ab3b4143f165d5d4a070"},{"id":"func/SendTokens.validateFlags","name":"SendTokens.validateFlags","line":43,"end_line":69,"hash":"175cefdd35ceb1788d44992d11c22c1e11c33b08138e535d6611daa0099294c4"},{"id":"func/SendTokens.sendTokens","name":"SendTokens.sendTokens","line":71,"end_line":122,"hash":"646dc09c73bc36843d8b089360246b16eb560c7be98bae045a16f19fb52db6f1"}]}
+// mutate4javascript-manifest-end

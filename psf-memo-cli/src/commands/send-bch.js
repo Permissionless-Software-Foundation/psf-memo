@@ -96,3 +96,7 @@ class SendBch {
 }
 
 export default SendBch
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:18:29.186Z","module_hash":"b8ededff1a747c9d7cdecbe01c8b0788d5d6456ad2524feeb129f41c2efcd605","functions":[{"id":"func/SendBch.constructor","name":"SendBch.constructor","line":11,"end_line":20,"hash":"38695ef9eb730ed1a4ae95a5feb362d2a333997ec9d7e1b747bc534dc132d1b7"},{"id":"func/SendBch.run","name":"SendBch.run","line":22,"end_line":41,"hash":"55033c839dea3e73e8ec60dd075e9e163b496bb27c8e9968440bcbcad32df06b"},{"id":"func/SendBch.validateFlags","name":"SendBch.validateFlags","line":43,"end_line":63,"hash":"3038052cbad8a234f6ce8f77cabde2d097b20288a23f3b7449f10eb9ad80da18"},{"id":"func/SendBch.sendBch","name":"SendBch.sendBch","line":67,"end_line":95,"hash":"abc593006c75e67090b61851abbc842db64bc3fccc76d51900b4f51d28960047"}]}
+// mutate4javascript-manifest-end

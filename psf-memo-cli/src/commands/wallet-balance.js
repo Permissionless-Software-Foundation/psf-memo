@@ -208,3 +208,7 @@ class WalletBalance {
 }
 
 export default WalletBalance
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:20:09.031Z","module_hash":"c736cf6f102b1f7cf09fea351401ec21fa285a4f44804a052b7c16a2d1cbf3f1","functions":[{"id":"func/WalletBalance.constructor","name":"WalletBalance.constructor","line":15,"end_line":29,"hash":"37e6b320bd9acecf6d02869ce95d5068bc2278fe86797e863be2041083685ffb"},{"id":"func/WalletBalance.run","name":"WalletBalance.run","line":31,"end_line":50,"hash":"b450c5f66acf32ec889547c8b0cba87f832d6582799f427f491ccac186216318"},{"id":"func/WalletBalance.validateFlags","name":"WalletBalance.validateFlags","line":52,"end_line":60,"hash":"8e0b3d7d6ba8ea4bda31ccd48cbc4cbf2a535b43fb8f99622cb608c93b7aa529"},{"id":"func/WalletBalance.getBalances","name":"WalletBalance.getBalances","line":65,"end_line":85,"hash":"6ba2437de5c6057e7fb2063d978f5a2ead3dde566880c588881a9f301eeeb90e"},{"id":"func/WalletBalance.displayBalance","name":"WalletBalance.displayBalance","line":88,"end_line":151,"hash":"e44f65e1b05bd826b2c0d4578e737d73221814000fc8c5dc948d187f6ab6f5a1"},{"id":"func/WalletBalance.getTokenBalances","name":"WalletBalance.getTokenBalances","line":155,"end_line":207,"hash":"69e661ea12a0820945b7e5c3767f2f5872a49821345df700fc6a6c8dadcbccae"}]}
+// mutate4javascript-manifest-end

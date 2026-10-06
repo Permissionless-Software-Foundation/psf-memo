@@ -1,5 +1,5 @@
 /*
-  This is the primary entry point for the psf-bch-wallet CLI app.
+  This is the primary entry point for the psf-memo-cli CLI app.
   This app uses commander.js.
 */
 
@@ -31,8 +31,8 @@ const msgVerify = new MsgVerify()
 const program = new Command()
 
 program
-  // Define the psf-bch-wallet app options
-  .name('psf-bch-wallet')
+  // Define the psf-memo-cli app options
+  .name('psf-memo-cli')
   .description('A command-line BCH and SLP token wallet.')
 
 // Define the wallet-create command

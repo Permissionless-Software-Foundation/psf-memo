@@ -68,3 +68,7 @@ class WalletUtil {
 }
 
 export default WalletUtil
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:19:13.675Z","module_hash":"04a8d773888ce91dc643d24faff10f4d3a75c55aef8576429501f98700f7101f","functions":[{"id":"func/WalletUtil.constructor","name":"WalletUtil.constructor","line":17,"end_line":25,"hash":"88aad542369fccdb87f12a73c782ec1dee86bc9cb776783943c6f0a27c946143"},{"id":"func/WalletUtil.saveWallet","name":"WalletUtil.saveWallet","line":28,"end_line":32,"hash":"496a75658c44bf9aa3ce0191d335ebcebc3452f627619a031759fd9c117ec095"},{"id":"func/WalletUtil.instanceWallet","name":"WalletUtil.instanceWallet","line":38,"end_line":67,"hash":"bf4f6860f6b04f1e6b40e7e94fd9baea4b736bd03c4c7012125162dbd8961a26"}]}
+// mutate4javascript-manifest-end

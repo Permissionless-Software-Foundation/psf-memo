@@ -79,3 +79,7 @@ class MsgVerify {
 }
 
 export default MsgVerify
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:18:14.495Z","module_hash":"ee3e2fc3e6df64e6b3c2f3b215732ff4eac4766857895fe459d2ecbd822da31a","functions":[{"id":"func/MsgVerify.constructor","name":"MsgVerify.constructor","line":12,"end_line":19,"hash":"5752cc02a13c4947510577cd10ca8afc6845c391d8ddf3b6917ed5fe7a53adb5"},{"id":"func/MsgVerify.run","name":"MsgVerify.run","line":21,"end_line":41,"hash":"d043b168e2bdc7c38f8b64bb39ea6e01921525c3ced000d56e773ac001085c7b"},{"id":"func/MsgVerify.validateFlags","name":"MsgVerify.validateFlags","line":43,"end_line":63,"hash":"7563acd49dbeda1eaedaabc37d9406882e08b4abea97b6201000d289ecad324e"},{"id":"func/MsgVerify.verify","name":"MsgVerify.verify","line":65,"end_line":78,"hash":"8f585e8604f3797a75b5ddca84ca7151738add59cc93e18f7f52019538624bc2"}]}
+// mutate4javascript-manifest-end

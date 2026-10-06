@@ -1,5 +1,6 @@
 node_modules/
 .wallets/
 coverage/
+target/
 .env
 

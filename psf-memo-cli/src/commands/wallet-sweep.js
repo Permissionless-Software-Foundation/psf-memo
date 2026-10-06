@@ -90,3 +90,7 @@ class WalletSweep {
 }
 
 export default WalletSweep
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T22:18:59.776Z","module_hash":"eee9747401aa67153b2135dd375a4279e49e093790735ac1cb7e9586bc6772ec","functions":[{"id":"func/WalletSweep.constructor","name":"WalletSweep.constructor","line":17,"end_line":26,"hash":"634c70929a1ed2d68aa7ef03426e9594d5d752aabe14ef2e85cd8e75aa432724"},{"id":"func/WalletSweep.run","name":"WalletSweep.run","line":28,"end_line":48,"hash":"53317a1764850cfad40a8d158636a8aeea961c367eaacf6c110b284bcba7b23c"},{"id":"func/WalletSweep.validateFlags","name":"WalletSweep.validateFlags","line":50,"end_line":64,"hash":"2628cee6404c194dedae16ad3c13e7fa19eab8b379e90d4b6373963ef3873b60"},{"id":"func/WalletSweep.sweepWif","name":"WalletSweep.sweepWif","line":66,"end_line":89,"hash":"790b7ea8f53fc3710561109ef974e0137b7eb126d936bb183a3084d95be0a776"}]}
+// mutate4javascript-manifest-end
