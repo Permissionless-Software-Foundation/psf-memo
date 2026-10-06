@@ -1,0 +1,308 @@
+# psf-memo-cli Feature Backlog — Memo Protocol Commands
+
+**Status**: DRAFT — proposed.
+**Owner**: specifier.
+**Last updated**: 2026-10-06.
+
+## Purpose
+
+`psf-memo-cli` began as a pure BCH + SLP wallet (forked from
+`psf-bch-wallet`). It now needs a second job: let **AI agents interact with the
+Memo protocol** the way a human uses the `psf-memo-client` web UI — read the
+social graph, broadcast posts/replies/likes, manage follows/mutes/profiles, and
+check notifications.
+
+Agents are a first-class consumer. Every command must be **non-interactive,
+deterministic, and machine-readable**, with stable exit codes and a `--json`
+mode, so an agent can chain commands and parse results without screen-scraping.
+
+This document is the candidate list. Each item below becomes its own
+specifier → coder → refactorer → architect cycle: a Gherkin spec, a coder
+implementation, refactoring, and architect verification, per the SwarmForge
+constitution. **Nothing here is approved to hand off yet.**
+
+---
+
+## Current state
+
+The CLI today exposes only wallet/crypto commands:
+
+| Command | Purpose |
+|---------|---------|
+| `wallet-create`, `wallet-list`, `wallet-addrs`, `wallet-balance`, `wallet-sweep` | Wallet management |
+| `send-bch`, `send-tokens` | BCH / SLP transfers |
+| `msg-sign`, `msg-verify` | Message signing |
+
+It has **no Memo protocol commands** and no client for the `psf-memo-db` read
+API. The reusable wallet plumbing is `src/lib/wallet-util.js`
+(`instanceWallet()`), `src/lib/flag-validator.js`, `src/lib/send-command.js`,
+and `src/lib/bind-methods.js`; commands follow the
+`run()` / `validateFlags()` contract documented in `src/commands/README.md`.
+
+The web client already implements every behavior we need to mirror in
+`psf-memo-client/src/services/` (CJS) and the DB read API already exposes the
+needed routes in `psf-memo-db/src/controllers/rest-api/`. The CLI is ESM
+(`"type": "module"`), so client services cannot be imported directly; logic
+must be ported into `src/` and kept dependency-free where possible.
+
+### Read APIs available for the CLI (`psf-memo-db`)
+
+| Method | Route | Params |
+|--------|-------|--------|
+| GET | `/posts/recent` | `limit`, `offset`, `viewer` |
+| GET | `/posts/by/:addr` | `limit`, `offset` |
+| GET | `/posts/following/:addr` | `limit`, `offset` |
+| GET | `/posts/notifications/:addr` | `limit`, `offset` |
+| GET | `/posts/:txid/thread` | — |
+| GET | `/level/post/:txid` | — |
+| GET | `/level/name/:addr`, `/level/profile/:addr`, `/level/profilepic/:addr` | — |
+| GET | `/profile/recent` | `limit`, `offset` |
+| GET | `/profile/newest-post/:addr` | — |
+| GET | `/follow/state` | `follower`, `followee` |
+| GET | `/follow/following/:follower`, `/follow/followers/:followee` | — |
+| GET | `/mute/state` | `muter`, `mutee` |
+| GET | `/mute/muted/:muter` | — |
+| GET | `/topics` | `limit`, `offset` |
+| GET | `/topics/:room/posts` | `limit`, `offset`, `viewer` |
+| GET | `/topics/:room/follow/state` | `addr` |
+| GET | `/topics/:room/followers` | — |
+| GET | `/search` | `q`, `limit`, `offset`, `viewer` |
+| GET | `/polls/:txid`, `/polls/:txid/options`, `/polls/:txid/votes` | — |
+| GET | `/level/status/status` | — |
+
+The production DB URL is `https://memo-api.fullstackcash.net`; local
+development is `http://localhost:5021`. The CLI has no DB URL config today, so
+the production URL becomes the default (overridable via `MEMO_DB_URL` or
+`--db-url`).
+
+---
+
+## Design principles (apply to every feature)
+
+1. **Non-interactive.** No prompts, no TTY assumptions. Anything that could
+   require a confirmation takes a flag (`--yes`) or is split into a
+   compose/wait command.
+2. **Machine-readable on every command.** Every command accepts `--json`,
+   which prints a single JSON document to stdout; human-readable output stays
+   the default. Diagnostics go to stderr.
+3. **Stable exit codes.** `0` success, `1` runtime/validation error, `2` usage
+   error. Never swallow a broadcast failure.
+4. **Wallet by name or WIF.** Wallet-relative commands accept either
+   `-n <wallet>` (reuse `wallet-util.instanceWallet()`) or `--wif <wif>` for a
+   one-shot identity. The resolved first address is the Memo identity, matching
+   the web UI's HD wallet. A shared resolver requires exactly one source and
+   derives the same cash address either way.
+5. **Real limits and wire formats.** Enforce the Memo protocol limits and
+   encodings server-side in the command, not by trusting the caller (see the
+   protocol table and gotchas below).
+6. **One command, one action.** Prefer small composable commands over a
+   mega-command; a `--dry-run` may preview a composed action without
+   broadcasting.
+7. **Quality gates.** Unit + property tests, 100% coverage, CRAP ≤ 6, DRY
+   clean, language mutation with no survivors, and lint — the
+   `cli-quality-hardening` baseline. New logic must keep that green.
+
+---
+
+## Foundation features (enablers — do these first)
+
+### F1 — Memo DB HTTP client and `MEMO_DB_URL` config
+Add a read-only HTTP client (`src/lib/memo-db.js`) covering the routes above,
+plus config in `config/index.js` and `.env.example`:
+`MEMO_DB_URL` (default `https://memo-api.fullstackcash.net`, the production
+memo-db) and a per-command `--db-url` override; local development points it at
+`http://localhost:5021`. Use Node 20's global `fetch` and avoid adding `axios`
+unless a concrete need appears. A 404 on a `/level/*` lookup resolves to `null`, not an
+error, mirroring the web client.
+
+### F2 — Wallet resolution + shared Memo broadcast scaffolding
+A shared resolver (`src/lib/wallet-source.js`) accepts exactly one of
+`-n <wallet>` or `--wif <wif>` and returns an initialized wallet plus its cash
+address. A shared module (`src/lib/memo-broadcast.js`) then validates flags,
+refreshes UTXOs, encodes the action payload, calls `sendOpReturn`, and prints
+the txid + `https://bch.loping.net/tx/<txid>`.
+`sendOpReturn`'s public signature is
+`sendOpReturn(msg='', prefix='6d02', bchOutput=[], satsPerByte=1.0)` — **not**
+the low-level `lib/op-return.js` signature (gotcha #3). Reuse
+`runSendCommand` where it fits, and add a JSON result shape.
+
+### F3 — Multi-push OP_RETURN support (Node port of `memo-multipush.js`)
+`minimal-slp-wallet`'s `sendOpReturn(msg, prefix)` hardcodes
+`[OP_RETURN, prefix, msg]`, so multi-field actions (reply, topic message,
+poll create/option/vote, and send-money) are silently flattened into one push
+and dropped by the indexer (gotcha #35). Port the client's
+`memo-multipush.js` approach into `src/lib/` (swap `bchjs.Script.encode2` for
+one call so each protocol field is its own push). Node always has `Buffer`, but
+if the port imports `buffer`, declare it as a direct dependency (gotcha #36).
+
+### F4 — Little-endian txid wire encoding
+Every action that references a transaction (like `0x6d04`, reply `0x6d03`,
+poll option `0x6d13`, poll vote `0x6d14`) must write the 32 bytes in
+little-endian wire order (byte-reverse of the display txid). The 20-byte
+hash160 follow/mute path is **not** reversed (gotcha #32). Provide
+`txidToWireBytes` / `addressToHash160` helpers with unit + property tests.
+
+### F5 — Output + exit-code contract
+A small shared reporter: human-readable default, `--json` (single JSON object
+on stdout), errors to stderr, exit `0`/`1`/`2`. Every new command uses it so
+agents get one consistent interface.
+
+### F6 — Gherkin acceptance harness for the CLI
+The CLI has no feature files or acceptance pipeline yet; its quality baseline
+runs unit + property only (gotcha #63, `quality-baseline.md`). Onboard Gherkin
+acceptance with project-local step handlers and a `runner-worker`, using the
+`cli` entry already present in `swarmforge/scripts/verify.mjs`. This unlocks
+soft Gherkin mutation for CLI specs and keeps parity with the other components.
+Per the 2026-10-06 decision, F6 lands **after the first `memo-*` command (W1)**:
+W1 ships with unit + property tests, then the acceptance harness follows.
+
+---
+
+## Read features
+
+Read commands never broadcast; they require no wallet unless the caller wants
+viewer-relative results (mute filtering). Wallet-relative commands (R6, R11,
+R12, R15) accept either `-n <wallet>` or `--wif <wif>` (see F2); commands that
+only need an address take `--viewer`/`-a <addr>` instead.
+
+| ID | Command | Behavior | Source / notes |
+|----|---------|----------|----------------|
+| R1 | `memo-feed [--limit --offset --viewer <addr> --json]` | One page of the recent top-level feed, newest first. | `GET /posts/recent`; fields `txid`, `addr`, `text`, `seen`, `blockHeight`, `replyCount`, `likeCount`, `pagination`. |
+| R2 | `memo-thread -t <txid> [--json]` | A post and its reply tree with like counts. | `GET /posts/:txid/thread`. |
+| R3 | `memo-post -t <txid> [--json]` | A single post document. | `GET /level/post/:txid`. |
+| R4 | `memo-profile -a <addr> [--json]` | Composed identity: name, bio, avatar URL, follow state, recent posts, token count summary. | `/level/name|profile|profilepic`, `/posts/by/:addr`, `/follow/state`. |
+| R5 | `memo-posts -a <addr> [--limit --offset --json]` | Posts authored by an address. | `GET /posts/by/:addr`. |
+| R6 | `memo-notifications -n <wallet> [--limit --offset --json]` | Likes, replies, and follows for the wallet's address, newest first, within the notification block window. | `GET /posts/notifications/:addr`; window semantics in gotcha #21 / `notifications-query-performance`. |
+| R7 | `memo-topics [--limit --offset --json]` | Topic list with last-post time, post count, follower count, ordered by recency. | `GET /topics`. |
+| R8 | `memo-topic -r <room> [--limit --offset --json]` | A topic's posts (optionally viewer-filtered). | `GET /topics/:room/posts`. |
+| R9 | `memo-search -q <query> [--limit --offset --viewer --json]` | Full-text post search. | `GET /search`. |
+| R10 | `memo-profiles [--limit --offset --json]` | Recently active profiles with display name and avatar. | `GET /profile/recent`; identity join in `recent-profile-identity`. |
+| R11 | `memo-following -n <wallet> [--json]` / `memo-followers -a <addr>` | Addresses the wallet follows / an address's followers. | `GET /follow/following/:addr`, `/follow/followers/:addr`. |
+| R12 | `memo-muted -n <wallet> [--json]` | Addresses the wallet has muted. | `GET /mute/muted/:muter`. |
+| R13 | `memo-poll -t <txid> [--json]` | A poll with options and current votes. | `GET /polls/:txid`, `/options`, `/votes`. |
+| R14 | `memo-status [--json]` | Indexer sync state: `startBlockHeight`, `syncedBlockHeight`, `chainBlockHeight`. | `GET /level/status/status`. Lets an agent know whether its broadcast can be visible yet. |
+| R15 | `memo-identity -n <wallet> [--json]` | The wallet's own Memo identity: cash address, name, bio, avatar, BCH/SLP balances. | Composes `wallet-balance` + R4 for the wallet address. |
+| R16 | `memo-wait -t <txid> [--timeout --interval --json]` | Poll until a broadcast tx is indexed (visible via `/level/post` or thread), then print it; non-zero on timeout. | Makes the async write→index→read path scriptable (backlog "Notes for future cycles"). |
+
+---
+
+## Write features (Memo broadcasts)
+
+Each write command follows F2/F3/F4, requires a wallet via `-n <wallet>` or
+`--wif <wif>`, enforces its protocol limit, and reports the txid (plus explorer
+link in human mode, plus the txid in `--json`). All limits are byte counts
+unless noted.
+
+| ID | Command | Action | Payload / limit | Source / notes |
+|----|---------|--------|-----------------|----------------|
+| W1 | `memo-post -n <wallet> -m <text> [--json]` | `0x6d02` post | text ≤ 217 **characters** (UTF-16) | Mirrors `memo-post.js`; gotcha #7. |
+| W2 | `memo-reply -n <wallet> -t <parent> -m <text> [--json]` | `0x6d03` reply | LE txid (32) + text ≤ 184 bytes | Multi-push (F3); mirrors `memo-reply.js`. |
+| W3 | `memo-like -n <wallet> -t <post> [--tip <sats> --author <addr>] [--json]` | `0x6d04` like/tip | LE txid (32); tip ≥ 600 sats, ≤ 1 BCH, needs author address | Mirrors `memo-like.js`; dust rules and spendable-balance check. |
+| W4 | `memo-name -n <wallet> -m <name> [--json]` | `0x6d01` set name | name ≤ 77 **bytes** | `memo-set-name.js`; byte counting for memo.cash parity (gotcha #7). |
+| W5 | `memo-bio -n <wallet> -m <text> [--json]` | `0x6d05` set profile text | ≤ 217 bytes | `memo-set-bio.js`. |
+| W6 | `memo-avatar -n <wallet> -u <url> [--json]` | `0x6d0a` set profile picture | ≤ 217 bytes | `memo-set-avatar-url.js`. |
+| W7 | `memo-follow -n <wallet> -a <addr>` / `memo-unfollow ...` | `0x6d06` / `0x6d07` | 20-byte hash160 of the cash address | `memo-follow.js`; do **not** reverse the hash (gotcha #32). |
+| W8 | `memo-mute -n <wallet> -a <addr>` / `memo-unmute ...` | `0x6d16` / `0x6d17` | 20-byte hash160 | `memo-mute.js`; persistence depends on the DB `mute` entity route (gotcha #60). |
+| W9 | `memo-topic-post -n <wallet> -r <room> -m <text> [--json]` | `0x6d0c` topic message | room + text ≤ 214 bytes combined | Multi-push (F3); mirrors `memo-topic-post.js`. |
+| W10 | `memo-topic-follow -n <wallet> -r <room>` / `memo-topic-unfollow ...` | `0x6d0d` / `0x6d0e` | topic name | `memo-topic-follow.js`. |
+| W11 | `memo-poll-create -n <wallet> --question <q> --options <n> [--type <n>] [--json]` | `0x6d10` create poll | type byte + option-count byte + question ≤ 209 bytes | Multi-push (F3); mirrors `memo-poll-create.js`. |
+| W12 | `memo-poll-option -n <wallet> -t <poll> -m <option> [--json]` | `0x6d13` add poll option | LE txid (32) + option ≤ 184 bytes | Multi-push (F3). |
+| W13 | `memo-poll-vote -n <wallet> -t <poll> [-m <comment>] [--json]` | `0x6d14` poll vote | LE txid (32) + comment ≤ 184 bytes | Multi-push (F3). |
+
+### Planned / deferred write actions
+
+| ID | Command | Action | Status |
+|----|---------|--------|--------|
+| W14 | `memo-repost` | `0x6d0b` repost | Deferred: the v1 indexer does not handle `0x6d0b` yet. Needs indexer + DB read support first. |
+| W15 | `memo-send-money` | `0x6d24` send money | Deferred: not in the v1 indexer handler set; would need indexer + DB support. The existing `send-bch` covers raw transfers. |
+| W16 | `memo-token-*` | MIP-0009 `0x6d30`–`0x6d35` token exchange | Out of scope for now; needs protocol parity work across indexer and DB. |
+
+---
+
+## Cross-cutting features and requirements
+
+- **X1 — Command reference docs.** Extend `README.md` and
+  `src/commands/README.md` with every `memo-*` command, flags (including
+  `--json` and the `-n`/`--wif` wallet source), the JSON shape, and exit codes;
+  add `MEMO_DB_URL` (production default) to `.env.example`.
+- **X2 — Error surfacing.** Broadcast failures print the real node/wallet error
+  (`Failed to broadcast: <msg>`), never a generic "must not be empty"
+  (gotcha #5). Validation errors name the exact flag and limit.
+- **X3 — Secret hygiene.** Never print mnemonics, WIFs, or the wallet JSON.
+  `--json` output must not include key material.
+- **X4 — Read-only safety.** Read commands must not instantiate or unlock a
+  wallet unless viewer-relative data is requested; a missing wallet file then
+  does not break `memo-feed`/`memo-status`.
+- **X5 — Quality and verification.** Every command ships unit tests, property
+  tests where invariants exist (encoding, pagination, limit math), and — once
+  F6 lands — Gherkin acceptance. Keep `verify.sh cli` green and preserve the
+  `cli-quality-hardening` baseline (CRAP ≤ 6, DRY clean, mutation 0 survivors,
+  100% coverage, lint).
+- **X6 — Pagination fidelity.** Read commands expose `limit`/`offset` and pass
+  through `pagination` unchanged, including the documented total cap
+  (`min(actual, 500)`; gotcha #21). Do not imply an exact total beyond the cap.
+- **X7 — Async visibility contract.** Document that a broadcast is not visible
+  until confirmed and indexed; `memo-wait` (R16) is the scriptable bridge.
+
+---
+
+## Suggested delivery order
+
+1. **Foundation**: F1 (DB client + production config), F5 (output/exit
+   contract), F4 (encoding helpers), then F2 (wallet resolution + broadcast
+   scaffolding) and F3 (multi-push).
+2. **Read-first value**: R1, R2, R3, R14, R15 — an agent can observe the
+   protocol and its own identity before writing.
+3. **Core write path**: W1 (post) is the first `memo-*` command and the trigger
+   for F6 (Gherkin acceptance harness). Then W2 (reply), W3 (like), R6
+   (notifications), and R16 (wait).
+4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
+5. **Topics and polls**: R7–R9, R13, W9–W13.
+6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
+
+Each numbered item is delivered as its own specifier → coder → refactorer →
+architect cycle.
+
+---
+
+## Resolved decisions (2026-10-06)
+
+1. **Command naming**: flat `memo-<action>` (consistent with
+   `wallet-*`/`send-*`). No nested `memo` group.
+2. **Default DB**: production `https://memo-api.fullstackcash.net`
+   (overridable via `MEMO_DB_URL` or `--db-url`; local dev uses
+   `http://localhost:5021`).
+3. **Wallet identity**: support both `-n <wallet>` and `--wif <wif>`.
+4. **JSON scope**: `--json` on every command.
+5. **F6 acceptance**: onboard CLI Gherkin acceptance after the first `memo-*`
+   command (W1).
+
+## Out of scope
+
+- Interactive/TUI flows, prompts, or confirmations.
+- Reimplementing chain scanning; the CLI only reads `psf-memo-db` and
+  broadcasts transactions.
+- Protocol actions the v1 indexer does not handle (`0x6d0b`, `0x6d24`, MIP-0009)
+  until indexer + DB support exists.
+- Changing the web client or the DB/indexer as part of CLI-only features;
+  cross-component changes get their own specs and task descriptions.
+
+## Protocol reference
+
+Action bytes and limits (full table in the root
+`specs/feature-backlog.md` and `memo.sv/protocol`). The CLI must not exceed:
+
+| Action | Limit |
+|--------|-------|
+| `6d01` set name | 77 bytes |
+| `6d02` post | 217 characters |
+| `6d03` reply | 32 + 184 bytes |
+| `6d04` like/tip | 32 bytes |
+| `6d05` set profile text | 217 bytes |
+| `6d06`/`6d07` follow/unfollow | 20 bytes |
+| `6d0a` set profile picture | 217 bytes |
+| `6d0c` topic message | 214 bytes combined |
+| `6d10` create poll | 1 + 1 + 209 bytes |
+| `6d13` add poll option | 32 + 184 bytes |
+| `6d14` poll vote | 32 + 184 bytes |
+| `6d16`/`6d17` mute/unmute | 20 bytes |
