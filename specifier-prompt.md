@@ -25,7 +25,7 @@ at the end of each session when asked.
 ## 2. Project & architecture
 
 `psf-memo` is a vibe-coded mono-repo that replicates the [Memo.cash](https://memo.cash)
-social network on Bitcoin Cash (BCH). It contains three coordinated pieces of
+social network on Bitcoin Cash (BCH). It contains four coordinated pieces of
 infrastructure:
 
 | Component | Path | Responsibility |
@@ -33,6 +33,7 @@ infrastructure:
 | **psf-memo-client** | `psf-memo-client/` | React SPA for reading and writing Memo actions |
 | **psf-memo-indexer** | `psf-memo-indexer/` | Node.js indexer that scans BCH blocks/mempool and indexes Memo protocol transactions |
 | **psf-memo-db** | `psf-memo-db/` | LevelDB REST API; indexer writes data, client reads it |
+| **psf-memo-cli** | `psf-memo-cli/` | Command-line BCH + SLP wallet CLI (forked from `psf-bch-wallet`) |
 
 Every social action is a BCH `OP_RETURN` transaction: Memo protocol prefix
 `0x6d` + action byte + payload. It is **broadcast** from the client to the BCH
@@ -882,6 +883,17 @@ that a single user-facing feature may require specs in more than one component.
     values, #12 class); language mutation 22/22 on `feed-tabs-page.js`. Spec:
     `psf-memo-client/specs/feed-pagination-scroll.feature`.
 
+63. **Onboarding a monorepo component needs a `verify.sh` entry and
+    self-provisioning for gitignored runtime dirs.** `psf-memo-cli` was added
+    with `crap`/`mutate`/`dry` npm scripts, but `verify.mjs` had no `cli`
+    component, so the architect could not emit a verification record until a
+    `cli` entry was added. Its `.wallets/` directory is gitignored, so a fresh
+    checkout failed `npm test` with `ENOENT`; `pretest: mkdir -p .wallets` and a
+    production `saveWallet` mkdir fixed both the test harness and the real
+    command. When onboarding a component, add its `verify.mjs` entry and make
+    gitignored runtime dirs self-provisioning. Brief:
+    `psf-memo-cli/dev-docs/quality-baseline.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -902,6 +914,11 @@ npm test
 # Indexer
 cd psf-memo-indexer
 npm test
+
+# CLI
+cd psf-memo-cli
+npm test
+npm run property
 ```
 
 After merging architect into `master`, run the verification commands for every
@@ -913,6 +930,7 @@ machine-readable record:
 swarmforge/scripts/verify.sh client  --record docs/reviews/<task>-verification.json --task <task>
 swarmforge/scripts/verify.sh db      --record docs/reviews/<task>-verification.json --task <task>
 swarmforge/scripts/verify.sh indexer --record docs/reviews/<task>-verification.json --task <task>
+swarmforge/scripts/verify.sh cli     --record docs/reviews/<task>-verification.json --task <task>
 ```
 After merging the architect branch, check `docs/reviews/<task>-verification.json`:
 it must exist and its `git_sha` must match the merged commit. On a matching
@@ -932,7 +950,26 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-02): specified and merged `feed-pagination-scroll` —
+Latest session (2026-10-06): routed and merged `cli-quality-hardening` — the
+newly added `psf-memo-cli` component (forked from `psf-bch-wallet`) was renamed,
+given CRAP/mutation/DRY tooling, and hardened before feature work. Baseline was
+red: CRAP exit 2 (`SendTokens.validateFlags` 9.0), 4 exact DRY duplicates, 50
+killed / 23 survived / 0 uncovered. The refactorer extracted
+`src/lib/token-balances.js`, `flag-validator.js`, `send-command.js`, and
+`bind-methods.js`, added a property suite, and made `pretest` provision
+`.wallets`; the architect decoupled `SendTokens` from the `WalletBalance`
+command, fixed misleading error labels, added `property` to the `cli`
+verification entry, and killed every survivor. Final: CRAP exit 0 (max 6.0),
+DRY no duplicates, mutation 49 killed / 0 survived / 0 uncovered, unit 84
+passing / 100% coverage, property 4/4, lint clean. Merged to `master` at
+`e1fc6f0` (fast-forward; architect code-review commit `7997339`; the later
+`e1fc6f0` adds only the record and summary, so
+`docs/reviews/cli-quality-hardening-verification.json` is valid for the merged
+tree). Independent check after merge: unit 84 passing, property 4/4, CRAP exit
+0. Routing brief: `psf-memo-cli/dev-docs/quality-baseline.md`; architect
+summary: `docs/reviews/cli-quality-hardening-summary.md`.
+
+Previous session (2026-10-02): specified and merged `feed-pagination-scroll` —
 the `/posts/recent` feed now scrolls to the top whenever a page loads (the Next
 or Previous buttons) or the active Recent/Following tab changes, so the viewer
 starts at the first post of the new page. The scroll is decided by the pure
@@ -951,7 +988,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `ffb063f` (`Merge architect feed-pagination-scroll`).
+Current `master` HEAD: `e1fc6f0` (`Record cli-quality-hardening architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds

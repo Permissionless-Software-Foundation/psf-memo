@@ -31,17 +31,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **psf-memo-cli quality baseline (`cli-quality-hardening`):** harden the
-  newly added `psf-memo-cli` component before feature work. Baseline: CRAP exit
-  2 (`SendTokens.validateFlags` 9.0; `MsgVerify`/`SendBch.validateFlags` 7.0),
-  4 exact DRY duplicates, and 50 killed / 23 survived / 0 uncovered mutations.
-  Refactorer reduces CRAP to <= 6 and the DRY duplicates; architect kills the
-  mutation survivors. Routing brief: `psf-memo-cli/dev-docs/quality-baseline.md`.
-  Tooling: `crap4javascript`, `mutate4javascript`, `dry4javascript` (npm scripts
-  `crap`/`mutate`/`dry`); `verify.sh cli` now supported. `psf-memo-cli` has no
-  Gherkin specs yet.
+- None.
 
 ## Recently completed
+
+- **psf-memo-cli quality baseline (`cli-quality-hardening`, 2026-10-06):** the
+  newly added `psf-memo-cli` component was hardened before feature work.
+  Baseline was red: CRAP exit 2 (`SendTokens.validateFlags` 9.0;
+  `MsgVerify`/`SendBch.validateFlags` 7.0), 4 exact DRY duplicates, and 50
+  killed / 23 survived / 0 uncovered mutations. The refactorer extracted
+  `src/lib/token-balances.js`, `flag-validator.js`, `send-command.js`, and
+  `bind-methods.js`, added a property suite, and made `pretest` provision
+  `.wallets`; the architect decoupled `SendTokens` from the `WalletBalance`
+  command, fixed misleading error labels, made `saveWallet` create its parent
+  directory, added `property` to the `cli` verification entry, and killed every
+  survivor. Final: CRAP exit 0 (max 6.0), DRY no duplicates, mutation 49 killed
+  / 0 survived / 0 uncovered, unit 84 passing / 100% coverage, property 4/4,
+  lint clean. Merged to `master` at `e1fc6f0` (fast-forward; architect
+  code-review commit `7997339`; the later `e1fc6f0` adds only the record and
+  summary, so `docs/reviews/cli-quality-hardening-verification.json` is valid
+  for the merged tree). Independent check after merge: unit 84 passing,
+  property 4/4, CRAP exit 0. Refactorer commits `eee2a29`, `1631bac`; architect
+  review `7997339`. Architect summary:
+  `docs/reviews/cli-quality-hardening-summary.md`.
 
 - **Feed pagination scroll (2026-10-02):** the `/posts/recent` posts feed now
   scrolls back to the top whenever a page loads (the Next or Previous buttons)
