@@ -107,6 +107,9 @@ the production URL becomes the default (overridable via `MEMO_DB_URL` or
 ## Foundation features (enablers — do these first)
 
 ### F1 — Memo DB HTTP client and `MEMO_DB_URL` config
+**Status: DONE** (2026-10-06, task `cli-memo-db-client`; merged at `346556f`;
+acceptance 12/12). Spec: `psf-memo-cli/specs/memo-db-client.feature`; architect
+summary: `docs/reviews/cli-memo-db-client-summary.md`.
 Add a read-only HTTP client (`src/lib/memo-db.js`) covering the routes above,
 plus config in `config/index.js` and `.env.example`:
 `MEMO_DB_URL` (default `https://memo-api.fullstackcash.net`, the production
@@ -148,13 +151,13 @@ on stdout), errors to stderr, exit `0`/`1`/`2`. Every new command uses it so
 agents get one consistent interface.
 
 ### F6 — Gherkin acceptance harness for the CLI
-The CLI has no feature files or acceptance pipeline yet; its quality baseline
-runs unit + property only (gotcha #63, `quality-baseline.md`). Onboard Gherkin
-acceptance with project-local step handlers and a `runner-worker`, using the
-`cli` entry already present in `swarmforge/scripts/verify.mjs`. This unlocks
-soft Gherkin mutation for CLI specs and keeps parity with the other components.
-Per the 2026-10-06 decision, F6 lands **after the first `memo-*` command (W1)**:
-W1 ships with unit + property tests, then the acceptance harness follows.
+**Status: DONE** — landed with F1 in task `cli-memo-db-client`
+(2026-10-06). `psf-memo-cli/acceptance/` now provides the generator, runtime,
+step handlers, and `runner-worker`, and `verify.sh cli` runs acceptance; the
+first CLI feature (`memo-db-client`) is acceptance-executable. New components
+reuse the shared `runComponentAcceptance({ root, acceptanceDir, repoRoot })`
+from `swarmforge/scripts/lib/acceptance-runner.cjs` rather than copying the
+orchestration.
 
 ---
 
@@ -234,8 +237,8 @@ unless noted.
   wallet unless viewer-relative data is requested; a missing wallet file then
   does not break `memo-feed`/`memo-status`.
 - **X5 — Quality and verification.** Every command ships unit tests, property
-  tests where invariants exist (encoding, pagination, limit math), and — once
-  F6 lands — Gherkin acceptance. Keep `verify.sh cli` green and preserve the
+  tests where invariants exist (encoding, pagination, limit math), and Gherkin
+  acceptance (F6 is in place). Keep `verify.sh cli` green and preserve the
   `cli-quality-hardening` baseline (CRAP ≤ 6, DRY clean, mutation 0 survivors,
   100% coverage, lint).
 - **X6 — Pagination fidelity.** Read commands expose `limit`/`offset` and pass
@@ -248,14 +251,14 @@ unless noted.
 
 ## Suggested delivery order
 
-1. **Foundation**: F1 (DB client + production config), F5 (output/exit
+1. **Foundation**: F1 (DB client + production config) **DONE**; F5 (output/exit
    contract), F4 (encoding helpers), then F2 (wallet resolution + broadcast
    scaffolding) and F3 (multi-push).
 2. **Read-first value**: R1, R2, R3, R14, R15 — an agent can observe the
-   protocol and its own identity before writing.
-3. **Core write path**: W1 (post) is the first `memo-*` command and the trigger
-   for F6 (Gherkin acceptance harness). Then W2 (reply), W3 (like), R6
-   (notifications), and R16 (wait).
+   protocol and its own identity before writing. **Next up: R1 (`memo-feed`).**
+3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
+   (wait). F6 (Gherkin acceptance harness) is already **DONE** with F1; W1
+   (post) follows the same pattern.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
@@ -275,7 +278,8 @@ architect cycle.
 3. **Wallet identity**: support both `-n <wallet>` and `--wif <wif>`.
 4. **JSON scope**: `--json` on every command.
 5. **F6 acceptance**: onboard CLI Gherkin acceptance after the first `memo-*`
-   command (W1).
+   command. Satisfied at F1 — the harness landed with `cli-memo-db-client`
+   (2026-10-06).
 
 ## Out of scope
 

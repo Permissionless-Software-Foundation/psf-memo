@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-10-02
+**Last updated**: 2026-10-06
 
 ---
 
@@ -34,6 +34,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **CLI Memo DB client (`cli-memo-db-client`, 2026-10-06):** the first item of
+  the new `psf-memo-cli` Memo-protocol backlog
+  (`psf-memo-cli/dev-docs/feature-backlog.md`). Added
+  `psf-memo-cli/src/lib/memo-db.js` (read-only client for the psf-memo-db REST
+  API; injected `fetch`, pure endpoint resolution) and endpoint config
+  (`MEMO_DB_URL` default `https://memo-api.fullstackcash.net`, `--db-url`
+  override, local dev `http://localhost:5021`). The same job onboarded the CLI
+  Gherkin acceptance harness (`psf-memo-cli/acceptance/`), so
+  `psf-memo-cli/specs/memo-db-client.feature` (7 scenarios, 12 example
+  executions) is executable. Merged to `master` at `346556f` (fast-forward;
+  architect code-review commit `c881811`; the later `9491580`/`346556f` are
+  docs-only, so `docs/reviews/cli-memo-db-client-verification.json` is valid for
+  the merged tree). `verify.sh cli` pass 4/4 at `c881811` (unit 99/0, property
+  10/0, acceptance 1 suite, lint ok); language mutation 6 killed / 0 survived;
+  soft Gherkin mutation 23/12 with 11 intrinsic survivors; DRY clean.
+  Independent acceptance check after merge: 12/12. Architect summary:
+  `docs/reviews/cli-memo-db-client-summary.md`.
 
 - **psf-memo-cli quality baseline (`cli-quality-hardening`, 2026-10-06):** the
   newly added `psf-memo-cli` component was hardened before feature work.
@@ -841,9 +859,12 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ## Next up: TBD
 
-Current direction is front-end improvements to `psf-memo-client` (UI/UX polish,
-accessibility, performance, responsiveness, state handling, error surfacing).
-Ask the user for the next feature.
+Active work has moved to the new `psf-memo-cli` Memo-protocol backlog:
+`psf-memo-cli/dev-docs/feature-backlog.md` (F1 done; next is F5, F4, F2/F3,
+then R1 `memo-feed`). The earlier client direction — front-end improvements to
+`psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
+state handling, error surfacing) — remains open. Ask the user for the next
+feature.
 
 ## Notes for future cycles
 
