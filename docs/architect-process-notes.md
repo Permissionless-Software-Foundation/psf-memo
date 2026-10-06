@@ -169,6 +169,14 @@ the captured output before the tool's `System/exit`; the JSON report
   client runner-workers still run the full feature; apply the same pattern if
   their soft runs get slow.
 
+- **The cli runner-worker narrows to the changed example, so survivor labels are
+  relative.** `psf-memo-cli/acceptance/lib/runner-worker.js` uses the same
+  `narrowToChanged` scoping as the DB worker: it replaces the scenario's
+  `examples` with only the changed row before `runFeature` expands it, so every
+  survivor/kill line is named `.../example_1` regardless of which outline row was
+  mutated. Do not read that label as the original row index; map it back through
+  the mutation's JSON path (`$.scenarios[i].examples[j]...`) instead.
+
 - **Production logging can corrupt the runner-worker's stdout protocol.** The
   DB `runner-worker.js` originally redirected only `console.log`, but importing
   `LevelRESTControllerLib` (added to `acceptance/lib/handlers.js` for the
