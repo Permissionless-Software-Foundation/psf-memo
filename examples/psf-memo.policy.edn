@@ -1,0 +1,14 @@
+{:title "PSF Memo"
+ ;; Policy prefix = namespace prefix of the Clojure tree (the TS/JS trees
+ ;; set their own per-source :prefix below, which becomes that tree's ns root).
+ :prefix "swarmforge"
+ :sources [{:lang :clojure :root "test" :prefix "swarmforge"}
+           {:lang :typescript :root "psf-memo-client/src"  :prefix "client"}
+           {:lang :typescript :root "psf-memo-db/src"      :prefix "db"}
+           {:lang :typescript :root "psf-memo-indexer/src" :prefix "indexer"}]
+ :hierarchical true
+ :order [db indexer client swarmforge]
+ :levels [[db indexer]
+          [client]
+          [swarmforge]]
+ :out "examples/psf-memo.edn"}

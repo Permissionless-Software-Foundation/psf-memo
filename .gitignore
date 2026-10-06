@@ -11,3 +11,9 @@ data/
 production/data/
 
 .gitsigners
+
+# BEGIN UML-VIEWER
+uml
+uml-viewer-log.txt
+.uml-viewer/
+# END UML-VIEWER
