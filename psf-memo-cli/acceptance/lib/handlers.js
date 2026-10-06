@@ -8,6 +8,7 @@
 
 // Local libraries
 import MemoDb from '../../src/lib/memo-db.js'
+import { runCommand, UsageError } from '../../src/lib/reporter.js'
 
 // A minimal fetch Response stand-in carrying a JSON body.
 function jsonResponse (body, status = 200) {
@@ -45,6 +46,36 @@ function makePosts (count) {
   return posts
 }
 
+// A write-only stream that accumulates its output for later assertions.
+function captureStream () {
+  const chunks = []
+  return {
+    stream: { write: (chunk) => { chunks.push(chunk) } },
+    text: () => chunks.join('')
+  }
+}
+
+// Parse one line of text as a single JSON object, or throw a clear failure.
+function parseSingleJsonObject (text, label) {
+  const trimmed = text.trim()
+  if (trimmed === '' || trimmed.split('\n').length !== 1) {
+    throw new Error(`Expected ${label} to be a single JSON object, got "${text}"`)
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch (err) {
+    throw new Error(`Expected ${label} to be JSON, got "${text}"`)
+  }
+
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`Expected ${label} to be a JSON object, got "${text}"`)
+  }
+
+  return parsed
+}
+
 async function createWorld () {
   const world = {
     flagUrl: undefined,
@@ -54,7 +85,12 @@ async function createWorld () {
     unreachable: false,
     lastRequest: null,
     lastResult: null,
-    lastError: null
+    lastError: null,
+    json: false,
+    outcome: null,
+    exitCode: null,
+    stdoutText: '',
+    stderrText: ''
   }
 
   world.fetch = async (url) => {
@@ -94,6 +130,13 @@ async function createWorld () {
     envUrl: world.envUrl,
     fetchImpl: world.fetch
   })
+
+  // Reproduce the scenario's command outcome as a runnable command.
+  world.command = async () => {
+    if (world.outcome.type === 'result') return { message: world.outcome.message }
+    if (world.outcome.type === 'usage') throw new UsageError(world.outcome.message)
+    throw new Error(world.outcome.message)
+  }
 
   return world
 }
@@ -260,8 +303,172 @@ const handlers = [
   }
 ]
 
+const reporterHandlers = [
+  {
+    name: 'a CLI command',
+    pattern: /^a CLI command$/,
+    run (m, example, world) {
+      world.json = false
+      world.outcome = null
+      world.exitCode = null
+      world.stdoutText = ''
+      world.stderrText = ''
+    }
+  },
+  {
+    name: 'command has a result',
+    pattern: /^the command has a result with the message "(.+)"$/,
+    run (m, example, world) {
+      world.outcome = { type: 'result', message: resolveParam(m[1], example) }
+    }
+  },
+  {
+    name: 'command fails',
+    pattern: /^the command fails with the error "(.+)"$/,
+    run (m, example, world) {
+      world.outcome = { type: 'error', message: resolveParam(m[1], example) }
+    }
+  },
+  {
+    name: 'command rejects the flags',
+    pattern: /^the command rejects the flags with the error "(.+)"$/,
+    run (m, example, world) {
+      world.outcome = { type: 'usage', message: resolveParam(m[1], example) }
+    }
+  },
+  {
+    name: 'runs in human mode',
+    pattern: /^the command runs in human mode$/,
+    async run (m, example, world) {
+      world.json = false
+      await runReporterCommand(world)
+    }
+  },
+  {
+    name: 'runs in JSON mode',
+    pattern: /^the command runs in JSON mode$/,
+    async run (m, example, world) {
+      world.json = true
+      await runReporterCommand(world)
+    }
+  },
+  {
+    name: 'exit code is',
+    pattern: /^the exit code is (.+)$/,
+    run (m, example, world) {
+      const expected = Number.parseInt(resolveParam(m[1], example), 10)
+      if (world.exitCode !== expected) {
+        throw new Error(`Expected exit code ${expected}, got ${world.exitCode}`)
+      }
+    }
+  },
+  {
+    name: 'stdout contains',
+    pattern: /^stdout contains "(.+)"$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (!world.stdoutText.includes(expected)) {
+        throw new Error(`Expected stdout to contain "${expected}", got "${world.stdoutText}"`)
+      }
+    }
+  },
+  {
+    name: 'stdout is not JSON',
+    pattern: /^stdout is not JSON$/,
+    run (m, example, world) {
+      let isJson = true
+      try {
+        JSON.parse(world.stdoutText)
+      } catch (err) {
+        isJson = false
+      }
+      if (isJson) {
+        throw new Error(`Expected stdout not to be JSON, got "${world.stdoutText}"`)
+      }
+    }
+  },
+  {
+    name: 'stderr is empty',
+    pattern: /^stderr is empty$/,
+    run (m, example, world) {
+      if (world.stderrText !== '') {
+        throw new Error(`Expected stderr to be empty, got "${world.stderrText}"`)
+      }
+    }
+  },
+  {
+    name: 'stdout is a single JSON object',
+    pattern: /^stdout is a single JSON object$/,
+    run (m, example, world) {
+      parseSingleJsonObject(world.stdoutText, 'stdout')
+    }
+  },
+  {
+    name: 'JSON output has the message',
+    pattern: /^the JSON output has the message "(.+)"$/,
+    run (m, example, world) {
+      const parsed = parseSingleJsonObject(world.stdoutText, 'stdout')
+      const expected = resolveParam(m[1], example)
+      if (parsed.message !== expected) {
+        throw new Error(`Expected JSON message "${expected}", got "${parsed.message}"`)
+      }
+    }
+  },
+  {
+    name: 'stdout is empty',
+    pattern: /^stdout is empty$/,
+    run (m, example, world) {
+      if (world.stdoutText !== '') {
+        throw new Error(`Expected stdout to be empty, got "${world.stdoutText}"`)
+      }
+    }
+  },
+  {
+    name: 'stderr contains',
+    pattern: /^stderr contains "(.+)"$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (!world.stderrText.includes(expected)) {
+        throw new Error(`Expected stderr to contain "${expected}", got "${world.stderrText}"`)
+      }
+    }
+  },
+  {
+    name: 'stderr is a single JSON object',
+    pattern: /^stderr is a single JSON object$/,
+    run (m, example, world) {
+      parseSingleJsonObject(world.stderrText, 'stderr')
+    }
+  },
+  {
+    name: 'JSON error has the message',
+    pattern: /^the JSON error has the message "(.+)"$/,
+    run (m, example, world) {
+      const parsed = parseSingleJsonObject(world.stderrText, 'stderr')
+      const expected = resolveParam(m[1], example)
+      if (parsed.error !== expected) {
+        throw new Error(`Expected JSON error "${expected}", got "${parsed.error}"`)
+      }
+    }
+  }
+]
+
+// Run the scenario's command through the real reporter and capture its output.
+async function runReporterCommand (world) {
+  const stdout = captureStream()
+  const stderr = captureStream()
+
+  world.exitCode = await runCommand(world.command, {
+    json: world.json,
+    stdout: stdout.stream,
+    stderr: stderr.stream
+  })
+  world.stdoutText = stdout.text()
+  world.stderrText = stderr.text()
+}
+
 async function handleStep (step, example, world) {
-  for (const handler of handlers) {
+  for (const handler of handlers.concat(reporterHandlers)) {
     const match = handler.pattern.exec(step.text)
     if (match) {
       await handler.run(match, example, world, step)
