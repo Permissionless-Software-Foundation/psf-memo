@@ -303,6 +303,22 @@ const handlers = [
   }
 ]
 
+// Build a handler that reads one JSON field from a captured stream and checks
+// it against the value from the current example row.
+function jsonFieldHandler ({ name, pattern, field, label, read }) {
+  return {
+    name,
+    pattern,
+    run (m, example, world) {
+      const parsed = parseSingleJsonObject(read(world), label)
+      const expected = resolveParam(m[1], example)
+      if (parsed[field] !== expected) {
+        throw new Error(`Expected JSON ${field} "${expected}", got "${parsed[field]}"`)
+      }
+    }
+  }
+}
+
 const reporterHandlers = [
   {
     name: 'a CLI command',
@@ -403,17 +419,13 @@ const reporterHandlers = [
       parseSingleJsonObject(world.stdoutText, 'stdout')
     }
   },
-  {
+  jsonFieldHandler({
     name: 'JSON output has the message',
     pattern: /^the JSON output has the message "(.+)"$/,
-    run (m, example, world) {
-      const parsed = parseSingleJsonObject(world.stdoutText, 'stdout')
-      const expected = resolveParam(m[1], example)
-      if (parsed.message !== expected) {
-        throw new Error(`Expected JSON message "${expected}", got "${parsed.message}"`)
-      }
-    }
-  },
+    field: 'message',
+    label: 'stdout',
+    read: (world) => world.stdoutText
+  }),
   {
     name: 'stdout is empty',
     pattern: /^stdout is empty$/,
@@ -440,17 +452,13 @@ const reporterHandlers = [
       parseSingleJsonObject(world.stderrText, 'stderr')
     }
   },
-  {
+  jsonFieldHandler({
     name: 'JSON error has the message',
     pattern: /^the JSON error has the message "(.+)"$/,
-    run (m, example, world) {
-      const parsed = parseSingleJsonObject(world.stderrText, 'stderr')
-      const expected = resolveParam(m[1], example)
-      if (parsed.error !== expected) {
-        throw new Error(`Expected JSON error "${expected}", got "${parsed.error}"`)
-      }
-    }
-  }
+    field: 'error',
+    label: 'stderr',
+    read: (world) => world.stderrText
+  })
 ]
 
 // Run the scenario's command through the real reporter and capture its output.

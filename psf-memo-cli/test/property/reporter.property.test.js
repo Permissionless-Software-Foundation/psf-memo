@@ -15,6 +15,7 @@ import { seededRandom } from './harness.js'
 import {
   Reporter,
   UsageError,
+  runCommand,
   EXIT_SUCCESS,
   EXIT_FAILURE,
   EXIT_USAGE
@@ -22,11 +23,15 @@ import {
 
 const rng = seededRandom(20261008)
 
+// A mix of letters, digits, whitespace, and JSON-significant characters so the
+// round-trip properties exercise the encoder, not only a plain alphabet.
+const TEXT_CHARS = 'abcXYZ019 \t\n"\\/{}[]:é中'
+
 function randomText () {
   const length = Math.floor(rng() * 40)
   let text = ''
   for (let i = 0; i < length; i++) {
-    text += String.fromCharCode(97 + Math.floor(rng() * 26))
+    text += TEXT_CHARS[Math.floor(rng() * TEXT_CHARS.length)]
   }
   return text
 }
@@ -67,5 +72,31 @@ test('JSON errors round-trip the message with the matching exit code', () => {
 
     assert.equal(code, usage ? EXIT_USAGE : EXIT_FAILURE)
     assert.equal(JSON.parse(err.text()).error, message)
+  }
+})
+
+test('runCommand maps every outcome to its exit code and channel', async () => {
+  for (let i = 0; i < 300; i++) {
+    const message = randomText()
+    const kind = Math.floor(rng() * 3)
+    const out = capture()
+    const err = capture()
+
+    const code = await runCommand(async () => {
+      if (kind === 0) return { message }
+      if (kind === 1) throw new Error(message)
+      throw new UsageError(message)
+    }, { json: false, stdout: out.stream, stderr: err.stream })
+
+    const expected = kind === 0 ? EXIT_SUCCESS : kind === 1 ? EXIT_FAILURE : EXIT_USAGE
+    assert.equal(code, expected)
+
+    if (kind === 0) {
+      assert.equal(out.text(), `${message}\n`)
+      assert.equal(err.text(), '')
+    } else {
+      assert.equal(err.text(), `${message}\n`)
+      assert.equal(out.text(), '')
+    }
   }
 })
