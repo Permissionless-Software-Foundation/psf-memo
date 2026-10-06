@@ -28,6 +28,23 @@ function maybeUrl (roll) {
   return `https://host-${Math.floor(rng() * 1000)}.example`
 }
 
+// Addresses with characters that require percent-encoding, so the request-path
+// property checks the encoding rather than only a fixed base32 alphabet.
+const ADDRESS_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789:/+?#&=%@ '
+
+function randomAddress () {
+  const length = 5 + Math.floor(rng() * 40)
+  let addr = 'bitcoincash:'
+  for (let i = 0; i < length; i++) {
+    addr += ADDRESS_ALPHABET[Math.floor(rng() * ADDRESS_ALPHABET.length)]
+  }
+  return addr
+}
+
+function jsonResponse (body, status = 200) {
+  return { ok: status >= 200 && status < 300, status, json: async () => body }
+}
+
 test('resolveMemoDbUrl follows --db-url > MEMO_DB_URL > default', () => {
   for (let i = 0; i < 500; i++) {
     const flagUrl = maybeUrl(rng())
@@ -35,6 +52,83 @@ test('resolveMemoDbUrl follows --db-url > MEMO_DB_URL > default', () => {
     const expected = flagUrl || envUrl || DEFAULT_MEMO_DB_URL
 
     assert.equal(resolveMemoDbUrl({ flagUrl, envUrl }), expected)
+  }
+})
+
+test('getProfile percent-encodes the address and returns the document', async () => {
+  for (let i = 0; i < 300; i++) {
+    const addr = randomAddress()
+    let requested
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async (url) => {
+        requested = url
+        return jsonResponse({ addr })
+      }
+    })
+
+    const profile = await client.getProfile(addr)
+
+    assert.equal(requested, `${DEFAULT_MEMO_DB_URL}/level/profile/${encodeURIComponent(addr)}`)
+    assert.deepEqual(profile, { addr })
+  }
+})
+
+test('getProfile resolves any missing level resource to null', async () => {
+  for (let i = 0; i < 200; i++) {
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+    })
+
+    assert.equal(await client.getProfile(randomAddress()), null)
+  }
+})
+
+test('getJson resolves 2xx and names every failure status', async () => {
+  for (let i = 0; i < 300; i++) {
+    const status = 200 + Math.floor(rng() * 400)
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async () => jsonResponse({ status }, status)
+    })
+
+    if (status >= 200 && status < 300) {
+      assert.deepEqual(await client.getRecentPosts(), { status })
+    } else {
+      let err
+      try {
+        await client.getRecentPosts()
+      } catch (e) {
+        err = e
+      }
+      assert.ok(err instanceof Error, `status ${status} should throw`)
+      assert.match(err.message, new RegExp(String(status)))
+    }
+  }
+})
+
+test('getJson wraps transport failures with the requested path', async () => {
+  for (let i = 0; i < 200; i++) {
+    const reason = `boom-${Math.floor(rng() * 1e6)}`
+    const addr = randomAddress()
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async () => {
+        throw new TypeError(reason)
+      }
+    })
+
+    let err
+    try {
+      await client.getProfile(addr)
+    } catch (e) {
+      err = e
+    }
+
+    assert.ok(err instanceof Error)
+    assert.ok(err.message.includes(reason))
+    assert.ok(err.message.includes('/level/profile/'))
   }
 })
 
