@@ -5,6 +5,7 @@
   "main": "psf-memo-cli.js",
   "type": "module",
   "scripts": {
+    "pretest": "mkdir -p .wallets",
     "test": "c8 --reporter=text mocha --exit --timeout 15000 --recursive test/unit",
     "lint": "standard --env mocha --fix",
     "coverage": "c8 --reporter=html mocha --exit --timeout 15000 --recursive test/unit/",
