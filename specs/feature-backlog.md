@@ -35,6 +35,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI output and exit-code contract (`cli-output-contract`, 2026-10-06):** F5
+  of the `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/reporter.js`, the pure injectable leaf every `memo-*`
+  command uses: human-readable by default, `--json` prints one object to
+  stdout, failures report the real error on stderr, exit `0`/`1`/`2`. Success
+  JSON is the command's own result object; error JSON is `{ "error": "..." }`
+  on stderr. Unknown-option exit-2 handling was deferred. The architect also
+  split the CLI acceptance step handlers into per-feature modules
+  (`acceptance/lib/steps/`). Merged to `master` at `e93afcf` (architect
+  code-review commit `e050713`; the later `e93afcf` adds only the record and
+  summary, so `docs/reviews/cli-output-contract-verification.json` is valid for
+  the merged tree). `verify.sh cli` pass 4/4 at `e050713` (unit 113/0, property
+  13/0, acceptance 2 suites, lint ok); language mutation 4 killed / 0 survived
+  (`reporter.js`); soft Gherkin mutation 10/0 with 10 intrinsic survivors; DRY
+  clean. Independent acceptance check after merge: 10/10 (plus the existing
+  memo-db-client 12/12). Architect summary:
+  `docs/reviews/cli-output-contract-summary.md`.
+
 - **CLI Memo DB client (`cli-memo-db-client`, 2026-10-06):** the first item of
   the new `psf-memo-cli` Memo-protocol backlog
   (`psf-memo-cli/dev-docs/feature-backlog.md`). Added
@@ -860,7 +878,7 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 ## Next up: TBD
 
 Active work has moved to the new `psf-memo-cli` Memo-protocol backlog:
-`psf-memo-cli/dev-docs/feature-backlog.md` (F1 done; next is F5, F4, F2/F3,
+`psf-memo-cli/dev-docs/feature-backlog.md` (F1 and F5 done; next is F4, F2/F3,
 then R1 `memo-feed`). The earlier client direction — front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next

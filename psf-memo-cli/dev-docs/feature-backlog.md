@@ -146,9 +146,14 @@ hash160 follow/mute path is **not** reversed (gotcha #32). Provide
 `txidToWireBytes` / `addressToHash160` helpers with unit + property tests.
 
 ### F5 — Output + exit-code contract
-A small shared reporter: human-readable default, `--json` (single JSON object
-on stdout), errors to stderr, exit `0`/`1`/`2`. Every new command uses it so
-agents get one consistent interface.
+**Status: DONE** (2026-10-06, task `cli-output-contract`; merged at `e93afcf`;
+acceptance 10/10). `psf-memo-cli/src/lib/reporter.js` is the pure, injectable
+leaf every `memo-*` command uses: human-readable by default, `--json` prints one
+object to stdout, failures report the real error on stderr, exit `0`/`1`/`2`.
+Success JSON is the command's own result object; error JSON is
+`{ "error": "<message>" }` on stderr. Unknown-option exit-2 handling is
+deferred to a later hardening item. Spec: `psf-memo-cli/specs/cli-output-contract.feature`;
+architect summary: `docs/reviews/cli-output-contract-summary.md`.
 
 ### F6 — Gherkin acceptance harness for the CLI
 **Status: DONE** — landed with F1 in task `cli-memo-db-client`
@@ -252,8 +257,8 @@ unless noted.
 ## Suggested delivery order
 
 1. **Foundation**: F1 (DB client + production config) **DONE**; F5 (output/exit
-   contract), F4 (encoding helpers), then F2 (wallet resolution + broadcast
-   scaffolding) and F3 (multi-push).
+   contract) **DONE**; **next: F4 (encoding helpers)**, then F2 (wallet
+   resolution + broadcast scaffolding) and F3 (multi-push).
 2. **Read-first value**: R1, R2, R3, R14, R15 — an agent can observe the
    protocol and its own identity before writing. **Next up: R1 (`memo-feed`).**
 3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16

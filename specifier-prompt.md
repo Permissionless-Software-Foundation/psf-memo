@@ -924,6 +924,28 @@ that a single user-facing feature may require specs in more than one component.
     #38). Merge the branch tip, then confirm any later commits are
     docs/generated-metadata only before treating the record as current.
 
+67. **The shared CLI reporter owns the output/exit contract (F5).**
+    `psf-memo-cli/src/lib/reporter.js` is a pure, injectable leaf that every
+    `memo-*` command must use: human-readable by default, `--json` prints one
+    object to stdout, failures print the real error on stderr, and exit codes
+    are `0` success / `1` runtime failure / `2` usage (missing required flag).
+    Success JSON is the command's own result object; error JSON is
+    `{ "error": "<message>" }` on stderr. Unknown-option exit-2 handling is
+    deferred to a later hardening item. Pin exported exit-code constants to
+    literal 0/1/2 in a contract test: symbolic assertions make their mutations
+    equivalent (the constant analogue of gotcha #12). Spec:
+    `psf-memo-cli/specs/cli-output-contract.feature`.
+
+68. **CLI acceptance step handlers are split per feature.** New features add
+    `acceptance/lib/steps/<feature>.js` (with the shared `step-support.js`);
+    `handlers.js` owns only the scenario world and step dispatch. The architect
+    split the coder's growing `handlers.js` after F5, so future work should
+    extend the per-feature module. Soft Gherkin mutation of
+    `cli-output-contract.feature` was 10 considered / 0 killed / 10 intrinsic
+    survivors (example strings flow through both setup and assertion); the
+    structural channel/exit/JSON steps carry the kills. Language mutation was 4
+    killed / 0 survived (`reporter.js`).
+
 ---
 
 ## 10. Run / verify the app
@@ -980,7 +1002,26 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-06, later): specified and merged `cli-memo-db-client` —
+Latest session (2026-10-06, `cli-output-contract`): specified and merged F5, the
+shared CLI output and exit-code contract. The specifier wrote
+`psf-memo-cli/specs/cli-output-contract.feature` (5 scenarios, 10 example
+executions); the coder/refactorer/architect added
+`psf-memo-cli/src/lib/reporter.js` (pure, injectable; human vs `--json`, stdout
+for results, stderr for errors/diagnostics, exit 0/1/2) plus per-feature
+acceptance step modules (`acceptance/lib/steps/`). Scenario 6 (unknown option
+-> exit 2) was deferred to a later hardening item. Merged to `master` at
+`e93afcf` (fast-forward; architect code-review commit `e050713`; the later
+`e93afcf` adds only the record and summary, so
+`docs/reviews/cli-output-contract-verification.json` is valid for the merged
+tree). `verify.sh cli` pass 4/4 at `e050713` (unit 113/0, property 13/0,
+acceptance 2 suites, lint ok); language mutation 4 killed / 0 survived
+(`reporter.js`); soft Gherkin mutation 10 considered / 0 killed / 10 intrinsic
+survivors; DRY clean. Independent acceptance check after merge:
+cli-output-contract 10/10 plus memo-db-client 12/12 (all 2 suites). Architect
+summary: `docs/reviews/cli-output-contract-summary.md`.
+
+Previous session (2026-10-06, `cli-memo-db-client`): specified and merged
+`cli-memo-db-client` —
 F1 of the new `psf-memo-cli` Memo-protocol backlog. The specifier wrote
 `psf-memo-cli/specs/memo-db-client.feature` (7 scenarios, 12 example
 executions); the coder/refactorer/architect built
@@ -997,7 +1038,7 @@ survivors; DRY clean. Independent acceptance check after merge: 12/12 example
 executions. Routing brief: `psf-memo-cli/dev-docs/feature-backlog.md`; architect
 summary: `docs/reviews/cli-memo-db-client-summary.md`.
 
-Previous session (2026-10-06): routed and merged `cli-quality-hardening` — the
+Earlier session (2026-10-06): routed and merged `cli-quality-hardening` — the
 newly added `psf-memo-cli` component (forked from `psf-bch-wallet`) was renamed,
 given CRAP/mutation/DRY tooling, and hardened before feature work. Baseline was
 red: CRAP exit 2 (`SendTokens.validateFlags` 9.0), 4 exact DRY duplicates, 50
@@ -1035,7 +1076,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `346556f` (`Note cli runner-worker narrowing relabels survivor examples`).
+Current `master` HEAD: `e93afcf` (`Record cli-output-contract architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1074,10 +1115,11 @@ and `psf-memo-client/specs/following-feed.feature` now describe the retired
 following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
 
-Next action: **ask the user for the next feature.** The active backlog is now
-`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands); F1 is
-done, and the suggested next items are **F5** (output/exit-code contract), then
-**F4** (encoding helpers), **F2/F3** (wallet resolution + multi-push), and the
-first read command **R1 `memo-feed`**. The earlier client direction (front-end
-improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
-Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
+Next action: **ask the user for the next feature.** The active backlog is
+`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands); F1 and
+F5 are done. The suggested next items are **F4** (little-endian txid / hash160
+encoding helpers), then **F2/F3** (wallet name-or-WIF resolution + multi-push
+broadcast), and the first read command **R1 `memo-feed`**. The earlier client
+direction (front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
+HEAD lines.
