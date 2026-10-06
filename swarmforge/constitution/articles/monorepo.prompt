@@ -2,13 +2,14 @@
 
 ## Project shape
 
-This project is a monorepo containing three coordinated pieces of infrastructure:
+This project is a monorepo containing four coordinated pieces of infrastructure:
 
 | Component | Path | Responsibility |
 |-----------|------|----------------|
 | psf-memo-client | `psf-memo-client/` | React SPA for reading and writing Memo actions |
 | psf-memo-indexer | `psf-memo-indexer/` | BCH block + mempool indexer for the Memo protocol |
 | psf-memo-db | `psf-memo-db/` | LevelDB REST API; the indexer writes, the client reads |
+| psf-memo-cli | `psf-memo-cli/` | Command-line BCH + SLP wallet CLI |
 
 ## Worktree discipline
 
@@ -43,6 +44,11 @@ npm run lint
 cd psf-memo-indexer
 npm test
 npm run lint
+
+# psf-memo-cli
+cd psf-memo-cli
+npm test
+npm run lint
 ```
 
 Run the verification commands for every component a task touches before
@@ -56,6 +62,7 @@ merging and hardening.
 - Client feature files: `psf-memo-client/specs/*.feature`
 - Indexer feature files (future): `psf-memo-indexer/specs/*.feature`
 - DB feature files (future): `psf-memo-db/specs/*.feature`
+- CLI notes and future specs: `psf-memo-cli/` (no Gherkin specs yet)
 
 A single user-facing feature often requires specs or implementation changes in
 more than one component. Call out all affected components in the task

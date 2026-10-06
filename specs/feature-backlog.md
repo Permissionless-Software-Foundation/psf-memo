@@ -31,7 +31,15 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **psf-memo-cli quality baseline (`cli-quality-hardening`):** harden the
+  newly added `psf-memo-cli` component before feature work. Baseline: CRAP exit
+  2 (`SendTokens.validateFlags` 9.0; `MsgVerify`/`SendBch.validateFlags` 7.0),
+  4 exact DRY duplicates, and 50 killed / 23 survived / 0 uncovered mutations.
+  Refactorer reduces CRAP to <= 6 and the DRY duplicates; architect kills the
+  mutation survivors. Routing brief: `psf-memo-cli/dev-docs/quality-baseline.md`.
+  Tooling: `crap4javascript`, `mutate4javascript`, `dry4javascript` (npm scripts
+  `crap`/`mutate`/`dry`); `verify.sh cli` now supported. `psf-memo-cli` has no
+  Gherkin specs yet.
 
 ## Recently completed
 

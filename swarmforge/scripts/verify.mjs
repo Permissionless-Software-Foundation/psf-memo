@@ -8,7 +8,7 @@
   mean for this component", so roles do not have to transcribe commands.
 
   Usage:
-    node swarmforge/scripts/verify.mjs <client|db|indexer>
+    node swarmforge/scripts/verify.mjs <client|db|indexer|cli>
     node swarmforge/scripts/verify.mjs <component> --record <file> --task <name>
 
   Exit codes:
@@ -53,11 +53,18 @@ const COMPONENTS = {
       ['acceptance', ['run', 'acceptance']],
       ['lint', ['run', 'lint']]
     ]
+  },
+  cli: {
+    dir: 'psf-memo-cli',
+    commands: [
+      ['unit', ['test']],
+      ['lint', ['run', 'lint']]
+    ]
   }
 }
 
 function usage () {
-  console.error('usage: verify.mjs <client|db|indexer> [--record <file>] [--task <name>]')
+  console.error('usage: verify.mjs <client|db|indexer|cli> [--record <file>] [--task <name>]')
 }
 
 function git (args) {
