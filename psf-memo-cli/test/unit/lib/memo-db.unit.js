@@ -24,6 +24,16 @@ function jsonResponse (body, status = 200) {
   }
 }
 
+// Resolve to the error a promise rejects with, or null when it resolves.
+async function captureError (promise) {
+  try {
+    await promise
+  } catch (err) {
+    return err
+  }
+  return null
+}
+
 describe('#memo-db', () => {
   describe('resolveMemoDbUrl', () => {
     it('defaults to the production memo-db', () => {
@@ -167,57 +177,35 @@ describe('#memo-db', () => {
   })
 
   describe('errors', () => {
-    it('reports a transport failure as an error', async () => {
-      const client = new MemoDb({
-        envUrl: null,
+    const cases = [
+      {
+        name: 'a transport failure',
         fetchImpl: async () => {
           throw new TypeError('fetch failed')
-        }
-      })
-
-      let err
-      try {
-        await client.getRecentPosts()
-      } catch (e) {
-        err = e
+        },
+        message: 'fetch failed'
+      },
+      {
+        name: 'a server failure',
+        fetchImpl: async () => jsonResponse({ message: 'boom' }, 500),
+        message: '500'
+      },
+      {
+        name: 'a 404 outside a level resource',
+        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404),
+        message: '404'
       }
+    ]
 
-      assert.instanceOf(err, Error)
-      assert.include(err.message, 'fetch failed')
-    })
+    for (const { name, fetchImpl, message } of cases) {
+      it(`reports ${name} as an error`, async () => {
+        const client = new MemoDb({ envUrl: null, fetchImpl })
 
-    it('reports a server failure as an error', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'boom' }, 500)
+        const err = await captureError(client.getRecentPosts())
+
+        assert.instanceOf(err, Error)
+        assert.include(err.message, message)
       })
-
-      let err
-      try {
-        await client.getRecentPosts()
-      } catch (e) {
-        err = e
-      }
-
-      assert.instanceOf(err, Error)
-      assert.include(err.message, '500')
-    })
-
-    it('treats a 404 outside a level resource as an error', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
-      })
-
-      let err
-      try {
-        await client.getRecentPosts()
-      } catch (e) {
-        err = e
-      }
-
-      assert.instanceOf(err, Error)
-      assert.include(err.message, '404')
-    })
+    }
   })
 })

@@ -68,3 +68,7 @@ class MemoDb {
 }
 
 export default MemoDb
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-06T23:29:24.616Z","module_hash":"7580d02e25ffa775970c0c838fda4d88118831a9b091ba44aff520c9a0341a42","functions":[{"id":"func/resolveMemoDbUrl","name":"resolveMemoDbUrl","line":16,"end_line":18,"hash":"8bd26bd83abf7abaeaec8ef09738c666c43f08cb50e571798578563c9b1b6135"},{"id":"func/MemoDb.constructor","name":"MemoDb.constructor","line":21,"end_line":25,"hash":"f4dabbe259a017147f340aa4e535e4862b286fd93c8a4bfbff3b610a85d4352a"},{"id":"func/MemoDb.endpoint","name":"MemoDb.endpoint","line":28,"end_line":30,"hash":"79076a85523e87c8f3cb26165a085f5994818d2c679632eac36e1b7ad25d5a6d"},{"id":"func/MemoDb.getRecentPosts","name":"MemoDb.getRecentPosts","line":33,"end_line":40,"hash":"0783c7ce0d8aa723cd8f991db39f145d011df63378ae01d6f21aa526fa2254f1"},{"id":"func/MemoDb.getProfile","name":"MemoDb.getProfile","line":43,"end_line":45,"hash":"5c171e82d00f3e8752b41a7faeb127343a10af8d6da26d219edbc797ad617c6d"},{"id":"func/MemoDb.getJson","name":"MemoDb.getJson","line":49,"end_line":67,"hash":"00155911d9a77adb326153aab05ed5140c9fb78c26108de2713cc5c1a115b167"}]}
+// mutate4javascript-manifest-end

@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-06T23:30:13.891261034Z","feature_name":"Memo DB Client","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-db-client.feature","background_hash":"9969b0d69a372fbee0d61dc2c0c54c015cb0eec90f4702ab1f063e1be4b3e4ee","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Memo DB Client - 2 the MEMO_DB_URL environment variable selects the endpoint","scenario_hash":"989987f5590863c8dd7b3ce1b8a8e4bb3cf096b4a510bfc4eac0b311a8a1b704","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-06T23:28:54.166030306Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Memo DB Client - 1, Memo DB Client - 2, Memo DB Client - 3, Memo DB Client - 4, Memo DB Client - 5, Memo DB Client - 6, Memo DB Client - 7
 #
 # F1: the shared read-only client for the psf-memo-db REST API, and the endpoint
