@@ -12,7 +12,6 @@
 
 // Local libraries
 import MemoReply from '../../../src/commands/memo-reply.js'
-import { assertUsageError, parseStderrError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 import { initCommandWorld, runCommandInWorld } from './broadcast-command.js'
 
@@ -88,21 +87,6 @@ const memoReplyHandlers = [
     run (m, example, world) {
       const bytes = world.broadcast?.pushes?.[2]?.length
       assertEqual(bytes, Number.parseInt(resolveParam(m[1], example), 10), 'push 3 byte length')
-    }
-  },
-  {
-    name: 'memo-reply command reported the usage error',
-    pattern: /^the memo-reply command reported the usage error "(.+)"$/,
-    run (m, example, world) {
-      assertUsageError(world, 'result', 'memo-reply', resolveParam(m[1], example))
-    }
-  },
-  {
-    name: 'memo-reply command reported the error',
-    pattern: /^the memo-reply command reported the error "(.+)"$/,
-    run (m, example, world) {
-      assertEqual(world.resultExitCode, 1, 'memo-reply exit code')
-      assertEqual(parseStderrError(world, 'result').error, resolveParam(m[1], example), 'error', { quote: true })
     }
   }
 ]

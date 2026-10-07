@@ -11,56 +11,27 @@
 */
 
 // Local libraries
-import { runCommand } from '../lib/reporter.js'
-import { resolveWalletSource } from '../lib/wallet-source.js'
-import { broadcastMemo } from '../lib/memo-broadcast.js'
 import {
   parseMemoPostFlags,
   formatMemoPostMessage,
   MEMO_POST_PREFIX
 } from '../lib/memo-post.js'
-import WalletUtil from '../lib/wallet-util.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initWriteCommand, runWriteCommand } from '../lib/write-command.js'
 
 class MemoPost {
   constructor (options = {}) {
-    // Encapsulate dependencies so tests and acceptance can inject a fake wallet
-    // source, broadcast, and output streams instead of touching the network or
-    // a real wallet file.
-    this.walletUtil = options.walletUtil || new WalletUtil()
-    this.broadcast = options.broadcast || broadcastMemo
-    this.stdout = options.stdout
-    this.stderr = options.stderr
-
-    bindMethods(this, ['run', 'validateFlags', 'post'])
+    initWriteCommand(this, options)
   }
 
   // Validate the memo, resolve the wallet, broadcast the post, and report the
-  // txid and explorer link. Returns the exit code (0/1/2) and assigns it to
-  // process.exitCode for commander.
+  // txid and explorer link. Returns the exit code (0/1/2).
   async run (flags = {}) {
-    const code = await runCommand(async () => {
-      const { memo } = parseMemoPostFlags(flags)
-
-      const { wallet } = await resolveWalletSource(
-        { name: flags.name, wif: flags.wif },
-        { walletUtil: this.walletUtil }
-      )
-
-      const { txid, explorerUrl } = await this.post({ wallet, memo })
-
-      return {
-        message: formatMemoPostMessage({ txid, explorerUrl }),
-        data: { txid, explorerUrl }
-      }
-    }, {
-      json: flags.json,
-      stdout: this.stdout,
-      stderr: this.stderr
+    return runWriteCommand({
+      command: this,
+      flags,
+      parse: parseMemoPostFlags,
+      format: formatMemoPostMessage
     })
-
-    process.exitCode = code
-    return code
   }
 
   // Validate the memo text. The wallet source is validated by the shared

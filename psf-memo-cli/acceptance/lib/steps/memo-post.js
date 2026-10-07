@@ -11,7 +11,6 @@
 
 // Local libraries
 import MemoPost from '../../../src/commands/memo-post.js'
-import { assertUsageError, parseStderrError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 import { initCommandWorld, runCommandInWorld } from './broadcast-command.js'
 
@@ -71,21 +70,6 @@ const memoPostHandlers = [
     run (m, example, world) {
       const bytes = world.broadcast?.pushes?.[1]?.length
       assertEqual(bytes, Number.parseInt(resolveParam(m[1], example), 10), 'push 2 byte length')
-    }
-  },
-  {
-    name: 'memo-post command reported the usage error',
-    pattern: /^the memo-post command reported the usage error "(.+)"$/,
-    run (m, example, world) {
-      assertUsageError(world, 'result', 'memo-post', resolveParam(m[1], example))
-    }
-  },
-  {
-    name: 'memo-post command reported the error',
-    pattern: /^the memo-post command reported the error "(.+)"$/,
-    run (m, example, world) {
-      assertEqual(world.resultExitCode, 1, 'memo-post exit code')
-      assertEqual(parseStderrError(world, 'result').error, resolveParam(m[1], example), 'error', { quote: true })
     }
   }
 ]

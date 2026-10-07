@@ -22,6 +22,7 @@
 
 // Local libraries
 import { captureStream } from '../../../test/support/capture.js'
+import { assertUsageError, parseStderrError } from '../read-command.js'
 import { createRecordingWallet } from '../wallet-support.js'
 import {
   assertEqual,
@@ -129,6 +130,21 @@ const broadcastCommandHandlers = [
     pattern: /^the wallet did not broadcast$/,
     run (m, example, world) {
       assertEqual(world.broadcastCount, 0, 'broadcast count')
+    }
+  },
+  {
+    name: 'command reported the usage error',
+    pattern: /^the (memo-post|memo-reply) command reported the usage error "(.+)"$/,
+    run (m, example, world) {
+      assertUsageError(world, 'result', m[1], resolveParam(m[2], example))
+    }
+  },
+  {
+    name: 'command reported the error',
+    pattern: /^the (memo-post|memo-reply) command reported the error "(.+)"$/,
+    run (m, example, world) {
+      assertEqual(world.resultExitCode, 1, `${m[1]} exit code`)
+      assertEqual(parseStderrError(world, 'result').error, resolveParam(m[2], example), 'error', { quote: true })
     }
   }
 ]
