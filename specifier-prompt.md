@@ -1108,7 +1108,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-wait`): specified and merged R16, the
+Latest session (2026-10-07, `cli-memo-notifications`): specified and merged R6,
+the wallet-relative notifications read command. The specifier wrote
+`psf-memo-cli/specs/memo-notifications.feature` (6 scenarios, 11 example
+executions); the coder/refactorer/architect added
+`src/lib/memo-notifications.js` (pure page defaults and summary) and a thin
+`src/commands/memo-notifications.js` over the shared
+`initReadCommand`/`runReadCommand`, the F2 wallet source, and
+`MemoDb.getNotifications` (`GET /posts/notifications/:addr`), registered as
+`memo-notifications`. It reports the wallet address's notifications and the
+paginated `{ notifications, pagination }` unchanged. The refactorer extracted
+`page-flags.js` (shared with `memo-feed`), `installWalletFactory`, and
+`assertReportedTxids`. Merged to `master` at `8446473` (fast-forward; architect
+code-review commit `b81b63e225`; the later `8446473` adds only the record and
+summary, so `docs/reviews/cli-memo-notifications-verification.json` is valid for
+the merged tree). `verify.sh cli` pass 4/4 at `b81b63e225` (unit 309/0, property
+54/0, acceptance all 15 suites, lint ok); language mutation 16 killed / 0
+survived across `page-flags.js`, `memo-notifications.js` lib+command,
+`memo-db.js`, and `memo-feed.js`; soft Gherkin mutation 25/25 killed (clean);
+DRY clean. Independent acceptance check after merge: 11/11 example executions.
+Architect summary: `docs/reviews/cli-memo-notifications-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-wait`): specified and merged R16, the
 poll-until-indexed read command. The specifier wrote
 `psf-memo-cli/specs/memo-wait.feature` (6 scenarios, 9 example executions); the
 coder/refactorer/architect added `src/lib/memo-wait.js` (pure timing-flag
@@ -1392,7 +1413,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `d4ca45a` (`Record cli-memo-wait architect review and verification`).
+Current `master` HEAD: `8446473` (`Record cli-memo-notifications architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1434,12 +1455,12 @@ implementations (#53) as an accepted, documented tradeoff.
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
-**R2 `memo-thread`**, **R3 `memo-get-post`**, **R14 `memo-status`**, **R15
-`memo-identity`**, **R16 `memo-wait`**) are done, and the first three write
-commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are
-done. The suggested next item is **R6 `memo-notifications`** (the
-wallet-relative notifications read over `GET /posts/notifications/:addr`), then
-the remaining read commands (R4/R5/R7–R13). The earlier client direction
-(front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
-HEAD lines.
+**R2 `memo-thread`**, **R3 `memo-get-post`**, **R6 `memo-notifications`**, **R14
+`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
+first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
+`memo-like`** are done. The suggested next item is **R4 `memo-profile`**
+(composed identity: name, bio, avatar URL, follow state, recent posts, and a
+Token summary), then R5 `memo-posts` and the remaining reads (R7–R13). The
+earlier client direction (front-end improvements to `psf-memo-client`) remains
+open in `specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh
+the HEAD lines.

@@ -35,6 +35,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI notifications read command (`cli-memo-notifications`, 2026-10-07):** R6 of
+  the `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-notifications.js` (pure page defaults and human
+  summary) and a thin `src/commands/memo-notifications.js` composed over the
+  shared `initReadCommand`/`runReadCommand`, the F2 wallet source, and
+  `MemoDb.getNotifications` (`GET /posts/notifications/:addr`), registered as
+  `memo-notifications`. It reads the wallet address's notifications (type,
+  action txid, actor address, and service-provided post txid/text/block height)
+  and reports the pagination unchanged; the refactorer extracted the shared
+  `page-flags.js` parse (with `memo-feed`), `installWalletFactory`, and
+  `assertReportedTxids`. Spec: `psf-memo-cli/specs/memo-notifications.feature`
+  (6 scenarios, 11 example executions). Merged to `master` at `8446473`
+  (fast-forward; architect code-review commit `b81b63e225`; the later `8446473`
+  adds only the record and summary, so
+  `docs/reviews/cli-memo-notifications-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `b81b63e225` (unit 309/0, property
+  54/0, acceptance all 15 suites, lint ok); language mutation 16 killed / 0
+  survived across `page-flags.js`, `memo-notifications.js` lib+command,
+  `memo-db.js`, and `memo-feed.js`; soft Gherkin mutation 25/25 killed (clean);
+  DRY clean after extracting the request-recording helper. Independent
+  acceptance check after merge: 11/11. Architect summary:
+  `docs/reviews/cli-memo-notifications-summary.md`.
+
 - **CLI wait read command (`cli-memo-wait`, 2026-10-07):** R16 of the
   `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-wait.js`
   (pure timing-flag validation and poll loop) and a thin
