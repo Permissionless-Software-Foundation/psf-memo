@@ -13,6 +13,8 @@ import { assert } from 'chai'
 // Local libraries
 import MemoPost from '../../../src/commands/memo-post.js'
 import { UsageError } from '../../../src/lib/reporter.js'
+import WalletUtil from '../../../src/lib/wallet-util.js'
+import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
 import { captureStream } from '../../support/capture.js'
 
 const TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
@@ -163,5 +165,12 @@ describe('#memo-post command', () => {
 
     assert.equal(command.validateFlags({ memo: 'hello' }), true)
     assert.throws(() => command.validateFlags({}), UsageError)
+  })
+
+  it('defaults to a real wallet util and the shared broadcaster', () => {
+    const command = new MemoPost()
+
+    assert.instanceOf(command.walletUtil, WalletUtil)
+    assert.equal(command.broadcast, broadcastMemo)
   })
 })

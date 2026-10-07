@@ -11,47 +11,16 @@
 
 // Local libraries
 import MemoPost from '../../../src/commands/memo-post.js'
-import { buildMemoPushes } from '../../../src/lib/memo-broadcast.js'
 import { captureStream } from '../../../test/support/capture.js'
-import { parseStderrError } from '../read-command.js'
-import { assertEqual, resolveParam } from '../step-support.js'
-
-// A wallet stand-in that records the pushes it receives and returns or rejects
-// on demand.
-function createRecordingWallet (world) {
-  return {
-    walletInfo: { cashAddress: 'bitcoincash:qmemo-post' },
-    initialized: false,
-    async initialize () {
-      this.initialized = true
-    },
-    async sendOpReturn (msgOrFields, prefix, bchOutput = []) {
-      if (world.broadcastError) {
-        throw new Error(world.broadcastError)
-      }
-      const fields = Array.isArray(msgOrFields) ? msgOrFields : [msgOrFields]
-      world.broadcast = { prefix, pushes: buildMemoPushes(prefix, fields), bchOutput }
-      world.broadcastCount++
-      return world.broadcastTxid
-    }
-  }
-}
+import { assertUsageError, parseStderrError } from '../read-command.js'
+import { assertEqual, resolveParam, resolveUrlTemplate } from '../step-support.js'
+import { createRecordingWallet } from '../wallet-support.js'
 
 function lookupMemoWallet (world, key, kind) {
   if (!(key in world.memoWallets)) {
     throw new Error(`Unknown ${kind} ${key}`)
   }
   return world.memoWallets[key]
-}
-
-// Substitute <param> placeholders embedded in a URL template.
-function resolveUrl (template, example) {
-  return template.replace(/<([A-Za-z0-9_]+)>/g, (match, name) => {
-    if (!(name in example)) {
-      throw new Error(`Missing example value for "${name}"`)
-    }
-    return example[name]
-  })
 }
 
 const memoPostHandlers = [
@@ -80,7 +49,8 @@ const memoPostHandlers = [
     name: 'a signing wallet that records broadcasts',
     pattern: /^a signing wallet that records broadcasts$/,
     run (m, example, world) {
-      world.memoWallets['memo-wallet'] = createRecordingWallet(world)
+      world.memoWallets['memo-wallet'] =
+        createRecordingWallet(world, { cashAddress: 'bitcoincash:qmemo-post' })
       world.memoSource = { name: 'memo-wallet' }
     }
   },
@@ -184,7 +154,7 @@ const memoPostHandlers = [
     name: 'command reported the explorer link',
     pattern: /^the command reported the explorer link "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.postJson?.explorerUrl, resolveUrl(m[1], example), 'explorer link')
+      assertEqual(world.postJson?.explorerUrl, resolveUrlTemplate(m[1], example), 'explorer link')
     }
   },
   {
@@ -198,8 +168,7 @@ const memoPostHandlers = [
     name: 'memo-post command reported the usage error',
     pattern: /^the memo-post command reported the usage error "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.postExitCode, 2, 'memo-post exit code')
-      assertEqual(parseStderrError(world, 'post').error, resolveParam(m[1], example), 'usage error', { quote: true })
+      assertUsageError(world, 'post', 'memo-post', resolveParam(m[1], example))
     }
   },
   {

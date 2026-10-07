@@ -8,29 +8,10 @@
 */
 
 // Local libraries
-import { broadcastMemo, buildMemoPushes } from '../../../src/lib/memo-broadcast.js'
+import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
 import { txidToWireBytes } from '../../../src/lib/wire-encoding.js'
-import { assertEqual, resolveParam } from '../step-support.js'
-
-// A wallet stand-in that records the pushes and returns/rejects on demand.
-function createRecordingWallet (world) {
-  return {
-    hasSpendableOutput: false,
-    initialized: false,
-    async initialize () {
-      this.initialized = true
-    },
-    async sendOpReturn (msgOrFields, prefix, bchOutput = []) {
-      if (world.broadcastError) {
-        throw new Error(world.broadcastError)
-      }
-      const fields = Array.isArray(msgOrFields) ? msgOrFields : [msgOrFields]
-      const pushes = buildMemoPushes(prefix, fields)
-      world.broadcast = { prefix, pushes, bchOutput }
-      return world.broadcastTxid
-    }
-  }
-}
+import { assertEqual, resolveParam, resolveUrlTemplate } from '../step-support.js'
+import { createRecordingWallet } from '../wallet-support.js'
 
 // Broadcast the configured action, recording either the result or the error.
 async function broadcastAndReport (world) {
@@ -238,13 +219,7 @@ const memoBroadcastHandlers = [
     name: 'the reported explorer link',
     pattern: /^the reported explorer link is "(.+)"$/,
     run (m, example, world) {
-      const expected = m[1].replace(/<([A-Za-z0-9_]+)>/g, (match, name) => {
-        if (!(name in example)) {
-          throw new Error(`Missing example value for "${name}"`)
-        }
-        return example[name]
-      })
-      assertEqual(world.result?.explorerUrl, expected, 'explorer link')
+      assertEqual(world.result?.explorerUrl, resolveUrlTemplate(m[1], example), 'explorer link')
     }
   },
   {
