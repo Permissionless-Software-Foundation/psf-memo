@@ -8,23 +8,11 @@
 */
 
 // Local libraries
-import { UsageError } from './reporter.js'
+import { parseNonNegativeInteger } from './page-flags.js'
 
 // The default page matches the web client and the DB route's own default.
 export const DEFAULT_FEED_LIMIT = 50
 export const DEFAULT_FEED_OFFSET = 0
-
-// Parse a non-negative integer flag, falling back when it is absent. A bad
-// value is a usage error so the caller exits 2 and names the exact flag.
-function parseNonNegativeInteger (value, fallback, flag) {
-  if (value === undefined || value === null || value === '') return fallback
-
-  const parsed = Number(value)
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new UsageError(`${flag} must be a non-negative integer.`)
-  }
-  return parsed
-}
 
 // Resolve the feed page from command-line flags.
 export function parseFeedFlags (flags = {}) {

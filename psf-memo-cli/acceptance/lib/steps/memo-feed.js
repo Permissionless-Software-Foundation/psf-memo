@@ -103,15 +103,6 @@ const memoFeedHandlers = [
     }
   },
   {
-    name: 'command reported pagination',
-    pattern: /^the command reported pagination total (.+) and hasMore (.+)$/,
-    run (m, example, world) {
-      const pagination = world.feedJson?.pagination || {}
-      assertEqual(pagination.total, Number.parseInt(resolveParam(m[1], example), 10), 'pagination total')
-      assertEqual(pagination.hasMore, resolveParam(m[2], example) === 'true', 'pagination hasMore')
-    }
-  },
-  {
     name: 'command reported a post with its fields',
     pattern: /^the command reported the post "(.+)" with text "(.+)", reply count (.+), and like count (.+)$/,
     run (m, example, world) {

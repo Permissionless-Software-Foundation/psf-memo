@@ -301,6 +301,45 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getNotifications', () => {
+    it('requests the notification page for the address', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ notifications: [{ txid: 'notif-1' }], pagination: { total: 1 } })
+        }
+      })
+
+      const result = await client.getNotifications('addrA', { limit: 2, offset: 4 })
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/posts/notifications/addrA')
+      assert.equal(url.searchParams.get('limit'), '2')
+      assert.equal(url.searchParams.get('offset'), '4')
+      assert.equal(result.notifications[0].txid, 'notif-1')
+    })
+
+    it('defaults the page to 50/0 and encodes the address', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ notifications: [] })
+        }
+      })
+
+      await client.getNotifications('a/b')
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/posts/notifications/a%2Fb')
+      assert.equal(url.searchParams.get('limit'), '50')
+      assert.equal(url.searchParams.get('offset'), '0')
+    })
+  })
+
   describe('level name and profile-picture resources', () => {
     const resourceCases = [
       { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },

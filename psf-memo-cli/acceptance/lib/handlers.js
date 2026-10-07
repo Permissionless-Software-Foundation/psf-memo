@@ -19,6 +19,8 @@ import { memoPostHandlers } from './steps/memo-post.js'
 import { memoReplyHandlers } from './steps/memo-reply.js'
 import { memoLikeHandlers } from './steps/memo-like.js'
 import { memoWaitHandlers } from './steps/memo-wait.js'
+import { memoNotificationsHandlers } from './steps/memo-notifications.js'
+import { readResultHandlers } from './steps/read-result.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
@@ -36,6 +38,8 @@ const handlers = [
   ...memoReplyHandlers,
   ...memoLikeHandlers,
   ...memoWaitHandlers,
+  ...memoNotificationsHandlers,
+  ...readResultHandlers,
   ...broadcastCommandHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
@@ -59,6 +63,7 @@ async function createWorld () {
     posts: [],
     threads: {},
     postStore: {},
+    notifications: [],
     status: null,
     nameStore: {},
     profileStore: {},
@@ -116,6 +121,19 @@ async function createWorld () {
         return jsonResponse({ message: 'not found' }, 404)
       }
       return jsonResponse(world.status, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/posts/notifications/')) {
+      const limit = Number.parseInt(world.lastRequest.searchParams.get('limit') || '50', 10)
+      const offset = Number.parseInt(world.lastRequest.searchParams.get('offset') || '0', 10)
+      const page = world.notifications.slice(offset, offset + limit)
+      const pagination = {
+        limit,
+        offset,
+        total: world.notifications.length,
+        hasMore: offset + limit < world.notifications.length
+      }
+      return jsonResponse({ notifications: page, pagination }, 200)
     }
 
     if (world.lastRequest.pathname === '/posts/recent') {

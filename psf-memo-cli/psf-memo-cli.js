@@ -25,6 +25,7 @@ import MemoPost from './src/commands/memo-post.js'
 import MemoReply from './src/commands/memo-reply.js'
 import MemoLike from './src/commands/memo-like.js'
 import MemoWait from './src/commands/memo-wait.js'
+import MemoNotifications from './src/commands/memo-notifications.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -45,6 +46,7 @@ const memoPost = new MemoPost()
 const memoReply = new MemoReply()
 const memoLike = new MemoLike()
 const memoWait = new MemoWait()
+const memoNotifications = new MemoNotifications()
 
 const program = new Command()
 
@@ -181,5 +183,15 @@ program.command('memo-wait')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoWait.run)
+
+program.command('memo-notifications')
+  .description("Read the wallet address's Memo notifications")
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-l, --limit <number>', 'maximum notifications to return (default 50)')
+  .option('-o, --offset <number>', 'notifications to skip (default 0)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoNotifications.run)
 
 program.parseAsync(process.argv)

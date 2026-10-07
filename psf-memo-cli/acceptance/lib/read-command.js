@@ -35,6 +35,8 @@ export async function runReadCommand (world, CommandClass, prefix, flags = {}, o
   } catch (err) {
     world[`${prefix}Json`] = null
   }
+  // A generic alias for shared result assertions that do not know the prefix.
+  world.readJson = world[`${prefix}Json`]
 }
 
 // Parse the JSON error a read command wrote to stderr.

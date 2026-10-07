@@ -40,6 +40,17 @@ class MemoDb {
     return this.getJson(`/posts/recent?${params.toString()}`)
   }
 
+  // GET /posts/notifications/:addr. Returns the wallet address's notification
+  // page (type, action txid, actor, optional post/text) with the service
+  // pagination.
+  async getNotifications (addr, { limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+
+    return this.getJson(`/posts/notifications/${encodeURIComponent(addr)}?${params.toString()}`)
+  }
+
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })
