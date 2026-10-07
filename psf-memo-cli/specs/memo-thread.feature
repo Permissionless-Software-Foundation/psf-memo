@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=9621e3e2f347ec301f651b542a56af0f2fe05b7327fc8c9f96ec6f6ccc866f82
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T02:28:05.459709979Z","feature_name":"Memo Thread","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-thread.feature","background_hash":"6a392a5c0eafb089067da6ed131a7570d88ab24989ab04cd3f4d371869847630","implementation_hash":"unknown","scenarios":[{"index":3,"name":"Memo Thread - 4 the command reports each reply's like count","scenario_hash":"acb2bd1d82a80882eb740fdb2947b55d6c40cae08f518a8356751e8361a70a18","mutation_count":6,"result":{"Total":6,"Killed":6,"Survived":0,"Errors":0},"tested_at":"2026-10-07T02:28:05.459709979Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Thread (R2): the psf-memo-cli command that reads a Memo post and its
 # nested reply tree with per-node like counts from psf-memo-db
 # (GET /posts/:txid/thread). The post is identified by its transaction id via

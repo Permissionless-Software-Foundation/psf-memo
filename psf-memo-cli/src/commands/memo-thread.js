@@ -59,5 +59,5 @@ class MemoThread {
 export default MemoThread
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T02:26:58.975Z","module_hash":"c03c6cb370bba2a7065b267f73aba5cdc9ddb33b23aa62c82be1287ef64d3e3f","functions":[{"id":"func/MemoThread.constructor","name":"MemoThread.constructor","line":15,"end_line":17,"hash":"c6fc6172e69bcb6cc9fbf66f829e5d589843f222d182a82b558a49762d1532ba"},{"id":"func/MemoThread.run","name":"MemoThread.run","line":21,"end_line":40,"hash":"ad4afb69af49a94ac62b09a4b38d44246955f356a07298261862059ef2069364"},{"id":"func/MemoThread.validateFlags","name":"MemoThread.validateFlags","line":44,"end_line":46,"hash":"4d8f53ce3cc4fdeb65042487013af9d9a372ccc02f094c265a5872a77e9b3bcf"},{"id":"func/MemoThread.createClient","name":"MemoThread.createClient","line":49,"end_line":51,"hash":"54385637d7ccdbdb4482a273dbbf40bd7272b92032c0a6f5d6ac2de757b02e80"},{"id":"func/MemoThread.readThread","name":"MemoThread.readThread","line":54,"end_line":56,"hash":"3e2c3bc03c835efe1059a39a9cd49df4629f04e534339817788ef6e3329aff12"}]}
 // mutate4javascript-manifest-end
