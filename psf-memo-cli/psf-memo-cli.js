@@ -29,6 +29,7 @@ import MemoNotifications from './src/commands/memo-notifications.js'
 import MemoProfile from './src/commands/memo-profile.js'
 import MemoPosts from './src/commands/memo-posts.js'
 import MemoTopics from './src/commands/memo-topics.js'
+import MemoTopic from './src/commands/memo-topic.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -53,6 +54,7 @@ const memoNotifications = new MemoNotifications()
 const memoProfile = new MemoProfile()
 const memoPosts = new MemoPosts()
 const memoTopics = new MemoTopics()
+const memoTopic = new MemoTopic()
 
 const program = new Command()
 
@@ -226,5 +228,15 @@ program.command('memo-topics')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoTopics.run)
+
+program.command('memo-topic')
+  .description("Read a topic's posts")
+  .option('-r, --room <string>', 'topic room name')
+  .option('--viewer <string>', 'viewer address for mute filtering')
+  .option('-l, --limit <number>', 'maximum posts to return (default 50)')
+  .option('-o, --offset <number>', 'posts to skip (default 0)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoTopic.run)
 
 program.parseAsync(process.argv)

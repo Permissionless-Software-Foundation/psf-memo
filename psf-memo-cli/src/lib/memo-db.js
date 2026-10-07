@@ -79,6 +79,17 @@ class MemoDb {
     return this.getJson(`/topics?${params.toString()}`)
   }
 
+  // GET /topics/:room/posts, optionally viewer-filtered. Returns one page of the
+  // topic's posts with the service pagination.
+  async getTopicPosts (room, { limit = 50, offset = 0, viewer = null } = {}) {
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+    if (viewer) params.set('viewer', viewer)
+
+    return this.getJson(`/topics/${encodeURIComponent(room)}/posts?${params.toString()}`)
+  }
+
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })

@@ -409,6 +409,47 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getTopicPosts', () => {
+    it('requests the topic page with limit, offset, and viewer', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ posts: [{ txid: 'alpha' }], pagination: { total: 1 } })
+        }
+      })
+
+      const result = await client.getTopicPosts('general', { limit: 2, offset: 4, viewer: 'viewerB' })
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/topics/general/posts')
+      assert.equal(url.searchParams.get('limit'), '2')
+      assert.equal(url.searchParams.get('offset'), '4')
+      assert.equal(url.searchParams.get('viewer'), 'viewerB')
+      assert.equal(result.posts[0].txid, 'alpha')
+    })
+
+    it('defaults the page and omits the viewer', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ posts: [] })
+        }
+      })
+
+      await client.getTopicPosts('a/b')
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/topics/a%2Fb/posts')
+      assert.equal(url.searchParams.get('limit'), '50')
+      assert.equal(url.searchParams.get('offset'), '0')
+      assert.equal(url.searchParams.has('viewer'), false)
+    })
+  })
+
   describe('level name and profile-picture resources', () => {
     const resourceCases = [
       { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },
