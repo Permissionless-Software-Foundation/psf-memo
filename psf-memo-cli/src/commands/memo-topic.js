@@ -10,9 +10,9 @@
 */
 
 // Local libraries
-import { initReadCommand, createMemoDbClient, runReadCommand } from '../lib/read-command.js'
+import { initReadCommand, createMemoDbClient } from '../lib/read-command.js'
 import { parseTopicFlags } from '../lib/memo-topic.js'
-import { formatFeedMessage } from '../lib/memo-feed.js'
+import { runPostsPageCommand } from '../lib/post-page-command.js'
 
 class MemoTopic {
   constructor (options = {}) {
@@ -22,26 +22,7 @@ class MemoTopic {
   // Read the topic page and report it. Returns the exit code (0/1/2) and assigns
   // it to process.exitCode for commander.
   async run (flags = {}) {
-    return runReadCommand({
-      command: this,
-      flags,
-      outcome: async () => {
-        const { room, viewer, limit, offset } = this.validateFlags(flags)
-
-        const { posts = [], pagination = {} } = await this.readTopicPosts({
-          room,
-          viewer,
-          limit,
-          offset,
-          dbUrl: flags.dbUrl
-        })
-
-        return {
-          message: formatFeedMessage(posts, pagination),
-          data: { posts, pagination }
-        }
-      }
-    })
+    return runPostsPageCommand({ command: this, flags, readMethod: 'readTopicPosts' })
   }
 
   // Validate and resolve the required room, optional viewer, and page flags
