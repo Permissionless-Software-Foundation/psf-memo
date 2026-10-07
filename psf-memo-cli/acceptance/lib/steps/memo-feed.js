@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoFeed from '../../../src/commands/memo-feed.js'
-import { runReadCommand } from '../read-command.js'
+import { runReadCommand, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The recent-feed fixture: five posts newest-first with the service fields the
@@ -136,17 +136,7 @@ const memoFeedHandlers = [
     name: 'memo-feed command reported an error',
     pattern: /^the memo-feed command reported an error$/,
     run (m, example, world) {
-      assertEqual(world.feedExitCode, 1, 'memo-feed exit code')
-
-      let parsed
-      try {
-        parsed = JSON.parse(world.feedStderr)
-      } catch (err) {
-        throw new Error(`Expected a JSON error on stderr, got "${world.feedStderr}"`)
-      }
-      if (!parsed.error) {
-        throw new Error(`Expected an error message on stderr, got "${world.feedStderr}"`)
-      }
+      assertReadCommandError(world, 'feed', 'memo-feed')
     }
   }
 ]

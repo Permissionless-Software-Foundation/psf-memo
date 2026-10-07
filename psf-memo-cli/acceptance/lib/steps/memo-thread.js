@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoThread from '../../../src/commands/memo-thread.js'
-import { runReadCommand } from '../read-command.js'
+import { runReadCommand, parseStderrError, assertNotFound, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The thread fixture: the root has three direct replies oldest-first, and the
@@ -80,15 +80,6 @@ function findPost (node, txid) {
   return null
 }
 
-// Parse the captured stderr as one JSON error object.
-function parseStderrError (world) {
-  try {
-    return JSON.parse(world.threadStderr)
-  } catch (err) {
-    throw new Error(`Expected a JSON error on stderr, got "${world.threadStderr}"`)
-  }
-}
-
 const memoThreadHandlers = [
   {
     name: 'service serves the thread',
@@ -130,7 +121,7 @@ const memoThreadHandlers = [
     pattern: /^the memo-thread command reported the usage error "(.+)"$/,
     run (m, example, world) {
       assertEqual(world.threadExitCode, 2, 'memo-thread exit code')
-      assertEqual(parseStderrError(world).error, resolveParam(m[1], example), 'usage error', { quote: true })
+      assertEqual(parseStderrError(world, 'thread').error, resolveParam(m[1], example), 'usage error', { quote: true })
     }
   },
   {
@@ -197,21 +188,14 @@ const memoThreadHandlers = [
     name: 'memo-thread command reported not found',
     pattern: /^the memo-thread command reported not found$/,
     run (m, example, world) {
-      assertEqual(world.threadExitCode, 1, 'memo-thread exit code')
-      const error = parseStderrError(world).error || ''
-      if (!error.toLowerCase().includes('not found')) {
-        throw new Error(`Expected a not-found error, got "${error}"`)
-      }
+      assertNotFound(world, 'thread', 'memo-thread')
     }
   },
   {
     name: 'memo-thread command reported an error',
     pattern: /^the memo-thread command reported an error$/,
     run (m, example, world) {
-      assertEqual(world.threadExitCode, 1, 'memo-thread exit code')
-      if (!parseStderrError(world).error) {
-        throw new Error(`Expected an error message on stderr, got "${world.threadStderr}"`)
-      }
+      assertReadCommandError(world, 'thread', 'memo-thread')
     }
   }
 ]

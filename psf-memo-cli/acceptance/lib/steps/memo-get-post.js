@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoGetPost from '../../../src/commands/memo-get-post.js'
-import { runReadCommand } from '../read-command.js'
+import { runReadCommand, parseStderrError, assertNotFound, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The posts store: the key txid is not part of the stored body, matching the
@@ -17,15 +17,6 @@ import { assertEqual, resolveParam } from '../step-support.js'
 const POST_STORE = {
   'post-abc': { addr: 'bitcoincash:qaddr-a', text: 'hello memo', blockHeight: 600001, seen: 1000 },
   'post-def': { addr: 'bitcoincash:qaddr-b', text: 'second post', blockHeight: 600050, seen: 2000 }
-}
-
-// Parse the captured stderr as one JSON error object.
-function parseStderrError (world) {
-  try {
-    return JSON.parse(world.getPostStderr)
-  } catch (err) {
-    throw new Error(`Expected a JSON error on stderr, got "${world.getPostStderr}"`)
-  }
 }
 
 const memoGetPostHandlers = [
@@ -71,7 +62,7 @@ const memoGetPostHandlers = [
     pattern: /^the memo-get-post command reported the usage error "(.+)"$/,
     run (m, example, world) {
       assertEqual(world.getPostExitCode, 2, 'memo-get-post exit code')
-      assertEqual(parseStderrError(world).error, resolveParam(m[1], example), 'usage error', { quote: true })
+      assertEqual(parseStderrError(world, 'getPost').error, resolveParam(m[1], example), 'usage error', { quote: true })
     }
   },
   {
@@ -103,21 +94,14 @@ const memoGetPostHandlers = [
     name: 'memo-get-post command reported not found',
     pattern: /^the memo-get-post command reported not found$/,
     run (m, example, world) {
-      assertEqual(world.getPostExitCode, 1, 'memo-get-post exit code')
-      const error = parseStderrError(world).error || ''
-      if (!error.toLowerCase().includes('not found')) {
-        throw new Error(`Expected a not-found error, got "${error}"`)
-      }
+      assertNotFound(world, 'getPost', 'memo-get-post')
     }
   },
   {
     name: 'memo-get-post command reported an error',
     pattern: /^the memo-get-post command reported an error$/,
     run (m, example, world) {
-      assertEqual(world.getPostExitCode, 1, 'memo-get-post exit code')
-      if (!parseStderrError(world).error) {
-        throw new Error(`Expected an error message on stderr, got "${world.getPostStderr}"`)
-      }
+      assertReadCommandError(world, 'getPost', 'memo-get-post')
     }
   }
 ]
