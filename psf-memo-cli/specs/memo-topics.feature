@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T20:56:12.080571941Z","feature_name":"Memo Topics","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-topics.feature","background_hash":"71d1a7cddb2cf113a7b2bdc7995c6b6b50649a24083e20f4c36d4783594e39c9","implementation_hash":"unknown","scenarios":[{"index":2,"name":"Memo Topics - 3 each reported topic keeps its metadata","scenario_hash":"23016291c6091e970813dcca1007d8a2e219b47441c56b64960bbe14c0927756","mutation_count":12,"result":{"Total":12,"Killed":12,"Survived":0,"Errors":0},"tested_at":"2026-10-07T20:56:12.080571941Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Topics (R7): the psf-memo-cli read command for the topic list. It reads
 # one page of GET /topics and reports the returned topics (room, post count,
 # last-post time as the epoch-ms lastSeen, and follower count) in the service's
