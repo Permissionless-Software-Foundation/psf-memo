@@ -9,6 +9,7 @@
 
 // Local libraries
 import { parseNonNegativeInteger } from './page-flags.js'
+import { formatReadCount, formatPagination } from './page-summary.js'
 
 // The default page matches the web client and the DB route's own default.
 export const DEFAULT_NOTIFICATIONS_LIMIT = 50
@@ -26,16 +27,14 @@ export function parseNotificationsFlags (flags = {}) {
 // line per notification (txid, type, actor, and the liked/replied post), then
 // the service pagination unchanged.
 export function formatNotificationsMessage (notifications = [], pagination = {}) {
-  const lines = [`Read ${notifications.length} notification${notifications.length === 1 ? '' : 's'}`]
+  const lines = [formatReadCount(notifications.length, 'notification')]
 
   for (const notification of notifications) {
     const target = notification.postTxid ? ` (post ${notification.postTxid})` : ''
     lines.push(`${notification.txid}: ${notification.type} from ${notification.addr}${target}`)
   }
 
-  lines.push(
-    `pagination: limit ${pagination.limit}, offset ${pagination.offset}, total ${pagination.total}, hasMore ${pagination.hasMore}`
-  )
+  lines.push(formatPagination(pagination))
 
   return lines.join('\n')
 }

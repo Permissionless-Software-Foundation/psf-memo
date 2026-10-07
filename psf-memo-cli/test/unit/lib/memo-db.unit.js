@@ -371,6 +371,44 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getTopics', () => {
+    it('requests the topic page with limit and offset', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ topics: [{ room: 'memo' }], pagination: { total: 1 } })
+        }
+      })
+
+      const result = await client.getTopics({ limit: 2, offset: 4 })
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/topics')
+      assert.equal(url.searchParams.get('limit'), '2')
+      assert.equal(url.searchParams.get('offset'), '4')
+      assert.equal(result.topics[0].room, 'memo')
+    })
+
+    it('defaults the page to 50/0', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ topics: [] })
+        }
+      })
+
+      await client.getTopics()
+
+      const url = new URL(requested)
+      assert.equal(url.searchParams.get('limit'), '50')
+      assert.equal(url.searchParams.get('offset'), '0')
+    })
+  })
+
   describe('level name and profile-picture resources', () => {
     const resourceCases = [
       { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },

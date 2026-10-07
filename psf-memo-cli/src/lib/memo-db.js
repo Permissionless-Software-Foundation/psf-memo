@@ -70,6 +70,15 @@ class MemoDb {
     return this.getJson(`/follow/state?${params.toString()}`)
   }
 
+  // GET /topics. Returns one page of the topic list with the service pagination.
+  async getTopics ({ limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+
+    return this.getJson(`/topics?${params.toString()}`)
+  }
+
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })

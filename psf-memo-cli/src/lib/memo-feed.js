@@ -9,6 +9,7 @@
 
 // Local libraries
 import { parseNonNegativeInteger } from './page-flags.js'
+import { formatReadCount, formatPagination } from './page-summary.js'
 
 // The default page matches the web client and the DB route's own default.
 export const DEFAULT_FEED_LIMIT = 50
@@ -26,7 +27,7 @@ export function parseFeedFlags (flags = {}) {
 // Render the human-readable feed summary: the post count, one line per post
 // (txid, text, reply and like counts), then the service pagination unchanged.
 export function formatFeedMessage (posts = [], pagination = {}) {
-  const lines = [`Read ${posts.length} post${posts.length === 1 ? '' : 's'}`]
+  const lines = [formatReadCount(posts.length, 'post')]
 
   for (const post of posts) {
     lines.push(
@@ -34,9 +35,7 @@ export function formatFeedMessage (posts = [], pagination = {}) {
     )
   }
 
-  lines.push(
-    `pagination: limit ${pagination.limit}, offset ${pagination.offset}, total ${pagination.total}, hasMore ${pagination.hasMore}`
-  )
+  lines.push(formatPagination(pagination))
 
   return lines.join('\n')
 }

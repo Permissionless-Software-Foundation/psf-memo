@@ -9,10 +9,16 @@
 // Local libraries
 import { assertEqual, resolveParam } from '../step-support.js'
 
+// Assert a reported list's named field values, joined by ", ", match the
+// expected value.
+export function assertReportedField (items, field, expected, label) {
+  const actual = (items || []).map((item) => item[field]).join(', ')
+  assertEqual(actual, expected, label, { quote: true })
+}
+
 // Assert a reported list's txids, joined by ", ", match the expected value.
 export function assertReportedTxids (items, expected, label) {
-  const actual = (items || []).map((item) => item.txid).join(', ')
-  assertEqual(actual, expected, label, { quote: true })
+  assertReportedField(items, 'txid', expected, label)
 }
 
 // Find a reported post in the generic read result, throwing when it is absent.
