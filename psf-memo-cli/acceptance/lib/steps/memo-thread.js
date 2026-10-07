@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoThread from '../../../src/commands/memo-thread.js'
-import { captureStream } from '../../../test/support/capture.js'
+import { runReadCommand } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The thread fixture: the root has three direct replies oldest-first, and the
@@ -80,32 +80,6 @@ function findPost (node, txid) {
   return null
 }
 
-// Run the real memo-thread command in JSON mode against the scenario's fake
-// service, recording its exit code, streams, and parsed JSON. Reset
-// process.exitCode so the generated acceptance process is not left failing.
-async function runMemoThread (world, flags) {
-  const stdout = captureStream()
-  const stderr = captureStream()
-  const command = new MemoThread({
-    fetchImpl: world.fetch,
-    envUrl: null,
-    stdout: stdout.stream,
-    stderr: stderr.stream
-  })
-
-  world.threadExitCode = await command.run({ json: true, ...flags })
-  process.exitCode = 0
-
-  world.threadStdout = stdout.text()
-  world.threadStderr = stderr.text()
-  world.threadJson = null
-  try {
-    world.threadJson = JSON.parse(world.threadStdout)
-  } catch (err) {
-    world.threadJson = null
-  }
-}
-
 // Parse the captured stderr as one JSON error object.
 function parseStderrError (world) {
   try {
@@ -141,14 +115,14 @@ const memoThreadHandlers = [
     name: 'memo-thread command runs without a txid',
     pattern: /^the memo-thread command runs without a txid$/,
     async run (m, example, world) {
-      await runMemoThread(world, {})
+      await runReadCommand(world, MemoThread, 'thread', {})
     }
   },
   {
     name: 'memo-thread command runs for a txid',
     pattern: /^the memo-thread command runs for "(.+)"$/,
     async run (m, example, world) {
-      await runMemoThread(world, { txid: resolveParam(m[1], example) })
+      await runReadCommand(world, MemoThread, 'thread', { txid: resolveParam(m[1], example) })
     }
   },
   {

@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoFeed from '../../../src/commands/memo-feed.js'
-import { captureStream } from '../../../test/support/capture.js'
+import { runReadCommand } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The recent-feed fixture: five posts newest-first with the service fields the
@@ -21,33 +21,6 @@ const FEED_POSTS = [
   { txid: 'delta', addr: 'bitcoincash:qdelta', text: 'fourth memo', seen: 2, blockHeight: 600002, replyCount: 0, likeCount: 0 },
   { txid: 'echo', addr: 'bitcoincash:qecho', text: 'fifth memo', seen: 1, blockHeight: 600001, replyCount: 0, likeCount: 0 }
 ]
-
-// Run the real memo-feed command in JSON mode against the scenario's fake
-// service, recording its exit code, streams, and parsed JSON. The command
-// writes process.exitCode for the CLI; reset it so the generated acceptance
-// process (which reports failures itself) is not left with a failing code.
-async function runMemoFeed (world, flags) {
-  const stdout = captureStream()
-  const stderr = captureStream()
-  const command = new MemoFeed({
-    fetchImpl: world.fetch,
-    envUrl: null,
-    stdout: stdout.stream,
-    stderr: stderr.stream
-  })
-
-  world.feedExitCode = await command.run({ json: true, ...flags })
-  process.exitCode = 0
-
-  world.feedStdout = stdout.text()
-  world.feedStderr = stderr.text()
-  world.feedJson = null
-  try {
-    world.feedJson = JSON.parse(world.feedStdout)
-  } catch (err) {
-    world.feedJson = null
-  }
-}
 
 const memoFeedHandlers = [
   {
@@ -75,14 +48,14 @@ const memoFeedHandlers = [
     name: 'memo-feed command runs',
     pattern: /^the memo-feed command runs$/,
     async run (m, example, world) {
-      await runMemoFeed(world, {})
+      await runReadCommand(world, MemoFeed, 'feed', {})
     }
   },
   {
     name: 'memo-feed command runs with a page',
     pattern: /^the memo-feed command runs with limit (.+) and offset (.+)$/,
     async run (m, example, world) {
-      await runMemoFeed(world, {
+      await runReadCommand(world, MemoFeed, 'feed', {
         limit: resolveParam(m[1], example),
         offset: resolveParam(m[2], example)
       })
@@ -92,7 +65,7 @@ const memoFeedHandlers = [
     name: 'memo-feed command runs with a viewer',
     pattern: /^the memo-feed command runs with viewer "(.+)"$/,
     async run (m, example, world) {
-      await runMemoFeed(world, { viewer: resolveParam(m[1], example) })
+      await runReadCommand(world, MemoFeed, 'feed', { viewer: resolveParam(m[1], example) })
     }
   },
   {

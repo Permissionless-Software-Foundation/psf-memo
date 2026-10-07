@@ -7,52 +7,35 @@
 */
 
 // Local libraries
-import MemoDb from '../lib/memo-db.js'
-import { runCommand } from '../lib/reporter.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initReadCommand, createMemoDbClient, runReadCommand } from '../lib/read-command.js'
 import { parseFeedFlags, formatFeedMessage } from '../lib/memo-feed.js'
 
 class MemoFeed {
-  constructor ({
-    MemoDbClass = MemoDb,
-    fetchImpl,
-    dbUrl,
-    envUrl = process.env.MEMO_DB_URL,
-    stdout,
-    stderr
-  } = {}) {
-    // Encapsulate dependencies so tests and acceptance can inject a fake
-    // service and capture output instead of touching the network or terminal.
-    this.MemoDbClass = MemoDbClass
-    this.fetchImpl = fetchImpl
-    this.dbUrl = dbUrl
-    this.envUrl = envUrl
-    this.stdout = stdout
-    this.stderr = stderr
-
-    bindMethods(this, ['run', 'validateFlags', 'createClient', 'readFeed'])
+  constructor (options = {}) {
+    initReadCommand(this, options, 'readFeed')
   }
 
   // Read the feed page and report it. Returns the exit code (0/1/2) and
   // assigns it to process.exitCode for commander.
   async run (flags = {}) {
-    const code = await runCommand(async () => {
-      const { limit, offset, viewer } = this.validateFlags(flags)
-      const { posts = [], pagination = {} } = await this.readFeed({
-        limit,
-        offset,
-        viewer,
-        dbUrl: flags.dbUrl
-      })
+    return runReadCommand({
+      command: this,
+      flags,
+      outcome: async () => {
+        const { limit, offset, viewer } = this.validateFlags(flags)
+        const { posts = [], pagination = {} } = await this.readFeed({
+          limit,
+          offset,
+          viewer,
+          dbUrl: flags.dbUrl
+        })
 
-      return {
-        message: formatFeedMessage(posts, pagination),
-        data: { posts, pagination }
+        return {
+          message: formatFeedMessage(posts, pagination),
+          data: { posts, pagination }
+        }
       }
-    }, { json: flags.json, stdout: this.stdout, stderr: this.stderr })
-
-    process.exitCode = code
-    return code
+    })
   }
 
   // Validate and resolve the page flags before any request. Throws a
@@ -64,11 +47,7 @@ class MemoFeed {
 
   // Build the read-only Memo DB client, honoring a --db-url override.
   createClient (dbUrl) {
-    return new this.MemoDbClass({
-      dbUrl: dbUrl || this.dbUrl,
-      envUrl: this.envUrl,
-      fetchImpl: this.fetchImpl
-    })
+    return createMemoDbClient(this, dbUrl)
   }
 
   // Fetch one recent-feed page from the service.
