@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T23:40:52.919673766Z","feature_name":"Memo Topic","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-topic.feature","background_hash":"ce77df1dd981cf2973a0ef24cd14b455bf9df3e48b258099cabcc02014c92205","implementation_hash":"unknown","scenarios":[{"index":2,"name":"Memo Topic - 3 the command returns the requested page","scenario_hash":"940b06018c94ddc5aa9323457fe4a95eecb36c34e11e031cb1165e9565e2ea2c","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-07T23:40:52.919673766Z"},{"index":3,"name":"Memo Topic - 4 each reported post keeps its text, reply count, and like count","scenario_hash":"100ffd8dc61c599d21415c5ba782dee3ad824ecc0ddd02bd3d89aca3aa4854d1","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-10-07T23:40:52.919673766Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Topic (R8): the psf-memo-cli read command for a single topic's posts. It
 # reads one page of GET /topics/:room/posts (newest first) and reports the
 # returned posts (txid, author address, text, seen, block height, reply count,

@@ -135,6 +135,25 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('default page', () => {
+    const cases = [
+      { method: 'getRecentPosts', call: (client) => client.getRecentPosts() },
+      { method: 'getTopics', call: (client) => client.getTopics() }
+    ]
+
+    for (const { method, call } of cases) {
+      it(`${method} defaults the page to 50/0`, async () => {
+        const { client, requestedUrl } = recordingClient({})
+
+        await call(client)
+
+        const url = requestedUrl()
+        assert.equal(url.searchParams.get('limit'), '50')
+        assert.equal(url.searchParams.get('offset'), '0')
+      })
+    }
+  })
+
   describe('getRecentPosts', () => {
     it('requests the page with limit and offset', async () => {
       let requested
@@ -154,16 +173,6 @@ describe('#memo-db', () => {
       assert.equal(url.searchParams.get('limit'), '1')
       assert.equal(url.searchParams.get('offset'), '2')
       assert.isFalse(url.searchParams.has('viewer'))
-    })
-
-    it('defaults the page to limit 50 and offset 0', async () => {
-      const { client, requestedUrl } = recordingClient({ posts: [] })
-
-      await client.getRecentPosts()
-
-      const url = requestedUrl()
-      assert.equal(url.searchParams.get('limit'), '50')
-      assert.equal(url.searchParams.get('offset'), '0')
     })
 
     it('sends the viewer when one is supplied', async () => {
@@ -373,56 +382,25 @@ describe('#memo-db', () => {
 
   describe('getTopics', () => {
     it('requests the topic page with limit and offset', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ topics: [{ room: 'memo' }], pagination: { total: 1 } })
-        }
-      })
+      const { client, requestedUrl } = recordingClient({ topics: [{ room: 'memo' }], pagination: { total: 1 } })
 
       const result = await client.getTopics({ limit: 2, offset: 4 })
 
-      const url = new URL(requested)
+      const url = requestedUrl()
       assert.equal(url.pathname, '/topics')
       assert.equal(url.searchParams.get('limit'), '2')
       assert.equal(url.searchParams.get('offset'), '4')
       assert.equal(result.topics[0].room, 'memo')
     })
-
-    it('defaults the page to 50/0', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ topics: [] })
-        }
-      })
-
-      await client.getTopics()
-
-      const url = new URL(requested)
-      assert.equal(url.searchParams.get('limit'), '50')
-      assert.equal(url.searchParams.get('offset'), '0')
-    })
   })
 
   describe('getTopicPosts', () => {
     it('requests the topic page with limit, offset, and viewer', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ posts: [{ txid: 'alpha' }], pagination: { total: 1 } })
-        }
-      })
+      const { client, requestedUrl } = recordingClient({ posts: [{ txid: 'alpha' }], pagination: { total: 1 } })
 
       const result = await client.getTopicPosts('general', { limit: 2, offset: 4, viewer: 'viewerB' })
 
-      const url = new URL(requested)
+      const url = requestedUrl()
       assert.equal(url.pathname, '/topics/general/posts')
       assert.equal(url.searchParams.get('limit'), '2')
       assert.equal(url.searchParams.get('offset'), '4')
@@ -431,18 +409,11 @@ describe('#memo-db', () => {
     })
 
     it('defaults the page and omits the viewer', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ posts: [] })
-        }
-      })
+      const { client, requestedUrl } = recordingClient({ posts: [] })
 
       await client.getTopicPosts('a/b')
 
-      const url = new URL(requested)
+      const url = requestedUrl()
       assert.equal(url.pathname, '/topics/a%2Fb/posts')
       assert.equal(url.searchParams.get('limit'), '50')
       assert.equal(url.searchParams.get('offset'), '0')

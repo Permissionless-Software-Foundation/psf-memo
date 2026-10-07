@@ -34,5 +34,5 @@ export function parseTopicFlags (flags = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T23:38:23.706Z","module_hash":"8590d94f8a3a3a9c4dc7bcd8bb7f3d41806dfc812df4eb34fb5b155ec6efad7d","functions":[{"id":"func/parseTopicFlags","name":"parseTopicFlags","line":21,"end_line":34,"hash":"882599bf2a51a7eeb63cdb31e04564823be514d270625d10dbfddf81e716629a"}]}
 // mutate4javascript-manifest-end
