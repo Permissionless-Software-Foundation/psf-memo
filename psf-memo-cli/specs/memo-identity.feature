@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T15:08:01.779951631Z","feature_name":"Memo Identity","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-identity.feature","background_hash":"5f5f186a7892f75373c6eba9e3e7586e1ac82e3c46b217a8fd400c868b404475","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Identity (R15): the psf-memo-cli command that reports the wallet's own
 # Memo identity. It resolves the signing wallet (-n <wallet> or --wif <wif>),
 # derives the wallet's cash address, summarizes its BCH and SLP token balances,

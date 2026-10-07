@@ -51,5 +51,5 @@ export function formatIdentityMessage ({
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T15:06:24.691Z","module_hash":"d4bd71476de2be21944a9ba5b6906440e14f828b2a6083379fb508088473370b","functions":[{"id":"func/sumBchSats","name":"sumBchSats","line":11,"end_line":13,"hash":"9a4afaa1e900c19ea9e0a933febe4f337000a6d8520ea26a74b6d20ac1da3c8e"},{"id":"func/satsToBch","name":"satsToBch","line":16,"end_line":18,"hash":"27429322481282f0e735be272658553633488e4d36e19bab888127a6408043cf"},{"id":"func/walletTokenUtxos","name":"walletTokenUtxos","line":22,"end_line":30,"hash":"46b2d6abc6f98c37480c37b1f0d22e741630f3c21772622fa7f9f8af8a24f823"},{"id":"func/formatIdentityMessage","name":"formatIdentityMessage","line":33,"end_line":51,"hash":"163c866d9be15cbe824b6d4550b9560a5d84ba231e50b66a7baf5c9e9f0b1c98"}]}
 // mutate4javascript-manifest-end

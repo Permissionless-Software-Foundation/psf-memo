@@ -45,6 +45,24 @@ async function assertMissingResource (method, arg) {
   assert.isNull(await client[method](arg))
 }
 
+// Build a client whose fetch records the requested URL and returns `body`, run
+// the given getter, assert the request path, and return the parsed result.
+async function requestLevelResource (method, addr, path, body) {
+  let requested
+  const client = new MemoDb({
+    envUrl: null,
+    fetchImpl: async (url) => {
+      requested = url
+      return jsonResponse(body)
+    }
+  })
+
+  const result = await client[method](addr)
+
+  assert.equal(new URL(requested).pathname, path)
+  return result
+}
+
 describe('#memo-db', () => {
   describe('resolveMemoDbUrl', () => {
     it('defaults to the production memo-db', () => {
@@ -283,58 +301,23 @@ describe('#memo-db', () => {
     })
   })
 
-  describe('getName', () => {
-    it('requests the name record for the address', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ name: 'alice' })
-        }
+  describe('level name and profile-picture resources', () => {
+    const resourceCases = [
+      { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },
+      { method: 'getProfilePic', path: '/level/profilepic/addrA', body: { url: 'https://example/a.png' }, field: 'url' }
+    ]
+
+    for (const { method, path, body, field } of resourceCases) {
+      it(`${method} requests its record and returns it`, async () => {
+        const result = await requestLevelResource(method, 'addrA', path, body)
+
+        assert.equal(result[field], body[field])
       })
 
-      const result = await client.getName('addrA')
-
-      assert.equal(new URL(requested).pathname, '/level/name/addrA')
-      assert.equal(result.name, 'alice')
-    })
-
-    it('resolves a missing name to null', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+      it(`${method} resolves a missing record to null`, async () => {
+        await assertMissingResource(method, 'addrA')
       })
-
-      assert.isNull(await client.getName('addrA'))
-    })
-  })
-
-  describe('getProfilePic', () => {
-    it('requests the profile picture record for the address', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ url: 'https://example/a.png' })
-        }
-      })
-
-      const result = await client.getProfilePic('addrA')
-
-      assert.equal(new URL(requested).pathname, '/level/profilepic/addrA')
-      assert.equal(result.url, 'https://example/a.png')
-    })
-
-    it('resolves a missing profile picture to null', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
-      })
-
-      assert.isNull(await client.getProfilePic('addrA'))
-    })
+    }
   })
 
   describe('errors', () => {

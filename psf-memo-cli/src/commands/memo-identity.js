@@ -87,5 +87,5 @@ class MemoIdentity {
 export default MemoIdentity
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T15:06:05.263Z","module_hash":"16cdb0ae295a0018dde9da34062d5f4e8ede278b661587359d63a398c92eb356","functions":[{"id":"func/MemoIdentity.constructor","name":"MemoIdentity.constructor","line":25,"end_line":28,"hash":"32f8917d7d2ad5c5fa8cf4b0b00ac553c6cfeb8bb14a293e8502a70f4fb3c852"},{"id":"func/MemoIdentity.run","name":"MemoIdentity.run","line":32,"end_line":56,"hash":"92418d7b57781a005eea53a3f69c63c19559cd5adfed1dfb610e13260b348ba6"},{"id":"func/MemoIdentity.validateFlags","name":"MemoIdentity.validateFlags","line":60,"end_line":62,"hash":"9b55458bc5138dd8b9abc4c90c402883faf7547e3f0ea7ebc48b32e1ab9defe0"},{"id":"func/MemoIdentity.createClient","name":"MemoIdentity.createClient","line":65,"end_line":67,"hash":"54385637d7ccdbdb4482a273dbbf40bd7272b92032c0a6f5d6ac2de757b02e80"},{"id":"func/MemoIdentity.readProfile","name":"MemoIdentity.readProfile","line":71,"end_line":84,"hash":"ed400777aeb9b4fbff0f59354aa71f6b281774e1800b749d4129154cb8faba53"}]}
 // mutate4javascript-manifest-end
