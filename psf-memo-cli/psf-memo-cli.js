@@ -18,6 +18,7 @@ import MsgSign from './src/commands/msg-sign.js'
 import MsgVerify from './src/commands/msg-verify.js'
 import MemoFeed from './src/commands/memo-feed.js'
 import MemoThread from './src/commands/memo-thread.js'
+import MemoGetPost from './src/commands/memo-get-post.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -31,6 +32,7 @@ const msgSign = new MsgSign()
 const msgVerify = new MsgVerify()
 const memoFeed = new MemoFeed()
 const memoThread = new MemoThread()
+const memoGetPost = new MemoGetPost()
 
 const program = new Command()
 
@@ -110,5 +112,12 @@ program.command('memo-thread')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoThread.run)
+
+program.command('memo-get-post')
+  .description('Read a single stored Memo post')
+  .option('-t, --txid <string>', 'post transaction id')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoGetPost.run)
 
 program.parseAsync(process.argv)

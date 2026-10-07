@@ -218,6 +218,48 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getPost', () => {
+    it('requests the stored post for the txid', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ addr: 'bitcoincash:qaddr-a', text: 'hi' })
+        }
+      })
+
+      const result = await client.getPost('post-abc')
+
+      assert.equal(new URL(requested).pathname, '/level/post/post-abc')
+      assert.equal(result.text, 'hi')
+    })
+
+    it('encodes the txid in the request path', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ text: 'hi' })
+        }
+      })
+
+      await client.getPost('a/b')
+
+      assert.equal(new URL(requested).pathname, '/level/post/a%2Fb')
+    })
+
+    it('resolves a txid with no stored post to null', async () => {
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+      })
+
+      assert.isNull(await client.getPost('post-missing'))
+    })
+  })
+
   describe('errors', () => {
     const cases = [
       {

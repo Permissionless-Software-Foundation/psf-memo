@@ -8,17 +8,11 @@
 */
 
 // Local libraries
-import { UsageError } from './reporter.js'
+import { parseTxidFlag } from './txid-flag.js'
 
 // Resolve the required post txid from the command-line flags.
 export function parseThreadFlags (flags = {}) {
-  const txid = flags.txid
-
-  if (!txid || txid === '') {
-    throw new UsageError('You must specify a post txid with the -t flag.')
-  }
-
-  return { txid }
+  return parseTxidFlag(flags)
 }
 
 // Render one post line, then its replies depth-first, indented under their

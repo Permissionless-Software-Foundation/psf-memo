@@ -51,6 +51,12 @@ class MemoDb {
     return this.getJson(`/posts/${encodeURIComponent(txid)}/thread`, { notFoundValue: null })
   }
 
+  // GET /level/post/:txid. A txid with no stored post resolves to null so the
+  // caller can report a not-found failure and poll for it.
+  async getPost (txid) {
+    return this.getJson(`/level/post/${encodeURIComponent(txid)}`, { notFoundValue: null })
+  }
+
   // GET a JSON resource. Throws on a transport failure or a non-OK response.
   // When notFoundValue is supplied (including null), a 404 returns it instead.
   async getJson (path, { notFoundValue } = {}) {

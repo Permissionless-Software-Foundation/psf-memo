@@ -12,6 +12,7 @@ import { UsageError } from '../../src/lib/reporter.js'
 import { memoDbHandlers } from './steps/memo-db.js'
 import { memoFeedHandlers } from './steps/memo-feed.js'
 import { memoThreadHandlers } from './steps/memo-thread.js'
+import { memoGetPostHandlers } from './steps/memo-get-post.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
@@ -21,6 +22,7 @@ const handlers = [
   ...memoDbHandlers,
   ...memoFeedHandlers,
   ...memoThreadHandlers,
+  ...memoGetPostHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
@@ -42,6 +44,7 @@ async function createWorld () {
     envUrl: undefined,
     posts: [],
     threads: {},
+    postStore: {},
     missingProfiles: new Set(),
     unreachable: false,
     lastRequest: null,
@@ -67,6 +70,14 @@ async function createWorld () {
         return jsonResponse({ message: 'not found' }, 404)
       }
       return jsonResponse({ addr, text: 'bio' }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/level/post/')) {
+      const txid = decodeURIComponent(world.lastRequest.pathname.split('/').pop())
+      if (!(txid in world.postStore)) {
+        return jsonResponse({ message: 'not found' }, 404)
+      }
+      return jsonResponse(world.postStore[txid], 200)
     }
 
     if (world.lastRequest.pathname === '/posts/recent') {
