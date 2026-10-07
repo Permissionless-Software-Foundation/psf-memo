@@ -10,7 +10,7 @@
 
 // Local libraries
 import MemoWait from '../../../src/commands/memo-wait.js'
-import { runReadCommand, assertUsageError, assertReadCommandError, parseStderrError } from '../read-command.js'
+import { runReadCommand, assertUsageError, assertReadCommandError, parseStderrError, assertReportedPost } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Install the wait command's deterministic clock and poll-counting fetch
@@ -127,13 +127,11 @@ const memoWaitHandlers = [
     name: 'command reported the indexed post',
     pattern: /^the command reported the indexed post "(.+)" with text "(.+)" and address "(.+)"$/,
     run (m, example, world) {
-      const post = world.waitJson?.post
-      if (!post) {
-        throw new Error('Expected a reported indexed post')
-      }
-      assertEqual(post.txid, resolveParam(m[1], example), 'post txid', { quote: true })
-      assertEqual(post.text, resolveParam(m[2], example), 'post text', { quote: true })
-      assertEqual(post.addr, resolveParam(m[3], example), 'post address', { quote: true })
+      assertReportedPost(world, 'wait', 'a reported indexed post', {
+        txid: resolveParam(m[1], example),
+        text: resolveParam(m[2], example),
+        addr: resolveParam(m[3], example)
+      })
     }
   },
   {

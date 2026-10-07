@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoGetPost from '../../../src/commands/memo-get-post.js'
-import { runReadCommand, assertUsageError, assertNotFound, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, assertUsageError, assertNotFound, assertReadCommandError, assertReportedPost } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The posts store: the key txid is not part of the stored body, matching the
@@ -68,13 +68,11 @@ const memoGetPostHandlers = [
     name: 'command reported the post fields',
     pattern: /^the command reported the post "(.+)" with text "(.+)" and address "(.+)"$/,
     run (m, example, world) {
-      const post = world.getPostJson?.post
-      if (!post) {
-        throw new Error('Expected a reported post')
-      }
-      assertEqual(post.txid, resolveParam(m[1], example), 'post txid', { quote: true })
-      assertEqual(post.text, resolveParam(m[2], example), 'post text', { quote: true })
-      assertEqual(post.addr, resolveParam(m[3], example), 'post address', { quote: true })
+      assertReportedPost(world, 'getPost', 'a reported post', {
+        txid: resolveParam(m[1], example),
+        text: resolveParam(m[2], example),
+        addr: resolveParam(m[3], example)
+      })
     }
   },
   {

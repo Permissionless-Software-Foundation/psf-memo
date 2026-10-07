@@ -196,4 +196,21 @@ describe('#memo-wait command', () => {
       interval: 250
     })
   })
+
+  it('falls back to the real clock when no clock is injected', async () => {
+    const { FakeMemoDb, calls } = fakeMemoDb({ results: [null, STORED_POST] })
+    const out = captureStream()
+    const command = new MemoWait({
+      MemoDbClass: FakeMemoDb,
+      envUrl: null,
+      stdout: out.stream,
+      stderr: captureStream().stream
+    })
+
+    const code = await command.run({ json: true, txid: 'real-clock-post', interval: '1' })
+
+    assert.equal(code, 0)
+    assert.equal(calls.count, 2)
+    assert.equal(JSON.parse(out.text()).post.txid, 'real-clock-post')
+  })
 })
