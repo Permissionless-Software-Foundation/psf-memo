@@ -35,6 +35,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI wire-encoding helpers (`cli-memo-wire-encoding`, 2026-10-07):** F4 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/wire-encoding.js`: `txidToWireBytes` (32-byte
+  little-endian, byte-reversed) and `addressToHash160` (20-byte hash160 in
+  display order, **not** reversed), with `ecashaddrjs` promoted to a direct
+  dependency. These are the endianness regression guards for the like/reply/
+  poll-option/poll-vote payloads (gotcha #32). Merged to `master` at `6f5c5ba`
+  (architect code-review commit `44015a9`; the later `6f5c5ba` adds only the
+  record and summary, so `docs/reviews/cli-memo-wire-encoding-verification.json`
+  is valid for the merged tree). `verify.sh cli` pass 4/4 at `44015a9` (unit
+  121/0, property 17/0, acceptance 3 suites, lint ok); language mutation 1
+  killed / 0 survived (`wire-encoding.js`); soft Gherkin mutation 16/10 with 6
+  malformed-input intrinsic survivors; DRY clean. Independent acceptance check
+  after merge: memo-wire-encoding 10/10 plus the two existing suites (all 3
+  passed). Architect summary: `docs/reviews/cli-memo-wire-encoding-summary.md`.
+
 - **CLI output and exit-code contract (`cli-output-contract`, 2026-10-06):** F5
   of the `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/reporter.js`, the pure injectable leaf every `memo-*`
@@ -878,7 +894,7 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 ## Next up: TBD
 
 Active work has moved to the new `psf-memo-cli` Memo-protocol backlog:
-`psf-memo-cli/dev-docs/feature-backlog.md` (F1 and F5 done; next is F4, F2/F3,
+`psf-memo-cli/dev-docs/feature-backlog.md` (F1, F5, and F4 done; next is F2/F3,
 then R1 `memo-feed`). The earlier client direction — front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next

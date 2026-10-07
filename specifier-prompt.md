@@ -946,6 +946,19 @@ that a single user-facing feature may require specs in more than one component.
     structural channel/exit/JSON steps carry the kills. Language mutation was 4
     killed / 0 survived (`reporter.js`).
 
+69. **CLI wire-encoding helpers (F4).** `psf-memo-cli/src/lib/wire-encoding.js`
+    exposes only `txidToWireBytes` (32-byte little-endian, byte-reversed) and
+    `addressToHash160` (20-byte hash160 in display order, **not** reversed),
+    promoting `ecashaddrjs` to a direct dependency. Soft Gherkin mutation of
+    `memo-wire-encoding.feature` was 16 mutations / 10 killed / 6 intrinsic
+    survivors: scenarios 1 and 3 have independent input/expected columns and
+    killed all 10 of their mutations, while mutating a malformed txid/address
+    in the rejection scenarios preserves its malformed property, so "reports an
+    invalid ..." still holds. That is a new intrinsic class (malformed-input
+    equivalents): if a rejection scenario must be mutatable, assert the exact
+    error or tie the assertion to independent data. Spec:
+    `psf-memo-cli/specs/memo-wire-encoding.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1002,7 +1015,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-06, `cli-output-contract`): specified and merged F5, the
+Latest session (2026-10-07, `cli-memo-wire-encoding`): specified and merged F4,
+the shared Memo OP_RETURN wire-encoding helpers. The specifier wrote
+`psf-memo-cli/specs/memo-wire-encoding.feature` (4 scenarios, 10 example
+executions); the coder/refactorer/architect added
+`psf-memo-cli/src/lib/wire-encoding.js` (`txidToWireBytes` 32-byte little-endian
+byte-reversal; `addressToHash160` 20-byte hash160 in display order, not
+reversed) with `ecashaddrjs` promoted to a direct dependency, plus the
+per-feature acceptance steps. Merged to `master` at `6f5c5ba` (fast-forward;
+architect code-review commit `44015a9`; the later `6f5c5ba` adds only the record
+and summary, so `docs/reviews/cli-memo-wire-encoding-verification.json` is valid
+for the merged tree). `verify.sh cli` pass 4/4 at `44015a9` (unit 121/0,
+property 17/0, acceptance 3 suites, lint ok); language mutation 1 killed / 0
+survived (`wire-encoding.js`); soft Gherkin mutation 16 considered / 10 killed /
+6 malformed-input intrinsic survivors; DRY clean. Independent acceptance check
+after merge: memo-wire-encoding 10/10 plus the two existing suites (all 3 passed).
+Architect summary: `docs/reviews/cli-memo-wire-encoding-summary.md`.
+
+Previous session (2026-10-06, `cli-output-contract`): specified and merged F5, the
 shared CLI output and exit-code contract. The specifier wrote
 `psf-memo-cli/specs/cli-output-contract.feature` (5 scenarios, 10 example
 executions); the coder/refactorer/architect added
@@ -1020,7 +1050,7 @@ survivors; DRY clean. Independent acceptance check after merge:
 cli-output-contract 10/10 plus memo-db-client 12/12 (all 2 suites). Architect
 summary: `docs/reviews/cli-output-contract-summary.md`.
 
-Previous session (2026-10-06, `cli-memo-db-client`): specified and merged
+Earlier session (2026-10-06, `cli-memo-db-client`): specified and merged
 `cli-memo-db-client` —
 F1 of the new `psf-memo-cli` Memo-protocol backlog. The specifier wrote
 `psf-memo-cli/specs/memo-db-client.feature` (7 scenarios, 12 example
@@ -1076,7 +1106,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `e93afcf` (`Record cli-output-contract architect review and verification`).
+Current `master` HEAD: `6f5c5ba` (`Record cli-memo-wire-encoding architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1116,10 +1146,9 @@ following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
-`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands); F1 and
-F5 are done. The suggested next items are **F4** (little-endian txid / hash160
-encoding helpers), then **F2/F3** (wallet name-or-WIF resolution + multi-push
-broadcast), and the first read command **R1 `memo-feed`**. The earlier client
-direction (front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
-HEAD lines.
+`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands); F1, F5,
+and F4 are done. The suggested next items are **F2/F3** (wallet name-or-WIF
+resolution + multi-push broadcast), then the first read command **R1
+`memo-feed`**. The earlier client direction (front-end improvements to
+`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
+`swarmforge/scripts/state.sh` to refresh the HEAD lines.

@@ -139,6 +139,13 @@ one call so each protocol field is its own push). Node always has `Buffer`, but
 if the port imports `buffer`, declare it as a direct dependency (gotcha #36).
 
 ### F4 — Little-endian txid wire encoding
+**Status: DONE** (2026-10-07, task `cli-memo-wire-encoding`; merged at
+`6f5c5ba`; acceptance 10/10). `psf-memo-cli/src/lib/wire-encoding.js` exposes
+`txidToWireBytes` (32-byte little-endian, byte-reversed) and
+`addressToHash160` (20-byte hash160 in display order, **not** reversed), backed
+by the direct dependency `ecashaddrjs`. Spec:
+`psf-memo-cli/specs/memo-wire-encoding.feature`; architect summary:
+`docs/reviews/cli-memo-wire-encoding-summary.md`.
 Every action that references a transaction (like `0x6d04`, reply `0x6d03`,
 poll option `0x6d13`, poll vote `0x6d14`) must write the 32 bytes in
 little-endian wire order (byte-reverse of the display txid). The 20-byte
@@ -257,8 +264,9 @@ unless noted.
 ## Suggested delivery order
 
 1. **Foundation**: F1 (DB client + production config) **DONE**; F5 (output/exit
-   contract) **DONE**; **next: F4 (encoding helpers)**, then F2 (wallet
-   resolution + broadcast scaffolding) and F3 (multi-push).
+   contract) **DONE**; F4 (encoding helpers) **DONE**; **next: F2 (wallet
+   resolution + broadcast scaffolding)** and **F3 (multi-push)**, then the read
+   layer.
 2. **Read-first value**: R1, R2, R3, R14, R15 — an agent can observe the
    protocol and its own identity before writing. **Next up: R1 (`memo-feed`).**
 3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
