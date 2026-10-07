@@ -24,6 +24,7 @@ import MemoIdentity from './src/commands/memo-identity.js'
 import MemoPost from './src/commands/memo-post.js'
 import MemoReply from './src/commands/memo-reply.js'
 import MemoLike from './src/commands/memo-like.js'
+import MemoWait from './src/commands/memo-wait.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -43,6 +44,7 @@ const memoIdentity = new MemoIdentity()
 const memoPost = new MemoPost()
 const memoReply = new MemoReply()
 const memoLike = new MemoLike()
+const memoWait = new MemoWait()
 
 const program = new Command()
 
@@ -170,5 +172,14 @@ program.command('memo-like')
   .option('--author <string>', 'tip recipient (post author) address')
   .option('--json', 'print the result as one JSON object')
   .action(memoLike.run)
+
+program.command('memo-wait')
+  .description('Wait for a broadcast Memo post to be indexed')
+  .option('-t, --txid <string>', 'post transaction id')
+  .option('--timeout <number>', 'total wait budget in milliseconds (default 60000)')
+  .option('--interval <number>', 'poll interval in milliseconds (default 5000)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoWait.run)
 
 program.parseAsync(process.argv)
