@@ -1108,8 +1108,31 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-notifications`): specified and merged R6,
-the wallet-relative notifications read command. The specifier wrote
+Latest session (2026-10-07, `cli-memo-profile`): specified and merged R4, the
+composed profile read command. The specifier wrote
+`psf-memo-cli/specs/memo-profile.feature` (7 scenarios, 12 example executions);
+the coder/refactorer/architect added `src/lib/memo-profile.js` (required `-a`,
+page defaults, summary) and a thin `src/commands/memo-profile.js` that composes
+the address's name/bio/avatar (`/level/name|profile|profilepic`) with one page
+of `GET /posts/by/:addr` and an optional `--viewer` follow state
+(`GET /follow/state`); without a viewer the follow state is false. It reports
+`{ address, name, bio, avatar, following, posts, pagination }`; SLP tokens are
+out of scope (psf-memo-db exposes no token route; R15 covers the wallet's own).
+The refactorer extracted `MemoDb.getAddrPage`, the
+`resolveFollowing`/`identityField` helpers, and shared identity acceptance
+steps. Merged to `master` at `dcf66fd` (fast-forward; architect code-review
+commit `78577b1ce6`; the later `dcf66fd` adds only the record and summary, so
+`docs/reviews/cli-memo-profile-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `78577b1ce6` (unit 328/0, property 58/0, acceptance
+all 16 suites, lint ok); language mutation 15 killed / 0 survived
+(`memo-profile.js` lib 5, command 5, `memo-db.js` 5); soft Gherkin mutation 28
+total / 17 killed / 11 intrinsic survivors (identity pass-through cells and
+exhausted-page limits); DRY clean. Independent acceptance check after merge:
+12/12 example executions. Architect summary:
+`docs/reviews/cli-memo-profile-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-notifications`): specified and merged
+R6, the wallet-relative notifications read command. The specifier wrote
 `psf-memo-cli/specs/memo-notifications.feature` (6 scenarios, 11 example
 executions); the coder/refactorer/architect added
 `src/lib/memo-notifications.js` (pure page defaults and summary) and a thin
@@ -1413,7 +1436,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `8446473` (`Record cli-memo-notifications architect review and verification`).
+Current `master` HEAD: `dcf66fd` (`Record cli-memo-profile architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1455,12 +1478,11 @@ implementations (#53) as an accepted, documented tradeoff.
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
-**R2 `memo-thread`**, **R3 `memo-get-post`**, **R6 `memo-notifications`**, **R14
-`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
-first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
-`memo-like`** are done. The suggested next item is **R4 `memo-profile`**
-(composed identity: name, bio, avatar URL, follow state, recent posts, and a
-Token summary), then R5 `memo-posts` and the remaining reads (R7–R13). The
-earlier client direction (front-end improvements to `psf-memo-client`) remains
-open in `specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh
-the HEAD lines.
+**R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R6
+`memo-notifications`**, **R14 `memo-status`**, **R15 `memo-identity`**, **R16
+`memo-wait`**) are done, and the first three write commands **W1 `memo-post`**,
+**W2 `memo-reply`**, and **W3 `memo-like`** are done. The suggested next item is
+**R5 `memo-posts`** (a page of posts authored by an address), then the
+remaining reads (R7–R13). The earlier client direction (front-end improvements
+to `psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
+`swarmforge/scripts/state.sh` to refresh the HEAD lines.

@@ -35,6 +35,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI profile read command (`cli-memo-profile`, 2026-10-07):** R4 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-profile.js` (required `-a`, page defaults, summary)
+  and a thin `src/commands/memo-profile.js` that composes the address's
+  name/bio/avatar (`/level/name|profile|profilepic`) with one page of `GET
+  /posts/by/:addr` and an optional `--viewer` follow state (`GET /follow/state`);
+  without a viewer the follow state is false. It reports `{ address, name, bio,
+  avatar, following, posts, pagination }`. No tokens (psf-memo-db exposes no
+  token route; R15 covers the wallet's own). Spec:
+  `psf-memo-cli/specs/memo-profile.feature` (7 scenarios, 12 example
+  executions). Merged to `master` at `dcf66fd` (fast-forward; architect
+  code-review commit `78577b1ce6`; the later `dcf66fd` adds only the record and
+  summary, so `docs/reviews/cli-memo-profile-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `78577b1ce6` (unit 328/0, property
+  58/0, acceptance all 16 suites, lint ok); language mutation 15 killed / 0
+  survived (`memo-profile.js` lib 5, command 5, `memo-db.js` 5); soft Gherkin
+  mutation 28 total / 17 killed / 11 intrinsic survivors (identity pass-through
+  cells and exhausted-page limits); DRY clean after table-driving the
+  address-page tests. Independent acceptance check after merge: 12/12. Architect
+  summary: `docs/reviews/cli-memo-profile-summary.md`.
+
 - **CLI notifications read command (`cli-memo-notifications`, 2026-10-07):** R6 of
   the `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-notifications.js` (pure page defaults and human

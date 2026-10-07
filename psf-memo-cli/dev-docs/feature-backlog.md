@@ -242,6 +242,10 @@ summary: `docs/reviews/cli-memo-wait-summary.md`.
 `psf-memo-cli/specs/memo-notifications.feature`; architect summary:
 `docs/reviews/cli-memo-notifications-summary.md`.
 
+**R4 status: DONE** (2026-10-07, task `cli-memo-profile`; merged at `dcf66fd`;
+acceptance 12/12). Spec: `psf-memo-cli/specs/memo-profile.feature`; architect
+summary: `docs/reviews/cli-memo-profile-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -326,10 +330,10 @@ summary: `docs/reviews/cli-memo-like-summary.md`.
    R15 **DONE** — an agent can observe the protocol and its own identity before
    writing.
 3. **Core write path**: W1 (post) **DONE**, W2 (reply) **DONE**, W3 (like)
-   **DONE**, R6 (notifications) **DONE**, and R16 (wait) **DONE**. The foundation
-   (F2/F3/F4) and the shared write-command scaffolding are in place. **Next up:
-   R4 (`memo-profile`)** — composed identity (name, bio, avatar, follow state,
-   recent posts, token summary).
+   **DONE**, R4 (profile) **DONE**, R6 (notifications) **DONE**, and R16 (wait)
+   **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding, and
+   the composed-read helpers are in place. **Next up: R5 (`memo-posts`)** — a
+   page of posts authored by an address.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
