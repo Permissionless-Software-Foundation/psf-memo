@@ -198,7 +198,7 @@ only need an address take `--viewer`/`-a <addr>` instead.
 |----|---------|----------|----------------|
 | R1 | `memo-feed [--limit --offset --viewer <addr> --json]` | One page of the recent top-level feed, newest first. | `GET /posts/recent`; fields `txid`, `addr`, `text`, `seen`, `blockHeight`, `replyCount`, `likeCount`, `pagination`. |
 | R2 | `memo-thread -t <txid> [--json]` | A post and its reply tree with like counts. | `GET /posts/:txid/thread`. |
-| R3 | `memo-post -t <txid> [--json]` | A single post document. | `GET /level/post/:txid`. |
+| R3 | `memo-get-post -t <txid> [--json]` | A single post document. | `GET /level/post/:txid`. |
 | R4 | `memo-profile -a <addr> [--json]` | Composed identity: name, bio, avatar URL, follow state, recent posts, token count summary. | `/level/name|profile|profilepic`, `/posts/by/:addr`, `/follow/state`. |
 | R5 | `memo-posts -a <addr> [--limit --offset --json]` | Posts authored by an address. | `GET /posts/by/:addr`. |
 | R6 | `memo-notifications -n <wallet> [--limit --offset --json]` | Likes, replies, and follows for the wallet's address, newest first, within the notification block window. | `GET /posts/notifications/:addr`; window semantics in gotcha #21 / `notifications-query-performance`. |
@@ -316,6 +316,11 @@ architect cycle.
 5. **F6 acceptance**: onboard CLI Gherkin acceptance after the first `memo-*`
    command. Satisfied at F1 — the harness landed with `cli-memo-db-client`
    (2026-10-06).
+6. **Command naming collision (2026-10-07)**: the single-post read command is
+   `memo-get-post` (`-t <txid>`, `GET /level/post/:txid`). The write command
+   `memo-post` (W1, `-n`/`--wif` + `-m <text>`, broadcast `0x6d02`) keeps its
+   name because "post" is its action; the two commands therefore never share a
+   name.
 
 ## Out of scope
 

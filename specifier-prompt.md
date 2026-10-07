@@ -1244,8 +1244,9 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) is complete and the first two read commands **R1
 `memo-feed`** and **R2 `memo-thread`** are done. The suggested next item is **R3
-`memo-post`** (a single post document via `GET /level/post/:txid`), then the rest
-of the read layer (R14/R15), then the write commands (`memo-post` W1,
+`memo-get-post`** (a single post document via `GET /level/post/:txid`; renamed
+from `memo-post` to avoid the W1 write-command collision), then the rest of the
+read layer (R14/R15), then the write commands (`memo-post` W1,
 `memo-reply` W2, `memo-like` W3, …). The earlier client direction (front-end
 improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
