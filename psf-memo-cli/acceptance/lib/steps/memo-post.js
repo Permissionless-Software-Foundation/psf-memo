@@ -1,78 +1,27 @@
 /*
   Gherkin step handlers for the Memo Post feature.
 
-  The scenario world supplies a wallet factory that maps a saved-wallet name to
-  a wallet which records the OP_RETURN pushes it receives. Each scenario runs
-  the real memo-post command in JSON mode through the real wallet resolver and
-  broadcast scaffolding, so the 0x6d02 action, the character limit, the usage
-  errors, and the broadcast-error contract are exercised without a network or a
-  real key.
+  The shared write-command steps (wallet source, recording wallet, txid +
+  explorer reporting, no-broadcast) live in ./broadcast-command.js; this module
+  adds the 0x6d02-specific memo text steps and the command runner. Each scenario
+  runs the real memo-post command in JSON mode through the real wallet resolver
+  and broadcast scaffolding, so the action, the character limit, and the
+  error contract are exercised without a network or a real key.
 */
 
 // Local libraries
 import MemoPost from '../../../src/commands/memo-post.js'
-import { captureStream } from '../../../test/support/capture.js'
 import { assertUsageError, parseStderrError } from '../read-command.js'
-import { assertEqual, resolveParam, resolveUrlTemplate } from '../step-support.js'
-import { createRecordingWallet } from '../wallet-support.js'
-
-function lookupMemoWallet (world, key, kind) {
-  if (!(key in world.memoWallets)) {
-    throw new Error(`Unknown ${kind} ${key}`)
-  }
-  return world.memoWallets[key]
-}
+import { assertEqual, resolveParam } from '../step-support.js'
+import { initCommandWorld, runCommandInWorld } from './broadcast-command.js'
 
 const memoPostHandlers = [
   {
     name: 'a Memo post command',
     pattern: /^a Memo post command$/,
     run (m, example, world) {
-      world.memoWallets = {}
-      world.memoSource = {}
+      initCommandWorld(world, { txid: 'memo-post-txid' })
       world.memoText = undefined
-      world.walletUtil = {
-        instanceWallet: (name) => lookupMemoWallet(world, name, 'wallet'),
-        instanceWalletFromWif: (wif) => lookupMemoWallet(world, wif, 'wif')
-      }
-      world.broadcast = null
-      world.broadcastCount = 0
-      world.broadcastTxid = 'memo-post-txid'
-      world.broadcastError = null
-      world.postExitCode = null
-      world.postStdout = ''
-      world.postStderr = ''
-      world.postJson = null
-    }
-  },
-  {
-    name: 'a signing wallet that records broadcasts',
-    pattern: /^a signing wallet that records broadcasts$/,
-    run (m, example, world) {
-      world.memoWallets['memo-wallet'] =
-        createRecordingWallet(world, { cashAddress: 'bitcoincash:qmemo-post' })
-      world.memoSource = { name: 'memo-wallet' }
-    }
-  },
-  {
-    name: 'no signing wallet is selected',
-    pattern: /^no signing wallet is selected$/,
-    run (m, example, world) {
-      world.memoSource = {}
-    }
-  },
-  {
-    name: 'signing wallet returns a txid',
-    pattern: /^the signing wallet returns the transaction id "(.+)"$/,
-    run (m, example, world) {
-      world.broadcastTxid = resolveParam(m[1], example)
-    }
-  },
-  {
-    name: 'signing wallet rejects the broadcast',
-    pattern: /^the signing wallet rejects the broadcast with the error "(.+)"$/,
-    run (m, example, world) {
-      world.broadcastError = resolveParam(m[1], example)
     }
   },
   {
@@ -110,29 +59,10 @@ const memoPostHandlers = [
     name: 'memo-post command runs',
     pattern: /^the memo-post command runs$/,
     async run (m, example, world) {
-      const stdout = captureStream()
-      const stderr = captureStream()
-      const command = new MemoPost({
-        walletUtil: world.walletUtil,
-        stdout: stdout.stream,
-        stderr: stderr.stream
-      })
-
-      world.postExitCode = await command.run({
-        json: true,
+      await runCommandInWorld(world, MemoPost, {
         memo: world.memoText,
-        ...world.memoSource
+        ...world.commandSource
       })
-      process.exitCode = 0
-
-      world.postStdout = stdout.text()
-      world.postStderr = stderr.text()
-      world.postJson = null
-      try {
-        world.postJson = JSON.parse(world.postStdout)
-      } catch (err) {
-        world.postJson = null
-      }
     }
   },
   {
@@ -144,39 +74,18 @@ const memoPostHandlers = [
     }
   },
   {
-    name: 'command reported the transaction id',
-    pattern: /^the command reported the transaction id "(.+)"$/,
-    run (m, example, world) {
-      assertEqual(world.postJson?.txid, resolveParam(m[1], example), 'txid', { quote: true })
-    }
-  },
-  {
-    name: 'command reported the explorer link',
-    pattern: /^the command reported the explorer link "(.+)"$/,
-    run (m, example, world) {
-      assertEqual(world.postJson?.explorerUrl, resolveUrlTemplate(m[1], example), 'explorer link')
-    }
-  },
-  {
-    name: 'the wallet did not broadcast',
-    pattern: /^the wallet did not broadcast$/,
-    run (m, example, world) {
-      assertEqual(world.broadcastCount, 0, 'broadcast count')
-    }
-  },
-  {
     name: 'memo-post command reported the usage error',
     pattern: /^the memo-post command reported the usage error "(.+)"$/,
     run (m, example, world) {
-      assertUsageError(world, 'post', 'memo-post', resolveParam(m[1], example))
+      assertUsageError(world, 'result', 'memo-post', resolveParam(m[1], example))
     }
   },
   {
     name: 'memo-post command reported the error',
     pattern: /^the memo-post command reported the error "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.postExitCode, 1, 'memo-post exit code')
-      assertEqual(parseStderrError(world, 'post').error, resolveParam(m[1], example), 'error', { quote: true })
+      assertEqual(world.resultExitCode, 1, 'memo-post exit code')
+      assertEqual(parseStderrError(world, 'result').error, resolveParam(m[1], example), 'error', { quote: true })
     }
   }
 ]

@@ -22,6 +22,7 @@ import MemoGetPost from './src/commands/memo-get-post.js'
 import MemoStatus from './src/commands/memo-status.js'
 import MemoIdentity from './src/commands/memo-identity.js'
 import MemoPost from './src/commands/memo-post.js'
+import MemoReply from './src/commands/memo-reply.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -39,6 +40,7 @@ const memoGetPost = new MemoGetPost()
 const memoStatus = new MemoStatus()
 const memoIdentity = new MemoIdentity()
 const memoPost = new MemoPost()
+const memoReply = new MemoReply()
 
 const program = new Command()
 
@@ -147,5 +149,14 @@ program.command('memo-post')
   .option('-m, --memo <string>', 'memo text to post')
   .option('--json', 'print the result as one JSON object')
   .action(memoPost.run)
+
+program.command('memo-reply')
+  .description('Broadcast a 0x6d03 Memo reply')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-t, --txid <string>', 'parent post transaction id')
+  .option('-m, --memo <string>', 'reply text')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoReply.run)
 
 program.parseAsync(process.argv)

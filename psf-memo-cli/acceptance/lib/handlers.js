@@ -16,6 +16,8 @@ import { memoGetPostHandlers } from './steps/memo-get-post.js'
 import { memoStatusHandlers } from './steps/memo-status.js'
 import { memoIdentityHandlers } from './steps/memo-identity.js'
 import { memoPostHandlers } from './steps/memo-post.js'
+import { memoReplyHandlers } from './steps/memo-reply.js'
+import { broadcastCommandHandlers } from './steps/broadcast-command.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
@@ -29,6 +31,8 @@ const handlers = [
   ...memoStatusHandlers,
   ...memoIdentityHandlers,
   ...memoPostHandlers,
+  ...memoReplyHandlers,
+  ...broadcastCommandHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
