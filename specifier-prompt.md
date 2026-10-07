@@ -1108,7 +1108,32 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-reply`): specified and merged W2, the
+Latest session (2026-10-07, `cli-memo-like`): specified and merged W3, the
+like/tip write command. The specifier wrote
+`psf-memo-cli/specs/memo-like.feature` (10 scenarios, 20 example executions);
+the coder/refactorer/architect added `src/lib/memo-like.js` (pure `0x6d04`
+prefix, post-txid decode, the 600-sat dust floor / 1-BCH maximum / integer tip
+window, the spendable-sat math, and the human summary) and a thin
+`src/commands/memo-like.js` over the shared `initWriteCommand`/`runWriteCommand`,
+registered as `memo-like`. A like broadcasts `[6d04, post txid (32 LE)]`; an
+optional `--tip`/`--author` adds a P2PKH output to the post author. Tip amount
+rules (dust floor, maximum, non-integer, missing author) and a malformed post
+txid are usage errors (exit 2) with no broadcast; a wallet under 3000 spendable
+sats, or a tip above the spendable balance, is reported as an error (exit 1); a
+rejected broadcast surfaces the wallet's real error (exit 1). The refactorer
+extracted `parseTxidBytesFlag` into `txid-flag.js` (shared with `memo-reply`).
+Merged to `master` at `aa617ed` (fast-forward; architect code-review commit
+`4a7917472f`; the later `aa617ed` adds only the record and summary, so
+`docs/reviews/cli-memo-like-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `4a7917472f` (unit 274/0, property 48/0, acceptance
+all 13 suites, lint ok); language mutation 17 killed / 2 equivalent survived
+(`memo-like.js` lib) plus 4 killed / 1 equivalent (`memo-like.js` command) and
+2 killed / 0 survived (`memo-reply.js`); soft Gherkin mutation 36 total / 10
+killed / 26 intrinsic survivors; DRY clean after extracting the shared
+command-test bodies. Independent acceptance check after merge: 20/20 example
+executions. Architect summary: `docs/reviews/cli-memo-like-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-reply`): specified and merged W2, the
 first multi-field `psf-memo-cli` write command. The specifier wrote
 `psf-memo-cli/specs/memo-reply.feature` (9 scenarios, 14 example executions);
 the coder/refactorer/architect added `src/lib/memo-reply.js` (pure `0x6d03`
@@ -1345,7 +1370,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `89fe739` (`Record cli-memo-reply architect review and verification`).
+Current `master` HEAD: `aa617ed` (`Record cli-memo-like architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1388,11 +1413,11 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R14 `memo-status`**, **R15
-`memo-identity`**) are done, and the first two write commands **W1 `memo-post`**
-and **W2 `memo-reply`** are done. The suggested next item is **W3 `memo-like`**
-(the like/tip write command; broadcast a 0x6d04 like over the shared
-write-command/multi-push scaffolding, with the optional tip and author-address
-rules), then **R16 `memo-wait`**, and the remaining read commands
-(R4/R5/R6/R7–R13). The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
-`swarmforge/scripts/state.sh` to refresh the HEAD lines.
+`memo-identity`**) are done, and the first three write commands **W1
+`memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are done. The
+suggested next item is **R16 `memo-wait`** (poll until a broadcast txid is
+indexed, making the async write->index->read path scriptable), then **R6
+`memo-notifications`** and the remaining read commands (R4/R5/R7–R13). The
+earlier client direction (front-end improvements to `psf-memo-client`) remains
+open in `specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh
+the HEAD lines.

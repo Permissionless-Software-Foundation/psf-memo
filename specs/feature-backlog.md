@@ -35,6 +35,31 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI memo like/tip write command (`cli-memo-like`, 2026-10-07):** W3 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-like.js`
+  (pure `0x6d04` prefix, post-txid decode, the tip window — 600-sat dust floor,
+  1-BCH maximum, integer parse — the spendable-sat math, and the human summary)
+  and a thin `src/commands/memo-like.js` over the shared
+  `initWriteCommand`/`runWriteCommand`, registered as `memo-like` in
+  `psf-memo-cli.js`. A like broadcasts `[6d04, post txid (32 LE)]`; an optional
+  `--tip`/`--author` adds a P2PKH output to the post author. Tip amount rules
+  (dust floor, maximum, non-integer, missing author) and a malformed post txid
+  are usage errors (exit 2) with no broadcast; a wallet under 3000 spendable
+  sats, or a tip above the spendable balance, is reported as an error (exit 1);
+  a rejected broadcast surfaces the wallet's real error (exit 1). The
+  refactorer extracted `parseTxidBytesFlag` into `txid-flag.js` (shared with
+  `memo-reply`). Spec: `psf-memo-cli/specs/memo-like.feature` (10 scenarios, 20
+  example executions). Merged to `master` at `aa617ed` (fast-forward; architect
+  code-review commit `4a7917472f`; the later `aa617ed` adds only the record and
+  summary, so `docs/reviews/cli-memo-like-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `4a7917472f` (unit 274/0, property
+  48/0, acceptance all 13 suites, lint ok); language mutation 17 killed / 2
+  equivalent survived (`memo-like.js` lib) plus 4 killed / 1 equivalent
+  (`memo-like.js` command) and 2 killed / 0 survived (`memo-reply.js`); soft
+  Gherkin mutation 36 total / 10 killed / 26 intrinsic survivors; DRY clean after
+  extracting the shared command-test bodies. Independent acceptance check after
+  merge: 20/20. Architect summary: `docs/reviews/cli-memo-like-summary.md`.
+
 - **CLI memo reply write command (`cli-memo-reply`, 2026-10-07):** W2 of the
   `psf-memo-cli` Memo-protocol backlog — the first multi-field write command.
   Added `psf-memo-cli/src/lib/memo-reply.js` (pure `0x6d03` prefix,
