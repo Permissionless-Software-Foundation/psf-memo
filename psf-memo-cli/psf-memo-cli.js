@@ -21,6 +21,7 @@ import MemoThread from './src/commands/memo-thread.js'
 import MemoGetPost from './src/commands/memo-get-post.js'
 import MemoStatus from './src/commands/memo-status.js'
 import MemoIdentity from './src/commands/memo-identity.js'
+import MemoPost from './src/commands/memo-post.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -37,6 +38,7 @@ const memoThread = new MemoThread()
 const memoGetPost = new MemoGetPost()
 const memoStatus = new MemoStatus()
 const memoIdentity = new MemoIdentity()
+const memoPost = new MemoPost()
 
 const program = new Command()
 
@@ -137,5 +139,13 @@ program.command('memo-identity')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoIdentity.run)
+
+program.command('memo-post')
+  .description('Broadcast a 0x6d02 Memo post')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-m, --memo <string>', 'memo text to post')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoPost.run)
 
 program.parseAsync(process.argv)
