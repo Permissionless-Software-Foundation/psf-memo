@@ -13,6 +13,26 @@ import {
 } from '../../../src/lib/wire-encoding.js'
 import { resolveParam } from '../step-support.js'
 
+// Run a conversion, recording either its result or the thrown error on the
+// world so both the success and malformed-input scenarios share one path.
+function captureConversion (world, run) {
+  world.conversionError = null
+  try {
+    return run()
+  } catch (err) {
+    world.conversionError = err
+    return null
+  }
+}
+
+// Assert that a byte buffer renders to the expected lowercase hex string.
+function assertHex (value, expected, label) {
+  const actual = value?.toString('hex')
+  if (actual !== expected) {
+    throw new Error(`Expected ${label} ${expected}, got ${actual}`)
+  }
+}
+
 const wireEncodingHandlers = [
   {
     name: 'a Memo encoding helper',
@@ -36,23 +56,14 @@ const wireEncodingHandlers = [
     name: 'convert txid to wire bytes',
     pattern: /^the txid is converted to wire bytes$/,
     run (m, example, world) {
-      world.conversionError = null
-      try {
-        world.wireBytes = txidToWireBytes(world.txid)
-      } catch (err) {
-        world.conversionError = err
-      }
+      world.wireBytes = captureConversion(world, () => txidToWireBytes(world.txid))
     }
   },
   {
     name: 'wire bytes are',
     pattern: /^the wire bytes are "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = world.wireBytes?.toString('hex')
-      if (actual !== expected) {
-        throw new Error(`Expected wire bytes ${expected}, got ${actual}`)
-      }
+      assertHex(world.wireBytes, resolveParam(m[1], example), 'wire bytes')
     }
   },
   {
@@ -75,23 +86,14 @@ const wireEncodingHandlers = [
     name: 'convert address to payload',
     pattern: /^the address is converted to its payload$/,
     run (m, example, world) {
-      world.conversionError = null
-      try {
-        world.payload = addressToHash160(world.address)
-      } catch (err) {
-        world.conversionError = err
-      }
+      world.payload = captureConversion(world, () => addressToHash160(world.address))
     }
   },
   {
     name: 'payload is',
     pattern: /^the payload is "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = world.payload?.toString('hex')
-      if (actual !== expected) {
-        throw new Error(`Expected payload ${expected}, got ${actual}`)
-      }
+      assertHex(world.payload, resolveParam(m[1], example), 'payload')
     }
   },
   {

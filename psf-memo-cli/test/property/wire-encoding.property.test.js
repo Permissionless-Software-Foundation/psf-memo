@@ -12,6 +12,7 @@
 */
 
 import { test } from 'node:test'
+import assert from 'node:assert/strict'
 import cashaddr from 'ecashaddrjs'
 import { seededRandom, forAll } from './harness.js'
 import {
@@ -73,4 +74,29 @@ test('addressToHash160 round-trips a random hash160 in display order', async () 
     },
     { label: 'addressToHash160 round trip' }
   )
+})
+
+test('txidToWireBytes rejects every malformed hex input', () => {
+  const rng = seededRandom(20261012)
+
+  const malformed = []
+  // Wrong length: 0..62 characters of valid hex.
+  for (let i = 0; i < 200; i++) {
+    const length = Math.floor(rng() * 63)
+    let value = ''
+    for (let j = 0; j < length; j++) {
+      value += HEX_CHARS[Math.floor(rng() * HEX_CHARS.length)]
+    }
+    malformed.push(value)
+  }
+  // Right length, one non-hex character at a random position.
+  for (let i = 0; i < 200; i++) {
+    const at = Math.floor(rng() * 64)
+    const value = randomTxid(rng)
+    malformed.push(`${value.slice(0, at)}z${value.slice(at + 1)}`)
+  }
+
+  for (const value of malformed) {
+    assert.throws(() => txidToWireBytes(value), /Txid/, `should reject ${value}`)
+  }
 })
