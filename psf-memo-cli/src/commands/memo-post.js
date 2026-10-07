@@ -83,5 +83,5 @@ class MemoPost {
 export default MemoPost
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T17:07:09.927Z","module_hash":"f31fc748a5d848dc9987037c3395e97c182865cf6684805998ee00f145749150","functions":[{"id":"func/MemoPost.constructor","name":"MemoPost.constructor","line":26,"end_line":36,"hash":"58a3cff261f283f8e1119d512dde0dcb12ec870b1aedf7dfd071a6689ce48f86"},{"id":"func/MemoPost.run","name":"MemoPost.run","line":41,"end_line":64,"hash":"951a15b04c6287e928fabe08db1d39f1339667c918f1e52b958f150471554b21"},{"id":"func/MemoPost.validateFlags","name":"MemoPost.validateFlags","line":68,"end_line":71,"hash":"5d68d7586c8dec507165926f9661d00fe53403ea9f1f0ac2b80ce55740183e92"},{"id":"func/MemoPost.post","name":"MemoPost.post","line":74,"end_line":80,"hash":"944e6884783f3e6b55691ab1c29795da58cf95d2878e27402d9fee288b1172b1"}]}
 // mutate4javascript-manifest-end

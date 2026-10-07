@@ -53,6 +53,18 @@ function makeCommand ({ broadcast } = {}) {
   return { command, out, err, calls }
 }
 
+// Run the command with the given flags in JSON mode and assert a usage error
+// (exit 2) that never reaches the broadcaster.
+async function assertUsageError (flags, expected) {
+  const { command, err, calls } = makeCommand()
+
+  const code = await command.run({ json: true, ...flags })
+
+  assert.equal(code, 2)
+  assert.deepEqual(JSON.parse(err.text()), { error: expected })
+  assert.equal(calls.length, 0)
+}
+
 describe('#memo-post command', () => {
   let originalExitCode
 
@@ -92,47 +104,25 @@ describe('#memo-post command', () => {
   })
 
   it('reports a missing wallet source as the documented usage error (exit 2)', async () => {
-    const { command, err, calls } = makeCommand()
-
-    const code = await command.run({ json: true, memo: 'hello memo' })
-
-    assert.equal(code, 2)
-    assert.deepEqual(JSON.parse(err.text()), { error: NO_SOURCE })
-    assert.equal(calls.length, 0)
+    await assertUsageError({ memo: 'hello memo' }, NO_SOURCE)
   })
 
   it('reports an over-long memo as a usage error and never broadcasts (exit 2)', async () => {
-    const { command, err, calls } = makeCommand()
-
-    const code = await command.run({ json: true, name: 'wallet1', memo: 'a'.repeat(218) })
-
-    assert.equal(code, 2)
-    assert.deepEqual(JSON.parse(err.text()), {
-      error: 'Memo is too long. Maximum is 217 characters.'
-    })
-    assert.equal(calls.length, 0)
+    await assertUsageError(
+      { name: 'wallet1', memo: 'a'.repeat(218) },
+      'Memo is too long. Maximum is 217 characters.'
+    )
   })
 
   it('reports a missing memo as a usage error (exit 2)', async () => {
-    const { command, err, calls } = makeCommand()
-
-    const code = await command.run({ json: true, name: 'wallet1' })
-
-    assert.equal(code, 2)
-    assert.deepEqual(JSON.parse(err.text()), {
-      error: 'You must specify memo text with the -m flag.'
-    })
-    assert.equal(calls.length, 0)
+    await assertUsageError(
+      { name: 'wallet1' },
+      'You must specify memo text with the -m flag.'
+    )
   })
 
   it('reports an empty memo as a usage error (exit 2)', async () => {
-    const { command, err, calls } = makeCommand()
-
-    const code = await command.run({ json: true, name: 'wallet1', memo: '' })
-
-    assert.equal(code, 2)
-    assert.deepEqual(JSON.parse(err.text()), { error: 'Memo must not be empty.' })
-    assert.equal(calls.length, 0)
+    await assertUsageError({ name: 'wallet1', memo: '' }, 'Memo must not be empty.')
   })
 
   it('surfaces the wallet broadcast error (exit 1)', async () => {
