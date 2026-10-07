@@ -54,5 +54,5 @@ export function formatFeedMessage (posts = [], pagination = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T01:53:52.397Z","module_hash":"5bc32cf79c440d2a423b37aff42f86b0cf05b60c6ecf3fe816c2639797d9e94c","functions":[{"id":"func/parseNonNegativeInteger","name":"parseNonNegativeInteger","line":19,"end_line":27,"hash":"59414499403988f535c8f64194324787a0f7d585597888e4c06f17f65ff8b5a6"},{"id":"func/parseFeedFlags","name":"parseFeedFlags","line":30,"end_line":36,"hash":"139a05f5921133012a6b862aa435cf6885f5acc00ec9aa2ecb764bddee3f3cd2"},{"id":"func/formatFeedMessage","name":"formatFeedMessage","line":40,"end_line":54,"hash":"a9a51f74202031c461c1a19e44658ef8b06f6547cf2e24ae4f36bbadb31600e5"}]}
 // mutate4javascript-manifest-end

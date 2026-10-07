@@ -38,6 +38,24 @@ describe('#memo-feed helpers', () => {
       })
     })
 
+    it('accepts zero as a real page value', () => {
+      assert.deepEqual(parseFeedFlags({ limit: '0', offset: '0' }), {
+        limit: 0,
+        offset: 0,
+        viewer: null
+      })
+    })
+
+    it('treats empty and null flags as absent', () => {
+      for (const value of ['', null]) {
+        assert.deepEqual(parseFeedFlags({ limit: value, offset: value }), {
+          limit: DEFAULT_FEED_LIMIT,
+          offset: DEFAULT_FEED_OFFSET,
+          viewer: null
+        })
+      }
+    })
+
     it('keeps a viewer address and treats an empty viewer as none', () => {
       assert.equal(
         parseFeedFlags({ viewer: 'bitcoincash:qviewer' }).viewer,

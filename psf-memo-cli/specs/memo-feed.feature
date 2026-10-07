@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T01:55:53.315105110Z","feature_name":"Memo Feed","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-feed.feature","background_hash":"8ec63aa94461d0b21ff2fd5f064bfe5c652530b00cd17a224d1326ca021e747a","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Feed - 5 an empty feed reports no posts","scenario_hash":"cdcddb7031bf9f63fd2a0f789ef4c40f323ede11f0f6da2d90570a96d3bbe9b1","mutation_count":3,"result":{"Total":3,"Killed":3,"Survived":0,"Errors":0},"tested_at":"2026-10-07T01:55:53.315105110Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Feed (R1): the first psf-memo-cli read command. It reads one page of the
 # recent top-level Memo feed from psf-memo-db (GET /posts/recent, newest first)
 # and reports the returned posts and the service's pagination. Read commands
