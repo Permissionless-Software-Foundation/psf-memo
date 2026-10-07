@@ -15,55 +15,16 @@ import MemoPost from '../../../src/commands/memo-post.js'
 import { UsageError } from '../../../src/lib/reporter.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
-import { captureStream } from '../../support/capture.js'
+import {
+  assertUsageError,
+  makeCommand,
+  walletUtilFor,
+  TXID,
+  EXPLORER
+} from '../../support/write-command-unit.js'
 
-const TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
-const EXPLORER = `https://bch.loping.net/tx/${TXID}`
 const NO_SOURCE =
   'You must specify a wallet name with the -n flag or a WIF with the --wif flag.'
-
-function fakeWallet (address = 'bitcoincash:qwallet') {
-  return { walletInfo: { cashAddress: address } }
-}
-
-function walletUtilFor (wallet = fakeWallet()) {
-  return {
-    instanceWallet: async () => wallet,
-    instanceWalletFromWif: async () => wallet
-  }
-}
-
-// Build a command whose broadcast records its call and resolves the supplied
-// result or throws the supplied error.
-function makeCommand ({ broadcast } = {}) {
-  const out = captureStream()
-  const err = captureStream()
-  const calls = []
-  const command = new MemoPost({
-    walletUtil: walletUtilFor(),
-    broadcast:
-      broadcast ||
-      (async (args) => {
-        calls.push(args)
-        return { txid: TXID, explorerUrl: EXPLORER }
-      }),
-    stdout: out.stream,
-    stderr: err.stream
-  })
-  return { command, out, err, calls }
-}
-
-// Run the command with the given flags in JSON mode and assert a usage error
-// (exit 2) that never reaches the broadcaster.
-async function assertUsageError (flags, expected) {
-  const { command, err, calls } = makeCommand()
-
-  const code = await command.run({ json: true, ...flags })
-
-  assert.equal(code, 2)
-  assert.deepEqual(JSON.parse(err.text()), { error: expected })
-  assert.equal(calls.length, 0)
-}
 
 describe('#memo-post command', () => {
   let originalExitCode
@@ -77,7 +38,7 @@ describe('#memo-post command', () => {
   })
 
   it('broadcasts the 0x6d02 action and reports the txid and link as JSON', async () => {
-    const { command, out, err, calls } = makeCommand()
+    const { command, out, err, calls } = makeCommand(MemoPost)
 
     const code = await command.run({ json: true, name: 'wallet1', memo: 'hello memo' })
 
@@ -95,7 +56,7 @@ describe('#memo-post command', () => {
   })
 
   it('accepts a WIF wallet source', async () => {
-    const { command, calls } = makeCommand()
+    const { command, calls } = makeCommand(MemoPost)
 
     const code = await command.run({ json: true, wif: 'wif-one', memo: 'hi' })
 
@@ -104,11 +65,12 @@ describe('#memo-post command', () => {
   })
 
   it('reports a missing wallet source as the documented usage error (exit 2)', async () => {
-    await assertUsageError({ memo: 'hello memo' }, NO_SOURCE)
+    await assertUsageError(MemoPost, { memo: 'hello memo' }, NO_SOURCE)
   })
 
   it('reports an over-long memo as a usage error and never broadcasts (exit 2)', async () => {
     await assertUsageError(
+      MemoPost,
       { name: 'wallet1', memo: 'a'.repeat(218) },
       'Memo is too long. Maximum is 217 characters.'
     )
@@ -116,17 +78,18 @@ describe('#memo-post command', () => {
 
   it('reports a missing memo as a usage error (exit 2)', async () => {
     await assertUsageError(
+      MemoPost,
       { name: 'wallet1' },
       'You must specify memo text with the -m flag.'
     )
   })
 
   it('reports an empty memo as a usage error (exit 2)', async () => {
-    await assertUsageError({ name: 'wallet1', memo: '' }, 'Memo must not be empty.')
+    await assertUsageError(MemoPost, { name: 'wallet1', memo: '' }, 'Memo must not be empty.')
   })
 
   it('surfaces the wallet broadcast error (exit 1)', async () => {
-    const { command, out, err } = makeCommand({
+    const { command, out, err } = makeCommand(MemoPost, {
       broadcast: async () => {
         throw new Error('insufficient funds')
       }
@@ -140,7 +103,7 @@ describe('#memo-post command', () => {
   })
 
   it('prints the txid and explorer link in human mode', async () => {
-    const { command, out } = makeCommand()
+    const { command, out } = makeCommand(MemoPost)
 
     const code = await command.run({ name: 'wallet1', memo: 'hello memo' })
 

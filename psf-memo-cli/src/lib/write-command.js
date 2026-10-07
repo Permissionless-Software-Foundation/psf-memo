@@ -64,5 +64,5 @@ export async function runWriteCommand ({ command, flags, parse, format }) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T18:26:13.797Z","module_hash":"04a4480b18ad2bff2071a0d9a2f0fc6ffa2a71336f2ebd9377cd4ee23579669f","functions":[{"id":"func/initWriteCommand","name":"initWriteCommand","line":20,"end_line":35,"hash":"eddd6c0ca5a4f408a6086f454e68849e92d5830860b9cfabb9e0706f1e277e52"},{"id":"func/runWriteCommand","name":"runWriteCommand","line":41,"end_line":64,"hash":"9e73b355dbe23e25cc4cf2595e65508c7d4f9a0e93de3375d60695f448e2c1a5"}]}
 // mutate4javascript-manifest-end

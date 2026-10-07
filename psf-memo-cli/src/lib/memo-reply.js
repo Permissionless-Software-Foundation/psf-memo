@@ -55,5 +55,5 @@ export function formatReplyMessage ({ txid, explorerUrl } = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T18:26:34.143Z","module_hash":"8cd9b2a50381b15c5700cbf9765aa3573825637738a04fc2c72937ab467a8d98","functions":[{"id":"func/parseReplyFlags","name":"parseReplyFlags","line":25,"end_line":50,"hash":"413a77cd9b349a41f1dbf7b613c1b6694ebd7cdfff2816f787948065cfd70a8a"},{"id":"func/formatReplyMessage","name":"formatReplyMessage","line":53,"end_line":55,"hash":"c67dbebce6eb635798343949c1937f36cdc49007dcc4e5f03bac3c1c61d28fe1"}]}
 // mutate4javascript-manifest-end

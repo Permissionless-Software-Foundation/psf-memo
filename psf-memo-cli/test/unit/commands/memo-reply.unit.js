@@ -15,57 +15,18 @@ import MemoReply from '../../../src/commands/memo-reply.js'
 import { UsageError } from '../../../src/lib/reporter.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
-import { captureStream } from '../../support/capture.js'
+import {
+  assertUsageError,
+  makeCommand,
+  walletUtilFor,
+  TXID,
+  EXPLORER
+} from '../../support/write-command-unit.js'
 
-const TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
-const EXPLORER = `https://bch.loping.net/tx/${TXID}`
 const PARENT = `01${'00'.repeat(31)}`
 const PARENT_WIRE = `${'00'.repeat(31)}01`
 const NO_SOURCE =
   'You must specify a wallet name with the -n flag or a WIF with the --wif flag.'
-
-function fakeWallet (address = 'bitcoincash:qwallet') {
-  return { walletInfo: { cashAddress: address } }
-}
-
-function walletUtilFor (wallet = fakeWallet()) {
-  return {
-    instanceWallet: async () => wallet,
-    instanceWalletFromWif: async () => wallet
-  }
-}
-
-// Build a command whose broadcast records its call and resolves the supplied
-// result or throws the supplied error.
-function makeCommand ({ broadcast } = {}) {
-  const out = captureStream()
-  const err = captureStream()
-  const calls = []
-  const command = new MemoReply({
-    walletUtil: walletUtilFor(),
-    broadcast:
-      broadcast ||
-      (async (args) => {
-        calls.push(args)
-        return { txid: TXID, explorerUrl: EXPLORER }
-      }),
-    stdout: out.stream,
-    stderr: err.stream
-  })
-  return { command, out, err, calls }
-}
-
-// Run the command with the given flags in JSON mode and assert a usage error
-// (exit 2) that never reaches the broadcaster.
-async function assertUsageError (flags, expected) {
-  const { command, err, calls } = makeCommand()
-
-  const code = await command.run({ json: true, ...flags })
-
-  assert.equal(code, 2)
-  assert.deepEqual(JSON.parse(err.text()), { error: expected })
-  assert.equal(calls.length, 0)
-}
 
 describe('#memo-reply command', () => {
   let originalExitCode
@@ -79,7 +40,7 @@ describe('#memo-reply command', () => {
   })
 
   it('broadcasts the 0x6d03 action and reports the txid and link as JSON', async () => {
-    const { command, out, err, calls } = makeCommand()
+    const { command, out, err, calls } = makeCommand(MemoReply)
 
     const code = await command.run({ json: true, name: 'wallet1', txid: PARENT, memo: 'hello reply' })
 
@@ -98,7 +59,7 @@ describe('#memo-reply command', () => {
   })
 
   it('accepts a WIF wallet source', async () => {
-    const { command, calls } = makeCommand()
+    const { command, calls } = makeCommand(MemoReply)
 
     const code = await command.run({ json: true, wif: 'wif-one', txid: PARENT, memo: 'hi' })
 
@@ -107,15 +68,17 @@ describe('#memo-reply command', () => {
   })
 
   it('reports a missing wallet source as the documented usage error (exit 2)', async () => {
-    await assertUsageError({ txid: PARENT, memo: 'hello reply' }, NO_SOURCE)
+    await assertUsageError(MemoReply, { txid: PARENT, memo: 'hello reply' }, NO_SOURCE)
   })
 
   it('reports a malformed parent txid as a usage error and never broadcasts (exit 2)', async () => {
     await assertUsageError(
+      MemoReply,
       { name: 'wallet1', txid: '1234', memo: 'hello reply' },
       'Txid must be a 64-character hex string.'
     )
     await assertUsageError(
+      MemoReply,
       { name: 'wallet1', txid: 'z'.repeat(64), memo: 'hello reply' },
       'Txid must be a valid hex string.'
     )
@@ -123,6 +86,7 @@ describe('#memo-reply command', () => {
 
   it('reports an over-long reply as a usage error and never broadcasts (exit 2)', async () => {
     await assertUsageError(
+      MemoReply,
       { name: 'wallet1', txid: PARENT, memo: 'é'.repeat(93) },
       'Reply is too long. Maximum is 184 bytes.'
     )
@@ -130,6 +94,7 @@ describe('#memo-reply command', () => {
 
   it('reports a missing reply as a usage error (exit 2)', async () => {
     await assertUsageError(
+      MemoReply,
       { name: 'wallet1', txid: PARENT },
       'You must specify reply text with the -m flag.'
     )
@@ -137,13 +102,14 @@ describe('#memo-reply command', () => {
 
   it('reports an empty reply as a usage error (exit 2)', async () => {
     await assertUsageError(
+      MemoReply,
       { name: 'wallet1', txid: PARENT, memo: '' },
       'Reply must not be empty.'
     )
   })
 
   it('surfaces the wallet broadcast error (exit 1)', async () => {
-    const { command, out, err } = makeCommand({
+    const { command, out, err } = makeCommand(MemoReply, {
       broadcast: async () => {
         throw new Error('insufficient funds')
       }
@@ -157,7 +123,7 @@ describe('#memo-reply command', () => {
   })
 
   it('prints the txid and explorer link in human mode', async () => {
-    const { command, out } = makeCommand()
+    const { command, out } = makeCommand(MemoReply)
 
     const code = await command.run({ name: 'wallet1', txid: PARENT, memo: 'hello reply' })
 
