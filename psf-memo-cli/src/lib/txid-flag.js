@@ -8,6 +8,7 @@
 
 // Local libraries
 import { UsageError } from './reporter.js'
+import { txidToWireBytes } from './wire-encoding.js'
 
 export const TXID_FLAG_ERROR = 'You must specify a post txid with the -t flag.'
 
@@ -20,6 +21,19 @@ export function parseTxidFlag (flags = {}) {
   }
 
   return { txid }
+}
+
+// Resolve the required post txid and decode it to its 32-byte little-endian
+// wire form. A malformed txid is a UsageError, so it is reported before any
+// broadcast.
+export function parseTxidBytesFlag (flags = {}) {
+  const { txid } = parseTxidFlag(flags)
+
+  try {
+    return txidToWireBytes(txid)
+  } catch (err) {
+    throw new UsageError(err.message)
+  }
 }
 
 // mutate4javascript-manifest-begin

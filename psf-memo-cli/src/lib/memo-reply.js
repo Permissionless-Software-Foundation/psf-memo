@@ -9,8 +9,7 @@
 
 // Local libraries
 import { UsageError } from './reporter.js'
-import { parseTxidFlag } from './txid-flag.js'
-import { txidToWireBytes } from './wire-encoding.js'
+import { parseTxidBytesFlag } from './txid-flag.js'
 
 // The 0x6d03 "reply" action prefix.
 export const MEMO_REPLY_PREFIX = '6d03'
@@ -23,14 +22,7 @@ export const MAX_REPLY_BYTES = 184
 // error (exit 2) reported before any broadcast. Returns the fields the command
 // sends: the wire-form parent bytes and the reply text.
 export function parseReplyFlags (flags = {}) {
-  const { txid: parent } = parseTxidFlag(flags)
-
-  let parentBytes
-  try {
-    parentBytes = txidToWireBytes(parent)
-  } catch (err) {
-    throw new UsageError(err.message)
-  }
+  const parentBytes = parseTxidBytesFlag(flags)
 
   const text = flags.memo
 

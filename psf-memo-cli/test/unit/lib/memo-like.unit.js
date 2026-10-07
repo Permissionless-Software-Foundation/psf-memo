@@ -110,6 +110,10 @@ describe('#memo-like helpers', () => {
     assert.equal(spendableSats(undefined), 0)
   })
 
+  it('treats a UTXO with no recognized value field as zero', () => {
+    assert.equal(spendableSats({ utxos: [{}] }), 0)
+  })
+
   it('renders the txid and explorer link', () => {
     const message = formatLikeMessage({
       txid: 'abc123',

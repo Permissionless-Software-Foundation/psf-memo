@@ -11,8 +11,7 @@
 
 // Local libraries
 import { UsageError } from './reporter.js'
-import { parseTxidFlag } from './txid-flag.js'
-import { txidToWireBytes } from './wire-encoding.js'
+import { parseTxidBytesFlag } from './txid-flag.js'
 
 // The 0x6d04 "like" action prefix.
 export const MEMO_LIKE_PREFIX = '6d04'
@@ -24,9 +23,8 @@ export const DUST_LIMIT_SATS = 3000
 export const DUST_TIP_SATS = 600
 export const MAX_TIP_SATS = 100000000
 
-// Parse and validate the optional tip, returning its satoshi value (0 when no
-// tip is given). A non-integer, negative, sub-dust, or over-maximum tip is a
-// usage error.
+// Parse the optional tip to a non-negative integer, returning 0 when no tip is
+// given. A non-integer or negative tip is a usage error.
 function parseTip (value) {
   if (value === undefined || value === null || value === '') return 0
 
@@ -35,6 +33,11 @@ function parseTip (value) {
     throw new UsageError('Tip must be a valid number of satoshis.')
   }
 
+  return tipSats
+}
+
+// Enforce the tip window: zero (no tip) or the dust floor up to the maximum.
+function assertTipInRange (tipSats) {
   if (tipSats > 0 && tipSats < DUST_TIP_SATS) {
     throw new UsageError(`Tip is below the dust limit of ${DUST_TIP_SATS} sats.`)
   }
@@ -52,16 +55,9 @@ function parseTip (value) {
 // command broadcasts: the wire-form post bytes, the tip in sats, and the author
 // address.
 export function parseLikeFlags (flags = {}) {
-  const { txid: post } = parseTxidFlag(flags)
+  const postBytes = parseTxidBytesFlag(flags)
 
-  let postBytes
-  try {
-    postBytes = txidToWireBytes(post)
-  } catch (err) {
-    throw new UsageError(err.message)
-  }
-
-  const tipSats = parseTip(flags.tip)
+  const tipSats = assertTipInRange(parseTip(flags.tip))
   const author = flags.author || ''
 
   if (tipSats > 0 && author === '') {
