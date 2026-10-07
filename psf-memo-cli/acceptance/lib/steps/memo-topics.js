@@ -8,7 +8,7 @@
 */
 
 // Local libraries
-import MemoTimes from '../../../src/commands/memo-topics.js'
+import MemoTopics from '../../../src/commands/memo-topics.js'
 import { runReadCommand, assertReadCommandError } from '../read-command.js'
 import { assertReportedField } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
@@ -48,14 +48,14 @@ const memoTopicsHandlers = [
     name: 'memo-topics command runs',
     pattern: /^the memo-topics command runs$/,
     async run (m, example, world) {
-      await runReadCommand(world, MemoTimes, 'topics', {})
+      await runReadCommand(world, MemoTopics, 'topics', {})
     }
   },
   {
     name: 'memo-topics command runs with a page',
     pattern: /^the memo-topics command runs with limit (.+) and offset (.+)$/,
     async run (m, example, world) {
-      await runReadCommand(world, MemoTimes, 'topics', {
+      await runReadCommand(world, MemoTopics, 'topics', {
         limit: resolveParam(m[1], example),
         offset: resolveParam(m[2], example)
       })

@@ -9,7 +9,7 @@
 
 // Local libraries
 import { parseNonNegativeInteger } from './page-flags.js'
-import { formatReadCount, formatPagination } from './page-summary.js'
+import { formatPageSummary } from './page-summary.js'
 
 // The default page matches the web client and the DB route's own default.
 export const DEFAULT_FEED_LIMIT = 50
@@ -27,17 +27,12 @@ export function parseFeedFlags (flags = {}) {
 // Render the human-readable feed summary: the post count, one line per post
 // (txid, text, reply and like counts), then the service pagination unchanged.
 export function formatFeedMessage (posts = [], pagination = {}) {
-  const lines = [formatReadCount(posts.length, 'post')]
-
-  for (const post of posts) {
-    lines.push(
-      `${post.txid}: ${post.text} (replies ${post.replyCount}, likes ${post.likeCount})`
-    )
-  }
-
-  lines.push(formatPagination(pagination))
-
-  return lines.join('\n')
+  return formatPageSummary(
+    posts,
+    'post',
+    (post) => `${post.txid}: ${post.text} (replies ${post.replyCount}, likes ${post.likeCount})`,
+    pagination
+  )
 }
 
 // mutate4javascript-manifest-begin

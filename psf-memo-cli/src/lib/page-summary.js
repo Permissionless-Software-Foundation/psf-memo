@@ -16,6 +16,20 @@ export function formatPagination (pagination = {}) {
   return `pagination: limit ${pagination.limit}, offset ${pagination.offset}, total ${pagination.total}, hasMore ${pagination.hasMore}`
 }
 
+// Render a paged summary: the "Read N <noun>" count, one line per item rendered
+// by `formatItem`, then the service pagination.
+export function formatPageSummary (items, noun, formatItem, pagination = {}) {
+  const lines = [formatReadCount(items.length, noun)]
+
+  for (const item of items) {
+    lines.push(formatItem(item))
+  }
+
+  lines.push(formatPagination(pagination))
+
+  return lines.join('\n')
+}
+
 // mutate4javascript-manifest-begin
 // {"version":1,"functions":[],"tested_at":null,"module_hash":null}
 // mutate4javascript-manifest-end

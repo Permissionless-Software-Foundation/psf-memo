@@ -9,7 +9,7 @@
 
 // Local libraries
 import { parseNonNegativeInteger } from './page-flags.js'
-import { formatReadCount, formatPagination } from './page-summary.js'
+import { formatPageSummary } from './page-summary.js'
 
 // The default page matches the web client and the DB route's own default.
 export const DEFAULT_TOPICS_LIMIT = 50
@@ -27,17 +27,12 @@ export function parseTopicsFlags (flags = {}) {
 // (room, post count, follower count, last-post time), then the service
 // pagination unchanged.
 export function formatTopicsMessage (topics = [], pagination = {}) {
-  const lines = [formatReadCount(topics.length, 'topic')]
-
-  for (const topic of topics) {
-    lines.push(
-      `${topic.room}: ${topic.postCount} posts, ${topic.followerCount} followers, lastSeen ${topic.lastSeen}`
-    )
-  }
-
-  lines.push(formatPagination(pagination))
-
-  return lines.join('\n')
+  return formatPageSummary(
+    topics,
+    'topic',
+    (topic) => `${topic.room}: ${topic.postCount} posts, ${topic.followerCount} followers, lastSeen ${topic.lastSeen}`,
+    pagination
+  )
 }
 
 // mutate4javascript-manifest-begin
