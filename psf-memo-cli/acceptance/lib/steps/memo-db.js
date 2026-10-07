@@ -131,7 +131,9 @@ const memoDbHandlers = [
   },
   {
     name: 'service received the viewer parameter',
-    pattern: /^the service received the viewer query parameter (.+)$/,
+    // The memo-feed feature quotes its viewer value; refuse a leading quote so
+    // that step routes to the memo-feed handler instead of being captured here.
+    pattern: /^the service received the viewer query parameter ([^"].*)$/,
     run (m, example, world) {
       const viewer = resolveParam(m[1], example)
       if (world.lastRequest?.searchParams.get('viewer') !== viewer) {

@@ -16,6 +16,7 @@ import SendTokens from './src/commands/send-tokens.js'
 import WalletSweep from './src/commands/wallet-sweep.js'
 import MsgSign from './src/commands/msg-sign.js'
 import MsgVerify from './src/commands/msg-verify.js'
+import MemoFeed from './src/commands/memo-feed.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -27,6 +28,7 @@ const sendTokens = new SendTokens()
 const walletSweep = new WalletSweep()
 const msgSign = new MsgSign()
 const msgVerify = new MsgVerify()
+const memoFeed = new MemoFeed()
 
 const program = new Command()
 
@@ -90,5 +92,14 @@ program.command('msg-verify')
   .option('-m, --msg <string>', 'Cleartext message that was signed')
   .option('-a, --addr <string>', 'BCH address generated from private key that signed the message')
   .action(msgVerify.run)
+
+program.command('memo-feed')
+  .description('Read one page of the recent top-level Memo feed')
+  .option('-l, --limit <number>', 'maximum posts to return (default 50)')
+  .option('-o, --offset <number>', 'posts to skip (default 0)')
+  .option('--viewer <string>', 'viewer address for mute filtering')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoFeed.run)
 
 program.parseAsync(process.argv)

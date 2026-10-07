@@ -10,6 +10,7 @@
 import MemoDb from '../../src/lib/memo-db.js'
 import { UsageError } from '../../src/lib/reporter.js'
 import { memoDbHandlers } from './steps/memo-db.js'
+import { memoFeedHandlers } from './steps/memo-feed.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
@@ -17,6 +18,7 @@ import { wireEncodingHandlers } from './steps/wire-encoding.js'
 
 const handlers = [
   ...memoDbHandlers,
+  ...memoFeedHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
