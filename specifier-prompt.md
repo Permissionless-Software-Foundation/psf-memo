@@ -989,6 +989,20 @@ that a single user-facing feature may require specs in more than one component.
     architect also removed a double flag parse (dead `validateFlags` return) in
     the command so the flags are parsed exactly once.
 
+72. **New read commands subclass the shared read-command scaffolding.**
+    The refactorer extracted `src/lib/read-command.js` (`initReadCommand`,
+    `createMemoDbClient`, `runReadCommand`) and the acceptance-side
+    `acceptance/lib/read-command.js` JSON-mode capture, so `memo-feed` and
+    `memo-thread` are thin declarative subclasses supplying only their flag
+    parser, service read, and renderer. Reuse this for the remaining read
+    commands (R3/R4/R5/R6/R7…) instead of re-wiring the MemoDb client and
+    reporter. `MemoDb.getThread(txid)` resolves an unindexed txid to `null`;
+    the command maps that to a named not-found failure (exit 1) so R16
+    `memo-wait` can poll. Soft Gherkin mutation of `memo-thread.feature` was
+    6/6 killed (no equivalents); language mutation 10 killed / 0 survived
+    (`read-command.js` 1, `memo-thread.js` 5, `memo-db.js` 4), commands 0
+    mutable sites; DRY clean.
+
 ---
 
 ## 10. Run / verify the app
@@ -1045,7 +1059,23 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-feed`): specified and merged R1, the first
+Latest session (2026-10-07, `cli-memo-thread`): specified and merged R2, the
+thread read command. The specifier wrote `psf-memo-cli/specs/memo-thread.feature`
+(7 scenarios, 9 example executions); the coder/refactorer/architect added
+`src/lib/memo-thread.js` (pure flag parsing and result shaping),
+`src/commands/memo-thread.js` (thin subclass of the new shared
+`src/lib/read-command.js`), `MemoDb.getThread`, registration, acceptance steps,
+unit tests, and property tests. A txid with no indexed thread maps to a named
+not-found failure (exit 1). Merged to `master` at `8fe83ce` (fast-forward;
+architect code-review commit `aa75d60`; the later `8fe83ce` adds only the record
+and summary, so `docs/reviews/cli-memo-thread-verification.json` is valid for
+the merged tree). `verify.sh cli` pass 4/4 at `aa75d60` (unit 170/0, property
+32/0, acceptance 7 suites, lint ok); language mutation 10 killed / 0 survived
+(`read-command.js` 1, `memo-thread.js` 5, `memo-db.js` 4); soft Gherkin mutation
+6/6 killed; DRY clean. Independent acceptance check after merge: 9/9. Architect
+summary: `docs/reviews/cli-memo-thread-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-feed`): specified and merged R1, the first
 `memo-*` read command. The specifier wrote `psf-memo-cli/specs/memo-feed.feature`
 (6 scenarios, 11 example executions); the coder/refactorer/architect added
 `src/lib/memo-feed.js` (pure flag parsing/defaults and result shaping) and
@@ -1171,7 +1201,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `bbf680b` (`Record cli-memo-feed architect review and verification`).
+Current `master` HEAD: `8fe83ce` (`Record cli-memo-thread architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1212,10 +1242,10 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
-foundation (F1, F5, F4, F2/F3) is complete and the first read command **R1
-`memo-feed`** is done. The suggested next item is **R2 `memo-thread`** (a post
-and its reply tree with like counts), then the rest of the read layer
-(R3/R14/R15), then the write commands (`memo-post` W1, `memo-reply` W2,
-`memo-like` W3, …). The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
-`swarmforge/scripts/state.sh` to refresh the HEAD lines.
+foundation (F1, F5, F4, F2/F3) is complete and the first two read commands **R1
+`memo-feed`** and **R2 `memo-thread`** are done. The suggested next item is **R3
+`memo-post`** (a single post document via `GET /level/post/:txid`), then the rest
+of the read layer (R14/R15), then the write commands (`memo-post` W1,
+`memo-reply` W2, `memo-like` W3, …). The earlier client direction (front-end
+improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
+Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

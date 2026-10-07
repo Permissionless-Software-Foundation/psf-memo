@@ -35,6 +35,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI memo thread read command (`cli-memo-thread`, 2026-10-07):** R2 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-thread.js`
+  (pure flag parsing and result shaping), `src/commands/memo-thread.js` (thin
+  subclass of the new shared `src/lib/read-command.js`), and `MemoDb.getThread`
+  for `GET /posts/:txid/thread`. It reads a Memo post and its nested reply tree
+  with per-node like counts, preserving the service's oldest-first reply order;
+  a txid with no indexed thread maps to a named not-found failure (exit 1). The
+  refactorer also extracted the shared read-command scaffolding reused by
+  `memo-feed`. Spec: `psf-memo-cli/specs/memo-thread.feature` (7 scenarios, 9
+  example executions). Merged to `master` at `8fe83ce` (fast-forward; architect
+  code-review commit `aa75d60`; the later `8fe83ce` is docs-only, so
+  `docs/reviews/cli-memo-thread-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `aa75d60` (unit 170/0, property 32/0,
+  acceptance 7 suites, lint ok); language mutation 10 killed / 0 survived;
+  soft Gherkin mutation 6/6 killed; DRY clean. Independent acceptance check
+  after merge: 9/9. Architect summary:
+  `docs/reviews/cli-memo-thread-summary.md`.
+
 - **CLI memo feed read command (`cli-memo-feed`, 2026-10-07):** R1 of the
   `psf-memo-cli` Memo-protocol backlog — the first `memo-*` read command. Added
   `psf-memo-cli/src/lib/memo-feed.js` (pure flag parsing/defaults and result

@@ -217,6 +217,10 @@ only need an address take `--viewer`/`-a <addr>` instead.
 acceptance 11/11). Spec: `psf-memo-cli/specs/memo-feed.feature`; architect
 summary: `docs/reviews/cli-memo-feed-summary.md`.
 
+**R2 status: DONE** (2026-10-07, task `cli-memo-thread`; merged at `8fe83ce`;
+acceptance 9/9). Spec: `psf-memo-cli/specs/memo-thread.feature`; architect
+summary: `docs/reviews/cli-memo-thread-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -283,10 +287,11 @@ unless noted.
 
 1. **Foundation**: F1 **DONE**; F5 **DONE**; F4 **DONE**; F2/F3 (wallet
    resolution + broadcast scaffolding + multi-push) **DONE**. The foundation is
-   complete. **R1 (`memo-feed`) DONE**; **next: R2 (`memo-thread`)**.
-2. **Read-first value**: R1 **DONE**, R2, R3, R14, R15 — an agent can observe
-   the protocol and its own identity before writing. **Next up: R2
-   (`memo-thread`).**
+   complete. **R1 (`memo-feed`) and R2 (`memo-thread`) DONE**; **next: R3
+   (`memo-post`)**.
+2. **Read-first value**: R1 **DONE**, R2 **DONE**, R3, R14, R15 — an agent can
+   observe the protocol and its own identity before writing. **Next up: R3
+   (`memo-post`).**
 3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
    (wait). F6 (Gherkin acceptance harness) is already **DONE** with F1; W1
    (post) follows the same pattern.
