@@ -12,13 +12,14 @@ import { assert } from 'chai'
 
 // Local libraries
 import MemoReply from '../../../src/commands/memo-reply.js'
-import { UsageError } from '../../../src/lib/reporter.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
 import {
+  assertBroadcastErrorSurfaces,
+  assertHumanMode,
   assertUsageError,
+  assertValidatesFlags,
   makeCommand,
-  walletUtilFor,
   TXID,
   EXPLORER
 } from '../../support/write-command-unit.js'
@@ -109,35 +110,18 @@ describe('#memo-reply command', () => {
   })
 
   it('surfaces the wallet broadcast error (exit 1)', async () => {
-    const { command, out, err } = makeCommand(MemoReply, {
-      broadcast: async () => {
-        throw new Error('insufficient funds')
-      }
-    })
-
-    const code = await command.run({ json: true, name: 'wallet1', txid: PARENT, memo: 'hello reply' })
-
-    assert.equal(code, 1)
-    assert.equal(out.text(), '')
-    assert.deepEqual(JSON.parse(err.text()), { error: 'insufficient funds' })
+    await assertBroadcastErrorSurfaces(
+      (opts) => makeCommand(MemoReply, opts),
+      { name: 'wallet1', txid: PARENT, memo: 'hello reply' }
+    )
   })
 
   it('prints the txid and explorer link in human mode', async () => {
-    const { command, out } = makeCommand(MemoReply)
-
-    const code = await command.run({ name: 'wallet1', txid: PARENT, memo: 'hello reply' })
-
-    assert.equal(code, 0)
-    assert.include(out.text(), TXID)
-    assert.include(out.text(), EXPLORER)
-    assert.throws(() => JSON.parse(out.text()))
+    await assertHumanMode(() => makeCommand(MemoReply), { name: 'wallet1', txid: PARENT, memo: 'hello reply' })
   })
 
   it('validates the flags without broadcasting', () => {
-    const command = new MemoReply({ walletUtil: walletUtilFor() })
-
-    assert.equal(command.validateFlags({ txid: PARENT, memo: 'hello' }), true)
-    assert.throws(() => command.validateFlags({ memo: 'hello' }), UsageError)
+    assertValidatesFlags(MemoReply, { txid: PARENT, memo: 'hello' })
   })
 
   it('defaults to a real wallet util and the shared broadcaster', () => {

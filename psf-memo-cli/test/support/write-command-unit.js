@@ -13,6 +13,7 @@ import { assert } from 'chai'
 
 // Local libraries
 import { captureStream } from './capture.js'
+import { UsageError } from '../../src/lib/reporter.js'
 
 const TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 const EXPLORER = `https://bch.loping.net/tx/${TXID}`
@@ -68,6 +69,45 @@ export async function assertUsageError (CommandClass, flags, expected) {
   assert.equal(code, 2)
   assert.deepEqual(JSON.parse(err.text()), { error: expected })
   assert.equal(calls.length, 0)
+}
+
+// Assert a command surfaces a thrown broadcast error as exit 1 with the error
+// echoed on stderr and nothing on stdout. `makeCmd` receives the broadcast
+// override and returns { command, out, err, ... }.
+export async function assertBroadcastErrorSurfaces (makeCmd, flags) {
+  const { command, out, err } = makeCmd({
+    broadcast: async () => {
+      throw new Error('insufficient funds')
+    }
+  })
+
+  const code = await command.run({ json: true, ...flags })
+
+  assert.equal(code, 1)
+  assert.equal(out.text(), '')
+  assert.deepEqual(JSON.parse(err.text()), { error: 'insufficient funds' })
+}
+
+// Assert a successful human-mode run prints the txid and explorer link as text,
+// not JSON.
+export async function assertHumanMode (makeCmd, flags) {
+  const { command, out } = makeCmd()
+
+  const code = await command.run(flags)
+
+  assert.equal(code, 0)
+  assert.include(out.text(), TXID)
+  assert.include(out.text(), EXPLORER)
+  assert.throws(() => JSON.parse(out.text()))
+}
+
+// Assert a command accepts its happy-path flags and rejects empty flags as a
+// usage error before any broadcast.
+export function assertValidatesFlags (CommandClass, validFlags) {
+  const command = new CommandClass({ walletUtil: walletUtilFor() })
+
+  assert.equal(command.validateFlags(validFlags), true)
+  assert.throws(() => command.validateFlags({}), UsageError)
 }
 
 export { TXID, EXPLORER }

@@ -12,12 +12,14 @@ import { assert } from 'chai'
 
 // Local libraries
 import MemoLike from '../../../src/commands/memo-like.js'
-import { UsageError } from '../../../src/lib/reporter.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
 import { captureStream } from '../../support/capture.js'
 import {
+  assertBroadcastErrorSurfaces,
+  assertHumanMode,
   assertUsageError,
+  assertValidatesFlags,
   fakeWallet,
   walletUtilFor,
   TXID,
@@ -85,13 +87,20 @@ describe('#memo-like command', () => {
     assert.equal(err.text(), '')
   })
 
-  it('broadcasts a tip output when a tip and author are given', async () => {
-    const { command, calls } = makeCommand(100000)
+  it('broadcasts a tip output for a tip up to the spendable balance', async () => {
+    const cases = [
+      { balance: 100000, tip: '25000', amountSat: 25000 },
+      { balance: 30000, tip: '30000', amountSat: 30000 }
+    ]
 
-    const code = await command.run({ json: true, name: 'wallet1', txid: POST, tip: '25000', author: AUTHOR })
+    for (const { balance, tip, amountSat } of cases) {
+      const { command, calls } = makeCommand(balance)
 
-    assert.equal(code, 0)
-    assert.deepEqual(calls[0].bchOutput, [{ address: AUTHOR, amountSat: 25000 }])
+      const code = await command.run({ json: true, name: 'wallet1', txid: POST, tip, author: AUTHOR })
+
+      assert.equal(code, 0)
+      assert.deepEqual(calls[0].bchOutput, [{ address: AUTHOR, amountSat }])
+    }
   })
 
   it('reports a balance below the dust floor as an error and never broadcasts (exit 1)', async () => {
@@ -163,35 +172,18 @@ describe('#memo-like command', () => {
   })
 
   it('surfaces the wallet broadcast error (exit 1)', async () => {
-    const { command, out, err } = makeCommand(100000, {
-      broadcast: async () => {
-        throw new Error('insufficient funds')
-      }
-    })
-
-    const code = await command.run({ json: true, name: 'wallet1', txid: POST })
-
-    assert.equal(code, 1)
-    assert.equal(out.text(), '')
-    assert.deepEqual(JSON.parse(err.text()), { error: 'insufficient funds' })
+    await assertBroadcastErrorSurfaces(
+      (opts) => makeCommand(100000, opts),
+      { name: 'wallet1', txid: POST }
+    )
   })
 
   it('prints the txid and explorer link in human mode', async () => {
-    const { command, out } = makeCommand(3000)
-
-    const code = await command.run({ name: 'wallet1', txid: POST })
-
-    assert.equal(code, 0)
-    assert.include(out.text(), TXID)
-    assert.include(out.text(), EXPLORER)
-    assert.throws(() => JSON.parse(out.text()))
+    await assertHumanMode(() => makeCommand(3000), { name: 'wallet1', txid: POST })
   })
 
   it('validates the flags without broadcasting', () => {
-    const command = new MemoLike({ walletUtil: walletUtilFor() })
-
-    assert.equal(command.validateFlags({ txid: POST }), true)
-    assert.throws(() => command.validateFlags({}), UsageError)
+    assertValidatesFlags(MemoLike, { txid: POST })
   })
 
   it('defaults to a real wallet util and the shared broadcaster', () => {

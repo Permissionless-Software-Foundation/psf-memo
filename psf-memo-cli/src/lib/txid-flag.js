@@ -37,5 +37,5 @@ export function parseTxidBytesFlag (flags = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-07T03:29:09.873Z","module_hash":"32782d73caea44fbe46cc184a53b4cbfdc155d60373eefce8c7c260e0cb27bef","functions":[{"id":"func/parseTxidFlag","name":"parseTxidFlag","line":15,"end_line":23,"hash":"c270e41d8062d0dc1e3042df6c2b09adf2e8978ba54f36bb77cc282574f96a69"}]}
+// {"version":1,"tested_at":"2026-10-07T18:49:31.954Z","module_hash":"41743cf42bab64f7a9e5360fec3ff406e06b3dcd90857e1a1bc65c729c33fe1b","functions":[{"id":"func/parseTxidFlag","name":"parseTxidFlag","line":16,"end_line":24,"hash":"c270e41d8062d0dc1e3042df6c2b09adf2e8978ba54f36bb77cc282574f96a69"},{"id":"func/parseTxidBytesFlag","name":"parseTxidBytesFlag","line":29,"end_line":37,"hash":"368713be89b0d3398ea00de3f70969e64d26b365c736aba0ad6e98c2277e71f3"}]}
 // mutate4javascript-manifest-end

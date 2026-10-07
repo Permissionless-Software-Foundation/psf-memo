@@ -46,11 +46,24 @@ describe('#memo-like helpers', () => {
     assert.equal(parsed.author, '')
   })
 
+  it('treats an empty, null, or numeric-zero tip as no tip', () => {
+    for (const tip of ['', null, '0', 0]) {
+      const parsed = parseLikeFlags({ txid: POST, tip })
+      assert.equal(parsed.tipSats, 0)
+    }
+  })
+
   it('accepts a valid tip and author address', () => {
     const parsed = parseLikeFlags({ txid: POST, tip: '600', author: AUTHOR })
 
     assert.equal(parsed.tipSats, DUST_TIP_SATS)
     assert.equal(parsed.author, AUTHOR)
+  })
+
+  it('accepts a tip of exactly the maximum', () => {
+    const parsed = parseLikeFlags({ txid: POST, tip: String(MAX_TIP_SATS), author: AUTHOR })
+
+    assert.equal(parsed.tipSats, MAX_TIP_SATS)
   })
 
   it('exposes the protocol constants', () => {

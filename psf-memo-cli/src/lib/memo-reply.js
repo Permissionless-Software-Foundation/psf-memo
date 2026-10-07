@@ -47,5 +47,5 @@ export function formatReplyMessage ({ txid, explorerUrl } = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-07T18:26:34.143Z","module_hash":"8cd9b2a50381b15c5700cbf9765aa3573825637738a04fc2c72937ab467a8d98","functions":[{"id":"func/parseReplyFlags","name":"parseReplyFlags","line":25,"end_line":50,"hash":"413a77cd9b349a41f1dbf7b613c1b6694ebd7cdfff2816f787948065cfd70a8a"},{"id":"func/formatReplyMessage","name":"formatReplyMessage","line":53,"end_line":55,"hash":"c67dbebce6eb635798343949c1937f36cdc49007dcc4e5f03bac3c1c61d28fe1"}]}
+// {"version":1,"tested_at":"2026-10-07T18:49:42.288Z","module_hash":"11e500234f21cf0c64b92dc0737902d7de1e0f82b458b90a2d20ce93a940dd1c","functions":[{"id":"func/parseReplyFlags","name":"parseReplyFlags","line":24,"end_line":42,"hash":"1195cb44094f52602b0fa1b66db54369d2c53eca691a8c70ec5ac577b24ded64"},{"id":"func/formatReplyMessage","name":"formatReplyMessage","line":45,"end_line":47,"hash":"c67dbebce6eb635798343949c1937f36cdc49007dcc4e5f03bac3c1c61d28fe1"}]}
 // mutate4javascript-manifest-end

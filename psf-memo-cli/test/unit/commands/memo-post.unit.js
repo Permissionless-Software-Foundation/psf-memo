@@ -12,13 +12,14 @@ import { assert } from 'chai'
 
 // Local libraries
 import MemoPost from '../../../src/commands/memo-post.js'
-import { UsageError } from '../../../src/lib/reporter.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
 import {
+  assertBroadcastErrorSurfaces,
+  assertHumanMode,
   assertUsageError,
+  assertValidatesFlags,
   makeCommand,
-  walletUtilFor,
   TXID,
   EXPLORER
 } from '../../support/write-command-unit.js'
@@ -89,35 +90,18 @@ describe('#memo-post command', () => {
   })
 
   it('surfaces the wallet broadcast error (exit 1)', async () => {
-    const { command, out, err } = makeCommand(MemoPost, {
-      broadcast: async () => {
-        throw new Error('insufficient funds')
-      }
-    })
-
-    const code = await command.run({ json: true, name: 'wallet1', memo: 'hello memo' })
-
-    assert.equal(code, 1)
-    assert.equal(out.text(), '')
-    assert.deepEqual(JSON.parse(err.text()), { error: 'insufficient funds' })
+    await assertBroadcastErrorSurfaces(
+      (opts) => makeCommand(MemoPost, opts),
+      { name: 'wallet1', memo: 'hello memo' }
+    )
   })
 
   it('prints the txid and explorer link in human mode', async () => {
-    const { command, out } = makeCommand(MemoPost)
-
-    const code = await command.run({ name: 'wallet1', memo: 'hello memo' })
-
-    assert.equal(code, 0)
-    assert.include(out.text(), TXID)
-    assert.include(out.text(), EXPLORER)
-    assert.throws(() => JSON.parse(out.text()))
+    await assertHumanMode(() => makeCommand(MemoPost), { name: 'wallet1', memo: 'hello memo' })
   })
 
   it('validates the memo flag without broadcasting', () => {
-    const command = new MemoPost({ walletUtil: walletUtilFor() })
-
-    assert.equal(command.validateFlags({ memo: 'hello' }), true)
-    assert.throws(() => command.validateFlags({}), UsageError)
+    assertValidatesFlags(MemoPost, { memo: 'hello' })
   })
 
   it('defaults to a real wallet util and the shared broadcaster', () => {

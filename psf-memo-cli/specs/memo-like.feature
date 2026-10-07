@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T18:52:38.663395310Z","feature_name":"Memo Like","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-like.feature","background_hash":"e0f4cd04fd00a3ffda3d4ad9f0568830f9e95968d33fe6f6365a58139e30d67b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Like (W3): the psf-memo-cli like/tip write command. It resolves the
 # signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source), requires
 # the liked post txid (-t), and broadcasts the 0x6d04 like action carrying the
