@@ -176,6 +176,48 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getThread', () => {
+    it('requests the thread for the txid', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ post: { txid: 'abc' } })
+        }
+      })
+
+      const result = await client.getThread('abc')
+
+      assert.equal(new URL(requested).pathname, '/posts/abc/thread')
+      assert.equal(result.post.txid, 'abc')
+    })
+
+    it('encodes the txid in the request path', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ post: {} })
+        }
+      })
+
+      await client.getThread('a/b')
+
+      assert.equal(new URL(requested).pathname, '/posts/a%2Fb/thread')
+    })
+
+    it('resolves an unindexed txid to null', async () => {
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async () => jsonResponse({ message: 'Post not found.' }, 404)
+      })
+
+      assert.isNull(await client.getThread('missing'))
+    })
+  })
+
   describe('errors', () => {
     const cases = [
       {

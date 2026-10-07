@@ -4,8 +4,9 @@
   The endpoint is selected, in order, by an explicit --db-url override, the
   MEMO_DB_URL environment variable, then the production memo-db default. The
   client uses the Node 20 global fetch, so callers can inject a fetch
-  implementation for tests. A 404 on a /level/* resource resolves to null (no
-  data), while a transport or server failure is reported as an error.
+  implementation for tests. A 404 on a /level/* resource or an unindexed
+  post's thread resolves to null (no data), while a transport or server failure
+  is reported as an error.
 */
 
 // Production memo-db. Local development points MEMO_DB_URL at
@@ -42,6 +43,12 @@ class MemoDb {
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })
+  }
+
+  // GET /posts/:txid/thread. A txid that is not an indexed post resolves to
+  // null so the caller can report a not-found failure and poll for it.
+  async getThread (txid) {
+    return this.getJson(`/posts/${encodeURIComponent(txid)}/thread`, { notFoundValue: null })
   }
 
   // GET a JSON resource. Throws on a transport failure or a non-OK response.

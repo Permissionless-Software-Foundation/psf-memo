@@ -17,6 +17,7 @@ import WalletSweep from './src/commands/wallet-sweep.js'
 import MsgSign from './src/commands/msg-sign.js'
 import MsgVerify from './src/commands/msg-verify.js'
 import MemoFeed from './src/commands/memo-feed.js'
+import MemoThread from './src/commands/memo-thread.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -29,6 +30,7 @@ const walletSweep = new WalletSweep()
 const msgSign = new MsgSign()
 const msgVerify = new MsgVerify()
 const memoFeed = new MemoFeed()
+const memoThread = new MemoThread()
 
 const program = new Command()
 
@@ -101,5 +103,12 @@ program.command('memo-feed')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoFeed.run)
+
+program.command('memo-thread')
+  .description('Read a Memo post and its nested reply tree')
+  .option('-t, --txid <string>', 'post transaction id')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoThread.run)
 
 program.parseAsync(process.argv)

@@ -11,6 +11,7 @@ import MemoDb from '../../src/lib/memo-db.js'
 import { UsageError } from '../../src/lib/reporter.js'
 import { memoDbHandlers } from './steps/memo-db.js'
 import { memoFeedHandlers } from './steps/memo-feed.js'
+import { memoThreadHandlers } from './steps/memo-thread.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
@@ -19,6 +20,7 @@ import { wireEncodingHandlers } from './steps/wire-encoding.js'
 const handlers = [
   ...memoDbHandlers,
   ...memoFeedHandlers,
+  ...memoThreadHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
@@ -39,6 +41,7 @@ async function createWorld () {
     flagUrl: undefined,
     envUrl: undefined,
     posts: [],
+    threads: {},
     missingProfiles: new Set(),
     unreachable: false,
     lastRequest: null,
@@ -77,6 +80,15 @@ async function createWorld () {
         hasMore: offset + limit < world.posts.length
       }
       return jsonResponse({ posts: page, pagination }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/posts/') && world.lastRequest.pathname.endsWith('/thread')) {
+      // ['', 'posts', '<txid>', 'thread']
+      const txid = decodeURIComponent(world.lastRequest.pathname.split('/')[2] || '')
+      if (!(txid in world.threads)) {
+        return jsonResponse({ message: 'Post not found.' }, 404)
+      }
+      return jsonResponse({ post: world.threads[txid] }, 200)
     }
 
     return jsonResponse({ message: 'not found' }, 404)
