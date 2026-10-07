@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=d23bd0eda967aae482aaa69943ef301befebb099c95d979ef0e2f2151e540a4f
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T03:30:44.816097186Z","feature_name":"Memo Get Post","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-get-post.feature","background_hash":"10e54e08cb2026861764a698bd5655ea4a12941a8c1523a23cb6d47352ba8a6b","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Memo Get Post - 2 the command reports the stored post fields","scenario_hash":"400dfbe844fec0f19c6b671286064fb8cf734876f32fd325f8ce0767a7c786d3","mutation_count":10,"result":{"Total":10,"Killed":10,"Survived":0,"Errors":0},"tested_at":"2026-10-07T03:30:44.816097186Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Get Post (R3): the psf-memo-cli command that reads a single stored Memo
 # post document from psf-memo-db (GET /level/post/:txid). The post is identified
 # by its transaction id via the required -t flag. The stored fields (text,

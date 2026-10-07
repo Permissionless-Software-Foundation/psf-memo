@@ -12,5 +12,5 @@ export function formatGetPostMessage (post = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T03:29:20.268Z","module_hash":"516535b857cf323f524dc0d6b8293fb911f5e229b51ef6917724206363de44d1","functions":[{"id":"func/formatGetPostMessage","name":"formatGetPostMessage","line":10,"end_line":12,"hash":"22d1292701e4c5f5c1c52d9c890d41329652cca453b4278c219fec661ad03a6c"}]}
 // mutate4javascript-manifest-end

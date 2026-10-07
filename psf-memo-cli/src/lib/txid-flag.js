@@ -23,5 +23,5 @@ export function parseTxidFlag (flags = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T03:29:09.873Z","module_hash":"32782d73caea44fbe46cc184a53b4cbfdc155d60373eefce8c7c260e0cb27bef","functions":[{"id":"func/parseTxidFlag","name":"parseTxidFlag","line":15,"end_line":23,"hash":"c270e41d8062d0dc1e3042df6c2b09adf2e8978ba54f36bb77cc282574f96a69"}]}
 // mutate4javascript-manifest-end
