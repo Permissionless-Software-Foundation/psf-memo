@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI wallet source and Memo broadcast scaffolding (`cli-wallet-broadcast`,
+  2026-10-07):** F2/F3 of the `psf-memo-cli` Memo-protocol backlog, completing
+  the foundation. Added `psf-memo-cli/src/lib/wallet-source.js` (pure resolver;
+  exactly one of `-n <wallet>`/`--wif <wif>`, else `UsageError`),
+  `psf-memo-cli/src/lib/memo-broadcast.js` (pure `toPushBuffer`/`buildMemoPushes`
+  plus a confined `minimal-slp-wallet` `Script.encode2` patch so a multi-field
+  action becomes one push per field, gotcha #35), and a `wallet-util.js` WIF
+  constructor. Specs: `psf-memo-cli/specs/wallet-source.feature`,
+  `psf-memo-cli/specs/memo-broadcast.feature`. Merged to `master` at `d78fb09`
+  (architect code-review commit `c2ab84a`; the later `d78fb09` adds only the
+  record and summary, so `docs/reviews/cli-wallet-broadcast-verification.json`
+  is valid for the merged tree). `verify.sh cli` pass 4/4 at `c2ab84a` (unit
+  139/0, property 20/0, acceptance 5 suites, lint ok); language mutation 12
+  killed / 0 survived (`wallet-source.js` 2, `memo-broadcast.js` 6,
+  `wallet-util.js` 4); soft Gherkin mutation memo-broadcast 22/9 and
+  wallet-source 8/0, survivors intrinsic round-trip equivalents; DRY clean.
+  Independent acceptance check after merge: all 5 suites. Architect summary:
+  `docs/reviews/cli-wallet-broadcast-summary.md`.
+
 - **CLI wire-encoding helpers (`cli-memo-wire-encoding`, 2026-10-07):** F4 of the
   `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/wire-encoding.js`: `txidToWireBytes` (32-byte
@@ -894,8 +913,9 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 ## Next up: TBD
 
 Active work has moved to the new `psf-memo-cli` Memo-protocol backlog:
-`psf-memo-cli/dev-docs/feature-backlog.md` (F1, F5, and F4 done; next is F2/F3,
-then R1 `memo-feed`). The earlier client direction — front-end improvements to
+`psf-memo-cli/dev-docs/feature-backlog.md` (F1, F5, F4, and F2/F3 done — the CLI
+foundation is complete; next is R1 `memo-feed`). The earlier client direction —
+front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next
 feature.

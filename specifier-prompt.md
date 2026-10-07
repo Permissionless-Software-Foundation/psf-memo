@@ -959,6 +959,22 @@ that a single user-facing feature may require specs in more than one component.
     error or tie the assertion to independent data. Spec:
     `psf-memo-cli/specs/memo-wire-encoding.feature`.
 
+70. **CLI wallet source and Memo broadcast scaffolding (F2/F3).**
+    `psf-memo-cli/src/lib/wallet-source.js` is a pure resolver requiring exactly
+    one of `-n <wallet>`/`--wif <wif>`; zero or two sources is a `UsageError`
+    (exit 2). `psf-memo-cli/src/lib/memo-broadcast.js` exports pure
+    `toPushBuffer`/`buildMemoPushes` and confines the minimal-slp-wallet
+    `Script.encode2` monkey-patch to `broadcastMultiPush`/
+    `attachMultiPushOpReturn` (gotcha #35); multi-field actions become one push
+    per field. `wallet-util.js` gained a WIF constructor. The acceptance
+    recording wallet reuses `buildMemoPushes` (do not re-implement the wire
+    format in the test double). Soft Gherkin mutation was memo-broadcast 22/9
+    and wallet-source 8/0, all survivors intrinsic round-trip equivalents (each
+    example value flows through both setup and assertion); language mutation 12
+    killed / 0 survived across the three modules. Specs:
+    `psf-memo-cli/specs/wallet-source.feature`,
+    `psf-memo-cli/specs/memo-broadcast.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1015,7 +1031,25 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-wire-encoding`): specified and merged F4,
+Latest session (2026-10-07, `cli-wallet-broadcast`): specified and merged
+F2/F3, completing the CLI foundation. The specifier wrote
+`psf-memo-cli/specs/wallet-source.feature` (4 scenarios) and
+`psf-memo-cli/specs/memo-broadcast.feature` (5 scenarios); the
+coder/refactorer/architect added `src/lib/wallet-source.js` (exactly one of
+`-n`/`--wif`, else `UsageError`), `src/lib/memo-broadcast.js` (pure
+`toPushBuffer`/`buildMemoPushes` plus the confined `Script.encode2` patch for
+multi-field actions), and the `wallet-util.js` WIF constructor. Merged to
+`master` at `d78fb09` (fast-forward; architect code-review commit `c2ab84a`;
+the later `d78fb09` adds only the record and summary, so
+`docs/reviews/cli-wallet-broadcast-verification.json` is valid for the merged
+tree). `verify.sh cli` pass 4/4 at `c2ab84a` (unit 139/0, property 20/0,
+acceptance 5 suites, lint ok); language mutation 12 killed / 0 survived
+(`wallet-source.js` 2, `memo-broadcast.js` 6, `wallet-util.js` 4); soft Gherkin
+mutation memo-broadcast 22/9, wallet-source 8/0, survivors intrinsic round-trip
+equivalents; DRY clean. Independent acceptance check after merge: all 5 suites.
+Architect summary: `docs/reviews/cli-wallet-broadcast-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-wire-encoding`): specified and merged F4,
 the shared Memo OP_RETURN wire-encoding helpers. The specifier wrote
 `psf-memo-cli/specs/memo-wire-encoding.feature` (4 scenarios, 10 example
 executions); the coder/refactorer/architect added
@@ -1032,7 +1066,7 @@ survived (`wire-encoding.js`); soft Gherkin mutation 16 considered / 10 killed /
 after merge: memo-wire-encoding 10/10 plus the two existing suites (all 3 passed).
 Architect summary: `docs/reviews/cli-memo-wire-encoding-summary.md`.
 
-Previous session (2026-10-06, `cli-output-contract`): specified and merged F5, the
+Earlier session (2026-10-06, `cli-output-contract`): specified and merged F5, the
 shared CLI output and exit-code contract. The specifier wrote
 `psf-memo-cli/specs/cli-output-contract.feature` (5 scenarios, 10 example
 executions); the coder/refactorer/architect added
@@ -1106,7 +1140,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `6f5c5ba` (`Record cli-memo-wire-encoding architect review and verification`).
+Current `master` HEAD: `d78fb09` (`Record cli-wallet-broadcast architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1146,9 +1180,10 @@ following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
-`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands); F1, F5,
-and F4 are done. The suggested next items are **F2/F3** (wallet name-or-WIF
-resolution + multi-push broadcast), then the first read command **R1
-`memo-feed`**. The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
-`swarmforge/scripts/state.sh` to refresh the HEAD lines.
+`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
+foundation (F1, F5, F4, F2/F3) is complete. The suggested next item is the first
+read command **R1 `memo-feed`**, then the read layer, then the write commands
+(`memo-post` W1, `memo-reply` W2, `memo-like` W3, …). The earlier client
+direction (front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
+HEAD lines.

@@ -119,6 +119,14 @@ unless a concrete need appears. A 404 on a `/level/*` lookup resolves to `null`,
 error, mirroring the web client.
 
 ### F2 — Wallet resolution + shared Memo broadcast scaffolding
+**Status: DONE** (2026-10-07, task `cli-wallet-broadcast`; merged at `d78fb09`;
+acceptance 9/9 across the two features).
+`psf-memo-cli/src/lib/wallet-source.js` is a pure resolver requiring exactly one
+of `-n <wallet>`/`--wif <wif>` (zero or two is a `UsageError`);
+`psf-memo-cli/src/lib/memo-broadcast.js` is the shared broadcast helper.
+Specs: `psf-memo-cli/specs/wallet-source.feature`,
+`psf-memo-cli/specs/memo-broadcast.feature`; architect summary:
+`docs/reviews/cli-wallet-broadcast-summary.md`.
 A shared resolver (`src/lib/wallet-source.js`) accepts exactly one of
 `-n <wallet>` or `--wif <wif>` and returns an initialized wallet plus its cash
 address. A shared module (`src/lib/memo-broadcast.js`) then validates flags,
@@ -130,6 +138,11 @@ the low-level `lib/op-return.js` signature (gotcha #3). Reuse
 `runSendCommand` where it fits, and add a JSON result shape.
 
 ### F3 — Multi-push OP_RETURN support (Node port of `memo-multipush.js`)
+**Status: DONE** (2026-10-07, task `cli-wallet-broadcast`; merged at `d78fb09`).
+`src/lib/memo-broadcast.js` exports pure `toPushBuffer`/`buildMemoPushes` and
+confines the minimal-slp-wallet `Script.encode2` patch to
+`broadcastMultiPush`/`attachMultiPushOpReturn`; multi-field actions become one
+push per field. Spec: `psf-memo-cli/specs/memo-broadcast.feature`.
 `minimal-slp-wallet`'s `sendOpReturn(msg, prefix)` hardcodes
 `[OP_RETURN, prefix, msg]`, so multi-field actions (reply, topic message,
 poll create/option/vote, and send-money) are silently flattened into one push
@@ -263,10 +276,9 @@ unless noted.
 
 ## Suggested delivery order
 
-1. **Foundation**: F1 (DB client + production config) **DONE**; F5 (output/exit
-   contract) **DONE**; F4 (encoding helpers) **DONE**; **next: F2 (wallet
-   resolution + broadcast scaffolding)** and **F3 (multi-push)**, then the read
-   layer.
+1. **Foundation**: F1 **DONE**; F5 **DONE**; F4 **DONE**; F2/F3 (wallet
+   resolution + broadcast scaffolding + multi-push) **DONE**. The foundation is
+   complete; **next: R1 (`memo-feed`)**.
 2. **Read-first value**: R1, R2, R3, R14, R15 — an agent can observe the
    protocol and its own identity before writing. **Next up: R1 (`memo-feed`).**
 3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
