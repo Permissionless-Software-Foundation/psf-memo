@@ -1108,7 +1108,31 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-post`): specified and merged W1, the
+Latest session (2026-10-07, `cli-memo-reply`): specified and merged W2, the
+first multi-field `psf-memo-cli` write command. The specifier wrote
+`psf-memo-cli/specs/memo-reply.feature` (9 scenarios, 14 example executions);
+the coder/refactorer/architect added `src/lib/memo-reply.js` (pure `0x6d03`
+prefix, 184-UTF-8-byte limit, parent-txid presence/format validation,
+little-endian wire encoding, human summary) and a thin
+`src/commands/memo-reply.js` over the new shared `src/lib/write-command.js`
+(`initWriteCommand`/`runWriteCommand`), which now also backs `memo-post`. A
+valid reply broadcasts `[6d03, parent txid (32 LE), text]` through the F3
+multi-push scaffolding and reports the txid + `bch.loping.net` explorer link;
+missing/empty/over-long text and a missing/malformed parent txid are usage
+errors (exit 2) with no broadcast; a rejected broadcast surfaces the wallet's
+real error (exit 1). Merged to `master` at `89fe739` (fast-forward; architect
+code-review commit `30fdddf0c2`; the later `89fe739` adds only the record and
+summary, so `docs/reviews/cli-memo-reply-verification.json` is valid for the
+merged tree). `verify.sh cli` pass 4/4 at `30fdddf0c2` (unit 248/0, property
+46/0, acceptance all 12 suites, lint ok); language mutation 6 killed / 0
+survived (`write-command.js` 2, `memo-reply.js` lib 2, `memo-reply.js` command
+1, and the refactored `memo-post.js` command 1); soft Gherkin mutation 21 total
+/ 7 killed / 14 intrinsic survivors (self-consistent parent/text/txid and
+over-limit equivalents); DRY clean after extracting the shared write-command
+unit helpers. Independent acceptance check after merge: 14/14 example
+executions. Architect summary: `docs/reviews/cli-memo-reply-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-post`): specified and merged W1, the
 first `psf-memo-cli` write command. The specifier wrote
 `psf-memo-cli/specs/memo-post.feature` (7 scenarios, 11 example executions); the
 coder/refactorer/architect added `src/lib/memo-post.js` (pure `0x6d02` prefix,
@@ -1321,7 +1345,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `756747e` (`Record cli-memo-post architect review and verification`).
+Current `master` HEAD: `89fe739` (`Record cli-memo-reply architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1364,10 +1388,11 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R14 `memo-status`**, **R15
-`memo-identity`**) are done, and the first write command **W1 `memo-post`** is
-done. The suggested next item is **W2 `memo-reply`** (the first multi-field write
-command; broadcast a 0x6d03 reply over the F2/F3 multi-push scaffolding), then
-**W3 `memo-like`**, **R16 `memo-wait`**, and the remaining read commands
+`memo-identity`**) are done, and the first two write commands **W1 `memo-post`**
+and **W2 `memo-reply`** are done. The suggested next item is **W3 `memo-like`**
+(the like/tip write command; broadcast a 0x6d04 like over the shared
+write-command/multi-push scaffolding, with the optional tip and author-address
+rules), then **R16 `memo-wait`**, and the remaining read commands
 (R4/R5/R6/R7–R13). The earlier client direction (front-end improvements to
 `psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
 `swarmforge/scripts/state.sh` to refresh the HEAD lines.

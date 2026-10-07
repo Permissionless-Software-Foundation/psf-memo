@@ -35,6 +35,30 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI memo reply write command (`cli-memo-reply`, 2026-10-07):** W2 of the
+  `psf-memo-cli` Memo-protocol backlog — the first multi-field write command.
+  Added `psf-memo-cli/src/lib/memo-reply.js` (pure `0x6d03` prefix,
+  184-UTF-8-byte limit, parent-txid presence/format validation, little-endian
+  wire encoding, human summary) and a thin `src/commands/memo-reply.js` over the
+  new shared `src/lib/write-command.js` (`initWriteCommand`/`runWriteCommand`),
+  which now also backs `memo-post`. A valid reply broadcasts `[6d03, parent
+  txid (32 LE), text]` through the F3 multi-push scaffolding and reports the
+  txid + `bch.loping.net` explorer link; missing/empty/over-long text and a
+  missing/malformed parent txid are usage errors (exit 2) with no broadcast; a
+  rejected broadcast surfaces the wallet's real error (exit 1). Spec:
+  `psf-memo-cli/specs/memo-reply.feature` (9 scenarios, 14 example executions).
+  Merged to `master` at `89fe739` (fast-forward; architect code-review commit
+  `30fdddf0c2`; the later `89fe739` adds only the record and summary, so
+  `docs/reviews/cli-memo-reply-verification.json` is valid for the merged tree).
+  `verify.sh cli` pass 4/4 at `30fdddf0c2` (unit 248/0, property 46/0, acceptance
+  all 12 suites, lint ok); language mutation 6 killed / 0 survived
+  (`write-command.js` 2, `memo-reply.js` lib 2, `memo-reply.js` command 1, and
+  the refactored `memo-post.js` command 1); soft Gherkin mutation 21 total / 7
+  killed / 14 intrinsic survivors (self-consistent parent/text/txid and
+  over-limit equivalents); DRY clean after extracting the shared write-command
+  unit helpers. Independent acceptance check after merge: 14/14. Architect
+  summary: `docs/reviews/cli-memo-reply-summary.md`.
+
 - **CLI memo post write command (`cli-memo-post`, 2026-10-07):** W1 of the
   `psf-memo-cli` Memo-protocol backlog — the first write command. Added
   `psf-memo-cli/src/lib/memo-post.js` (pure `0x6d02` prefix, 217-UTF-16-code-unit

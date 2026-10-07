@@ -262,6 +262,10 @@ unless noted.
 acceptance 11/11). Spec: `psf-memo-cli/specs/memo-post.feature`; architect
 summary: `docs/reviews/cli-memo-post-summary.md`.
 
+**W2 status: DONE** (2026-10-07, task `cli-memo-reply`; merged at `89fe739`;
+acceptance 14/14). Spec: `psf-memo-cli/specs/memo-reply.feature`; architect
+summary: `docs/reviews/cli-memo-reply-summary.md`.
+
 ### Planned / deferred write actions
 
 | ID | Command | Action | Status |
@@ -308,10 +312,10 @@ summary: `docs/reviews/cli-memo-post-summary.md`.
 2. **Read-first value**: R1 **DONE**, R2 **DONE**, R3 **DONE**, R14 **DONE**,
    R15 **DONE** — an agent can observe the protocol and its own identity before
    writing.
-3. **Core write path**: W1 (post) **DONE**, W2 (reply), W3 (like), R6
-   (notifications), and R16 (wait). The foundation (F2/F3/F4) and the
-   write-command scaffolding are in place. **Next up: W2 (`memo-reply`)** — the
-   first multi-field write command.
+3. **Core write path**: W1 (post) **DONE**, W2 (reply) **DONE**, W3 (like), R6
+   (notifications), and R16 (wait). The foundation (F2/F3/F4) and the shared
+   write-command scaffolding are in place. **Next up: W3 (`memo-like`)** — the
+   like/tip write command.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
