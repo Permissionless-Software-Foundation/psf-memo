@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI topic read command (`cli-memo-topic`, 2026-10-07):** R8 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-topic.js` (required `-r` room, optional `--viewer`,
+  page defaults, summary) and a thin `src/commands/memo-topic.js` over the shared
+  `runPostsPageCommand` pipeline and `MemoDb.getTopicPosts`
+  (`GET /topics/:room/posts`), registered as `memo-topic`. It reports one page of
+  a topic's posts (with reply and like counts) and pagination unchanged; the
+  optional viewer filters muted authors. Spec:
+  `psf-memo-cli/specs/memo-topic.feature` (7 scenarios, 12 example executions).
+  Merged to `master` at `085e873` (fast-forward; architect code-review commit
+  `405ab072ef`; the later `085e873` adds only the record and summary, so
+  `docs/reviews/cli-memo-topic-verification.json` is valid for the merged tree).
+  `verify.sh cli` pass 4/4 at `405ab072ef` (unit 370/0, property 68/0, acceptance
+  all 19 suites, lint ok); language mutation 9 killed / 0 survived
+  (`memo-topic.js` 2, `memo-db.js` 7); soft Gherkin mutation 26 total / 24 killed
+  / 2 intrinsic survivors (viewer-address case); DRY clean. Independent
+  acceptance check after merge: 12/12. Architect summary:
+  `docs/reviews/cli-memo-topic-summary.md`.
+
 - **CLI topics read command (`cli-memo-topics`, 2026-10-07):** R7 of the
   `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-topics.js` (page defaults and summary) and a thin

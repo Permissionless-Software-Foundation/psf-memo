@@ -254,6 +254,10 @@ summary: `docs/reviews/cli-memo-posts-summary.md`.
 acceptance 10/10). Spec: `psf-memo-cli/specs/memo-topics.feature`; architect
 summary: `docs/reviews/cli-memo-topics-summary.md`.
 
+**R8 status: DONE** (2026-10-07, task `cli-memo-topic`; merged at `085e873`;
+acceptance 12/12). Spec: `psf-memo-cli/specs/memo-topic.feature`; architect
+summary: `docs/reviews/cli-memo-topic-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -339,10 +343,10 @@ summary: `docs/reviews/cli-memo-like-summary.md`.
    writing.
 3. **Core write path**: W1 (post) **DONE**, W2 (reply) **DONE**, W3 (like)
    **DONE**, R4 (profile) **DONE**, R5 (posts) **DONE**, R6 (notifications)
-   **DONE**, R7 (topics) **DONE**, and R16 (wait) **DONE**. The foundation
-   (F2/F3/F4), the shared write-command scaffolding, the post-page read
-   pipeline, and the shared page-summary renderer are in place. **Next up: R8
-   (`memo-topic`)** — a topic's posts.
+   **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
+   **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
+   and the shared post-page read pipeline are in place. **Next up: R9
+   (`memo-search`)** — full-text post search.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

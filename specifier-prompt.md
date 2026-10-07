@@ -1108,7 +1108,26 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-topics`): specified and merged R7, the
+Latest session (2026-10-07, `cli-memo-topic`): specified and merged R8, the
+single-topic posts read command. The specifier wrote
+`psf-memo-cli/specs/memo-topic.feature` (7 scenarios, 12 example executions);
+the coder/refactorer/architect added `src/lib/memo-topic.js` (required `-r`
+room, optional `--viewer`, page defaults, summary) and a thin
+`src/commands/memo-topic.js` over the shared `runPostsPageCommand` pipeline and
+`MemoDb.getTopicPosts` (`GET /topics/:room/posts`), registered as `memo-topic`.
+It reports one page of a topic's posts (with reply and like counts) and
+pagination unchanged; the optional viewer filters muted authors. Merged to
+`master` at `085e873` (fast-forward; architect code-review commit `405ab072ef`;
+the later `085e873` adds only the record and summary, so
+`docs/reviews/cli-memo-topic-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `405ab072ef` (unit 370/0, property 68/0, acceptance
+all 19 suites, lint ok); language mutation 9 killed / 0 survived
+(`memo-topic.js` 2, `memo-db.js` 7); soft Gherkin mutation 26 total / 24 killed
+/ 2 intrinsic survivors (viewer-address case); DRY clean. Independent acceptance
+check after merge: 12/12 example executions. Architect summary:
+`docs/reviews/cli-memo-topic-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-topics`): specified and merged R7, the
 topic-list read command. The specifier wrote
 `psf-memo-cli/specs/memo-topics.feature` (5 scenarios, 10 example executions);
 the coder/refactorer/architect added `src/lib/memo-topics.js` (page defaults and
@@ -1475,7 +1494,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `5559269` (`Record cli-memo-topics architect review and verification`).
+Current `master` HEAD: `085e873` (`Record cli-memo-topic architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1518,12 +1537,12 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
-`memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R14
-`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
-first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
-`memo-like`** are done. The suggested next item is **R8 `memo-topic`** (a single
-topic's posts, optionally viewer-filtered), then R9 `memo-search`, R10
-`memo-profiles`, R11 `memo-following`/`memo-followers`, R12 `memo-muted`, and
-R13 `memo-poll`. The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
-`swarmforge/scripts/state.sh` to refresh the HEAD lines.
+`memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8
+`memo-topic`**, **R14 `memo-status`**, **R15 `memo-identity`**, **R16
+`memo-wait`**) are done, and the first three write commands **W1 `memo-post`**,
+**W2 `memo-reply`**, and **W3 `memo-like`** are done. The suggested next item is
+**R9 `memo-search`** (full-text post search with an optional viewer filter),
+then R10 `memo-profiles`, R11 `memo-following`/`memo-followers`, R12
+`memo-muted`, and R13 `memo-poll`. The earlier client direction (front-end
+improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
+Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
