@@ -35,6 +35,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI posts read command (`cli-memo-posts`, 2026-10-07):** R5 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-posts.js`
+  (flag parsing/defaults and summary) and a thin `src/commands/memo-posts.js`
+  over the new shared `src/lib/post-page-command.js` (`memo-feed` now uses it
+  too) and the new shared `src/lib/address-flag.js`, registered as `memo-posts`.
+  It reports one page of `GET /posts/by/:addr` (newest first, replies excluded)
+  as `{ posts, pagination }`. Spec: `psf-memo-cli/specs/memo-posts.feature` (6
+  scenarios, 10 example executions). Merged to `master` at `b6d7fac`
+  (fast-forward; architect code-review commit `382485b5f2`; the later `b6d7fac`
+  adds only the record and summary, so
+  `docs/reviews/cli-memo-posts-verification.json` is valid for the merged tree).
+  `verify.sh cli` pass 4/4 at `382485b5f2` (unit 342/0, property 61/0,
+  acceptance all 17 suites, lint ok); language mutation 6 killed / 0 survived
+  (`memo-posts.js` 1, `memo-profile.js` 5; the new shared modules are
+  structural-zero); soft Gherkin mutation 22/22 killed (clean); DRY clean.
+  Independent acceptance check after merge: 10/10. Architect summary:
+  `docs/reviews/cli-memo-posts-summary.md`.
+
 - **CLI profile read command (`cli-memo-profile`, 2026-10-07):** R4 of the
   `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-profile.js` (required `-a`, page defaults, summary)
