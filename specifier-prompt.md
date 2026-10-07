@@ -1034,6 +1034,24 @@ that a single user-facing feature may require specs in more than one component.
     failure (exit 1). DRY: the three memo-db 404 unit tests were consolidated
     into one `assertMissingResource` helper.
 
+75. **Wallet-relative read commands compose; they don't grow the read
+    scaffolding.** `memo-identity` is the first read command that also needs a
+    wallet. It composes `src/lib/read-command.js` with the F2
+    `src/lib/wallet-source.js` resolver and pure `src/lib/memo-identity.js`
+    helpers (BCH summing, sats→BCH, token-UTXO collection); wallet concerns were
+    deliberately not added to the read-command module. `readProfile` issues the
+    name/profile/avatar requests with `Promise.all` and normalizes a missing
+    document to an empty field (`doc?.field || ''`), while a transport failure
+    propagates as exit 1. Soft Gherkin mutation of `memo-identity.feature` was
+    26 total / 12 killed / 14 intrinsic survivors: the kills are the derived
+    balance cells (`sats`/`bch`, `utxos`/`balances`); the survivors are
+    pass-through `addr`/`name`/`bio`/`url` cells used on both the setup and the
+    assertion side (gotcha #12 class). Language mutation 19 killed / 0 survived
+    (`memo-identity.js` command 5, lib 10, `memo-db.js` 4). DRY: the
+    `getName`/`getProfilePic` level-resource tests were table-driven into
+    `requestLevelResource`/`assertMissingResource`; the `assertUsageError`
+    acceptance helper is now shared across the read features.
+
 ---
 
 ## 10. Run / verify the app
@@ -1090,7 +1108,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-status`): specified and merged R14, the
+Latest session (2026-10-07, `cli-memo-identity`): specified and merged R15, the
+first wallet-relative read command. The specifier wrote
+`psf-memo-cli/specs/memo-identity.feature` (6 scenarios, 11 example executions);
+the coder/refactorer/architect added `src/lib/memo-identity.js` (pure balance
+helpers), `src/commands/memo-identity.js` (composition over read-command +
+wallet-source), `MemoDb.getName`/`getProfilePic`, registration, acceptance
+steps, unit tests, and property tests. Missing profile documents become empty
+fields; a transport failure is exit 1. Merged to `master` at `df32bc0`
+(fast-forward; architect code-review commit `a403a53`; the later `df32bc0` adds
+only the record and summary, so
+`docs/reviews/cli-memo-identity-verification.json` is valid for the merged
+tree). `verify.sh cli` pass 4/4 at `a403a53` (unit 211/0, property 42/0,
+acceptance 10 suites, lint ok); language mutation 19 killed / 0 survived; soft
+Gherkin mutation 26/12 with 14 intrinsic survivors (profile pass-through cells);
+DRY clean. Independent acceptance check after merge: 11/11. Architect summary:
+`docs/reviews/cli-memo-identity-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-status`): specified and merged R14, the
 indexer sync-state read command. The specifier wrote
 `psf-memo-cli/specs/memo-status.feature` (3 scenarios, 5 example executions);
 the coder/refactorer/architect added `src/lib/memo-status.js` (pure result
@@ -1265,7 +1300,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `a9aa65a` (`Record cli-memo-status architect review and verification`).
+Current `master` HEAD: `df32bc0` (`Record cli-memo-identity architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1306,11 +1341,12 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
-foundation (F1, F5, F4, F2/F3) is complete and four read commands are done
-(**R1 `memo-feed`**, **R2 `memo-thread`**, **R3 `memo-get-post`**, **R14
-`memo-status`**). The suggested next item is **R15 `memo-identity`** (the wallet's
-Memo identity; composes `wallet-balance` with the profile read and accepts
-`-n`/`--wif`), then **R4 `memo-profile`**, then the write commands (`memo-post`
-W1, `memo-reply` W2, `memo-like` W3, …). The earlier client direction (front-end
-improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
-Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
+foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
+**R2 `memo-thread`**, **R3 `memo-get-post`**, **R14 `memo-status`**, **R15
+`memo-identity`**) are done. The suggested next item is **W1 `memo-post`** (the
+first write command; broadcast a 0x6d02 Memo post over the F2/F3 broadcast
+scaffolding), then **W2 `memo-reply`**, **W3 `memo-like`**, **R16 `memo-wait`**,
+and the remaining read commands (R4/R5/R6/R7–R13). The earlier client direction
+(front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the HEAD
+lines.

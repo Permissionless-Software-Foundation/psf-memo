@@ -229,6 +229,10 @@ summary: `docs/reviews/cli-memo-get-post-summary.md`.
 acceptance 5/5). Spec: `psf-memo-cli/specs/memo-status.feature`; architect
 summary: `docs/reviews/cli-memo-status-summary.md`.
 
+**R15 status: DONE** (2026-10-07, task `cli-memo-identity`; merged at `df32bc0`;
+acceptance 11/11). Spec: `psf-memo-cli/specs/memo-identity.feature`; architect
+summary: `docs/reviews/cli-memo-identity-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -295,14 +299,14 @@ unless noted.
 
 1. **Foundation**: F1 **DONE**; F5 **DONE**; F4 **DONE**; F2/F3 (wallet
    resolution + broadcast scaffolding + multi-push) **DONE**. The foundation is
-   complete. **R1 (`memo-feed`), R2 (`memo-thread`), R3 (`memo-get-post`), and R14
-   (`memo-status`) DONE**; **next: R15 (`memo-identity`)**.
+   complete. **R1 (`memo-feed`), R2 (`memo-thread`), R3 (`memo-get-post`), R14
+   (`memo-status`), and R15 (`memo-identity`) DONE**.
 2. **Read-first value**: R1 **DONE**, R2 **DONE**, R3 **DONE**, R14 **DONE**,
-   R15 — an agent can observe the protocol and its own identity before writing.
-   **Next up: R15 (`memo-identity`).**
-3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
-   (wait). F6 (Gherkin acceptance harness) is already **DONE** with F1; W1
-   (post) follows the same pattern.
+   R15 **DONE** — an agent can observe the protocol and its own identity before
+   writing.
+3. **Core write path**: W1 (post), W2 (reply), W3 (like), R6 (notifications),
+   and R16 (wait). The foundation (F2/F3/F4) and the write-command scaffolding
+   are in place. **Next up: W1 (`memo-post`)** — the first write command.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

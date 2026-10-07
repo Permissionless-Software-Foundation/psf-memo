@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI wallet identity read command (`cli-memo-identity`, 2026-10-07):** R15 of
+  the `psf-memo-cli` Memo-protocol backlog — the first wallet-relative read
+  command. It composes the shared `src/lib/read-command.js` scaffolding with the
+  F2 `src/lib/wallet-source.js` resolver and pure `src/lib/memo-identity.js`
+  helpers (BCH summing, sats→BCH, token-UTXO collection), plus `MemoDb.getName`
+  and `getProfilePic`. It reports the wallet's cash address, BCH/SLP balances,
+  and the address's Memo name/bio/avatar; a missing profile document becomes an
+  empty field (exit 0) while a transport failure is exit 1. Spec:
+  `psf-memo-cli/specs/memo-identity.feature` (6 scenarios, 11 example
+  executions). Merged to `master` at `df32bc0` (fast-forward; architect
+  code-review commit `a403a53`; the later `df32bc0` is docs-only, so
+  `docs/reviews/cli-memo-identity-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `a403a53` (unit 211/0, property 42/0,
+  acceptance 10 suites, lint ok); language mutation 19 killed / 0 survived; soft
+  Gherkin mutation 26 total / 12 killed / 14 intrinsic survivors (profile
+  pass-through cells); DRY clean. Independent acceptance check after merge:
+  11/11. Architect summary:
+  `docs/reviews/cli-memo-identity-summary.md`.
+
 - **CLI indexer status read command (`cli-memo-status`, 2026-10-07):** R14 of
   the `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-status.js` (pure result shaping),
