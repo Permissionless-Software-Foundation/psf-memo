@@ -33,3 +33,7 @@ export function addressToHash160 (addr) {
     throw new Error('Address must be a valid cash address.')
   }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-07T00:10:48.498Z","module_hash":"609b1128ce1b0e5a1e0c9dc4ec74bd294406bfb72155a565f28958df916c0277","functions":[{"id":"func/txidToWireBytes","name":"txidToWireBytes","line":15,"end_line":26,"hash":"9fff7b807e7704c78c9293ae3a0d71beccf2a6232b545c049421174c636d249c"},{"id":"func/addressToHash160","name":"addressToHash160","line":29,"end_line":35,"hash":"dc7a0d5f33b6796750ff16af6ea2d73589cc1cb70360abdc49ebecc9d2ab2001"}]}
+// mutate4javascript-manifest-end

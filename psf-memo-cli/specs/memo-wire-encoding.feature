@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T00:11:08.664635708Z","feature_name":"Memo Wire Encoding","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-wire-encoding.feature","background_hash":"a66b7a2e7e764329f66a5401d2fbe13924a637dc3bfb3d575913535866ec7306","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Memo Wire Encoding - 1 a display txid converts to little-endian wire bytes","scenario_hash":"8de1487580f39631e097d8014b36951fcd0d4ce386c86df068dbeff0aa3dc21c","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-07T00:11:08.664635708Z"},{"index":2,"name":"Memo Wire Encoding - 3 a cash address converts to its 20-byte hash160","scenario_hash":"8e4a63a00dd11e597f2040b3ceb9ab98f5da4513078830d59f0374f508c11fb9","mutation_count":6,"result":{"Total":6,"Killed":6,"Survived":0,"Errors":0},"tested_at":"2026-10-07T00:11:08.664635708Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Memo Wire Encoding - 1, Memo Wire Encoding - 2, Memo Wire Encoding - 3, Memo Wire Encoding - 4
 #
 # F4: the shared encoding helpers every memo-* broadcast command uses to build
