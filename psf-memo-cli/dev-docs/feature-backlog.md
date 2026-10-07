@@ -258,6 +258,10 @@ unless noted.
 | W12 | `memo-poll-option -n <wallet> -t <poll> -m <option> [--json]` | `0x6d13` add poll option | LE txid (32) + option ≤ 184 bytes | Multi-push (F3). |
 | W13 | `memo-poll-vote -n <wallet> -t <poll> [-m <comment>] [--json]` | `0x6d14` poll vote | LE txid (32) + comment ≤ 184 bytes | Multi-push (F3). |
 
+**W1 status: DONE** (2026-10-07, task `cli-memo-post`; merged at `756747e`;
+acceptance 11/11). Spec: `psf-memo-cli/specs/memo-post.feature`; architect
+summary: `docs/reviews/cli-memo-post-summary.md`.
+
 ### Planned / deferred write actions
 
 | ID | Command | Action | Status |
@@ -304,9 +308,10 @@ unless noted.
 2. **Read-first value**: R1 **DONE**, R2 **DONE**, R3 **DONE**, R14 **DONE**,
    R15 **DONE** — an agent can observe the protocol and its own identity before
    writing.
-3. **Core write path**: W1 (post), W2 (reply), W3 (like), R6 (notifications),
-   and R16 (wait). The foundation (F2/F3/F4) and the write-command scaffolding
-   are in place. **Next up: W1 (`memo-post`)** — the first write command.
+3. **Core write path**: W1 (post) **DONE**, W2 (reply), W3 (like), R6
+   (notifications), and R16 (wait). The foundation (F2/F3/F4) and the
+   write-command scaffolding are in place. **Next up: W2 (`memo-reply`)** — the
+   first multi-field write command.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

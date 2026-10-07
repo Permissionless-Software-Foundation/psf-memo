@@ -35,6 +35,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI memo post write command (`cli-memo-post`, 2026-10-07):** W1 of the
+  `psf-memo-cli` Memo-protocol backlog — the first write command. Added
+  `psf-memo-cli/src/lib/memo-post.js` (pure `0x6d02` prefix, 217-UTF-16-code-unit
+  limit, flag parsing, human summary) and a thin `src/commands/memo-post.js`
+  composing the shared F5 reporter, F2 wallet source, and F3 broadcast
+  scaffolding, registered as `memo-post` in `psf-memo-cli.js`. A valid memo
+  broadcasts `[6d02, text]` and reports the txid + `bch.loping.net` explorer
+  link; missing/empty/over-long text is a usage error (exit 2) with no
+  broadcast; a rejected broadcast surfaces the wallet's real error (exit 1).
+  Spec: `psf-memo-cli/specs/memo-post.feature` (7 scenarios, 11 example
+  executions). Merged to `master` at `756747e` (fast-forward; architect
+  code-review commit `4675901a11`; the later `756747e` adds only the record and
+  summary, so `docs/reviews/cli-memo-post-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `4675901a11` (unit 228/0, property
+  44/0, acceptance all 11 suites, lint ok); language mutation 5 killed / 0
+  survived (`memo-post.js` command 3, lib 2); soft Gherkin mutation 15 total / 6
+  killed / 9 intrinsic survivors (self-consistent text/txid and over-limit
+  equivalents); DRY clean after consolidating the usage-error tests. Independent
+  acceptance check after merge: 11/11. Architect summary:
+  `docs/reviews/cli-memo-post-summary.md`.
+
 - **CLI wallet identity read command (`cli-memo-identity`, 2026-10-07):** R15 of
   the `psf-memo-cli` Memo-protocol backlog — the first wallet-relative read
   command. It composes the shared `src/lib/read-command.js` scaffolding with the

@@ -1108,7 +1108,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-identity`): specified and merged R15, the
+Latest session (2026-10-07, `cli-memo-post`): specified and merged W1, the
+first `psf-memo-cli` write command. The specifier wrote
+`psf-memo-cli/specs/memo-post.feature` (7 scenarios, 11 example executions); the
+coder/refactorer/architect added `src/lib/memo-post.js` (pure `0x6d02` prefix,
+217-UTF-16-code-unit limit, flag parsing, human summary) and a thin
+`src/commands/memo-post.js` composing the F5 reporter, F2 wallet source, and F3
+broadcast scaffolding, plus registration, acceptance steps, unit tests, and
+property tests. A valid memo broadcasts `[6d02, text]` and reports the txid +
+`bch.loping.net` explorer link; missing/empty/over-long text is a usage error
+(exit 2) with no broadcast; a rejected broadcast surfaces the wallet's real
+error (exit 1). Merged to `master` at `756747e` (fast-forward; architect
+code-review commit `4675901a11`; the later `756747e` adds only the record and
+summary, so `docs/reviews/cli-memo-post-verification.json` is valid for the
+merged tree). `verify.sh cli` pass 4/4 at `4675901a11` (unit 228/0, property
+44/0, acceptance all 11 suites, lint ok); language mutation 5 killed / 0
+survived (`memo-post.js` command 3, lib 2); soft Gherkin mutation 15 total / 6
+killed / 9 intrinsic survivors (self-consistent text/txid and over-limit
+equivalents); DRY clean after consolidating the usage-error tests. Independent
+acceptance check after merge: 11/11 example executions. Architect summary:
+`docs/reviews/cli-memo-post-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-identity`): specified and merged R15, the
 first wallet-relative read command. The specifier wrote
 `psf-memo-cli/specs/memo-identity.feature` (6 scenarios, 11 example executions);
 the coder/refactorer/architect added `src/lib/memo-identity.js` (pure balance
@@ -1300,7 +1321,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `df32bc0` (`Record cli-memo-identity architect review and verification`).
+Current `master` HEAD: `756747e` (`Record cli-memo-post architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1343,10 +1364,10 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R14 `memo-status`**, **R15
-`memo-identity`**) are done. The suggested next item is **W1 `memo-post`** (the
-first write command; broadcast a 0x6d02 Memo post over the F2/F3 broadcast
-scaffolding), then **W2 `memo-reply`**, **W3 `memo-like`**, **R16 `memo-wait`**,
-and the remaining read commands (R4/R5/R6/R7–R13). The earlier client direction
-(front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the HEAD
-lines.
+`memo-identity`**) are done, and the first write command **W1 `memo-post`** is
+done. The suggested next item is **W2 `memo-reply`** (the first multi-field write
+command; broadcast a 0x6d03 reply over the F2/F3 multi-push scaffolding), then
+**W3 `memo-like`**, **R16 `memo-wait`**, and the remaining read commands
+(R4/R5/R6/R7–R13). The earlier client direction (front-end improvements to
+`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
+`swarmforge/scripts/state.sh` to refresh the HEAD lines.
