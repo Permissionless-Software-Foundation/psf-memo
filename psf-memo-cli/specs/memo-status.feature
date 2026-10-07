@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T04:02:56.951106251Z","feature_name":"Memo Status","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-status.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Status (R14): the psf-memo-cli command that reports the psf-memo-db
 # indexer's sync state from GET /level/status/status: the first indexed block
 # (startBlockHeight), the last fully indexed block (syncedBlockHeight), and the

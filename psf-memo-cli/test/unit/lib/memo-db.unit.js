@@ -34,6 +34,17 @@ async function captureError (promise) {
   return null
 }
 
+// Build a client whose fetch always returns 404 and assert the given getter
+// resolves a missing resource to null.
+async function assertMissingResource (method, arg) {
+  const client = new MemoDb({
+    envUrl: null,
+    fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+  })
+
+  assert.isNull(await client[method](arg))
+}
+
 describe('#memo-db', () => {
   describe('resolveMemoDbUrl', () => {
     it('defaults to the production memo-db', () => {
@@ -209,12 +220,7 @@ describe('#memo-db', () => {
     })
 
     it('resolves an unindexed txid to null', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'Post not found.' }, 404)
-      })
-
-      assert.isNull(await client.getThread('missing'))
+      await assertMissingResource('getThread', 'missing')
     })
   })
 
@@ -251,12 +257,7 @@ describe('#memo-db', () => {
     })
 
     it('resolves a txid with no stored post to null', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
-      })
-
-      assert.isNull(await client.getPost('post-missing'))
+      await assertMissingResource('getPost', 'post-missing')
     })
   })
 
@@ -278,12 +279,7 @@ describe('#memo-db', () => {
     })
 
     it('resolves a missing status to null', async () => {
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
-      })
-
-      assert.isNull(await client.getStatus())
+      await assertMissingResource('getStatus')
     })
   })
 
