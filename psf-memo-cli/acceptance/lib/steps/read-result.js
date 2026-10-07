@@ -31,6 +31,13 @@ const readResultHandlers = [
     run (m, example, world) {
       assertReportedTxids(world.readJson?.posts, resolveParam(m[1], example), 'post txids')
     }
+  },
+  {
+    name: 'command reported a post count',
+    pattern: /^the command reported (.+) posts$/,
+    run (m, example, world) {
+      assertEqual((world.readJson?.posts || []).length, Number.parseInt(resolveParam(m[1], example), 10), 'post count')
+    }
   }
 ]
 

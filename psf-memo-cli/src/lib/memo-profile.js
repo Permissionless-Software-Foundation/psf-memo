@@ -9,7 +9,7 @@
 */
 
 // Local libraries
-import { UsageError } from './reporter.js'
+import { parseAddressFlag } from './address-flag.js'
 import { parseNonNegativeInteger } from './page-flags.js'
 import { formatFeedMessage } from './memo-feed.js'
 
@@ -21,14 +21,8 @@ export const DEFAULT_PROFILE_OFFSET = 0
 // from command-line flags. Throws a UsageError (exit 2) for a missing address or
 // a bad --limit/--offset.
 export function parseProfileFlags (flags = {}) {
-  const address = flags.addr
-
-  if (!address) {
-    throw new UsageError('You must specify a profile address with the -a flag.')
-  }
-
   return {
-    address,
+    address: parseAddressFlag(flags, 'You must specify a profile address with the -a flag.'),
     viewer: flags.viewer || null,
     limit: parseNonNegativeInteger(flags.limit, DEFAULT_PROFILE_LIMIT, '--limit'),
     offset: parseNonNegativeInteger(flags.offset, DEFAULT_PROFILE_OFFSET, '--offset')

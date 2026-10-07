@@ -21,6 +21,7 @@ import { memoLikeHandlers } from './steps/memo-like.js'
 import { memoWaitHandlers } from './steps/memo-wait.js'
 import { memoNotificationsHandlers } from './steps/memo-notifications.js'
 import { memoProfileHandlers } from './steps/memo-profile.js'
+import { memoPostsHandlers } from './steps/memo-posts.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -42,6 +43,7 @@ const handlers = [
   ...memoWaitHandlers,
   ...memoNotificationsHandlers,
   ...memoProfileHandlers,
+  ...memoPostsHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,

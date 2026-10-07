@@ -27,6 +27,7 @@ import MemoLike from './src/commands/memo-like.js'
 import MemoWait from './src/commands/memo-wait.js'
 import MemoNotifications from './src/commands/memo-notifications.js'
 import MemoProfile from './src/commands/memo-profile.js'
+import MemoPosts from './src/commands/memo-posts.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -49,6 +50,7 @@ const memoLike = new MemoLike()
 const memoWait = new MemoWait()
 const memoNotifications = new MemoNotifications()
 const memoProfile = new MemoProfile()
+const memoPosts = new MemoPosts()
 
 const program = new Command()
 
@@ -205,5 +207,14 @@ program.command('memo-profile')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoProfile.run)
+
+program.command('memo-posts')
+  .description('Read the top-level posts authored by an address')
+  .option('-a, --addr <string>', 'author address')
+  .option('-l, --limit <number>', 'maximum posts to return (default 50)')
+  .option('-o, --offset <number>', 'posts to skip (default 0)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoPosts.run)
 
 program.parseAsync(process.argv)

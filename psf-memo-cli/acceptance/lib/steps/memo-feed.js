@@ -109,13 +109,6 @@ const memoFeedHandlers = [
     }
   },
   {
-    name: 'command reported a post count',
-    pattern: /^the command reported (.+) posts$/,
-    run (m, example, world) {
-      assertEqual((world.feedJson?.posts || []).length, Number.parseInt(resolveParam(m[1], example), 10), 'post count')
-    }
-  },
-  {
     name: 'memo-feed command reported an error',
     pattern: /^the memo-feed command reported an error$/,
     run (m, example, world) {
