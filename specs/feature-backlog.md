@@ -35,6 +35,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI wait read command (`cli-memo-wait`, 2026-10-07):** R16 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-wait.js`
+  (pure timing-flag validation and poll loop) and a thin
+  `src/commands/memo-wait.js` over the shared `initReadCommand`/`runReadCommand`,
+  registered as `memo-wait` in `psf-memo-cli.js`. It polls `GET
+  /level/post/:txid` immediately, then every `--interval` (default 5000 ms)
+  until the post appears or `--timeout` (default 60000 ms) elapses: on success
+  it reports the stored post fields; a timeout is a runtime error (exit 1); a
+  transport failure aborts on the first poll (exit 1); non-positive or
+  non-integer timing flags are usage errors (exit 2). The clock (`sleep`/`now`)
+  is injected. Spec: `psf-memo-cli/specs/memo-wait.feature` (6 scenarios, 9
+  example executions). Merged to `master` at `d4ca45a` (fast-forward; architect
+  code-review commit `e8dfe42aa0`; the later `d4ca45a` adds only the record and
+  summary, so `docs/reviews/cli-memo-wait-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `e8dfe42aa0` (unit 293/0, property
+  50/0, acceptance all 14 suites, lint ok); language mutation 12 killed / 0
+  survived (`memo-wait.js` lib 10, command 2); soft Gherkin mutation 12 total /
+  6 killed / 6 intrinsic survivors (invalid-flag outline equivalents); DRY clean
+  after extracting `test/support/clock.js`. Independent acceptance check after
+  merge: 9/9. Architect summary: `docs/reviews/cli-memo-wait-summary.md`.
+
 - **CLI memo like/tip write command (`cli-memo-like`, 2026-10-07):** W3 of the
   `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-like.js`
   (pure `0x6d04` prefix, post-txid decode, the tip window — 600-sat dust floor,

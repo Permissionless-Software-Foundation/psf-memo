@@ -1108,7 +1108,29 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-like`): specified and merged W3, the
+Latest session (2026-10-07, `cli-memo-wait`): specified and merged R16, the
+poll-until-indexed read command. The specifier wrote
+`psf-memo-cli/specs/memo-wait.feature` (6 scenarios, 9 example executions); the
+coder/refactorer/architect added `src/lib/memo-wait.js` (pure timing-flag
+validation and poll loop) and a thin `src/commands/memo-wait.js` over the shared
+`initReadCommand`/`runReadCommand`, registered as `memo-wait`. It polls `GET
+/level/post/:txid` immediately, then every `--interval` (default 5000 ms) until
+the post appears or `--timeout` (default 60000 ms) elapses; on success it
+reports the stored post fields; a timeout is a runtime error (exit 1); a
+transport failure aborts on the first poll (exit 1); non-positive or
+non-integer timing flags are usage errors (exit 2). The clock (`sleep`/`now`) is
+injected. Merged to `master` at `d4ca45a` (fast-forward; architect code-review
+commit `e8dfe42aa0`; the later `d4ca45a` adds only the record and summary, so
+`docs/reviews/cli-memo-wait-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `e8dfe42aa0` (unit 293/0, property 50/0, acceptance
+all 14 suites, lint ok); language mutation 12 killed / 0 survived
+(`memo-wait.js` lib 10, command 2); soft Gherkin mutation 12 total / 6 killed /
+6 intrinsic survivors (invalid-flag outline equivalents); DRY clean after
+extracting `test/support/clock.js`. Independent acceptance check after merge:
+9/9 example executions. Architect summary:
+`docs/reviews/cli-memo-wait-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-like`): specified and merged W3, the
 like/tip write command. The specifier wrote
 `psf-memo-cli/specs/memo-like.feature` (10 scenarios, 20 example executions);
 the coder/refactorer/architect added `src/lib/memo-like.js` (pure `0x6d04`
@@ -1370,7 +1392,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `aa617ed` (`Record cli-memo-like architect review and verification`).
+Current `master` HEAD: `d4ca45a` (`Record cli-memo-wait architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1413,11 +1435,11 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R14 `memo-status`**, **R15
-`memo-identity`**) are done, and the first three write commands **W1
-`memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are done. The
-suggested next item is **R16 `memo-wait`** (poll until a broadcast txid is
-indexed, making the async write->index->read path scriptable), then **R6
-`memo-notifications`** and the remaining read commands (R4/R5/R7–R13). The
-earlier client direction (front-end improvements to `psf-memo-client`) remains
-open in `specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh
-the HEAD lines.
+`memo-identity`**, **R16 `memo-wait`**) are done, and the first three write
+commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are
+done. The suggested next item is **R6 `memo-notifications`** (the
+wallet-relative notifications read over `GET /posts/notifications/:addr`), then
+the remaining read commands (R4/R5/R7–R13). The earlier client direction
+(front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
+HEAD lines.
