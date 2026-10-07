@@ -41,5 +41,5 @@ export function formatNotificationsMessage (notifications = [], pagination = {})
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T19:24:16.112Z","module_hash":"f25037e5c43e91eab8c585a6c30a638dfd5c26fb1808fc47e7c28437f5a669bc","functions":[{"id":"func/parseNotificationsFlags","name":"parseNotificationsFlags","line":18,"end_line":23,"hash":"3f7d18cedb74c147182cd111cae519f25fe1934b381193971efe11635f498bef"},{"id":"func/formatNotificationsMessage","name":"formatNotificationsMessage","line":28,"end_line":41,"hash":"65ed11fc3f9863686ebebdde8e157f0851a0a0cbbfd521a26ec7574d2e5178bb"}]}
 // mutate4javascript-manifest-end

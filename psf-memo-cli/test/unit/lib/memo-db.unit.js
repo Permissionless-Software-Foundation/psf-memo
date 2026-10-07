@@ -24,6 +24,20 @@ function jsonResponse (body, status = 200) {
   }
 }
 
+// Build a MemoDb whose fetch records the requested URL and returns `response`,
+// exposing the parsed request URL for assertions.
+function recordingClient (response) {
+  let requested
+  const client = new MemoDb({
+    envUrl: null,
+    fetchImpl: async (url) => {
+      requested = url
+      return jsonResponse(response)
+    }
+  })
+  return { client, requestedUrl: () => new URL(requested) }
+}
+
 // Resolve to the error a promise rejects with, or null when it resolves.
 async function captureError (promise) {
   try {
@@ -143,18 +157,11 @@ describe('#memo-db', () => {
     })
 
     it('defaults the page to limit 50 and offset 0', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ posts: [] })
-        }
-      })
+      const { client, requestedUrl } = recordingClient({ posts: [] })
 
       await client.getRecentPosts()
 
-      const url = new URL(requested)
+      const url = requestedUrl()
       assert.equal(url.searchParams.get('limit'), '50')
       assert.equal(url.searchParams.get('offset'), '0')
     })
@@ -322,18 +329,11 @@ describe('#memo-db', () => {
     })
 
     it('defaults the page to 50/0 and encodes the address', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ notifications: [] })
-        }
-      })
+      const { client, requestedUrl } = recordingClient({ notifications: [] })
 
       await client.getNotifications('a/b')
 
-      const url = new URL(requested)
+      const url = requestedUrl()
       assert.equal(url.pathname, '/posts/notifications/a%2Fb')
       assert.equal(url.searchParams.get('limit'), '50')
       assert.equal(url.searchParams.get('offset'), '0')

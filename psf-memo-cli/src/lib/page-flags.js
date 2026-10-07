@@ -22,5 +22,5 @@ export function parseNonNegativeInteger (value, fallback, flag) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T19:24:01.162Z","module_hash":"28c4a27e71ced18497ce4e9c5ef2fe7041309ecc3015f97edc2699a2febc8abb","functions":[{"id":"func/parseNonNegativeInteger","name":"parseNonNegativeInteger","line":14,"end_line":22,"hash":"59414499403988f535c8f64194324787a0f7d585597888e4c06f17f65ff8b5a6"}]}
 // mutate4javascript-manifest-end
