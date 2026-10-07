@@ -975,6 +975,20 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-cli/specs/wallet-source.feature`,
     `psf-memo-cli/specs/memo-broadcast.feature`.
 
+71. **`memo-feed` soft Gherkin survivors are intrinsic (gotcha #12 class).**
+    The soft mutation run on `memo-feed.feature` was 33 total / 27 killed / 6
+    survived, 0 errors. Survivors: `limit 2 -> 6` and `limit 5 -> 9` in Memo
+    Feed - 2 (with `offset 4` only one post remains and the fixture has five, so
+    the reported page, `total 5`, and `hasMore` are unchanged for any larger
+    limit) and `limit 1 -> 3` / `limit 2 -> 4` in Memo Feed - 3 (the asserted
+    single post is still present in the widened page); the two `viewer` address
+    mutations in Memo Feed - 4 are self-consistent (setup and assertion use the
+    same value). `gherkin-mutator` wrote a manifest listing only the fully-killed
+    scenario (Memo Feed - 5); commit it as-is (#40). Language mutation was 9
+    killed / 0 survived (`memo-feed.js` command 1, lib 8); DRY clean. The
+    architect also removed a double flag parse (dead `validateFlags` return) in
+    the command so the flags are parsed exactly once.
+
 ---
 
 ## 10. Run / verify the app
@@ -1031,7 +1045,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-wallet-broadcast`): specified and merged
+Latest session (2026-10-07, `cli-memo-feed`): specified and merged R1, the first
+`memo-*` read command. The specifier wrote `psf-memo-cli/specs/memo-feed.feature`
+(6 scenarios, 11 example executions); the coder/refactorer/architect added
+`src/lib/memo-feed.js` (pure flag parsing/defaults and result shaping) and
+`src/commands/memo-feed.js` (thin wiring over the F1 `MemoDb` client and the F5
+reporter), registered the `memo-feed` command, and added the acceptance steps,
+unit tests, and property tests. Merged to `master` at `bbf680b` (fast-forward;
+architect code-review commit `baf9ca2`; the later `bbf680b` adds only the record
+and summary, so `docs/reviews/cli-memo-feed-verification.json` is valid for the
+merged tree). `verify.sh cli` pass 4/4 at `baf9ca2` (unit 157/0, property 27/0,
+acceptance 6 suites, lint ok); language mutation 9 killed / 0 survived
+(`memo-feed.js` command 1, lib 8); soft Gherkin mutation 33/27 with 6 intrinsic
+survivors (widened-limit and consistent-viewer equivalents); DRY clean. The
+architect also removed a double flag parse (dead `validateFlags` return) in the
+command. Independent acceptance check after merge: 11/11. Architect summary:
+`docs/reviews/cli-memo-feed-summary.md`.
+
+Previous session (2026-10-07, `cli-wallet-broadcast`): specified and merged
 F2/F3, completing the CLI foundation. The specifier wrote
 `psf-memo-cli/specs/wallet-source.feature` (4 scenarios) and
 `psf-memo-cli/specs/memo-broadcast.feature` (5 scenarios); the
@@ -1140,7 +1171,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `d78fb09` (`Record cli-wallet-broadcast architect review and verification`).
+Current `master` HEAD: `bbf680b` (`Record cli-memo-feed architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1181,9 +1212,10 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
-foundation (F1, F5, F4, F2/F3) is complete. The suggested next item is the first
-read command **R1 `memo-feed`**, then the read layer, then the write commands
-(`memo-post` W1, `memo-reply` W2, `memo-like` W3, …). The earlier client
-direction (front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
-HEAD lines.
+foundation (F1, F5, F4, F2/F3) is complete and the first read command **R1
+`memo-feed`** is done. The suggested next item is **R2 `memo-thread`** (a post
+and its reply tree with like counts), then the rest of the read layer
+(R3/R14/R15), then the write commands (`memo-post` W1, `memo-reply` W2,
+`memo-like` W3, …). The earlier client direction (front-end improvements to
+`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
+`swarmforge/scripts/state.sh` to refresh the HEAD lines.

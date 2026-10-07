@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — proposed.
 **Owner**: specifier.
-**Last updated**: 2026-10-06.
+**Last updated**: 2026-10-07.
 
 ## Purpose
 
@@ -33,8 +33,10 @@ The CLI today exposes only wallet/crypto commands:
 | `send-bch`, `send-tokens` | BCH / SLP transfers |
 | `msg-sign`, `msg-verify` | Message signing |
 
-It has **no Memo protocol commands** and no client for the `psf-memo-db` read
-API. The reusable wallet plumbing is `src/lib/wallet-util.js`
+The Memo-protocol foundation is in place (F1 DB client, F5 output contract, F4
+wire encoding, F2/F3 wallet resolution + broadcast scaffolding) and **R1
+`memo-feed`, the first read command, is DONE**. The reusable wallet plumbing is
+`src/lib/wallet-util.js`
 (`instanceWallet()`), `src/lib/flag-validator.js`, `src/lib/send-command.js`,
 and `src/lib/bind-methods.js`; commands follow the
 `run()` / `validateFlags()` contract documented in `src/commands/README.md`.
@@ -71,9 +73,8 @@ must be ported into `src/` and kept dependency-free where possible.
 | GET | `/level/status/status` | — |
 
 The production DB URL is `https://memo-api.fullstackcash.net`; local
-development is `http://localhost:5021`. The CLI has no DB URL config today, so
-the production URL becomes the default (overridable via `MEMO_DB_URL` or
-`--db-url`).
+development is `http://localhost:5021`. The F1 config resolves it as the
+production default (overridable via `MEMO_DB_URL` or `--db-url`).
 
 ---
 
@@ -212,6 +213,10 @@ only need an address take `--viewer`/`-a <addr>` instead.
 | R15 | `memo-identity -n <wallet> [--json]` | The wallet's own Memo identity: cash address, name, bio, avatar, BCH/SLP balances. | Composes `wallet-balance` + R4 for the wallet address. |
 | R16 | `memo-wait -t <txid> [--timeout --interval --json]` | Poll until a broadcast tx is indexed (visible via `/level/post` or thread), then print it; non-zero on timeout. | Makes the async write→index→read path scriptable (backlog "Notes for future cycles"). |
 
+**R1 status: DONE** (2026-10-07, task `cli-memo-feed`; merged at `bbf680b`;
+acceptance 11/11). Spec: `psf-memo-cli/specs/memo-feed.feature`; architect
+summary: `docs/reviews/cli-memo-feed-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -278,9 +283,10 @@ unless noted.
 
 1. **Foundation**: F1 **DONE**; F5 **DONE**; F4 **DONE**; F2/F3 (wallet
    resolution + broadcast scaffolding + multi-push) **DONE**. The foundation is
-   complete; **next: R1 (`memo-feed`)**.
-2. **Read-first value**: R1, R2, R3, R14, R15 — an agent can observe the
-   protocol and its own identity before writing. **Next up: R1 (`memo-feed`).**
+   complete. **R1 (`memo-feed`) DONE**; **next: R2 (`memo-thread`)**.
+2. **Read-first value**: R1 **DONE**, R2, R3, R14, R15 — an agent can observe
+   the protocol and its own identity before writing. **Next up: R2
+   (`memo-thread`).**
 3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
    (wait). F6 (Gherkin acceptance harness) is already **DONE** with F1; W1
    (post) follows the same pattern.

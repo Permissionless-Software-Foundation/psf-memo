@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-10-06
+**Last updated**: 2026-10-07
 
 ---
 
@@ -34,6 +34,26 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **CLI memo feed read command (`cli-memo-feed`, 2026-10-07):** R1 of the
+  `psf-memo-cli` Memo-protocol backlog — the first `memo-*` read command. Added
+  `psf-memo-cli/src/lib/memo-feed.js` (pure flag parsing/defaults and result
+  shaping) and `src/commands/memo-feed.js` (thin wiring over the F1 `MemoDb`
+  client and the F5 reporter), registered as `memo-feed` in
+  `psf-memo-cli/psf-memo-cli.js`. It reads one page of the recent top-level feed
+  (`GET /posts/recent`, newest first), passing `--limit`/`--offset` through
+  (defaults 50/0), an optional `--viewer` address, and the service pagination
+  unchanged (including the capped total). Spec:
+  `psf-memo-cli/specs/memo-feed.feature` (6 scenarios, 11 example executions).
+  Merged to `master` at `bbf680b` (fast-forward; architect code-review commit
+  `baf9ca2`; the later `bbf680b` is docs-only, so
+  `docs/reviews/cli-memo-feed-verification.json` is valid for the merged tree).
+  `verify.sh cli` pass 4/4 at `baf9ca2` (unit 157/0, property 27/0, acceptance 6
+  suites, lint ok); language mutation 9 killed / 0 survived (`memo-feed.js`
+  command 1, lib 8); soft Gherkin mutation 33/27 with 6 intrinsic survivors
+  (widened-limit and consistent-viewer equivalents); DRY clean. Independent
+  acceptance check after merge: 11/11. Architect summary:
+  `docs/reviews/cli-memo-feed-summary.md`.
 
 - **CLI wallet source and Memo broadcast scaffolding (`cli-wallet-broadcast`,
   2026-10-07):** F2/F3 of the `psf-memo-cli` Memo-protocol backlog, completing
