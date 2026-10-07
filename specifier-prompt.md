@@ -1019,6 +1019,21 @@ that a single user-facing feature may require specs in more than one component.
     resolved: the read command is `memo-get-post`, the write command (W1) keeps
     `memo-post`.
 
+74. **`memo-status` soft Gherkin survivors are all intrinsic (gotcha #12
+    class).** The soft mutation run on `memo-status.feature` was 9/9 survived, 0
+    errors: every `startBlockHeight`/`syncedBlockHeight`/`chainBlockHeight`
+    example value is parsed from the same cell in the setup and the assertion, so
+    a mutation applies consistently to both sides. The tool wrote the expected
+    empty `"scenarios":[]` manifest (no `# mutation-stamp`); commit it as-is.
+    Language mutation was 5 killed / 0 survived (`memo-status.js` command 1,
+    `memo-db.js` 4; lib is a single template literal, 0 sites). `memo-status` is
+    flag-less, so `validateFlags()` returns a constant `true` to satisfy the
+    shared read-command binder; an explicit unit test pins it, so it is not a
+    dead equivalent. `MemoDb.getStatus` resolves a missing
+    `/level/status/status` to `null`; the command maps it to a named not-found
+    failure (exit 1). DRY: the three memo-db 404 unit tests were consolidated
+    into one `assertMissingResource` helper.
+
 ---
 
 ## 10. Run / verify the app
@@ -1075,7 +1090,23 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-get-post`): specified and merged R3, the
+Latest session (2026-10-07, `cli-memo-status`): specified and merged R14, the
+indexer sync-state read command. The specifier wrote
+`psf-memo-cli/specs/memo-status.feature` (3 scenarios, 5 example executions);
+the coder/refactorer/architect added `src/lib/memo-status.js` (pure result
+shaping), `src/commands/memo-status.js` (flag-less thin subclass of the shared
+`src/lib/read-command.js`), `MemoDb.getStatus` for `GET /level/status/status`,
+registration, acceptance steps, unit tests, and property tests. A missing status
+maps to a named not-found failure (exit 1). Merged to `master` at `a9aa65a`
+(fast-forward; architect code-review commit `f842955`; the later `a9aa65a` adds
+only the record and summary, so `docs/reviews/cli-memo-status-verification.json`
+is valid for the merged tree). `verify.sh cli` pass 4/4 at `f842955` (unit
+194/0, property 38/0, acceptance 9 suites, lint ok); language mutation 5 killed
+/ 0 survived; soft Gherkin mutation 9/9 intrinsic survivors (self-consistent
+status values); DRY clean. Independent acceptance check after merge: 5/5.
+Architect summary: `docs/reviews/cli-memo-status-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-get-post`): specified and merged R3, the
 single-post read command. The specifier wrote
 `psf-memo-cli/specs/memo-get-post.feature` (4 scenarios, 5 example executions)
 and resolved the `memo-post` name collision (read = `memo-get-post`, write W1 =
@@ -1234,7 +1265,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `373912d` (`Record cli-memo-get-post architect review and verification`).
+Current `master` HEAD: `a9aa65a` (`Record cli-memo-status architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1275,11 +1306,11 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
-foundation (F1, F5, F4, F2/F3) is complete and the first three read commands
-**R1 `memo-feed`**, **R2 `memo-thread`**, and **R3 `memo-get-post`** are done. The
-suggested next item is **R14 `memo-status`** (indexer sync state via
-`GET /level/status/status`), then **R15 `memo-identity`**, then the write commands
-(`memo-post` W1, `memo-reply` W2, `memo-like` W3, …). The earlier client
-direction (front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the HEAD
-lines.
+foundation (F1, F5, F4, F2/F3) is complete and four read commands are done
+(**R1 `memo-feed`**, **R2 `memo-thread`**, **R3 `memo-get-post`**, **R14
+`memo-status`**). The suggested next item is **R15 `memo-identity`** (the wallet's
+Memo identity; composes `wallet-balance` with the profile read and accepts
+`-n`/`--wif`), then **R4 `memo-profile`**, then the write commands (`memo-post`
+W1, `memo-reply` W2, `memo-like` W3, …). The earlier client direction (front-end
+improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
+Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

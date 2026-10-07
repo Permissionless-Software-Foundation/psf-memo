@@ -35,6 +35,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI indexer status read command (`cli-memo-status`, 2026-10-07):** R14 of
+  the `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-status.js` (pure result shaping),
+  `src/commands/memo-status.js` (flag-less thin subclass of the shared
+  `src/lib/read-command.js`), and `MemoDb.getStatus` for
+  `GET /level/status/status`. It reports the indexer's `startBlockHeight`,
+  `syncedBlockHeight`, and `chainBlockHeight`; a missing status record maps to a
+  named not-found failure (exit 1). Spec:
+  `psf-memo-cli/specs/memo-status.feature` (3 scenarios, 5 example executions).
+  Merged to `master` at `a9aa65a` (fast-forward; architect code-review commit
+  `f842955`; the later `a9aa65a` is docs-only, so
+  `docs/reviews/cli-memo-status-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `f842955` (unit 194/0, property 38/0,
+  acceptance 9 suites, lint ok); language mutation 5 killed / 0 survived; soft
+  Gherkin mutation 9/9 intrinsic (self-consistent status values); DRY clean.
+  Independent acceptance check after merge: 5/5. Architect summary:
+  `docs/reviews/cli-memo-status-summary.md`.
+
 - **CLI single-post read command (`cli-memo-get-post`, 2026-10-07):** R3 of the
   `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-get-post.js` (pure flag parsing and result shaping),
