@@ -221,6 +221,10 @@ summary: `docs/reviews/cli-memo-feed-summary.md`.
 acceptance 9/9). Spec: `psf-memo-cli/specs/memo-thread.feature`; architect
 summary: `docs/reviews/cli-memo-thread-summary.md`.
 
+**R3 status: DONE** (2026-10-07, task `cli-memo-get-post`; merged at `373912d`;
+acceptance 5/5). Spec: `psf-memo-cli/specs/memo-get-post.feature`; architect
+summary: `docs/reviews/cli-memo-get-post-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -287,11 +291,11 @@ unless noted.
 
 1. **Foundation**: F1 **DONE**; F5 **DONE**; F4 **DONE**; F2/F3 (wallet
    resolution + broadcast scaffolding + multi-push) **DONE**. The foundation is
-   complete. **R1 (`memo-feed`) and R2 (`memo-thread`) DONE**; **next: R3
-   (`memo-post`)**.
-2. **Read-first value**: R1 **DONE**, R2 **DONE**, R3, R14, R15 — an agent can
-   observe the protocol and its own identity before writing. **Next up: R3
-   (`memo-post`).**
+   complete. **R1 (`memo-feed`), R2 (`memo-thread`), and R3 (`memo-get-post`)
+   DONE**; **next: R14 (`memo-status`)**.
+2. **Read-first value**: R1 **DONE**, R2 **DONE**, R3 **DONE**, R14, R15 — an
+   agent can observe the protocol and its own identity before writing. **Next up:
+   R14 (`memo-status`).**
 3. **Core write path**: W2 (reply), W3 (like), R6 (notifications), and R16
    (wait). F6 (Gherkin acceptance harness) is already **DONE** with F1; W1
    (post) follows the same pattern.

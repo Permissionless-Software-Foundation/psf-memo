@@ -35,6 +35,26 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI single-post read command (`cli-memo-get-post`, 2026-10-07):** R3 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-get-post.js` (pure flag parsing and result shaping),
+  `src/commands/memo-get-post.js` (thin subclass of the shared
+  `src/lib/read-command.js`), `MemoDb.getPost` for `GET /level/post/:txid`, and
+  the shared `src/lib/txid-flag.js` (required `-t` validation). It reports a
+  single stored post's fields (text, address, block height, seen); a txid with no
+  stored post maps to a named not-found failure (exit 1). The `memo-post` name
+  collision is resolved: read = `memo-get-post`, write W1 = `memo-post`. Spec:
+  `psf-memo-cli/specs/memo-get-post.feature` (4 scenarios, 5 example
+  executions). Merged to `master` at `373912d` (fast-forward; architect
+  code-review commit `e91506a`; the later `373912d` is docs-only, so
+  `docs/reviews/cli-memo-get-post-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `e91506a` (unit 185/0, property 35/0,
+  acceptance 8 suites, lint ok); language mutation 8 killed / 0 survived
+  (`memo-thread.js` 4, `memo-db.js` 4; the new modules scan as 0 sites); soft
+  Gherkin mutation 10/10 killed; DRY clean. Independent acceptance check after
+  merge: 5/5. Architect summary:
+  `docs/reviews/cli-memo-get-post-summary.md`.
+
 - **CLI memo thread read command (`cli-memo-thread`, 2026-10-07):** R2 of the
   `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-thread.js`
   (pure flag parsing and result shaping), `src/commands/memo-thread.js` (thin

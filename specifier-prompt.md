@@ -1003,6 +1003,22 @@ that a single user-facing feature may require specs in more than one component.
     (`read-command.js` 1, `memo-thread.js` 5, `memo-db.js` 4), commands 0
     mutable sites; DRY clean.
 
+73. **`-t` parsing and read-command error assertions are shared leaves.**
+    `src/lib/txid-flag.js` single-sources the required-`-t` validation and its
+    exact usage message; `memo-thread` and `memo-get-post` delegate to it.
+    `acceptance/lib/read-command.js` now also owns `parseStderrError`,
+    `assertNotFound`, and `assertReadCommandError`, used by all three read step
+    modules. `MemoDb.getPost(txid)` resolves a missing `/level/post/:txid` to
+    `null`; the command merges the request txid into the returned body (the
+    stored post is not txid-keyed) and maps `null` to a named not-found failure
+    (exit 1). The new `memo-get-post` modules (`txid-flag.js`, the
+    `memo-get-post.js` lib + command) scan as 0 language mutation sites (pure
+    guards/template literals, confirmed with `--scan`); `memo-thread.js` and
+    `memo-db.js` were re-mutated 4/0 each. Soft Gherkin mutation of
+    `memo-get-post.feature` was 10/10 killed. The `memo-post` name collision is
+    resolved: the read command is `memo-get-post`, the write command (W1) keeps
+    `memo-post`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1059,7 +1075,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-thread`): specified and merged R2, the
+Latest session (2026-10-07, `cli-memo-get-post`): specified and merged R3, the
+single-post read command. The specifier wrote
+`psf-memo-cli/specs/memo-get-post.feature` (4 scenarios, 5 example executions)
+and resolved the `memo-post` name collision (read = `memo-get-post`, write W1 =
+`memo-post`); the coder/refactorer/architect added `src/lib/memo-get-post.js`,
+`src/commands/memo-get-post.js`, `MemoDb.getPost`, the shared
+`src/lib/txid-flag.js`, registration, acceptance steps, unit tests, and property
+tests. A txid with no stored post maps to a named not-found failure (exit 1).
+Merged to `master` at `373912d` (fast-forward; architect code-review commit
+`e91506a`; the later `373912d` adds only the record and summary, so
+`docs/reviews/cli-memo-get-post-verification.json` is valid for the merged
+tree). `verify.sh cli` pass 4/4 at `e91506a` (unit 185/0, property 35/0,
+acceptance 8 suites, lint ok); language mutation 8 killed / 0 survived
+(`memo-thread.js` 4, `memo-db.js` 4; the new modules scan as 0 sites); soft
+Gherkin mutation 10/10 killed; DRY clean. Independent acceptance check after
+merge: 5/5. Architect summary: `docs/reviews/cli-memo-get-post-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-thread`): specified and merged R2, the
 thread read command. The specifier wrote `psf-memo-cli/specs/memo-thread.feature`
 (7 scenarios, 9 example executions); the coder/refactorer/architect added
 `src/lib/memo-thread.js` (pure flag parsing and result shaping),
@@ -1201,7 +1234,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `8fe83ce` (`Record cli-memo-thread architect review and verification`).
+Current `master` HEAD: `373912d` (`Record cli-memo-get-post architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1242,11 +1275,11 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
-foundation (F1, F5, F4, F2/F3) is complete and the first two read commands **R1
-`memo-feed`** and **R2 `memo-thread`** are done. The suggested next item is **R3
-`memo-get-post`** (a single post document via `GET /level/post/:txid`; renamed
-from `memo-post` to avoid the W1 write-command collision), then the rest of the
-read layer (R14/R15), then the write commands (`memo-post` W1,
-`memo-reply` W2, `memo-like` W3, …). The earlier client direction (front-end
-improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
-Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
+foundation (F1, F5, F4, F2/F3) is complete and the first three read commands
+**R1 `memo-feed`**, **R2 `memo-thread`**, and **R3 `memo-get-post`** are done. The
+suggested next item is **R14 `memo-status`** (indexer sync state via
+`GET /level/status/status`), then **R15 `memo-identity`**, then the write commands
+(`memo-post` W1, `memo-reply` W2, `memo-like` W3, …). The earlier client
+direction (front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the HEAD
+lines.
