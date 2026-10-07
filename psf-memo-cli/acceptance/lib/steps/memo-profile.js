@@ -35,26 +35,6 @@ const memoProfileHandlers = [
     }
   },
   {
-    name: 'service serves a profile',
-    pattern: /^the Memo DB service serves the profile "(.+)" with name "(.+)", bio "(.+)", and avatar "(.+)"$/,
-    run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      world.nameStore[addr] = { addr, name: resolveParam(m[2], example) }
-      world.profileStore[addr] = { addr, text: resolveParam(m[3], example) }
-      world.profilePicStore[addr] = { addr, url: resolveParam(m[4], example) }
-    }
-  },
-  {
-    name: 'service has no profile',
-    pattern: /^the Memo DB service has no profile for "(.+)"$/,
-    run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      world.nameStore[addr] = null
-      world.profileStore[addr] = null
-      world.profilePicStore[addr] = null
-    }
-  },
-  {
     name: 'service serves posts by an address',
     pattern: /^the Memo DB service serves posts by "(.+)"$/,
     run (m, example, world) {
@@ -101,15 +81,6 @@ const memoProfileHandlers = [
         addr: resolveParam(m[1], example),
         viewer: resolveParam(m[2], example)
       })
-    }
-  },
-  {
-    name: 'command reported the profile identity',
-    pattern: /^the command reported the profile identity name "(.+)", bio "(.+)", and avatar "(.+)"$/,
-    run (m, example, world) {
-      assertEqual(world.profileJson?.name, resolveParam(m[1], example), 'name', { quote: true })
-      assertEqual(world.profileJson?.bio, resolveParam(m[2], example), 'bio', { quote: true })
-      assertEqual(world.profileJson?.avatar, resolveParam(m[3], example), 'avatar', { quote: true })
     }
   },
   {

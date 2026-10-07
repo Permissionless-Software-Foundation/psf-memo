@@ -40,24 +40,25 @@ class MemoDb {
     return this.getJson(`/posts/recent?${params.toString()}`)
   }
 
+  // GET a paginated, address-scoped /posts route.
+  getAddrPage (path, addr, { limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+
+    return this.getJson(`/posts/${path}/${encodeURIComponent(addr)}?${params.toString()}`)
+  }
+
   // GET /posts/notifications/:addr. Returns the wallet address's notification
   // page (type, action txid, actor, optional post/text) with the service
   // pagination.
-  async getNotifications (addr, { limit = 50, offset = 0 } = {}) {
-    const params = new URLSearchParams()
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-
-    return this.getJson(`/posts/notifications/${encodeURIComponent(addr)}?${params.toString()}`)
+  async getNotifications (addr, page = {}) {
+    return this.getAddrPage('notifications', addr, page)
   }
 
   // GET /posts/by/:addr. Returns one page of the address's top-level posts.
-  async getPostsByAddr (addr, { limit = 50, offset = 0 } = {}) {
-    const params = new URLSearchParams()
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-
-    return this.getJson(`/posts/by/${encodeURIComponent(addr)}?${params.toString()}`)
+  async getPostsByAddr (addr, page = {}) {
+    return this.getAddrPage('by', addr, page)
   }
 
   // GET /follow/state?follower=&followee=. Returns the follow state document.

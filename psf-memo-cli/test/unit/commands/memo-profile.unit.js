@@ -27,7 +27,7 @@ const PAGE = {
 
 // Build a MemoDb stand-in that records every call and resolves the supplied
 // identity, page, follow state, or error.
-function fakeMemoDb ({ identity = IDENTITY, page = PAGE, following = false, error = null } = {}) {
+function fakeMemoDb ({ identity = IDENTITY, page = PAGE, following = false, followState, error = null } = {}) {
   const calls = { opts: null, name: [], profile: [], pic: [], posts: [], follow: [] }
   class FakeMemoDb {
     constructor (opts) {
@@ -61,7 +61,7 @@ function fakeMemoDb ({ identity = IDENTITY, page = PAGE, following = false, erro
     async getFollowState (follower, followee) {
       calls.follow.push({ follower, followee })
       if (error) throw error
-      return { following }
+      return followState === undefined ? { following } : followState
     }
   }
   return { FakeMemoDb, calls }
@@ -122,6 +122,42 @@ describe('#memo-profile command', () => {
     assert.equal(code, 0)
     assert.equal(fake.calls.follow.length, 0)
     assert.equal(JSON.parse(out.text()).following, false)
+  })
+
+  it('reports not followed when the viewer does not follow the address', async () => {
+    const fake = fakeMemoDb({ following: false })
+    const { command, out } = makeCommand(fake)
+
+    const code = await command.run({ json: true, addr: 'addrA', viewer: 'viewerB' })
+
+    assert.equal(code, 0)
+    assert.deepEqual(fake.calls.follow, [{ follower: 'viewerB', followee: 'addrA' }])
+    assert.equal(JSON.parse(out.text()).following, false)
+  })
+
+  it('treats a missing follow-state document as not followed', async () => {
+    const fake = fakeMemoDb({ followState: null })
+    const { command, out } = makeCommand(fake)
+
+    const code = await command.run({ json: true, addr: 'addrA', viewer: 'viewerB' })
+
+    assert.equal(code, 0)
+    assert.equal(JSON.parse(out.text()).following, false)
+  })
+
+  it('reports empty identity fields and page when the resources are missing', async () => {
+    const fake = fakeMemoDb({ identity: { name: null, profile: null, pic: null }, page: {} })
+    const { command, out } = makeCommand(fake)
+
+    const code = await command.run({ json: true, addr: 'addrA' })
+
+    assert.equal(code, 0)
+    const data = JSON.parse(out.text())
+    assert.equal(data.name, '')
+    assert.equal(data.bio, '')
+    assert.equal(data.avatar, '')
+    assert.deepEqual(data.posts, [])
+    assert.deepEqual(data.pagination, {})
   })
 
   it('reports a missing address as the documented usage error (exit 2)', async () => {

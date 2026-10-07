@@ -14,6 +14,20 @@
 import { initReadCommand, createMemoDbClient, runReadCommand } from '../lib/read-command.js'
 import { parseProfileFlags, formatProfileMessage } from '../lib/memo-profile.js'
 
+// Read the viewer's follow state for the address. Without a viewer the profile
+// is simply not followed.
+async function resolveFollowing (client, viewer, address) {
+  if (!viewer) return false
+
+  const state = await client.getFollowState(viewer, address)
+  return state?.following === true
+}
+
+// An identity document field, or an empty string when the document is missing.
+function identityField (doc, field) {
+  return doc?.[field] || ''
+}
+
 class MemoProfile {
   constructor (options = {}) {
     initReadCommand(this, options, 'readComposedProfile')
@@ -66,15 +80,13 @@ class MemoProfile {
       client.getPostsByAddr(address, { limit, offset })
     ])
 
-    const following = viewer
-      ? (await client.getFollowState(viewer, address))?.following === true
-      : false
+    const following = await resolveFollowing(client, viewer, address)
 
     return {
       address,
-      name: nameDoc?.name || '',
-      bio: profileDoc?.text || '',
-      avatar: avatarDoc?.url || '',
+      name: identityField(nameDoc, 'name'),
+      bio: identityField(profileDoc, 'text'),
+      avatar: identityField(avatarDoc, 'url'),
       posts: page.posts || [],
       pagination: page.pagination || {},
       following

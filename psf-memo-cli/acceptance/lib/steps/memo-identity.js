@@ -87,26 +87,6 @@ const memoIdentityHandlers = [
     }
   },
   {
-    name: 'service serves the identity profile',
-    pattern: /^the Memo DB service serves name "(.+)", profile text "(.+)", and avatar "(.+)" for "(.+)"$/,
-    run (m, example, world) {
-      const addr = resolveParam(m[4], example)
-      world.nameStore[addr] = { addr, name: resolveParam(m[1], example) }
-      world.profileStore[addr] = { addr, text: resolveParam(m[2], example) }
-      world.profilePicStore[addr] = { addr, url: resolveParam(m[3], example) }
-    }
-  },
-  {
-    name: 'service has no identity profile',
-    pattern: /^the Memo DB service has no name, profile text, or avatar for "(.+)"$/,
-    run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      world.nameStore[addr] = null
-      world.profileStore[addr] = null
-      world.profilePicStore[addr] = null
-    }
-  },
-  {
     name: 'service fails the identity profile request',
     pattern: /^the Memo DB service fails the identity profile request$/,
     run (m, example, world) {
@@ -148,15 +128,6 @@ const memoIdentityHandlers = [
         .map((token) => `${token.ticker}:${token.qty}`)
         .join(', ')
       assertEqual(actual, resolveParam(m[1], example), 'token balances', { quote: true })
-    }
-  },
-  {
-    name: 'command reported the identity profile',
-    pattern: /^the command reported the identity name "(.+)", bio "(.+)", and avatar "(.+)"$/,
-    run (m, example, world) {
-      assertEqual(world.identityJson?.name, resolveParam(m[1], example), 'name', { quote: true })
-      assertEqual(world.identityJson?.bio, resolveParam(m[2], example), 'bio', { quote: true })
-      assertEqual(world.identityJson?.avatar, resolveParam(m[3], example), 'avatar', { quote: true })
     }
   },
   {
