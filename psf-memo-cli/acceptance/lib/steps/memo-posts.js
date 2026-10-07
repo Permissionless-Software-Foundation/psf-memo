@@ -10,6 +10,7 @@
 // Local libraries
 import MemoPosts from '../../../src/commands/memo-posts.js'
 import { runReadCommand, assertUsageError, assertReadCommandError } from '../read-command.js'
+import { findReportedPost } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 async function runPosts (world, flags) {
@@ -43,24 +44,10 @@ const memoPostsHandlers = [
     }
   },
   {
-    name: 'service received an address-posts request',
-    pattern: /^the service received an address-posts request for "([^"]+)" with limit (.+) and offset (.+)$/,
-    run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      assertEqual(world.lastRequest?.pathname, `/posts/by/${addr}`, 'request path')
-      assertEqual(world.lastRequest?.searchParams.get('limit'), resolveParam(m[2], example), 'limit')
-      assertEqual(world.lastRequest?.searchParams.get('offset'), resolveParam(m[3], example), 'offset')
-    }
-  },
-  {
     name: 'command reported a post with its text and reply count',
     pattern: /^the command reported the post "([^"]+)" with text "([^"]*)" and reply count (.+)$/,
     run (m, example, world) {
-      const txid = resolveParam(m[1], example)
-      const post = (world.readJson?.posts || []).find((p) => p.txid === txid)
-      if (!post) {
-        throw new Error(`Expected a reported post with txid ${txid}`)
-      }
+      const post = findReportedPost(world, resolveParam(m[1], example))
       assertEqual(post.text, resolveParam(m[2], example), 'post text', { quote: true })
       assertEqual(post.replyCount, Number.parseInt(resolveParam(m[3], example), 10), 'reply count')
     }

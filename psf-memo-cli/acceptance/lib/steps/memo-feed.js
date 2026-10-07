@@ -10,6 +10,7 @@
 // Local libraries
 import MemoFeed from '../../../src/commands/memo-feed.js'
 import { runReadCommand, assertReadCommandError } from '../read-command.js'
+import { findReportedPost } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The recent-feed fixture: five posts newest-first with the service fields the
@@ -98,11 +99,7 @@ const memoFeedHandlers = [
     name: 'command reported a post with its fields',
     pattern: /^the command reported the post "(.+)" with text "(.+)", reply count (.+), and like count (.+)$/,
     run (m, example, world) {
-      const txid = resolveParam(m[1], example)
-      const post = (world.feedJson?.posts || []).find((p) => p.txid === txid)
-      if (!post) {
-        throw new Error(`Expected a reported post with txid ${txid}`)
-      }
+      const post = findReportedPost(world, resolveParam(m[1], example))
       assertEqual(post.text, resolveParam(m[2], example), 'post text', { quote: true })
       assertEqual(post.replyCount, Number.parseInt(resolveParam(m[3], example), 10), 'reply count')
       assertEqual(post.likeCount, Number.parseInt(resolveParam(m[4], example), 10), 'like count')

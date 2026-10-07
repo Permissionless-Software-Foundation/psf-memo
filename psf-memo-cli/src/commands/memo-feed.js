@@ -7,8 +7,9 @@
 */
 
 // Local libraries
-import { initReadCommand, createMemoDbClient, runReadCommand } from '../lib/read-command.js'
-import { parseFeedFlags, formatFeedMessage } from '../lib/memo-feed.js'
+import { initReadCommand, createMemoDbClient } from '../lib/read-command.js'
+import { parseFeedFlags } from '../lib/memo-feed.js'
+import { runPostsPageCommand } from '../lib/post-page-command.js'
 
 class MemoFeed {
   constructor (options = {}) {
@@ -18,24 +19,7 @@ class MemoFeed {
   // Read the feed page and report it. Returns the exit code (0/1/2) and
   // assigns it to process.exitCode for commander.
   async run (flags = {}) {
-    return runReadCommand({
-      command: this,
-      flags,
-      outcome: async () => {
-        const { limit, offset, viewer } = this.validateFlags(flags)
-        const { posts = [], pagination = {} } = await this.readFeed({
-          limit,
-          offset,
-          viewer,
-          dbUrl: flags.dbUrl
-        })
-
-        return {
-          message: formatFeedMessage(posts, pagination),
-          data: { posts, pagination }
-        }
-      }
-    })
+    return runPostsPageCommand({ command: this, flags, readMethod: 'readFeed' })
   }
 
   // Validate and resolve the page flags before any request. Throws a

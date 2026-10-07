@@ -89,16 +89,6 @@ const memoNotificationsHandlers = [
     }
   },
   {
-    name: 'service received a notifications request',
-    pattern: /^the service received a notifications request for "(.+)" with limit (.+) and offset (.+)$/,
-    run (m, example, world) {
-      const addr = resolveParam(m[1], example)
-      assertEqual(world.lastRequest?.pathname, `/posts/notifications/${addr}`, 'request path')
-      assertEqual(world.lastRequest?.searchParams.get('limit'), resolveParam(m[2], example), 'limit')
-      assertEqual(world.lastRequest?.searchParams.get('offset'), resolveParam(m[3], example), 'offset')
-    }
-  },
-  {
     name: 'command reported the notification txids',
     pattern: /^the command reported the notification txids "(.+)"$/,
     run (m, example, world) {

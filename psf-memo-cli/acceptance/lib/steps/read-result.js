@@ -15,6 +15,22 @@ export function assertReportedTxids (items, expected, label) {
   assertEqual(actual, expected, label, { quote: true })
 }
 
+// Find a reported post in the generic read result, throwing when it is absent.
+export function findReportedPost (world, txid) {
+  const post = (world.readJson?.posts || []).find((p) => p.txid === txid)
+  if (!post) {
+    throw new Error(`Expected a reported post with txid ${txid}`)
+  }
+  return post
+}
+
+// Assert the last request hit an address-scoped /posts route with the page.
+function assertAddressPageRequest (world, path, { addr, limit, offset }) {
+  assertEqual(world.lastRequest?.pathname, `/posts/${path}/${addr}`, 'request path')
+  assertEqual(world.lastRequest?.searchParams.get('limit'), limit, 'limit')
+  assertEqual(world.lastRequest?.searchParams.get('offset'), offset, 'offset')
+}
+
 const readResultHandlers = [
   {
     name: 'command reported pagination',
@@ -37,6 +53,17 @@ const readResultHandlers = [
     pattern: /^the command reported (.+) posts$/,
     run (m, example, world) {
       assertEqual((world.readJson?.posts || []).length, Number.parseInt(resolveParam(m[1], example), 10), 'post count')
+    }
+  },
+  {
+    name: 'service received an address-posts request',
+    pattern: /^the service received an? (notifications|address-posts) request for "([^"]+)" with limit (.+) and offset (.+)$/,
+    run (m, example, world) {
+      assertAddressPageRequest(world, m[1] === 'notifications' ? 'notifications' : 'by', {
+        addr: resolveParam(m[2], example),
+        limit: resolveParam(m[3], example),
+        offset: resolveParam(m[4], example)
+      })
     }
   }
 ]
