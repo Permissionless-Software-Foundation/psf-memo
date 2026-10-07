@@ -9,17 +9,8 @@
 
 // Local libraries
 import MemoStatus from '../../../src/commands/memo-status.js'
-import { runReadCommand } from '../read-command.js'
+import { runReadCommand, assertNotFound, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
-
-// Parse the captured stderr as one JSON error object.
-function parseStderrError (world) {
-  try {
-    return JSON.parse(world.statusStderr)
-  } catch (err) {
-    throw new Error(`Expected a JSON error on stderr, got "${world.statusStderr}"`)
-  }
-}
 
 const memoStatusHandlers = [
   {
@@ -71,21 +62,14 @@ const memoStatusHandlers = [
     name: 'memo-status command reported not found',
     pattern: /^the memo-status command reported not found$/,
     run (m, example, world) {
-      assertEqual(world.statusExitCode, 1, 'memo-status exit code')
-      const error = parseStderrError(world).error || ''
-      if (!error.toLowerCase().includes('not found')) {
-        throw new Error(`Expected a not-found error, got "${error}"`)
-      }
+      assertNotFound(world, 'status', 'memo-status')
     }
   },
   {
     name: 'memo-status command reported an error',
     pattern: /^the memo-status command reported an error$/,
     run (m, example, world) {
-      assertEqual(world.statusExitCode, 1, 'memo-status exit code')
-      if (!parseStderrError(world).error) {
-        throw new Error(`Expected an error message on stderr, got "${world.statusStderr}"`)
-      }
+      assertReadCommandError(world, 'status', 'memo-status')
     }
   }
 ]
