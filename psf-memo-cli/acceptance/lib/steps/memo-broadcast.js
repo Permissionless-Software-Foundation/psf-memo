@@ -8,7 +8,7 @@
 */
 
 // Local libraries
-import { broadcastMemo, toPushBuffer } from '../../../src/lib/memo-broadcast.js'
+import { broadcastMemo, buildMemoPushes } from '../../../src/lib/memo-broadcast.js'
 import { txidToWireBytes } from '../../../src/lib/wire-encoding.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
@@ -25,7 +25,7 @@ function createRecordingWallet (world) {
         throw new Error(world.broadcastError)
       }
       const fields = Array.isArray(msgOrFields) ? msgOrFields : [msgOrFields]
-      const pushes = [Buffer.from(prefix, 'hex'), ...fields.map(toPushBuffer)]
+      const pushes = buildMemoPushes(prefix, fields)
       world.broadcast = { prefix, pushes, bchOutput }
       return world.broadcastTxid
     }

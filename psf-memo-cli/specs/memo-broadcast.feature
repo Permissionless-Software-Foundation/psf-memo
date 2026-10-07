@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T00:47:08.117619576Z","feature_name":"Memo Broadcast","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-broadcast.feature","background_hash":"52c78008f684fe9b0041a82a948c1e03ed825b104747bada15d557cb9f48fbbe","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Memo Broadcast - 1, Memo Broadcast - 2, Memo Broadcast - 3, Memo Broadcast - 4, Memo Broadcast - 5
 #
 # F2b/F3: the shared broadcast scaffolding every memo-* write command uses. It

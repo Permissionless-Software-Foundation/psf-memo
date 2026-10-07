@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T00:47:08.470510500Z","feature_name":"Wallet Source","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/wallet-source.feature","background_hash":"f97cbaac2ba810e4a3a32fc3c886a0b4354dbb7b6d0db78500a525cbb88b0c89","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Wallet Source - 1, Wallet Source - 2, Wallet Source - 3, Wallet Source - 4
 #
 # F2a: how a memo-* write command resolves the signing wallet. Exactly one
