@@ -80,4 +80,38 @@ describe('#wallet-util', () => {
       }
     })
   })
+
+  describe('#instanceWalletFromWif', () => {
+    it('should derive the same address from the wallet WIF', async () => {
+      const fromName = await uut.instanceWallet('test123')
+      const wif = fromName.walletInfo.privateKey
+
+      const fromWif = await uut.instanceWalletFromWif(wif)
+
+      assert.equal(
+        fromWif.walletInfo.cashAddress,
+        fromName.walletInfo.cashAddress
+      )
+    })
+
+    it('should throw error if wif is not specified', async () => {
+      try {
+        await uut.instanceWalletFromWif()
+
+        assert.fail('Unexpected code path')
+      } catch (err) {
+        assert.include(err.message, 'wif is required.')
+      }
+    })
+
+    it('should throw error if wif is not a string', async () => {
+      try {
+        await uut.instanceWalletFromWif(123)
+
+        assert.fail('Unexpected code path')
+      } catch (err) {
+        assert.include(err.message, 'wif is required.')
+      }
+    })
+  })
 })

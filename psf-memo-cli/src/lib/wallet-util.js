@@ -69,6 +69,32 @@ class WalletUtil {
       throw err
     }
   }
+
+  // Takes a WIF private key and returns an instance of minimal-slp-wallet whose
+  // walletInfo is derived from that key. The wallet library recognizes the
+  // 52-character WIF form and derives its cash address.
+  async instanceWalletFromWif (wif) {
+    try {
+      // Input validation
+      if (!wif || typeof wif !== 'string') {
+        throw new Error('wif is required.')
+      }
+
+      // Use info from the config file on how to initialize the wallet lib.
+      const advancedConfig = {}
+      advancedConfig.restURL = this.config.restURL
+      advancedConfig.interface = this.config.interface
+
+      const bchWallet = new this.BchWallet(wif, advancedConfig)
+
+      await bchWallet.walletInfoPromise
+
+      return bchWallet
+    } catch (err) {
+      console.error('Error in wallet-util.js/instanceWalletFromWif()')
+      throw err
+    }
+  }
 }
 
 export default WalletUtil
