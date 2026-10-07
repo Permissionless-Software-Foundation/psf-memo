@@ -39,6 +39,28 @@ export async function runReadCommand (world, CommandClass, prefix, flags = {}, o
   world.readJson = world[`${prefix}Json`]
 }
 
+// Install a scenario wallet factory on `world` for a read command that needs a
+// signing wallet. Wallets are stored under `<prefix>Wallets` and resolved by the
+// name or WIF the flags request; the scenario sets `<prefix>Source` to select
+// one.
+export function installWalletFactory (world, prefix) {
+  const wallets = {}
+  world[`${prefix}Wallets`] = wallets
+  world[`${prefix}Source`] = {}
+
+  const lookup = (key, kind) => {
+    if (!(key in wallets)) {
+      throw new Error(`Unknown ${kind} ${key}`)
+    }
+    return wallets[key]
+  }
+
+  world.walletUtil = {
+    instanceWallet: (name) => lookup(name, 'wallet'),
+    instanceWalletFromWif: (wif) => lookup(wif, 'wif')
+  }
+}
+
 // Parse the JSON error a read command wrote to stderr.
 export function parseStderrError (world, prefix) {
   const stderr = world[`${prefix}Stderr`]

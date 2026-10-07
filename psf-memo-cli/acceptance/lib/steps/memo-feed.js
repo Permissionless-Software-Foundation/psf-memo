@@ -10,6 +10,7 @@
 // Local libraries
 import MemoFeed from '../../../src/commands/memo-feed.js'
 import { runReadCommand, assertReadCommandError } from '../read-command.js'
+import { assertReportedTxids } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The recent-feed fixture: five posts newest-first with the service fields the
@@ -98,8 +99,7 @@ const memoFeedHandlers = [
     name: 'command reported the post txids',
     pattern: /^the command reported the post txids "(.+)"$/,
     run (m, example, world) {
-      const actual = (world.feedJson?.posts || []).map((post) => post.txid).join(', ')
-      assertEqual(actual, resolveParam(m[1], example), 'post txids', { quote: true })
+      assertReportedTxids(world.feedJson?.posts, resolveParam(m[1], example), 'post txids')
     }
   },
   {

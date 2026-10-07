@@ -9,6 +9,12 @@
 // Local libraries
 import { assertEqual, resolveParam } from '../step-support.js'
 
+// Assert a reported list's txids, joined by ", ", match the expected value.
+export function assertReportedTxids (items, expected, label) {
+  const actual = (items || []).map((item) => item.txid).join(', ')
+  assertEqual(actual, expected, label, { quote: true })
+}
+
 const readResultHandlers = [
   {
     name: 'command reported pagination',

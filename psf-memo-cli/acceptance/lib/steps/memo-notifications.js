@@ -9,7 +9,8 @@
 
 // Local libraries
 import MemoNotifications from '../../../src/commands/memo-notifications.js'
-import { runReadCommand, assertUsageError, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, installWalletFactory, assertUsageError, assertReadCommandError } from '../read-command.js'
+import { assertReportedTxids } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Five notifications newest-first: a follow, a reply, a like, and two more.
@@ -20,13 +21,6 @@ const NOTIFICATIONS = [
   { txid: 'notif-4', type: 'follow', addr: 'followerB', blockHeight: 600002, seen: 2 },
   { txid: 'notif-5', type: 'like', addr: 'likerTwo', postTxid: 'post-c', blockHeight: 600001, seen: 1 }
 ]
-
-function lookupNotifWallet (world, key, kind) {
-  if (!(key in world.notifWallets)) {
-    throw new Error(`Unknown ${kind} ${key}`)
-  }
-  return world.notifWallets[key]
-}
 
 async function runNotifications (world, flags) {
   await runReadCommand(
@@ -43,12 +37,7 @@ const memoNotificationsHandlers = [
     name: 'a Memo notifications command',
     pattern: /^a Memo notifications command$/,
     run (m, example, world) {
-      world.notifWallets = {}
-      world.notifSource = {}
-      world.walletUtil = {
-        instanceWallet: (name) => lookupNotifWallet(world, name, 'wallet'),
-        instanceWalletFromWif: (wif) => lookupNotifWallet(world, wif, 'wif')
-      }
+      installWalletFactory(world, 'notif')
     }
   },
   {
@@ -113,8 +102,7 @@ const memoNotificationsHandlers = [
     name: 'command reported the notification txids',
     pattern: /^the command reported the notification txids "(.+)"$/,
     run (m, example, world) {
-      const actual = (world.notificationsJson?.notifications || []).map((n) => n.txid).join(', ')
-      assertEqual(actual, resolveParam(m[1], example), 'notification txids', { quote: true })
+      assertReportedTxids(world.notificationsJson?.notifications, resolveParam(m[1], example), 'notification txids')
     }
   },
   {

@@ -12,6 +12,7 @@ import { assert } from 'chai'
 
 // Local libraries
 import MemoNotifications from '../../../src/commands/memo-notifications.js'
+import WalletUtil from '../../../src/lib/wallet-util.js'
 import { captureStream } from '../../support/capture.js'
 
 const PAGE = {
@@ -179,5 +180,11 @@ describe('#memo-notifications command', () => {
     })
 
     assert.deepEqual(command.validateFlags({ limit: '2', offset: '3' }), { limit: 2, offset: 3 })
+  })
+
+  it('defaults to a real wallet util', () => {
+    const command = new MemoNotifications({ MemoDbClass: fakeMemoDb().FakeMemoDb })
+
+    assert.instanceOf(command.walletUtil, WalletUtil)
   })
 })

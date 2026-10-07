@@ -10,7 +10,7 @@
 
 // Local libraries
 import MemoIdentity from '../../../src/commands/memo-identity.js'
-import { runReadCommand, assertUsageError, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, installWalletFactory, assertUsageError, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Build a fake wallet with the given cash address and UTXOs.
@@ -53,24 +53,12 @@ function registerWallet (world, address, walletOptions) {
   world.identitySource = { name: 'identity-wallet' }
 }
 
-function lookupIdentityWallet (world, key, kind) {
-  if (!(key in world.identityWallets)) {
-    throw new Error(`Unknown ${kind} ${key}`)
-  }
-  return world.identityWallets[key]
-}
-
 const memoIdentityHandlers = [
   {
     name: 'a Memo identity command',
     pattern: /^a Memo identity command$/,
     run (m, example, world) {
-      world.identityWallets = {}
-      world.identitySource = {}
-      world.walletUtil = {
-        instanceWallet: (name) => lookupIdentityWallet(world, name, 'wallet'),
-        instanceWalletFromWif: (wif) => lookupIdentityWallet(world, wif, 'wif')
-      }
+      installWalletFactory(world, 'identity')
     }
   },
   {
