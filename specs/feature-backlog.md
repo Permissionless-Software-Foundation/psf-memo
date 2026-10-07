@@ -35,6 +35,28 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI topics read command (`cli-memo-topics`, 2026-10-07):** R7 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-topics.js` (page defaults and summary) and a thin
+  `src/commands/memo-topics.js` over the shared read scaffolding and
+  `MemoDb.getTopics` (`GET /topics`), registered as `memo-topics`. It reports
+  the paginated topic list — each topic's `room`, `postCount`, `lastSeen`
+  (epoch-ms last-post time), and `followerCount` — in the service's recency
+  order, with pagination unchanged. The refactorer added
+  `src/lib/page-summary.js` (`formatPageSummary`), now shared by `memo-feed`,
+  `memo-notifications`, and `memo-topics`. Spec:
+  `psf-memo-cli/specs/memo-topics.feature` (5 scenarios, 10 example executions).
+  Merged to `master` at `5559269` (fast-forward; architect code-review commit
+  `ccb7ab8702`; the later `5559269` adds only the record and summary, so
+  `docs/reviews/cli-memo-topics-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `ccb7ab8702` (unit 357/0, property 65/0,
+  acceptance all 18 suites, lint ok); language mutation 11 killed / 0 survived
+  (`page-summary.js` 1, `memo-topics.js` 1, `memo-db.js` 6, `memo-feed.js` 2,
+  `memo-notifications.js` 1); soft Gherkin mutation 28 total / 26 killed / 2
+  intrinsic survivors (exhausted-page limits); DRY clean. Independent acceptance
+  check after merge: 10/10. Architect summary:
+  `docs/reviews/cli-memo-topics-summary.md`.
+
 - **CLI posts read command (`cli-memo-posts`, 2026-10-07):** R5 of the
   `psf-memo-cli` Memo-protocol backlog. Added `psf-memo-cli/src/lib/memo-posts.js`
   (flag parsing/defaults and summary) and a thin `src/commands/memo-posts.js`

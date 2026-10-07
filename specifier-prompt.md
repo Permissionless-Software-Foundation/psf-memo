@@ -1108,7 +1108,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-posts`): specified and merged R5, the
+Latest session (2026-10-07, `cli-memo-topics`): specified and merged R7, the
+topic-list read command. The specifier wrote
+`psf-memo-cli/specs/memo-topics.feature` (5 scenarios, 10 example executions);
+the coder/refactorer/architect added `src/lib/memo-topics.js` (page defaults and
+summary) and a thin `src/commands/memo-topics.js` over the shared read
+scaffolding and `MemoDb.getTopics` (`GET /topics`), registered as
+`memo-topics`. It reports the paginated topic list (`room`, `postCount`,
+`lastSeen`, `followerCount`) in the service's recency order, with pagination
+unchanged. The refactorer added `src/lib/page-summary.js` (`formatPageSummary`),
+now shared by `memo-feed`, `memo-notifications`, and `memo-topics`. Merged to
+`master` at `5559269` (fast-forward; architect code-review commit `ccb7ab8702`;
+the later `5559269` adds only the record and summary, so
+`docs/reviews/cli-memo-topics-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `ccb7ab8702` (unit 357/0, property 65/0, acceptance
+all 18 suites, lint ok); language mutation 11 killed / 0 survived
+(`page-summary.js` 1, `memo-topics.js` 1, `memo-db.js` 6, `memo-feed.js` 2,
+`memo-notifications.js` 1); soft Gherkin mutation 28 total / 26 killed / 2
+intrinsic survivors (exhausted-page limits); DRY clean. Independent acceptance
+check after merge: 10/10 example executions. Architect summary:
+`docs/reviews/cli-memo-topics-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-posts`): specified and merged R5, the
 posts-by-address read command. The specifier wrote
 `psf-memo-cli/specs/memo-posts.feature` (6 scenarios, 10 example executions);
 the coder/refactorer/architect added `src/lib/memo-posts.js` (flag
@@ -1454,7 +1475,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `b6d7fac` (`Record cli-memo-posts architect review and verification`).
+Current `master` HEAD: `5559269` (`Record cli-memo-topics architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1497,11 +1518,12 @@ Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
-`memo-posts`**, **R6 `memo-notifications`**, **R14 `memo-status`**, **R15
-`memo-identity`**, **R16 `memo-wait`**) are done, and the first three write
-commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are
-done. The suggested next item is **R7 `memo-topics`** (the paginated topic list
-with last-post time, post count, and follower count), then R8–R13. The earlier
-client direction (front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`. Run `swarmforge/scripts/state.sh` to refresh the
-HEAD lines.
+`memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R14
+`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
+first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
+`memo-like`** are done. The suggested next item is **R8 `memo-topic`** (a single
+topic's posts, optionally viewer-filtered), then R9 `memo-search`, R10
+`memo-profiles`, R11 `memo-following`/`memo-followers`, R12 `memo-muted`, and
+R13 `memo-poll`. The earlier client direction (front-end improvements to
+`psf-memo-client`) remains open in `specs/feature-backlog.md`. Run
+`swarmforge/scripts/state.sh` to refresh the HEAD lines.
