@@ -57,5 +57,5 @@ export function formatProfileMessage ({
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T19:45:07.555Z","module_hash":"3c851b3dc088df94730f5762beb5427b303e49d5dea380ba4915edcbd204797d","functions":[{"id":"func/parseProfileFlags","name":"parseProfileFlags","line":23,"end_line":36,"hash":"18445a683e2246b5957902fc86c3ee21605270b4d3081ce6d6d0f9cb0ac43dad"},{"id":"func/formatProfileMessage","name":"formatProfileMessage","line":40,"end_line":57,"hash":"d741e24e0c6366d3eba9f02bc441a358d823151ecfe19cc575adc75b48321780"}]}
 // mutate4javascript-manifest-end

@@ -308,75 +308,46 @@ describe('#memo-db', () => {
     })
   })
 
-  describe('getNotifications', () => {
-    it('requests the notification page for the address', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ notifications: [{ txid: 'notif-1' }], pagination: { total: 1 } })
-        }
+  describe('address-scoped post pages', () => {
+    const cases = [
+      {
+        method: 'getNotifications',
+        path: 'notifications',
+        body: { notifications: [{ txid: 'notif-1' }], pagination: { total: 1 } },
+        list: 'notifications'
+      },
+      {
+        method: 'getPostsByAddr',
+        path: 'by',
+        body: { posts: [{ txid: 'alpha' }], pagination: { total: 1 } },
+        list: 'posts'
+      }
+    ]
+
+    for (const { method, path, body, list } of cases) {
+      it(`${method} requests /posts/${path}/:addr with the limit and offset`, async () => {
+        const { client, requestedUrl } = recordingClient(body)
+
+        const result = await client[method]('addrA', { limit: 2, offset: 4 })
+
+        const url = requestedUrl()
+        assert.equal(url.pathname, `/posts/${path}/addrA`)
+        assert.equal(url.searchParams.get('limit'), '2')
+        assert.equal(url.searchParams.get('offset'), '4')
+        assert.equal(result[list][0].txid, body[list][0].txid)
       })
 
-      const result = await client.getNotifications('addrA', { limit: 2, offset: 4 })
+      it(`${method} defaults the page to 50/0 and encodes the address`, async () => {
+        const { client, requestedUrl } = recordingClient(body)
 
-      const url = new URL(requested)
-      assert.equal(url.pathname, '/posts/notifications/addrA')
-      assert.equal(url.searchParams.get('limit'), '2')
-      assert.equal(url.searchParams.get('offset'), '4')
-      assert.equal(result.notifications[0].txid, 'notif-1')
-    })
+        await client[method]('a/b')
 
-    it('defaults the page to 50/0 and encodes the address', async () => {
-      const { client, requestedUrl } = recordingClient({ notifications: [] })
-
-      await client.getNotifications('a/b')
-
-      const url = requestedUrl()
-      assert.equal(url.pathname, '/posts/notifications/a%2Fb')
-      assert.equal(url.searchParams.get('limit'), '50')
-      assert.equal(url.searchParams.get('offset'), '0')
-    })
-  })
-
-  describe('getPostsByAddr', () => {
-    it('requests the address page with limit and offset', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ posts: [{ txid: 'alpha' }], pagination: { total: 1 } })
-        }
+        const url = requestedUrl()
+        assert.equal(url.pathname, `/posts/${path}/a%2Fb`)
+        assert.equal(url.searchParams.get('limit'), '50')
+        assert.equal(url.searchParams.get('offset'), '0')
       })
-
-      const result = await client.getPostsByAddr('addrA', { limit: 2, offset: 4 })
-
-      const url = new URL(requested)
-      assert.equal(url.pathname, '/posts/by/addrA')
-      assert.equal(url.searchParams.get('limit'), '2')
-      assert.equal(url.searchParams.get('offset'), '4')
-      assert.equal(result.posts[0].txid, 'alpha')
-    })
-
-    it('defaults the page to 50/0 and encodes the address', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ posts: [] })
-        }
-      })
-
-      await client.getPostsByAddr('a/b')
-
-      const url = new URL(requested)
-      assert.equal(url.pathname, '/posts/by/a%2Fb')
-      assert.equal(url.searchParams.get('limit'), '50')
-      assert.equal(url.searchParams.get('offset'), '0')
-    })
+    }
   })
 
   describe('getFollowState', () => {

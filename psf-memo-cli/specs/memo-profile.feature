@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T19:46:53.594446339Z","feature_name":"Memo Profile","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-profile.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Profile (R4): the psf-memo-cli composed profile read command. For a
 # target address (-a <addr>) it reports the address's Memo name (0x6d01),
 # profile text (0x6d05), and avatar URL (0x6d0a) from /level/name|profile|
