@@ -19,6 +19,7 @@ import MsgVerify from './src/commands/msg-verify.js'
 import MemoFeed from './src/commands/memo-feed.js'
 import MemoThread from './src/commands/memo-thread.js'
 import MemoGetPost from './src/commands/memo-get-post.js'
+import MemoStatus from './src/commands/memo-status.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -33,6 +34,7 @@ const msgVerify = new MsgVerify()
 const memoFeed = new MemoFeed()
 const memoThread = new MemoThread()
 const memoGetPost = new MemoGetPost()
+const memoStatus = new MemoStatus()
 
 const program = new Command()
 
@@ -119,5 +121,11 @@ program.command('memo-get-post')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoGetPost.run)
+
+program.command('memo-status')
+  .description("Report the psf-memo-db indexer's sync state")
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoStatus.run)
 
 program.parseAsync(process.argv)

@@ -57,6 +57,12 @@ class MemoDb {
     return this.getJson(`/level/post/${encodeURIComponent(txid)}`, { notFoundValue: null })
   }
 
+  // GET /level/status/status. A missing status record resolves to null so the
+  // caller can report a not-found failure.
+  async getStatus () {
+    return this.getJson('/level/status/status', { notFoundValue: null })
+  }
+
   // GET a JSON resource. Throws on a transport failure or a non-OK response.
   // When notFoundValue is supplied (including null), a 404 returns it instead.
   async getJson (path, { notFoundValue } = {}) {

@@ -13,6 +13,7 @@ import { memoDbHandlers } from './steps/memo-db.js'
 import { memoFeedHandlers } from './steps/memo-feed.js'
 import { memoThreadHandlers } from './steps/memo-thread.js'
 import { memoGetPostHandlers } from './steps/memo-get-post.js'
+import { memoStatusHandlers } from './steps/memo-status.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
@@ -23,6 +24,7 @@ const handlers = [
   ...memoFeedHandlers,
   ...memoThreadHandlers,
   ...memoGetPostHandlers,
+  ...memoStatusHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
@@ -45,6 +47,7 @@ async function createWorld () {
     posts: [],
     threads: {},
     postStore: {},
+    status: null,
     missingProfiles: new Set(),
     unreachable: false,
     lastRequest: null,
@@ -78,6 +81,13 @@ async function createWorld () {
         return jsonResponse({ message: 'not found' }, 404)
       }
       return jsonResponse(world.postStore[txid], 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/level/status/')) {
+      if (!world.status) {
+        return jsonResponse({ message: 'not found' }, 404)
+      }
+      return jsonResponse(world.status, 200)
     }
 
     if (world.lastRequest.pathname === '/posts/recent') {

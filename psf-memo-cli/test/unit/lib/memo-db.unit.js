@@ -260,6 +260,33 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getStatus', () => {
+    it('requests the indexer status key', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ startBlockHeight: 0, syncedBlockHeight: 0, chainBlockHeight: 750000 })
+        }
+      })
+
+      const result = await client.getStatus()
+
+      assert.equal(new URL(requested).pathname, '/level/status/status')
+      assert.equal(result.chainBlockHeight, 750000)
+    })
+
+    it('resolves a missing status to null', async () => {
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+      })
+
+      assert.isNull(await client.getStatus())
+    })
+  })
+
   describe('errors', () => {
     const cases = [
       {
