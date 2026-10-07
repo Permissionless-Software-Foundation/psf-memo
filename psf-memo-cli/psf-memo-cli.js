@@ -26,6 +26,7 @@ import MemoReply from './src/commands/memo-reply.js'
 import MemoLike from './src/commands/memo-like.js'
 import MemoWait from './src/commands/memo-wait.js'
 import MemoNotifications from './src/commands/memo-notifications.js'
+import MemoProfile from './src/commands/memo-profile.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -47,6 +48,7 @@ const memoReply = new MemoReply()
 const memoLike = new MemoLike()
 const memoWait = new MemoWait()
 const memoNotifications = new MemoNotifications()
+const memoProfile = new MemoProfile()
 
 const program = new Command()
 
@@ -193,5 +195,15 @@ program.command('memo-notifications')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoNotifications.run)
+
+program.command('memo-profile')
+  .description('Read a composed Memo profile for an address')
+  .option('-a, --addr <string>', 'profile address')
+  .option('--viewer <string>', 'viewer address for the follow state')
+  .option('-l, --limit <number>', 'maximum posts to return (default 50)')
+  .option('-o, --offset <number>', 'posts to skip (default 0)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoProfile.run)
 
 program.parseAsync(process.argv)

@@ -51,6 +51,24 @@ class MemoDb {
     return this.getJson(`/posts/notifications/${encodeURIComponent(addr)}?${params.toString()}`)
   }
 
+  // GET /posts/by/:addr. Returns one page of the address's top-level posts.
+  async getPostsByAddr (addr, { limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+
+    return this.getJson(`/posts/by/${encodeURIComponent(addr)}?${params.toString()}`)
+  }
+
+  // GET /follow/state?follower=&followee=. Returns the follow state document.
+  async getFollowState (follower, followee) {
+    const params = new URLSearchParams()
+    params.set('follower', follower)
+    params.set('followee', followee)
+
+    return this.getJson(`/follow/state?${params.toString()}`)
+  }
+
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })

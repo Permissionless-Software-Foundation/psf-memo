@@ -340,6 +340,66 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getPostsByAddr', () => {
+    it('requests the address page with limit and offset', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ posts: [{ txid: 'alpha' }], pagination: { total: 1 } })
+        }
+      })
+
+      const result = await client.getPostsByAddr('addrA', { limit: 2, offset: 4 })
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/posts/by/addrA')
+      assert.equal(url.searchParams.get('limit'), '2')
+      assert.equal(url.searchParams.get('offset'), '4')
+      assert.equal(result.posts[0].txid, 'alpha')
+    })
+
+    it('defaults the page to 50/0 and encodes the address', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ posts: [] })
+        }
+      })
+
+      await client.getPostsByAddr('a/b')
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/posts/by/a%2Fb')
+      assert.equal(url.searchParams.get('limit'), '50')
+      assert.equal(url.searchParams.get('offset'), '0')
+    })
+  })
+
+  describe('getFollowState', () => {
+    it('requests the follow state for the follower and followee', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ followerAddr: 'viewerB', followeeAddr: 'addrA', following: true })
+        }
+      })
+
+      const result = await client.getFollowState('viewerB', 'addrA')
+
+      const url = new URL(requested)
+      assert.equal(url.pathname, '/follow/state')
+      assert.equal(url.searchParams.get('follower'), 'viewerB')
+      assert.equal(url.searchParams.get('followee'), 'addrA')
+      assert.equal(result.following, true)
+    })
+  })
+
   describe('level name and profile-picture resources', () => {
     const resourceCases = [
       { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },

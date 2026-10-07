@@ -24,6 +24,13 @@ const readResultHandlers = [
       assertEqual(pagination.total, Number.parseInt(resolveParam(m[1], example), 10), 'pagination total')
       assertEqual(pagination.hasMore, resolveParam(m[2], example) === 'true', 'pagination hasMore')
     }
+  },
+  {
+    name: 'command reported the post txids',
+    pattern: /^the command reported the post txids "(.+)"$/,
+    run (m, example, world) {
+      assertReportedTxids(world.readJson?.posts, resolveParam(m[1], example), 'post txids')
+    }
   }
 ]
 

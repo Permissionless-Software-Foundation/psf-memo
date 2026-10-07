@@ -20,6 +20,7 @@ import { memoReplyHandlers } from './steps/memo-reply.js'
 import { memoLikeHandlers } from './steps/memo-like.js'
 import { memoWaitHandlers } from './steps/memo-wait.js'
 import { memoNotificationsHandlers } from './steps/memo-notifications.js'
+import { memoProfileHandlers } from './steps/memo-profile.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
@@ -39,6 +40,7 @@ const handlers = [
   ...memoLikeHandlers,
   ...memoWaitHandlers,
   ...memoNotificationsHandlers,
+  ...memoProfileHandlers,
   ...readResultHandlers,
   ...broadcastCommandHandlers,
   ...memoBroadcastHandlers,
@@ -64,6 +66,8 @@ async function createWorld () {
     threads: {},
     postStore: {},
     notifications: [],
+    profilePosts: [],
+    followState: false,
     status: null,
     nameStore: {},
     profileStore: {},
@@ -134,6 +138,27 @@ async function createWorld () {
         hasMore: offset + limit < world.notifications.length
       }
       return jsonResponse({ notifications: page, pagination }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/posts/by/')) {
+      const limit = Number.parseInt(world.lastRequest.searchParams.get('limit') || '50', 10)
+      const offset = Number.parseInt(world.lastRequest.searchParams.get('offset') || '0', 10)
+      const page = world.profilePosts.slice(offset, offset + limit)
+      const pagination = {
+        limit,
+        offset,
+        total: world.profilePosts.length,
+        hasMore: offset + limit < world.profilePosts.length
+      }
+      return jsonResponse({ posts: page, pagination }, 200)
+    }
+
+    if (world.lastRequest.pathname === '/follow/state') {
+      return jsonResponse({
+        followerAddr: world.lastRequest.searchParams.get('follower'),
+        followeeAddr: world.lastRequest.searchParams.get('followee'),
+        following: world.followState === true
+      }, 200)
     }
 
     if (world.lastRequest.pathname === '/posts/recent') {
