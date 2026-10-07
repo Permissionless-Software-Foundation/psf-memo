@@ -17,9 +17,17 @@ import { captureStream } from './capture.js'
 const TXID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 const EXPLORER = `https://bch.loping.net/tx/${TXID}`
 
-// A minimal wallet stand-in holding a cash address.
+// A minimal wallet stand-in holding a cash address. `initialize` refreshes
+// UTXOs for commands that read the spendable balance.
 export function fakeWallet (address = 'bitcoincash:qwallet') {
-  return { walletInfo: { cashAddress: address } }
+  const wallet = {
+    walletInfo: { cashAddress: address },
+    initialized: false,
+    async initialize () {
+      wallet.initialized = true
+    }
+  }
+  return wallet
 }
 
 // A wallet factory that returns one wallet regardless of the requested name/WIF.

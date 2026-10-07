@@ -23,6 +23,7 @@ import MemoStatus from './src/commands/memo-status.js'
 import MemoIdentity from './src/commands/memo-identity.js'
 import MemoPost from './src/commands/memo-post.js'
 import MemoReply from './src/commands/memo-reply.js'
+import MemoLike from './src/commands/memo-like.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -41,6 +42,7 @@ const memoStatus = new MemoStatus()
 const memoIdentity = new MemoIdentity()
 const memoPost = new MemoPost()
 const memoReply = new MemoReply()
+const memoLike = new MemoLike()
 
 const program = new Command()
 
@@ -158,5 +160,15 @@ program.command('memo-reply')
   .option('-m, --memo <string>', 'reply text')
   .option('--json', 'print the result as one JSON object')
   .action(memoReply.run)
+
+program.command('memo-like')
+  .description('Broadcast a 0x6d04 Memo like, with an optional tip')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-t, --txid <string>', 'liked post transaction id')
+  .option('--tip <number>', 'tip amount in satoshis')
+  .option('--author <string>', 'tip recipient (post author) address')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoLike.run)
 
 program.parseAsync(process.argv)

@@ -98,6 +98,16 @@ const broadcastCommandHandlers = [
     }
   },
   {
+    name: 'signing wallet has a spendable balance',
+    pattern: /^the signing wallet has a spendable balance of (.+) satoshis$/,
+    run (m, example, world) {
+      const balance = Number.parseInt(resolveParam(m[1], example), 10)
+      world.commandWallets['command-wallet'].utxos = {
+        utxoStore: { bchUtxos: [{ value: balance }] }
+      }
+    }
+  },
+  {
     name: 'signing wallet returns a txid',
     pattern: /^the signing wallet returns the transaction id "(.+)"$/,
     run (m, example, world) {
@@ -134,14 +144,14 @@ const broadcastCommandHandlers = [
   },
   {
     name: 'command reported the usage error',
-    pattern: /^the (memo-post|memo-reply) command reported the usage error "(.+)"$/,
+    pattern: /^the (memo-post|memo-reply|memo-like) command reported the usage error "(.+)"$/,
     run (m, example, world) {
       assertUsageError(world, 'result', m[1], resolveParam(m[2], example))
     }
   },
   {
     name: 'command reported the error',
-    pattern: /^the (memo-post|memo-reply) command reported the error "(.+)"$/,
+    pattern: /^the (memo-post|memo-reply|memo-like) command reported the error "(.+)"$/,
     run (m, example, world) {
       assertEqual(world.resultExitCode, 1, `${m[1]} exit code`)
       assertEqual(parseStderrError(world, 'result').error, resolveParam(m[2], example), 'error', { quote: true })
