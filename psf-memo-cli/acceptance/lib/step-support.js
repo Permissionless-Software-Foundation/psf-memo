@@ -14,3 +14,12 @@ export function resolveParam (value, example) {
   }
   return String(value).trim()
 }
+
+// Assert a value equals the expected value, with a consistent failure message.
+// `quote` wraps both rendered values in double quotes for text assertions.
+export function assertEqual (actual, expected, label, { quote = false } = {}) {
+  const show = (value) => (quote ? `"${value}"` : `${value}`)
+  if (actual !== expected) {
+    throw new Error(`Expected ${label} ${show(expected)}, got ${show(actual)}`)
+  }
+}

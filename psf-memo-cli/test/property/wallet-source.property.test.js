@@ -51,3 +51,24 @@ test('exactly one wallet source is required', async () => {
     }
   }
 })
+
+test('falsy sources count as missing and never shadow a real source', async () => {
+  for (const source of [{}, { name: '' }, { wif: '' }, { name: '', wif: '' }]) {
+    let err
+    try {
+      await resolveWalletSource(source, { walletUtil })
+    } catch (e) {
+      err = e
+    }
+    assert.ok(
+      err instanceof UsageError,
+      `expected a usage error for ${JSON.stringify(source)}`
+    )
+  }
+
+  const resolved = await resolveWalletSource(
+    { name: '', wif: 'wif-real' },
+    { walletUtil }
+  )
+  assert.equal(resolved.address, 'bitcoincash:wif-real')
+})

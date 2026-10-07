@@ -9,7 +9,15 @@
 // Local libraries
 import { resolveWalletSource } from '../../../src/lib/wallet-source.js'
 import { UsageError } from '../../../src/lib/reporter.js'
-import { resolveParam } from '../step-support.js'
+import { assertEqual, resolveParam } from '../step-support.js'
+
+// Map a saved-wallet name or WIF to an address, rejecting unknown keys.
+function addressLookup (table, key, kind) {
+  if (!(key in table)) {
+    throw new Error(`Unknown ${kind} ${key}`)
+  }
+  return { walletInfo: { cashAddress: table[key] } }
+}
 
 // Resolve a source, recording either the result or the thrown error.
 async function resolveSource (world, source) {
@@ -35,18 +43,8 @@ const walletSourceHandlers = [
       world.resolution = null
       world.resolutionError = null
       world.walletUtil = {
-        async instanceWallet (name) {
-          if (!(name in world.savedWallets)) {
-            throw new Error(`Unknown wallet ${name}`)
-          }
-          return { walletInfo: { cashAddress: world.savedWallets[name] } }
-        },
-        async instanceWalletFromWif (wif) {
-          if (!(wif in world.wifs)) {
-            throw new Error(`Unknown wif ${wif}`)
-          }
-          return { walletInfo: { cashAddress: world.wifs[wif] } }
-        }
+        instanceWallet: (name) => addressLookup(world.savedWallets, name, 'wallet'),
+        instanceWalletFromWif: (wif) => addressLookup(world.wifs, wif, 'wif')
       }
     }
   },
@@ -103,11 +101,7 @@ const walletSourceHandlers = [
     name: 'resolved address',
     pattern: /^the resolved address is "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = world.resolution?.address
-      if (actual !== expected) {
-        throw new Error(`Expected address ${expected}, got ${actual}`)
-      }
+      assertEqual(world.resolution?.address, resolveParam(m[1], example), 'address')
     }
   },
   {

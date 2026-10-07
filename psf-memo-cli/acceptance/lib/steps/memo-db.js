@@ -7,7 +7,7 @@
 */
 
 // Local libraries
-import { resolveParam } from '../step-support.js'
+import { assertEqual, resolveParam } from '../step-support.js'
 
 function makePosts (count) {
   const posts = []
@@ -109,11 +109,7 @@ const memoDbHandlers = [
     name: 'client returned a post count',
     pattern: /^the Memo DB client returns (.+) posts$/,
     run (m, example, world) {
-      const expected = Number.parseInt(resolveParam(m[1], example), 10)
-      const actual = world.lastResult?.posts?.length
-      if (actual !== expected) {
-        throw new Error(`Expected ${expected} posts, got ${actual}`)
-      }
+      assertEqual(world.lastResult?.posts?.length, Number.parseInt(resolveParam(m[1], example), 10), 'post count')
     }
   },
   {

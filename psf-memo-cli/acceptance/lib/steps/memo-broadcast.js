@@ -10,7 +10,7 @@
 // Local libraries
 import { broadcastMemo, toPushBuffer } from '../../../src/lib/memo-broadcast.js'
 import { txidToWireBytes } from '../../../src/lib/wire-encoding.js'
-import { resolveParam } from '../step-support.js'
+import { assertEqual, resolveParam } from '../step-support.js'
 
 // A wallet stand-in that records the pushes and returns/rejects on demand.
 function createRecordingWallet (world) {
@@ -175,99 +175,63 @@ const memoBroadcastHandlers = [
     name: 'the broadcast push count',
     pattern: /^the broadcast has (.+) OP_RETURN pushes$/,
     run (m, example, world) {
-      const expected = Number.parseInt(resolveParam(m[1], example), 10)
-      const actual = world.broadcast?.pushes?.length
-      if (actual !== expected) {
-        throw new Error(`Expected ${expected} pushes, got ${actual}`)
-      }
+      assertEqual(world.broadcast?.pushes?.length, Number.parseInt(resolveParam(m[1], example), 10), 'push count')
     }
   },
   {
     name: 'push 1 is the Memo prefix',
     pattern: /^broadcast push 1 is the Memo prefix "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = push(world, 1).toString('hex')
-      if (actual !== expected) {
-        throw new Error(`Expected prefix push ${expected}, got ${actual}`)
-      }
+      assertEqual(push(world, 1).toString('hex'), resolveParam(m[1], example), 'prefix push')
     }
   },
   {
     name: 'push 2 is UTF-8 text',
     pattern: /^broadcast push 2 is the UTF-8 text "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = push(world, 2).toString('utf8')
-      if (actual !== expected) {
-        throw new Error(`Expected text push "${expected}", got "${actual}"`)
-      }
+      assertEqual(push(world, 2).toString('utf8'), resolveParam(m[1], example), 'text push', { quote: true })
     }
   },
   {
     name: 'push 3 is UTF-8 text',
     pattern: /^broadcast push 3 is the UTF-8 text "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = push(world, 3).toString('utf8')
-      if (actual !== expected) {
-        throw new Error(`Expected text push "${expected}", got "${actual}"`)
-      }
+      assertEqual(push(world, 3).toString('utf8'), resolveParam(m[1], example), 'text push', { quote: true })
     }
   },
   {
     name: 'push 2 is the wire txid',
     pattern: /^broadcast push 2 is the referenced txid "(.+)" in little-endian wire order$/,
     run (m, example, world) {
-      const expected = txidToWireBytes(resolveParam(m[1], example)).toString('hex')
-      const actual = push(world, 2).toString('hex')
-      if (actual !== expected) {
-        throw new Error(`Expected wire txid ${expected}, got ${actual}`)
-      }
+      assertEqual(push(world, 2).toString('hex'), txidToWireBytes(resolveParam(m[1], example)).toString('hex'), 'wire txid')
     }
   },
   {
     name: 'push 2 is the poll type',
     pattern: /^broadcast push 2 is the poll type (.+)$/,
     run (m, example, world) {
-      const expected = Number.parseInt(resolveParam(m[1], example), 10)
-      const actual = push(world, 2)[0]
-      if (actual !== expected) {
-        throw new Error(`Expected poll type ${expected}, got ${actual}`)
-      }
+      assertEqual(push(world, 2)[0], Number.parseInt(resolveParam(m[1], example), 10), 'poll type')
     }
   },
   {
     name: 'push 3 is the option count',
     pattern: /^broadcast push 3 is the option count (.+)$/,
     run (m, example, world) {
-      const expected = Number.parseInt(resolveParam(m[1], example), 10)
-      const actual = push(world, 3)[0]
-      if (actual !== expected) {
-        throw new Error(`Expected option count ${expected}, got ${actual}`)
-      }
+      assertEqual(push(world, 3)[0], Number.parseInt(resolveParam(m[1], example), 10), 'option count')
     }
   },
   {
     name: 'push 4 is the UTF-8 question',
     pattern: /^broadcast push 4 is the UTF-8 question "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = push(world, 4).toString('utf8')
-      if (actual !== expected) {
-        throw new Error(`Expected question push "${expected}", got "${actual}"`)
-      }
+      assertEqual(push(world, 4).toString('utf8'), resolveParam(m[1], example), 'question push', { quote: true })
     }
   },
   {
     name: 'the reported transaction id',
     pattern: /^the reported transaction id is "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = world.result?.txid
-      if (actual !== expected) {
-        throw new Error(`Expected txid ${expected}, got ${actual}`)
-      }
+      assertEqual(world.result?.txid, resolveParam(m[1], example), 'txid')
     }
   },
   {
@@ -280,21 +244,14 @@ const memoBroadcastHandlers = [
         }
         return example[name]
       })
-      const actual = world.result?.explorerUrl
-      if (actual !== expected) {
-        throw new Error(`Expected explorer link ${expected}, got ${actual}`)
-      }
+      assertEqual(world.result?.explorerUrl, expected, 'explorer link')
     }
   },
   {
     name: 'the reported error',
     pattern: /^the reported error is "(.+)"$/,
     run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      const actual = world.error?.message
-      if (actual !== expected) {
-        throw new Error(`Expected error "${expected}", got "${actual}"`)
-      }
+      assertEqual(world.error?.message, resolveParam(m[1], example), 'error', { quote: true })
     }
   }
 ]
