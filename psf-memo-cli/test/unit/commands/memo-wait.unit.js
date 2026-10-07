@@ -13,6 +13,7 @@ import { assert } from 'chai'
 // Local libraries
 import MemoWait from '../../../src/commands/memo-wait.js'
 import { captureStream } from '../../support/capture.js'
+import { fakeClock } from '../../support/clock.js'
 
 const STORED_POST = {
   addr: 'bitcoincash:qaddr-a',
@@ -40,20 +41,6 @@ function fakeMemoDb ({ results, error } = {}) {
     }
   }
   return { FakeMemoDb, calls }
-}
-
-// A deterministic clock: `sleep` records each delay and advances `now`.
-function fakeClock () {
-  let current = 0
-  const delays = []
-  return {
-    delays,
-    now: () => current,
-    sleep: async (ms) => {
-      delays.push(ms)
-      current += ms
-    }
-  }
 }
 
 function makeCommand ({ FakeMemoDb, clock }) {

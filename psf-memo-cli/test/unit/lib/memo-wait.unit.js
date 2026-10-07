@@ -18,25 +18,12 @@ import {
   DEFAULT_WAIT_INTERVAL_MS
 } from '../../../src/lib/memo-wait.js'
 import { UsageError } from '../../../src/lib/reporter.js'
+import { fakeClock } from '../../support/clock.js'
 
 const TIMEOUT_ERROR =
   'The --timeout value must be a positive integer number of milliseconds.'
 const INTERVAL_ERROR =
   'The --interval value must be a positive integer number of milliseconds.'
-
-// A deterministic clock: `sleep` records each delay and advances `now`.
-function fakeClock () {
-  let current = 0
-  const delays = []
-  return {
-    delays,
-    now: () => current,
-    sleep: async (ms) => {
-      delays.push(ms)
-      current += ms
-    }
-  }
-}
 
 // A read function that resolves null until the post is available on call `onCall`.
 function readOnCall (post, onCall) {
@@ -79,22 +66,30 @@ describe('#memo-wait helpers', () => {
     })
   })
 
+  it('treats null or empty timing flags as absent', () => {
+    assert.deepEqual(parseWaitFlags({ txid: 'post-abc', timeout: null, interval: '' }), {
+      txid: 'post-abc',
+      timeout: DEFAULT_WAIT_TIMEOUT_MS,
+      interval: DEFAULT_WAIT_INTERVAL_MS
+    })
+  })
+
   it('rejects a missing txid', () => {
     const err = captureUsageError(() => parseWaitFlags({}))
     assert.equal(err.message, 'You must specify a post txid with the -t flag.')
   })
 
-  it('rejects a non-positive or non-integer timeout', () => {
-    for (const timeout of ['0', '-1', 'abc', '1.5']) {
-      const err = captureUsageError(() => parseWaitFlags({ txid: 'post-abc', timeout }))
-      assert.equal(err.message, TIMEOUT_ERROR)
-    }
-  })
+  it('rejects a non-positive or non-integer timeout or interval', () => {
+    const cases = [
+      ['timeout', TIMEOUT_ERROR],
+      ['interval', INTERVAL_ERROR]
+    ]
 
-  it('rejects a non-positive or non-integer interval', () => {
-    for (const interval of ['0', '-1', 'abc', '1.5']) {
-      const err = captureUsageError(() => parseWaitFlags({ txid: 'post-abc', interval }))
-      assert.equal(err.message, INTERVAL_ERROR)
+    for (const [flag, expected] of cases) {
+      for (const value of ['0', '-1', 'abc', '1.5']) {
+        const err = captureUsageError(() => parseWaitFlags({ txid: 'post-abc', [flag]: value }))
+        assert.equal(err.message, expected)
+      }
     }
   })
 
@@ -115,19 +110,26 @@ describe('#memo-wait helpers', () => {
   })
 
   it('polls at the interval until the post is indexed', async () => {
-    const clock = fakeClock()
-    const result = await pollForPost({
-      read: readOnCall({ text: 'waited memo' }, 3),
-      txid: 'wait-post',
-      timeout: 60000,
-      interval: 5000,
-      sleep: clock.sleep,
-      now: clock.now
-    })
+    const cases = [
+      { onCall: 3, text: 'waited memo', timeout: 60000, interval: 5000, delays: [5000, 5000] },
+      { onCall: 4, text: 'edge memo', timeout: 3000, interval: 1000, delays: [1000, 1000, 1000] }
+    ]
 
-    assert.equal(result.polls, 3)
-    assert.deepEqual(result.post, { text: 'waited memo' })
-    assert.deepEqual(clock.delays, [5000, 5000])
+    for (const { onCall, text, timeout, interval, delays } of cases) {
+      const clock = fakeClock()
+      const result = await pollForPost({
+        read: readOnCall({ text }, onCall),
+        txid: 'post',
+        timeout,
+        interval,
+        sleep: clock.sleep,
+        now: clock.now
+      })
+
+      assert.equal(result.polls, onCall)
+      assert.deepEqual(result.post, { text })
+      assert.deepEqual(clock.delays, delays)
+    }
   })
 
   it('times out with the post and budget in the message', async () => {
@@ -149,6 +151,7 @@ describe('#memo-wait helpers', () => {
     assert.instanceOf(err, Error)
     assert.notInstanceOf(err, UsageError)
     assert.equal(err.message, 'Timed out waiting for post post-missing after 3000 milliseconds.')
+    assert.deepEqual(clock.delays, [1000, 1000, 1000])
   })
 
   it('propagates a read failure without retrying', async () => {

@@ -11,22 +11,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { seededRandom } from './harness.js'
+import { fakeClock } from '../support/clock.js'
 import { parseWaitFlags, pollForPost } from '../../src/lib/memo-wait.js'
 import { UsageError } from '../../src/lib/reporter.js'
-
-// A clock whose `sleep` records the delay and advances `now`.
-function fakeClock () {
-  let current = 0
-  const delays = []
-  return {
-    delays,
-    now: () => current,
-    sleep: async (ms) => {
-      delays.push(ms)
-      current += ms
-    }
-  }
-}
 
 test('a post on poll N is reached exactly within the timeout budget', async () => {
   const rng = seededRandom(20261017)

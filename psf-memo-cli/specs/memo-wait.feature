@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-07T19:08:45.506030649Z","feature_name":"Memo Wait","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-wait.feature","background_hash":"10e54e08cb2026861764a698bd5655ea4a12941a8c1523a23cb6d47352ba8a6b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Wait (R16): the psf-memo-cli command that polls until a broadcast post
 # transaction is indexed, then reports it. It queries GET /level/post/:txid
 # (the same post store memo-get-post reads) immediately, then re-queries every
