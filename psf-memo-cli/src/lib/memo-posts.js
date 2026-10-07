@@ -26,5 +26,5 @@ export function parsePostsFlags (flags = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T20:42:59.714Z","module_hash":"f097331632c2e62d56b603460c9d4ac854db6eed29bfaad1d3c3173755d9e6a3","functions":[{"id":"func/parsePostsFlags","name":"parsePostsFlags","line":20,"end_line":26,"hash":"8f21fd1530711669d5e343c70cbd3902af077a16124c6713aa9f8333db31d33a"}]}
 // mutate4javascript-manifest-end

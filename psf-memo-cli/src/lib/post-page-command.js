@@ -33,5 +33,5 @@ export async function runPostsPageCommand ({ command, flags, readMethod }) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T20:43:14.591Z","module_hash":"3d0e61ffe0c5956aac6668e422010b485eaf22d98dceeaa08b55e3f040d593dc","functions":[{"id":"func/runPostsPageCommand","name":"runPostsPageCommand","line":16,"end_line":33,"hash":"6197e55ff99ee0196314bdbddab0a6021c5b91a4de40c11dcb5ca2bb9afed589"}]}
 // mutate4javascript-manifest-end

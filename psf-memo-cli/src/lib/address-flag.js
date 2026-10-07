@@ -23,5 +23,5 @@ export function parseAddressFlag (flags = {}, message) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"functions":[],"tested_at":null,"module_hash":null}
+// {"version":1,"tested_at":"2026-10-07T20:42:49.278Z","module_hash":"3e4c92738ec750d3c477708d1f774740ab9c56092569f88f14d5aa7aa0d97fd9","functions":[{"id":"func/parseAddressFlag","name":"parseAddressFlag","line":15,"end_line":23,"hash":"5f1f23d5045cfc0a12468a8f7d11aa66f5b42c7a9f6cfec2730c42dec4114f38"}]}
 // mutate4javascript-manifest-end
