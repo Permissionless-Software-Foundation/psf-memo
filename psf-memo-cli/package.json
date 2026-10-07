@@ -23,6 +23,7 @@
     "collect.js": "4.36.1",
     "commander": "12.1.0",
     "dotenv": "17.2.3",
+    "ecashaddrjs": "1.0.7",
     "minimal-slp-wallet": "5.12.1",
     "shelljs": "0.8.5"
   },

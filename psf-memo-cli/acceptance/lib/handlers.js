@@ -11,8 +11,9 @@ import MemoDb from '../../src/lib/memo-db.js'
 import { UsageError } from '../../src/lib/reporter.js'
 import { memoDbHandlers } from './steps/memo-db.js'
 import { outputContractHandlers } from './steps/output-contract.js'
+import { wireEncodingHandlers } from './steps/wire-encoding.js'
 
-const handlers = [...memoDbHandlers, ...outputContractHandlers]
+const handlers = [...memoDbHandlers, ...outputContractHandlers, ...wireEncodingHandlers]
 
 // A minimal fetch Response stand-in carrying a JSON body.
 function jsonResponse (body, status = 200) {
