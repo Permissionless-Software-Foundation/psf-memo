@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoThread from '../../../src/commands/memo-thread.js'
-import { runReadCommand, parseStderrError, assertNotFound, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, assertUsageError, assertNotFound, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The thread fixture: the root has three direct replies oldest-first, and the
@@ -120,8 +120,7 @@ const memoThreadHandlers = [
     name: 'command reported the usage error',
     pattern: /^the memo-thread command reported the usage error "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.threadExitCode, 2, 'memo-thread exit code')
-      assertEqual(parseStderrError(world, 'thread').error, resolveParam(m[1], example), 'usage error', { quote: true })
+      assertUsageError(world, 'thread', 'memo-thread', resolveParam(m[1], example))
     }
   },
   {

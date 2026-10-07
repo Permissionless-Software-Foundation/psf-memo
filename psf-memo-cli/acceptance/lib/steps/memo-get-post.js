@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoGetPost from '../../../src/commands/memo-get-post.js'
-import { runReadCommand, parseStderrError, assertNotFound, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, assertUsageError, assertNotFound, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The posts store: the key txid is not part of the stored body, matching the
@@ -61,8 +61,7 @@ const memoGetPostHandlers = [
     name: 'command reported the usage error',
     pattern: /^the memo-get-post command reported the usage error "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.getPostExitCode, 2, 'memo-get-post exit code')
-      assertEqual(parseStderrError(world, 'getPost').error, resolveParam(m[1], example), 'usage error', { quote: true })
+      assertUsageError(world, 'getPost', 'memo-get-post', resolveParam(m[1], example))
     }
   },
   {

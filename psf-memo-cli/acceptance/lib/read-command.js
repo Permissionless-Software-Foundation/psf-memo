@@ -47,6 +47,12 @@ export function parseStderrError (world, prefix) {
   }
 }
 
+// Assert a read command exited 2 with the given usage error message.
+export function assertUsageError (world, prefix, name, expected) {
+  assertEqual(world[`${prefix}ExitCode`], 2, `${name} exit code`)
+  assertEqual(parseStderrError(world, prefix).error, expected, 'usage error', { quote: true })
+}
+
 // Assert a read command exited 1 with a "not found" error.
 export function assertNotFound (world, prefix, name) {
   assertEqual(world[`${prefix}ExitCode`], 1, `${name} exit code`)

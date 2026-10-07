@@ -10,7 +10,7 @@
 
 // Local libraries
 import MemoIdentity from '../../../src/commands/memo-identity.js'
-import { runReadCommand } from '../read-command.js'
+import { runReadCommand, assertUsageError, assertReadCommandError } from '../read-command.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Build a fake wallet with the given cash address and UTXOs.
@@ -58,15 +58,6 @@ function lookupIdentityWallet (world, key, kind) {
     throw new Error(`Unknown ${kind} ${key}`)
   }
   return world.identityWallets[key]
-}
-
-// Parse the captured stderr as one JSON error object.
-function parseStderrError (world) {
-  try {
-    return JSON.parse(world.identityStderr)
-  } catch (err) {
-    throw new Error(`Expected a JSON error on stderr, got "${world.identityStderr}"`)
-  }
 }
 
 const memoIdentityHandlers = [
@@ -193,18 +184,14 @@ const memoIdentityHandlers = [
     name: 'memo-identity command reported the usage error',
     pattern: /^the memo-identity command reported the usage error "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.identityExitCode, 2, 'memo-identity exit code')
-      assertEqual(parseStderrError(world).error, resolveParam(m[1], example), 'usage error', { quote: true })
+      assertUsageError(world, 'identity', 'memo-identity', resolveParam(m[1], example))
     }
   },
   {
     name: 'memo-identity command reported an error',
     pattern: /^the memo-identity command reported an error$/,
     run (m, example, world) {
-      assertEqual(world.identityExitCode, 1, 'memo-identity exit code')
-      if (!parseStderrError(world).error) {
-        throw new Error(`Expected an error message on stderr, got "${world.identityStderr}"`)
-      }
+      assertReadCommandError(world, 'identity', 'memo-identity')
     }
   }
 ]
