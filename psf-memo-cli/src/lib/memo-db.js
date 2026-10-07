@@ -45,6 +45,16 @@ class MemoDb {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })
   }
 
+  // GET /level/name/:addr. A missing name resolves to null.
+  async getName (addr) {
+    return this.getJson(`/level/name/${encodeURIComponent(addr)}`, { notFoundValue: null })
+  }
+
+  // GET /level/profilepic/:addr. A missing profile picture resolves to null.
+  async getProfilePic (addr) {
+    return this.getJson(`/level/profilepic/${encodeURIComponent(addr)}`, { notFoundValue: null })
+  }
+
   // GET /posts/:txid/thread. A txid that is not an indexed post resolves to
   // null so the caller can report a not-found failure and poll for it.
   async getThread (txid) {

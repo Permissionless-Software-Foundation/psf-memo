@@ -283,6 +283,60 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getName', () => {
+    it('requests the name record for the address', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ name: 'alice' })
+        }
+      })
+
+      const result = await client.getName('addrA')
+
+      assert.equal(new URL(requested).pathname, '/level/name/addrA')
+      assert.equal(result.name, 'alice')
+    })
+
+    it('resolves a missing name to null', async () => {
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+      })
+
+      assert.isNull(await client.getName('addrA'))
+    })
+  })
+
+  describe('getProfilePic', () => {
+    it('requests the profile picture record for the address', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ url: 'https://example/a.png' })
+        }
+      })
+
+      const result = await client.getProfilePic('addrA')
+
+      assert.equal(new URL(requested).pathname, '/level/profilepic/addrA')
+      assert.equal(result.url, 'https://example/a.png')
+    })
+
+    it('resolves a missing profile picture to null', async () => {
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async () => jsonResponse({ message: 'not found' }, 404)
+      })
+
+      assert.isNull(await client.getProfilePic('addrA'))
+    })
+  })
+
   describe('errors', () => {
     const cases = [
       {

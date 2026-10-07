@@ -13,12 +13,13 @@
 import { captureStream } from '../../test/support/capture.js'
 import { assertEqual } from './step-support.js'
 
-export async function runReadCommand (world, CommandClass, prefix, flags = {}) {
+export async function runReadCommand (world, CommandClass, prefix, flags = {}, options = {}) {
   const stdout = captureStream()
   const stderr = captureStream()
   const command = new CommandClass({
     fetchImpl: world.fetch,
     envUrl: null,
+    ...options,
     stdout: stdout.stream,
     stderr: stderr.stream
   })

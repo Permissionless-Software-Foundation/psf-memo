@@ -14,6 +14,7 @@ import { memoFeedHandlers } from './steps/memo-feed.js'
 import { memoThreadHandlers } from './steps/memo-thread.js'
 import { memoGetPostHandlers } from './steps/memo-get-post.js'
 import { memoStatusHandlers } from './steps/memo-status.js'
+import { memoIdentityHandlers } from './steps/memo-identity.js'
 import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
@@ -25,6 +26,7 @@ const handlers = [
   ...memoThreadHandlers,
   ...memoGetPostHandlers,
   ...memoStatusHandlers,
+  ...memoIdentityHandlers,
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
@@ -48,6 +50,10 @@ async function createWorld () {
     threads: {},
     postStore: {},
     status: null,
+    nameStore: {},
+    profileStore: {},
+    profilePicStore: {},
+    identityWallets: {},
     missingProfiles: new Set(),
     unreachable: false,
     lastRequest: null,
@@ -67,12 +73,24 @@ async function createWorld () {
       throw new TypeError('fetch failed')
     }
 
+    if (world.lastRequest.pathname.startsWith('/level/name/')) {
+      const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop())
+      const doc = world.nameStore[addr]
+      return doc ? jsonResponse(doc, 200) : jsonResponse({ message: 'not found' }, 404)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/level/profilepic/')) {
+      const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop())
+      const doc = world.profilePicStore[addr]
+      return doc ? jsonResponse(doc, 200) : jsonResponse({ message: 'not found' }, 404)
+    }
+
     if (world.lastRequest.pathname.startsWith('/level/profile/')) {
       const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop())
-      if (world.missingProfiles.has(addr)) {
+      if (world.missingProfiles.has(addr) || world.profileStore[addr] === null) {
         return jsonResponse({ message: 'not found' }, 404)
       }
-      return jsonResponse({ addr, text: 'bio' }, 200)
+      return jsonResponse(world.profileStore[addr] || { addr, text: 'bio' }, 200)
     }
 
     if (world.lastRequest.pathname.startsWith('/level/post/')) {

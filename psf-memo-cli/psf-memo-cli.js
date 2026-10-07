@@ -20,6 +20,7 @@ import MemoFeed from './src/commands/memo-feed.js'
 import MemoThread from './src/commands/memo-thread.js'
 import MemoGetPost from './src/commands/memo-get-post.js'
 import MemoStatus from './src/commands/memo-status.js'
+import MemoIdentity from './src/commands/memo-identity.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -35,6 +36,7 @@ const memoFeed = new MemoFeed()
 const memoThread = new MemoThread()
 const memoGetPost = new MemoGetPost()
 const memoStatus = new MemoStatus()
+const memoIdentity = new MemoIdentity()
 
 const program = new Command()
 
@@ -127,5 +129,13 @@ program.command('memo-status')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoStatus.run)
+
+program.command('memo-identity')
+  .description("Report the wallet's own Memo identity")
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoIdentity.run)
 
 program.parseAsync(process.argv)
