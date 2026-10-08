@@ -18,6 +18,20 @@ export function resolveMemoDbUrl ({ flagUrl, envUrl } = {}) {
   return flagUrl || envUrl || DEFAULT_MEMO_DB_URL
 }
 
+// Serialize the defined query parameters in insertion order. A null viewer
+// (the "no filter" value) is dropped, so every paginated route builds its
+// query the same way instead of repeating the limit/offset/viewer wiring.
+function toQuery (params) {
+  const query = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue
+    query.set(key, String(value))
+  }
+
+  return query.toString()
+}
+
 class MemoDb {
   constructor ({ dbUrl, envUrl = process.env.MEMO_DB_URL, fetchImpl = globalThis.fetch } = {}) {
     // Encapsulate dependencies so tests can inject a fake fetch.
@@ -32,21 +46,12 @@ class MemoDb {
 
   // GET /posts/recent, optionally filtered for a viewer's mutes.
   async getRecentPosts ({ limit = 50, offset = 0, viewer = null } = {}) {
-    const params = new URLSearchParams()
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-    if (viewer) params.set('viewer', viewer)
-
-    return this.getJson(`/posts/recent?${params.toString()}`)
+    return this.getJson(`/posts/recent?${toQuery({ limit, offset, viewer: viewer || null })}`)
   }
 
   // GET a paginated, address-scoped /posts route.
   getAddrPage (path, addr, { limit = 50, offset = 0 } = {}) {
-    const params = new URLSearchParams()
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-
-    return this.getJson(`/posts/${path}/${encodeURIComponent(addr)}?${params.toString()}`)
+    return this.getJson(`/posts/${path}/${encodeURIComponent(addr)}?${toQuery({ limit, offset })}`)
   }
 
   // GET /posts/notifications/:addr. Returns the wallet address's notification
@@ -63,44 +68,25 @@ class MemoDb {
 
   // GET /follow/state?follower=&followee=. Returns the follow state document.
   async getFollowState (follower, followee) {
-    const params = new URLSearchParams()
-    params.set('follower', follower)
-    params.set('followee', followee)
-
-    return this.getJson(`/follow/state?${params.toString()}`)
+    return this.getJson(`/follow/state?${toQuery({ follower, followee })}`)
   }
 
   // GET /topics. Returns one page of the topic list with the service pagination.
   async getTopics ({ limit = 50, offset = 0 } = {}) {
-    const params = new URLSearchParams()
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-
-    return this.getJson(`/topics?${params.toString()}`)
+    return this.getJson(`/topics?${toQuery({ limit, offset })}`)
   }
 
   // GET /topics/:room/posts, optionally viewer-filtered. Returns one page of the
   // topic's posts with the service pagination.
   async getTopicPosts (room, { limit = 50, offset = 0, viewer = null } = {}) {
-    const params = new URLSearchParams()
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-    if (viewer) params.set('viewer', viewer)
-
-    return this.getJson(`/topics/${encodeURIComponent(room)}/posts?${params.toString()}`)
+    return this.getJson(`/topics/${encodeURIComponent(room)}/posts?${toQuery({ limit, offset, viewer: viewer || null })}`)
   }
 
   // GET /search. Returns one page of matching top-level posts and profiles with
   // the service pagination. The optional viewer filters the posts by the
   // viewer's mutes (profiles are not mute-filtered).
   async search (query, { limit = 50, offset = 0, viewer = null } = {}) {
-    const params = new URLSearchParams()
-    params.set('q', query)
-    params.set('limit', String(limit))
-    params.set('offset', String(offset))
-    if (viewer) params.set('viewer', viewer)
-
-    return this.getJson(`/search?${params.toString()}`)
+    return this.getJson(`/search?${toQuery({ q: query, limit, offset, viewer: viewer || null })}`)
   }
 
   // GET /level/profile/:addr. A missing profile resolves to null.

@@ -19,6 +19,7 @@ import {
 } from '../../../src/lib/memo-wait.js'
 import { UsageError } from '../../../src/lib/reporter.js'
 import { fakeClock } from '../../support/clock.js'
+import { captureUsageError } from '../../support/usage-error.js'
 
 const TIMEOUT_ERROR =
   'The --timeout value must be a positive integer number of milliseconds.'
@@ -32,16 +33,6 @@ function readOnCall (post, onCall) {
     calls++
     return calls >= onCall ? post : null
   }
-}
-
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
 }
 
 describe('#memo-wait helpers', () => {

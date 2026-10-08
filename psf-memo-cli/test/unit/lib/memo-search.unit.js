@@ -18,17 +18,7 @@ import {
   DEFAULT_SEARCH_LIMIT,
   DEFAULT_SEARCH_OFFSET
 } from '../../../src/lib/memo-search.js'
-import { UsageError } from '../../../src/lib/reporter.js'
-
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
+import { captureUsageError, assertPageFlagViolations } from '../../support/usage-error.js'
 
 describe('#memo-search helpers', () => {
   it('exposes the default page', () => {
@@ -67,16 +57,14 @@ describe('#memo-search helpers', () => {
   })
 
   it('rejects a non-negative-integer page violation', () => {
-    const limit = captureUsageError(() => parseSearchFlags({ query: 'memo', limit: '-1' }))
-    assert.equal(limit.message, '--limit must be a non-negative integer.')
-
-    const offset = captureUsageError(() => parseSearchFlags({ query: 'memo', offset: 'abc' }))
-    assert.equal(offset.message, '--offset must be a non-negative integer.')
+    assertPageFlagViolations(parseSearchFlags, { query: 'memo' })
   })
 
   it('detects blank queries without treating whitespace as a query', () => {
     assert.isTrue(isEmptySearchQuery(''))
     assert.isTrue(isEmptySearchQuery('   '))
+    assert.isTrue(isEmptySearchQuery(null))
+    assert.isTrue(isEmptySearchQuery(undefined))
     assert.isFalse(isEmptySearchQuery('memo'))
   })
 
@@ -85,6 +73,14 @@ describe('#memo-search helpers', () => {
       posts: [],
       profiles: [],
       pagination: { limit: 25, offset: 5, total: 0, hasMore: false }
+    })
+  })
+
+  it('defaults the empty page to the shared search page', () => {
+    assert.deepEqual(emptySearchResult(), {
+      posts: [],
+      profiles: [],
+      pagination: { limit: DEFAULT_SEARCH_LIMIT, offset: DEFAULT_SEARCH_OFFSET, total: 0, hasMore: false }
     })
   })
 

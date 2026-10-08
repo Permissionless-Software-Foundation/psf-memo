@@ -12,7 +12,7 @@
 // Local libraries
 import MemoSearch from '../../../src/commands/memo-search.js'
 import { runReadCommand, assertUsageError, assertReadCommandError } from '../read-command.js'
-import { assertReportedField, findReportedPost } from './read-result.js'
+import { assertReportedField, findReportedPost, findReportedItem } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The default fixture: two posts and one profile, total 3.
@@ -126,10 +126,7 @@ const memoSearchHandlers = [
     pattern: /^the command reported the profile "([^"]+)" with name "([^"]+)"$/,
     run (m, example, world) {
       const addr = resolveParam(m[1], example)
-      const profile = (world.readJson?.profiles || []).find((p) => p.addr === addr)
-      if (!profile) {
-        throw new Error(`Expected a reported profile with address ${addr}`)
-      }
+      const profile = findReportedItem(world.readJson?.profiles, 'addr', addr, 'a reported profile')
       assertEqual(profile.name, resolveParam(m[2], example), 'profile name', { quote: true })
     }
   },

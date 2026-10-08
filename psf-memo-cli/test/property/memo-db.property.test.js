@@ -160,3 +160,34 @@ test('getRecentPosts carries the requested page and viewer', async () => {
     }
   }
 })
+
+test('search carries the query, page, and viewer', async () => {
+  for (let i = 0; i < 300; i++) {
+    const query = `q-${Math.floor(rng() * 1e9)}`
+    const limit = 1 + Math.floor(rng() * 100)
+    const offset = Math.floor(rng() * 1000)
+    const viewer = rng() < 0.5 ? `bitcoincash:q${Math.floor(rng() * 1e9)}` : ''
+    let requested
+
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async (url) => {
+        requested = url
+        return { ok: true, status: 200, json: async () => ({ posts: [], profiles: [] }) }
+      }
+    })
+
+    await client.search(query, { limit, offset, viewer })
+
+    const url = new URL(requested)
+    assert.equal(url.pathname, '/search')
+    assert.equal(url.searchParams.get('q'), query)
+    assert.equal(url.searchParams.get('limit'), String(limit))
+    assert.equal(url.searchParams.get('offset'), String(offset))
+    if (viewer) {
+      assert.equal(url.searchParams.get('viewer'), viewer)
+    } else {
+      assert.equal(url.searchParams.has('viewer'), false)
+    }
+  }
+})

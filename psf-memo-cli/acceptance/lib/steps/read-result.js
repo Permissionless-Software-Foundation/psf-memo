@@ -21,13 +21,18 @@ export function assertReportedTxids (items, expected, label) {
   assertReportedField(items, 'txid', expected, label)
 }
 
+// Find an item in a reported list by a field value, throwing when it is absent.
+export function findReportedItem (items, field, value, label) {
+  const item = (items || []).find((entry) => entry[field] === value)
+  if (!item) {
+    throw new Error(`Expected ${label} with ${field} ${value}`)
+  }
+  return item
+}
+
 // Find a reported post in the generic read result, throwing when it is absent.
 export function findReportedPost (world, txid) {
-  const post = (world.readJson?.posts || []).find((p) => p.txid === txid)
-  if (!post) {
-    throw new Error(`Expected a reported post with txid ${txid}`)
-  }
-  return post
+  return findReportedItem(world.readJson?.posts, 'txid', txid, 'a reported post')
 }
 
 // Assert the last request hit an address-scoped /posts route with the page.

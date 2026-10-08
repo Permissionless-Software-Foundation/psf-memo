@@ -10,7 +10,7 @@
 // Local libraries
 import MemoNotifications from '../../../src/commands/memo-notifications.js'
 import { runReadCommand, installWalletFactory, assertUsageError, assertReadCommandError } from '../read-command.js'
-import { assertReportedTxids } from './read-result.js'
+import { assertReportedTxids, findReportedItem } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Five notifications newest-first: a follow, a reply, a like, and two more.
@@ -100,10 +100,7 @@ const memoNotificationsHandlers = [
     pattern: /^the command reported notification "(.+)" of type "(.+)" from "(.+)"$/,
     run (m, example, world) {
       const txid = resolveParam(m[1], example)
-      const notification = (world.notificationsJson?.notifications || []).find((n) => n.txid === txid)
-      if (!notification) {
-        throw new Error(`Expected a reported notification with txid ${txid}`)
-      }
+      const notification = findReportedItem(world.notificationsJson?.notifications, 'txid', txid, 'a reported notification')
       assertEqual(notification.type, resolveParam(m[2], example), 'notification type', { quote: true })
       assertEqual(notification.addr, resolveParam(m[3], example), 'notification actor', { quote: true })
     }

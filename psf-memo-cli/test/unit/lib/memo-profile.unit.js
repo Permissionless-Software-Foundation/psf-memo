@@ -16,20 +16,10 @@ import {
   DEFAULT_PROFILE_LIMIT,
   DEFAULT_PROFILE_OFFSET
 } from '../../../src/lib/memo-profile.js'
-import { UsageError } from '../../../src/lib/reporter.js'
+import { captureUsageError, assertPageFlagViolations } from '../../support/usage-error.js'
 
 const PROFILE_ADDRESS_ERROR =
   'You must specify a profile address with the -a flag.'
-
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
 
 describe('#memo-profile helpers', () => {
   it('exposes the default page', () => {
@@ -61,8 +51,7 @@ describe('#memo-profile helpers', () => {
   })
 
   it('rejects a non-negative-integer page violation', () => {
-    const limit = captureUsageError(() => parseProfileFlags({ addr: 'addrA', limit: '-1' }))
-    assert.equal(limit.message, '--limit must be a non-negative integer.')
+    assertPageFlagViolations(parseProfileFlags, { addr: 'addrA' })
   })
 
   it('renders the identity, posts, and pagination', () => {

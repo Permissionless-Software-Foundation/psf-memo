@@ -14,17 +14,7 @@ import {
   DEFAULT_TOPIC_LIMIT,
   DEFAULT_TOPIC_OFFSET
 } from '../../../src/lib/memo-topic.js'
-import { UsageError } from '../../../src/lib/reporter.js'
-
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
+import { captureUsageError, assertPageFlagViolations } from '../../support/usage-error.js'
 
 describe('#memo-topic helpers', () => {
   it('exposes the default page', () => {
@@ -56,10 +46,6 @@ describe('#memo-topic helpers', () => {
   })
 
   it('rejects a non-negative-integer page violation', () => {
-    const limit = captureUsageError(() => parseTopicFlags({ room: 'general', limit: '-1' }))
-    assert.equal(limit.message, '--limit must be a non-negative integer.')
-
-    const offset = captureUsageError(() => parseTopicFlags({ room: 'general', offset: 'abc' }))
-    assert.equal(offset.message, '--offset must be a non-negative integer.')
+    assertPageFlagViolations(parseTopicFlags, { room: 'general' })
   })
 })

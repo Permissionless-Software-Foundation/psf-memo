@@ -16,18 +16,7 @@ import {
   MEMO_POST_PREFIX,
   MAX_MEMO_CHARS
 } from '../../../src/lib/memo-post.js'
-import { UsageError } from '../../../src/lib/reporter.js'
-
-// Run fn and return the UsageError it throws, failing when it does not throw.
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
+import { captureUsageError } from '../../support/usage-error.js'
 
 describe('#memo-post helpers', () => {
   it('accepts a memo within the 217-character limit', () => {

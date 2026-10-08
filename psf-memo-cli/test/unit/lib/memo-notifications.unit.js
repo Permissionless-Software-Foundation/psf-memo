@@ -16,17 +16,7 @@ import {
   DEFAULT_NOTIFICATIONS_LIMIT,
   DEFAULT_NOTIFICATIONS_OFFSET
 } from '../../../src/lib/memo-notifications.js'
-import { UsageError } from '../../../src/lib/reporter.js'
-
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
+import { assertPageFlagViolations } from '../../support/usage-error.js'
 
 describe('#memo-notifications helpers', () => {
   it('exposes the default page', () => {
@@ -43,11 +33,7 @@ describe('#memo-notifications helpers', () => {
   })
 
   it('rejects a non-negative-integer violation', () => {
-    const limit = captureUsageError(() => parseNotificationsFlags({ limit: '-1' }))
-    assert.equal(limit.message, '--limit must be a non-negative integer.')
-
-    const offset = captureUsageError(() => parseNotificationsFlags({ offset: 'abc' }))
-    assert.equal(offset.message, '--offset must be a non-negative integer.')
+    assertPageFlagViolations(parseNotificationsFlags)
   })
 
   it('renders the notifications and the pagination', () => {

@@ -20,22 +20,11 @@ import {
   DUST_TIP_SATS,
   MAX_TIP_SATS
 } from '../../../src/lib/memo-like.js'
-import { UsageError } from '../../../src/lib/reporter.js'
+import { captureUsageError } from '../../support/usage-error.js'
 
 const POST = `01${'00'.repeat(31)}`
 const POST_WIRE = `${'00'.repeat(31)}01`
 const AUTHOR = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
-
-// Run fn and return the UsageError it throws, failing when it does not throw.
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
 
 describe('#memo-like helpers', () => {
   it('accepts a post txid with no tip', () => {

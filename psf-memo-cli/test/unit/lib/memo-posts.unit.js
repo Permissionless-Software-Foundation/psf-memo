@@ -14,17 +14,7 @@ import {
   DEFAULT_POSTS_LIMIT,
   DEFAULT_POSTS_OFFSET
 } from '../../../src/lib/memo-posts.js'
-import { UsageError } from '../../../src/lib/reporter.js'
-
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
+import { captureUsageError, assertPageFlagViolations } from '../../support/usage-error.js'
 
 describe('#memo-posts helpers', () => {
   it('exposes the default page', () => {
@@ -54,10 +44,6 @@ describe('#memo-posts helpers', () => {
   })
 
   it('rejects a non-negative-integer page violation', () => {
-    const limit = captureUsageError(() => parsePostsFlags({ addr: 'addrA', limit: '-1' }))
-    assert.equal(limit.message, '--limit must be a non-negative integer.')
-
-    const offset = captureUsageError(() => parsePostsFlags({ addr: 'addrA', offset: 'abc' }))
-    assert.equal(offset.message, '--offset must be a non-negative integer.')
+    assertPageFlagViolations(parsePostsFlags, { addr: 'addrA' })
   })
 })

@@ -16,23 +16,12 @@ import {
   MEMO_REPLY_PREFIX,
   MAX_REPLY_BYTES
 } from '../../../src/lib/memo-reply.js'
-import { UsageError } from '../../../src/lib/reporter.js'
+import { captureUsageError } from '../../support/usage-error.js'
 
 // A 64-char hex txid whose big-endian bytes are 0x01 followed by 31 zero bytes,
 // so its little-endian wire form is 31 zero bytes followed by 0x01.
 const PARENT = `01${'00'.repeat(31)}`
 const PARENT_WIRE = `${'00'.repeat(31)}01`
-
-// Run fn and return the UsageError it throws, failing when it does not throw.
-function captureUsageError (fn) {
-  try {
-    fn()
-  } catch (err) {
-    assert.instanceOf(err, UsageError)
-    return err
-  }
-  throw new Error('Expected a UsageError')
-}
 
 describe('#memo-reply helpers', () => {
   it('accepts a valid parent txid and reply text', () => {
