@@ -60,7 +60,7 @@ Feature: Memo Mute
     And the target address is "bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-mute command runs
-    Then the memo-mute command reported the error "<error>"
+    Then the memo-mute command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |

@@ -10,7 +10,11 @@
 # field is sent as one payload push; multiple fields are expanded into one push
 # per field, because minimal-slp-wallet's sendOpReturn hardcodes [prefix, msg]
 # and would otherwise flatten a multi-field action (gotcha #35). On success the
-# command reports the txid and a bch.loping.net explorer link.
+# command reports the txid and a bch.loping.net explorer link. On a wallet or
+# node rejection it reports `Failed to broadcast: <wallet error>` (exit 1),
+# preserving the original error text; an error detected before the broadcast
+# keeps its own specific message and is not given the broadcast prefix. This is
+# the X2 error-surfacing contract shared by every memo-* write command.
 Feature: Memo Broadcast
 
   Background:
@@ -73,10 +77,10 @@ Feature: Memo Broadcast
       | 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef |
       | 00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff |
 
-  Scenario Outline: Memo Broadcast - 5 a rejected broadcast reports the wallet's error
+  Scenario Outline: Memo Broadcast - 5 a rejected broadcast reports the wallet's real error with a broadcast prefix
     Given the wallet rejects the broadcast with the error "<error>"
     When the command broadcasts the Memo action and reports the result
-    Then the reported error is "<error>"
+    Then the reported error is "Failed to broadcast: <error>"
 
     Examples:
       | error               |

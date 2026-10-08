@@ -88,7 +88,7 @@ Feature: Memo Name
     And the name is "trout"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-name command runs
-    Then the memo-name command reported the error "<error>"
+    Then the memo-name command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |

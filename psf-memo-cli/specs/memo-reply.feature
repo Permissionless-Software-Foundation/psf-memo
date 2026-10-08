@@ -118,7 +118,7 @@ Feature: Memo Reply
     And the reply text is "hello memo"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-reply command runs
-    Then the memo-reply command reported the error "<error>"
+    Then the memo-reply command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |

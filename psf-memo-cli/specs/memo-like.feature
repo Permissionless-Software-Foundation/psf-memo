@@ -144,7 +144,7 @@ Feature: Memo Like
     And the liked post txid is "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-like command runs
-    Then the memo-like command reported the error "<error>"
+    Then the memo-like command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |

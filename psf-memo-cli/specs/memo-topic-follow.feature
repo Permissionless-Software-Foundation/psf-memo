@@ -52,7 +52,7 @@ Feature: Memo Topic Follow
     And the topic room is "general"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-topic-follow command runs
-    Then the memo-topic-follow command reported the error "<error>"
+    Then the memo-topic-follow command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |
