@@ -352,10 +352,13 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
 
 ## Cross-cutting features and requirements
 
-- **X1 — Command reference docs.** Extend `README.md` and
-  `src/commands/README.md` with every `memo-*` command, flags (including
-  `--json` and the `-n`/`--wif` wallet source), the JSON shape, and exit codes;
-  add `MEMO_DB_URL` (production default) to `.env.example`.
+- **X1 — Command reference docs.** **DONE** (2026-10-08, task
+  `cli-command-reference`; merged to `master` at `0541746`; docs-only, no
+  Gherkin). `psf-memo-cli/README.md` and `src/commands/README.md` now document
+  every `memo-*` command, flags (including `--json` and the `-n`/`--wif` wallet
+  source), JSON shape, and exit codes; `.env.example` documents `MEMO_DB_URL`
+  (production default). Spec: `psf-memo-cli/dev-docs/command-reference.md`;
+  architect summary: `docs/reviews/cli-command-reference-summary.md`.
 - **X2 — Error surfacing.** Broadcast failures print the real node/wallet error
   (`Failed to broadcast: <msg>`), never a generic "must not be empty"
   (gotcha #5). Validation errors name the exact flag and limit.
@@ -398,10 +401,12 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
-6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
+6. **Hardening**: X1 **DONE**; X2–X7 remain, plus W14–W16 if protocol support is
+   added upstream.
 
-**Next up: the X-series (X1–X7).** Poll writes W11–W13 are intentionally
-not planned (user decision, 2026-10-08).
+**Next up: X2 (error surfacing).** X1 command reference docs are DONE (merged
+at `0541746`). Poll writes W11–W13 are intentionally not planned (user decision,
+2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.

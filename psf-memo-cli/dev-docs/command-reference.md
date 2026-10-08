@@ -2,7 +2,9 @@
 
 **Task name:** `cli-command-reference`
 **Owner:** specifier (specification); coder (docs); architect (verification).
-**Status:** awaiting user approval to hand off.
+**Status:** DONE (2026-10-08); merged to `master` at `0541746` (docs-only, no
+Gherkin; architect verification record
+`docs/reviews/cli-command-reference-verification.json`).
 **Backlog item:** X1 in `psf-memo-cli/dev-docs/feature-backlog.md`.
 
 X1 is a documentation deliverable, not runtime behavior. There is no Gherkin
