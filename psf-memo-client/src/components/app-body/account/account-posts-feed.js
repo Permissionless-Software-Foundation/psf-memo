@@ -87,3 +87,7 @@ function AccountPostsFeed ({
 }
 
 module.exports = { AccountPostsFeed, NO_POSTS_MESSAGE: AccountPage.NO_POSTS_MESSAGE }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T19:56:43.362Z","module_hash":"1c3bf7844445307a47c0aa25e9df6050b0424c400d6b8930d76fa7477945aa87","functions":[{"id":"func/AccountPostCard","name":"AccountPostCard","line":23,"end_line":56,"hash":"999a580c79631346836672337ecb3c50145979f67d0ec22aee1425f32a8b19df"},{"id":"func/AccountPostsFeed","name":"AccountPostsFeed","line":58,"end_line":87,"hash":"48315a16655e40c7545f8cacb1a1e408aafcc329e6deeaa14c029757efe52ed6"}]}
+// mutate4javascript-manifest-end

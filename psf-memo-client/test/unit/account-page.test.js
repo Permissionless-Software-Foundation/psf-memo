@@ -557,3 +557,38 @@ test('getPost returns null for an unknown txid', () => {
 
   assert.equal(page.getPost('unknown'), null)
 })
+
+test('loadPosts requires a memo db client', async () => {
+  const page = new AccountPage({ wallet: makeWallet() })
+
+  await assert.rejects(() => page.loadPosts(), /requires a memo db client/)
+})
+
+test('loadPosts requires an address', async () => {
+  const page = new AccountPage({ memoDb: makeMemoDb() })
+
+  await assert.rejects(() => page.loadPosts(), /requires an address/)
+})
+
+test('loadPosts forwards limit and offset and stores the page', async () => {
+  const wallet = makeWallet()
+  const posts = Array.from({ length: 8 }, (_, i) => ({
+    txid: `${i}`.padStart(64, '0'),
+    addr: wallet.walletInfo.cashAddress,
+    text: `memo ${i}`
+  }))
+  const memoDb = makeMemoDb(posts)
+  const page = new AccountPage({ wallet, memoDb })
+
+  const result = await page.loadPosts({ limit: 10, offset: 5 })
+
+  assert.deepEqual(memoDb.calls, [{
+    addr: wallet.walletInfo.cashAddress,
+    limit: 10,
+    offset: 5
+  }])
+  assert.deepEqual(result.posts, posts.slice(5))
+  assert.equal(result.pagination.offset, 5)
+  assert.equal(page.posts.length, 3)
+  assert.equal(page.canLoadMore(), false)
+})
