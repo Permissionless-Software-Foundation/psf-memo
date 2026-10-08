@@ -35,6 +35,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Account post metadata (`account-post-metadata`, 2026-10-08):** Client-only
+  fix for the account posts feed. Each `/account` post card now shows the
+  post's timestamp and `Block <height>` at the top, matching the
+  `/profile/:addr` card's meta row. The refactorer extracted the duplicated
+  `formatSeen` into the shared pure `src/services/post-timestamp.js` and
+  pointed the account feed, profile page, and recent profiles page at it. New
+  `Account Posts Feed - 6` scenario exercises both epoch-seconds and
+  milliseconds `seen` inputs. Merged to `master` at `a70f36c` (fast-forward;
+  architect code-review commit `9c46b25`; the later `a70f36c` adds only the
+  record and summary, so
+  `docs/reviews/account-post-metadata-verification.json` is valid for the merged
+  tree). Recorded `verify.sh client` pass 5/5 at `9c46b25` (unit 811/0,
+  property 223/0, acceptance all 49 suites, lint ok, build ok). Independent
+  acceptance check after merge: account-posts-feed 10/10. Architect summary:
+  `docs/reviews/account-post-metadata-summary.md`.
+
 - **Account posts feed (`account-posts-feed`, 2026-10-08):** Client-only
   front-end feature. `/account` now loads the authenticated address's top-level
   Memo posts (`MemoDb.getPostsByAddr`, `PAGE_SIZE = 50`) and shows them in the
