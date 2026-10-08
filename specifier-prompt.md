@@ -1088,6 +1088,17 @@ that a single user-facing feature may require specs in more than one component.
     table. Specs: `psf-memo-cli/specs/memo-following.feature`,
     `psf-memo-cli/specs/memo-followers.feature`.
 
+79. **Wallet-scoped address-list commands share `defineWalletListCommand`
+    (`memo-muted`, R12).** `src/lib/wallet-list-command.js`
+    (`defineWalletListCommand`) owns the wallet-scoped, unpaginated address-list
+    pipeline (flag normalization, `resolveWalletSource`, summary, reporter);
+    `memo-muted` and `memo-following` are declarations of
+    `readMethod`/`clientMethod`/`listField`/`label`. It builds on
+    `ListReadCommand` and the shared `follow-list.js` parsers/formatter. New
+    wallet-scoped list reads should reuse it. Expressing `memo-muted` scenario 2
+    as a `Scenario Outline` made it soft-mutation-testable (4/4 killed),
+    confirming gotcha #78. Spec: `psf-memo-cli/specs/memo-muted.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1144,7 +1155,25 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-follow-lists`): specified and merged R11 as two
+Latest session (2026-10-08, `cli-memo-muted`): specified and merged R12, the
+muted-list read command. The specifier wrote
+`psf-memo-cli/specs/memo-muted.feature` (4 scenarios, 5 example executions;
+scenario 2 is a `Scenario Outline` so the soft mutator has values to mutate);
+the coder/refactorer/architect added `src/commands/memo-muted.js` over the new
+shared `defineWalletListCommand` factory (`src/lib/wallet-list-command.js`) and
+`MemoDb.getMuted` (`GET /mute/muted/:addr`), registered as `memo-muted`. It
+resolves the signing wallet (`-n`/`--wif`) and reports the address's muted cash
+addresses; the route is unpaginated. The refactorer migrated `memo-following`
+onto the same factory; the architect removed a dead flag-parsing alias. Merged
+to `master` at `7367b74` (fast-forward; architect code-review commit
+`265618da20`; the later `7367b74` adds only the record and summary, so
+`docs/reviews/cli-memo-muted-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `265618da20` (unit 431/0, property 91/0, acceptance
+all 24 suites, lint ok); language mutation 18 killed / 0 survived; soft Gherkin
+mutation 4/4 killed; DRY clean. Independent acceptance check after merge: 5/5.
+Architect summary: `docs/reviews/cli-memo-muted-summary.md`.
+
+Previous session (2026-10-08, `cli-follow-lists`): specified and merged R11 as two
 commands in one cycle. The specifier wrote
 `psf-memo-cli/specs/memo-following.feature` and
 `psf-memo-cli/specs/memo-followers.feature` (4 scenarios each); the
@@ -1599,7 +1628,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `9bffb8a` (`Record cli-follow-lists architect review and verification`).
+Current `master` HEAD: `7367b74` (`Record cli-memo-muted architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1644,10 +1673,11 @@ foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
 `memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8
 `memo-topic`**, **R9 `memo-search`**, **R10 `memo-profiles`**, **R11
-`memo-following`/`memo-followers`**, **R14 `memo-status`**, **R15
-`memo-identity`**, **R16 `memo-wait`**) are done, and the first three write
-commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are
-done. The suggested next item is **R12 `memo-muted`** (the addresses the wallet
-has muted), then R13 `memo-poll`. The earlier client direction (front-end
-improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
+`memo-following`/`memo-followers`**, **R12 `memo-muted`**, **R14
+`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
+first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
+`memo-like`** are done. The suggested next item is **R13 `memo-poll`** (a poll
+with its options and current votes), the last read command before the W4+ write
+commands. The earlier client direction (front-end improvements to
+`psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

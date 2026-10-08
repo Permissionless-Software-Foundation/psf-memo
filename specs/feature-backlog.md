@@ -35,6 +35,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI muted-list command (`cli-memo-muted`, 2026-10-08):** R12 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `src/commands/memo-muted.js` over
+  the new shared `defineWalletListCommand` factory and `MemoDb.getMuted`
+  (`GET /mute/muted/:addr`), registered as `memo-muted`. It resolves the signing
+  wallet (`-n`/`--wif`, shared F2 wallet-source; usage error exit 2 when
+  missing) and reports the address's muted (mutee) cash addresses; the route is
+  unpaginated, so there is no `--limit`/`--offset`. Read-only; a failed request
+  is an error (exit 1). The refactorer extracted `src/lib/wallet-list-command.js`
+  and migrated `memo-following` onto the same factory. Spec:
+  `psf-memo-cli/specs/memo-muted.feature` (4 scenarios, 5 example executions;
+  scenario 2 is a `Scenario Outline` so the values are soft-mutation-testable).
+  Merged to `master` at `7367b74` (fast-forward; architect code-review commit
+  `265618da20`; the later `7367b74` adds only the record and summary, so
+  `docs/reviews/cli-memo-muted-verification.json` is valid for the merged tree).
+  `verify.sh cli` pass 4/4 at `265618da20` (unit 431/0, property 91/0,
+  acceptance all 24 suites, lint ok); language mutation 18 killed / 0 survived
+  (`wallet-list-command.js` 2, `follow-list.js` 3, `memo-db.js` 13; the command
+  modules scan as 0 sites); soft Gherkin mutation 4/4 killed; DRY clean.
+  Independent acceptance check after merge: 5/5. Architect summary:
+  `docs/reviews/cli-memo-muted-summary.md`.
+
 - **CLI follow lists (`cli-follow-lists`, 2026-10-08):** R11 of the
   `psf-memo-cli` Memo-protocol backlog, delivered as two commands in one cycle.
   Added `psf-memo-cli/src/lib/follow-list.js` (shared follower `-a` flag and
