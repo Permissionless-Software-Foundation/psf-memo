@@ -16,3 +16,7 @@ function formatSeen (seen) {
 }
 
 module.exports = { formatSeen }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T20:29:47.554Z","module_hash":"b203efb0ad34ccdfd57450c14f280dedf4447feaf8c56213c625bdd2cbbae074","functions":[{"id":"func/formatSeen","name":"formatSeen","line":12,"end_line":16,"hash":"47d4d15d1e7030a586c04b0f161a88e1ae5cce0ef3581c35c4ab200c24748355"}]}
+// mutate4javascript-manifest-end

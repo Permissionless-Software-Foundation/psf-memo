@@ -96,5 +96,5 @@ function AccountPostsFeed ({
 module.exports = { AccountPostsFeed, NO_POSTS_MESSAGE: AccountPage.NO_POSTS_MESSAGE }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T19:56:43.362Z","module_hash":"1c3bf7844445307a47c0aa25e9df6050b0424c400d6b8930d76fa7477945aa87","functions":[{"id":"func/AccountPostCard","name":"AccountPostCard","line":23,"end_line":56,"hash":"999a580c79631346836672337ecb3c50145979f67d0ec22aee1425f32a8b19df"},{"id":"func/AccountPostsFeed","name":"AccountPostsFeed","line":58,"end_line":87,"hash":"48315a16655e40c7545f8cacb1a1e408aafcc329e6deeaa14c029757efe52ed6"}]}
+// {"version":1,"tested_at":"2026-10-08T20:29:55.915Z","module_hash":"78115c454008523782c99840bb318148ec6e1eb6b55d0c2d5aa5247e2c66e409","functions":[{"id":"func/AccountPostCard","name":"AccountPostCard","line":24,"end_line":63,"hash":"02f8847759fe62a48b6a37db3b738bea3fef59e033724af63d9ed9df2836b773"},{"id":"func/AccountPostsFeed","name":"AccountPostsFeed","line":65,"end_line":94,"hash":"48315a16655e40c7545f8cacb1a1e408aafcc329e6deeaa14c029757efe52ed6"}]}
 // mutate4javascript-manifest-end
