@@ -63,6 +63,7 @@ const { renderAccountAvatar, renderAccountAvatarView } = require('./render-accou
 const { renderAccountControls } = require('./render-account-controls')
 const { renderAccountSidebar } = require('./render-account-sidebar')
 const { renderAccountPostsFeed } = require('./render-account-posts-feed')
+const { formatSeen } = require('../../src/services/post-timestamp')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
 const { renderMuteResult } = require('./render-mute-result')
@@ -1866,6 +1867,39 @@ const handlers = [
     run (m, example, world) {
       if (!world.accountPage.canLoadMore()) {
         throw new Error('Expected the account page to have more posts, but pagination says there are none.')
+      }
+    }
+  },
+  {
+    name: 'account post shows block number',
+    pattern: /^the account post with txid (.+) shows block number (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const post = world.accountPage.getPost(txid)
+      if (!post) {
+        throw new Error(`No account post found for txid ${txid}.`)
+      }
+      const html = renderAccountPostsFeed({ posts: [post], wallet: world.wallet })
+      if (!html.includes(`Block ${expected}`)) {
+        throw new Error(`The account post with txid ${txid} does not show block number ${expected}.`)
+      }
+    }
+  },
+  {
+    name: 'account post shows timestamp for seen',
+    pattern: /^the account post with txid (.+) shows the timestamp for seen (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const seen = Number(resolveParam(m[2], example))
+      const post = world.accountPage.getPost(txid)
+      if (!post) {
+        throw new Error(`No account post found for txid ${txid}.`)
+      }
+      const expected = formatSeen(seen)
+      const html = renderAccountPostsFeed({ posts: [post], wallet: world.wallet })
+      if (!html.includes(expected)) {
+        throw new Error(`The account post with txid ${txid} does not show the timestamp for seen ${seen}.`)
       }
     }
   },
@@ -4056,6 +4090,18 @@ const handlers = [
       const addr = resolveParam(m[2], example)
       const text = resolveText(m[3], example)
       world.memoDb.addPost({ txid, addr, text, blockHeight: 100 })
+    }
+  },
+  {
+    name: 'API serves post with txid my address text block height and seen',
+    pattern: /^the psf-memo-db API serves a post with txid (.+) authored by my wallet address with text (.+) at block height (.+) seen (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const myAddr = world.wallet.walletInfo.cashAddress
+      const text = resolveText(m[2], example)
+      const blockHeight = parseInt(resolveParam(m[3], example), 10)
+      const seen = parseInt(resolveParam(m[4], example), 10)
+      world.memoDb.addPost({ txid, addr: myAddr, text, blockHeight, seen })
     }
   },
   {
