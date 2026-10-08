@@ -61,6 +61,13 @@ export function installWalletFactory (world, prefix) {
   }
 }
 
+// Record a named wallet's cash address and select it as the prefix's source.
+// Pairs with installWalletFactory so a scenario can drive wallet resolution.
+export function setWalletAddress (world, prefix, name, address) {
+  world[`${prefix}Wallets`][name] = { walletInfo: { cashAddress: address } }
+  world[`${prefix}Source`] = { name }
+}
+
 // Parse the JSON error a read command wrote to stderr.
 export function parseStderrError (world, prefix) {
   const stderr = world[`${prefix}Stderr`]

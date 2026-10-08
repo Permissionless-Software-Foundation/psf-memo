@@ -214,3 +214,24 @@ test('getRecentProfiles carries the requested page', async () => {
     assert.equal(url.searchParams.get('offset'), String(offset))
   }
 })
+
+test('getFollowing and getFollowers percent-encode the address', async () => {
+  for (let i = 0; i < 300; i++) {
+    const addr = randomAddress()
+    let requested
+
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async (url) => {
+        requested = url
+        return { ok: true, status: 200, json: async () => ({}) }
+      }
+    })
+
+    await client.getFollowing(addr)
+    assert.equal(new URL(requested).pathname, `/follow/following/${encodeURIComponent(addr)}`)
+
+    await client.getFollowers(addr)
+    assert.equal(new URL(requested).pathname, `/follow/followers/${encodeURIComponent(addr)}`)
+  }
+})

@@ -10,7 +10,7 @@
 
 // Local libraries
 import MemoFollowing from '../../../src/commands/memo-following.js'
-import { runReadCommand, installWalletFactory, assertUsageError, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, installWalletFactory, setWalletAddress, assertUsageError, assertReadCommandError } from '../read-command.js'
 import { assertReportedAddresses } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
@@ -60,10 +60,7 @@ const memoFollowingHandlers = [
     name: 'the following wallet has an address',
     pattern: /^the following wallet has the address "(.+)"$/,
     run (m, example, world) {
-      world.followingWallets['following-wallet'] = {
-        walletInfo: { cashAddress: resolveParam(m[1], example) }
-      }
-      world.followingSource = { name: 'following-wallet' }
+      setWalletAddress(world, 'following', 'following-wallet', resolveParam(m[1], example))
     }
   },
   {

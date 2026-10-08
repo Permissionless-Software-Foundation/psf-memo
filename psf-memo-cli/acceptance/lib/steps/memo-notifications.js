@@ -9,7 +9,7 @@
 
 // Local libraries
 import MemoNotifications from '../../../src/commands/memo-notifications.js'
-import { runReadCommand, installWalletFactory, assertUsageError, assertReadCommandError } from '../read-command.js'
+import { runReadCommand, installWalletFactory, setWalletAddress, assertUsageError, assertReadCommandError } from '../read-command.js'
 import { assertReportedTxids, findReportedItem } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
@@ -65,10 +65,7 @@ const memoNotificationsHandlers = [
     name: 'viewer wallet has an address',
     pattern: /^the viewer wallet has the address "(.+)"$/,
     run (m, example, world) {
-      world.notifWallets['viewer-wallet'] = {
-        walletInfo: { cashAddress: resolveParam(m[1], example) }
-      }
-      world.notifSource = { name: 'viewer-wallet' }
+      setWalletAddress(world, 'notif', 'viewer-wallet', resolveParam(m[1], example))
     }
   },
   {

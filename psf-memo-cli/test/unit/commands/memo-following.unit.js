@@ -130,4 +130,10 @@ describe('#memo-following command', () => {
 
     assert.deepEqual(command.validateFlags({ name: 'wallet' }), { name: 'wallet', wif: null })
   })
+
+  it('defaults to the real wallet utility when none is injected', () => {
+    const command = new MemoFollowing({ MemoDbClass: fakeMemoDb().FakeMemoDb })
+
+    assert.isFunction(command.walletUtil.instanceWallet)
+  })
 })

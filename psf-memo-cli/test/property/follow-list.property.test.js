@@ -1,0 +1,84 @@
+/*
+  Property tests for the follow-list helpers shared by memo-following and
+  memo-followers.
+
+  These exercise broad input ranges to confirm:
+
+    - the following wallet source passes through as name/wif or null.
+    - the required followee -a address resolves, and every missing value is a
+      UsageError with the documented message.
+    - the summary counts and orders the address list and singularizes a
+      one-address list.
+*/
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { seededRandom } from './harness.js'
+import {
+  parseFollowingFlags,
+  parseFollowersFlags,
+  formatFollowListMessage,
+  MISSING_FOLLOWEE_MESSAGE
+} from '../../src/lib/follow-list.js'
+import { UsageError } from '../../src/lib/reporter.js'
+
+const rng = seededRandom(20261101)
+
+function randomToken (prefix, index) {
+  return `${prefix}-${index}-${Math.floor(rng() * 1e9).toString(16)}`
+}
+
+function randomAddresses (maxItems = 12) {
+  const count = Math.floor(rng() * (maxItems + 1))
+  const addresses = []
+  for (let i = 0; i < count; i++) addresses.push(randomToken('addr', i))
+  return addresses
+}
+
+test('parseFollowingFlags passes through the wallet source or nulls it', () => {
+  for (let i = 0; i < 400; i++) {
+    const name = rng() < 0.5 ? randomToken('wallet', i) : null
+    const wif = rng() < 0.5 ? randomToken('wif', i) : null
+
+    const flags = parseFollowingFlags({ name, wif })
+
+    assert.equal(flags.name, name || null)
+    assert.equal(flags.wif, wif || null)
+  }
+
+  for (const value of [undefined, null, '']) {
+    assert.deepEqual(parseFollowingFlags({ name: value, wif: value }), { name: null, wif: null })
+  }
+})
+
+test('parseFollowersFlags resolves the address and rejects every missing value', () => {
+  for (let i = 0; i < 300; i++) {
+    const addr = randomToken('addr', i)
+    assert.deepEqual(parseFollowersFlags({ addr }), { address: addr })
+  }
+
+  for (const value of [undefined, null, '']) {
+    assert.throws(
+      () => parseFollowersFlags({ addr: value }),
+      (err) => err instanceof UsageError && err.message === MISSING_FOLLOWEE_MESSAGE
+    )
+  }
+})
+
+test('formatFollowListMessage counts, orders, and pluralizes the address list', () => {
+  for (let i = 0; i < 400; i++) {
+    const addresses = randomAddresses()
+    const label = rng() < 0.5 ? 'following' : 'follower'
+    const message = formatFollowListMessage(addresses, label)
+
+    const noun = addresses.length === 1 ? 'address' : 'addresses'
+    assert.equal(message.split('\n')[0], `Read ${addresses.length} ${label} ${noun}`)
+
+    let cursor = -1
+    for (const address of addresses) {
+      const at = message.indexOf(address)
+      assert.ok(at > cursor, `${address} should appear after the previous address`)
+      cursor = at
+    }
+  }
+})
