@@ -39,3 +39,7 @@ function ReplyCountView ({ count = 0, onClick }) {
 }
 
 module.exports = ReplyCountView
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T19:56:59.023Z","module_hash":"f0a0168435a6aca55991f26908b3e9298d1471ae3adf31afa055e2b8db8392a0","functions":[{"id":"func/ReplyCountView","name":"ReplyCountView","line":19,"end_line":39,"hash":"7c0dc9bbfb1f9ef3b7a7b5235483157b3ff25d9fa855f09878fb0e00aa7ea024"}]}
+// mutate4javascript-manifest-end

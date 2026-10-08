@@ -35,3 +35,10 @@ test('renders a clickable reply count with a handler', () => {
   assert.ok(html.includes('tabindex="0"'))
   assert.ok(html.includes('aria-label="1 reply — click to view thread"'))
 })
+
+test('defaults to a zero reply count when none is given', () => {
+  const html = render({})
+
+  assert.ok(html.includes('>0<'))
+  assert.ok(html.includes('aria-label="0 replies"'))
+})
