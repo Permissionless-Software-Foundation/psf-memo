@@ -35,6 +35,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI set-bio write command (`cli-memo-bio`, 2026-10-08):** W5 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `src/lib/memo-bio.js` (0x6d05
+  prefix, 217 UTF-8 byte limit, flag parsing, summary) and a thin
+  `src/commands/memo-bio.js` over the shared single-field write factory,
+  registered as `memo-bio`. It resolves the signing wallet (`-n`/`--wif`) and
+  broadcasts `[6d05, bio]`; a missing/empty/over-217-byte bio is a usage error
+  (exit 2) with no broadcast, and a rejected broadcast surfaces the wallet's
+  real error (exit 1). The refactorer extracted the shared `-m` validation
+  factory `src/lib/memo-text-flag.js` (now backing `memo-post`, `memo-name`,
+  `memo-bio`). Spec: `psf-memo-cli/specs/memo-bio.feature` (7 scenarios, 11
+  example executions). Merged to `master` at `ab6f909` (fast-forward; architect
+  code-review commit `e93f949aca`; the later `ab6f909` adds only the record and
+  summary, so `docs/reviews/cli-memo-bio-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `e93f949aca` (unit 476/0, property
+  100/0, acceptance all 27 suites, lint ok); language mutation 2 killed / 0
+  survived (`memo-text-flag.js`; the command modules and per-command libs scan
+  as 0 sites); soft Gherkin mutation 15 total / 5 killed / 10 intrinsic
+  survivors; DRY one accepted per-command wrapper pair. Independent acceptance
+  check after merge: 11/11. Architect summary:
+  `docs/reviews/cli-memo-bio-summary.md`.
+
 - **CLI set-name write command (`cli-memo-name`, 2026-10-08):** W4 of the
   `psf-memo-cli` Memo-protocol backlog, the first profile write. Added
   `src/lib/memo-name.js` (0x6d01 prefix, 77 UTF-8 byte limit via
