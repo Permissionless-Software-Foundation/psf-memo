@@ -16,7 +16,7 @@ import path from 'node:path'
 import WalletSweep from '../../../src/commands/wallet-sweep.js'
 import WalletList from '../../../src/commands/wallet-list.js'
 import MemoFollowing from '../../../src/commands/memo-following.js'
-import { captureStream } from '../../../test/support/capture.js'
+import { captureConsole, captureStream } from '../../../test/support/capture.js'
 import { resolveTemplate } from '../step-support.js'
 
 const WALLETS_DIR = path.resolve(import.meta.dirname, '..', '..', '..', '.wallets')
@@ -34,22 +34,6 @@ function walletWithSecrets (cashAddress, wif) {
       privateKey: wif
     }
   }
-}
-
-// Replace console.log/console.error with a recording sink for the duration of
-// the asynchronous command, then restore them and return everything printed.
-async function captureConsole (fn) {
-  const chunks = []
-  const original = { log: console.log, error: console.error }
-  console.log = (...args) => chunks.push(args.join(' '))
-  console.error = (...args) => chunks.push(args.join(' '))
-  try {
-    await fn()
-  } finally {
-    console.log = original.log
-    console.error = original.error
-  }
-  return chunks.join('\n')
 }
 
 // Run the real wallet-sweep command with a fake wallet and a stubbed sweep, so

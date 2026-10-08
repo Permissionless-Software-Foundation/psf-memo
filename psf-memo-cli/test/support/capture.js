@@ -14,3 +14,19 @@ export function captureStream () {
     text: () => chunks.join('')
   }
 }
+
+// Run `fn` while replacing console.log/console.error with a recording sink,
+// then restore them and return everything printed.
+export async function captureConsole (fn) {
+  const chunks = []
+  const original = { log: console.log, error: console.error }
+  console.log = (...args) => chunks.push(args.join(' '))
+  console.error = (...args) => chunks.push(args.join(' '))
+  try {
+    await fn()
+  } finally {
+    console.log = original.log
+    console.error = original.error
+  }
+  return chunks.join('\n')
+}

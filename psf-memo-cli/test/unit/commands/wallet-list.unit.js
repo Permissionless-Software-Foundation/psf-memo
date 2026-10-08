@@ -10,6 +10,7 @@ import { promises as fs } from 'fs'
 // Local libraries
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import WalletList from '../../../src/commands/wallet-list.js'
+import { captureConsole } from '../../support/capture.js'
 
 const __dirname = import.meta.dirname
 const filename = `${__dirname.toString()}/../../../.wallets/test123.json`
@@ -99,17 +100,13 @@ describe('#wallet-list', () => {
         JSON.stringify({ wallet: { mnemonic, description: 'hygiene test' } })
       )
 
-      const logs = []
-      const originalLog = console.log
-      console.log = (...args) => logs.push(args.join(' '))
+      let output
       try {
-        await uut.run()
+        output = await captureConsole(() => uut.run())
       } finally {
-        console.log = originalLog
         await fs.rm(filename)
       }
 
-      const output = logs.join('\n')
       assert.notInclude(output, mnemonic)
       assert.include(output, 'test123')
     })

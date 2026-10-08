@@ -11,6 +11,7 @@ import { promises as fs } from 'fs'
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import WalletSweep from '../../../src/commands/wallet-sweep.js'
+import { captureConsole } from '../../support/capture.js'
 
 const walletCreate = new WalletCreate()
 const walletUtil = new WalletUtil()
@@ -149,16 +150,7 @@ describe('#wallet-sweep', () => {
       }
       sandbox.stub(uut, 'sweepWif').resolves(txid)
 
-      const logs = []
-      const originalLog = console.log
-      console.log = (...args) => logs.push(args.join(' '))
-      try {
-        await uut.run({ name: 'test123', wif })
-      } finally {
-        console.log = originalLog
-      }
-
-      const output = logs.join('\n')
+      const output = await captureConsole(() => uut.run({ name: 'test123', wif }))
       assert.notInclude(output, wif)
       assert.include(output, txid)
     })
