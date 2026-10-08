@@ -1196,6 +1196,18 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/account-posts-feed.feature` (scenario 6). Architect
     summary: `docs/reviews/account-post-metadata-summary.md`.
 
+88. **Profile paths are single-sourced at `src/services/profile-path.js`.** The
+    account sidebar's `Profile` link, the notification entries, and the
+    recent-profiles table all build `/profile/<encodeURIComponent(addr)>`
+    through the shared pure `profilePath` helper, replacing the duplicated
+    builders (gotcha #43). Internal profile links render an anchor with the
+    literal `href` plus `event.preventDefault()` and an injected
+    `onProfileClick`/navigate (gotcha #42) so the GitHub Pages SPA fallback is
+    not defeated. `AccountPage.SIDEBAR_SECTIONS` is now `avatar, bio, profile,
+    address, tokens`. Spec: `psf-memo-client/specs/account-page-layout.feature`
+    (scenarios 15–16). Architect summary:
+    `docs/reviews/account-profile-link-summary.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1252,7 +1264,22 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `account-post-metadata`): a small client-only
+Latest session (2026-10-08, `account-profile-link`): a small client-only
+follow-up. The specifier added the `Profile` link to the account sidebar between
+the bio and the BCH address (`Account Page Layout - 16`) and updated the sidebar
+order (`- 15`) to `avatar, bio, profile, address, tokens`; the
+coder/refactorer/architect added the router-safe link to `AccountSidebar` and
+extracted the shared pure `src/services/profile-path.js` (`profilePath`),
+replacing the duplicated profile-path builders in `notification-entry.js` and
+`recent-profiles-table.js`. Merged to `master` at `81c47cb` (fast-forward;
+architect code-review commit `6b910ae`; the later `81c47cb` adds only the record
+and summary, so `docs/reviews/account-profile-link-verification.json` is valid
+for the merged tree). Recorded `verify.sh client` pass 5/5 at `6b910ae` (unit
+819/0, property 224/0, acceptance all 49 suites, lint ok, build ok). Independent
+acceptance check after merge: account-page-layout 21/21. Architect summary:
+`docs/reviews/account-profile-link-summary.md`.
+
+Previous session (2026-10-08, `account-post-metadata`): a small client-only
 follow-up to `account-posts-feed`. The user reported that the timestamp and
 block number were missing from the top of each `/account` post; the specifier
 added `Account Posts Feed - 6` (seeds a post with `block height` and `seen`, then
@@ -1901,7 +1928,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `a70f36c` (`Record account-post-metadata architect review and verification`).
+Current `master` HEAD: `81c47cb` (`Record account-profile-link architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1942,8 +1969,9 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the latest features, `account-posts-feed` merged at
-`2470bc8` and its `account-post-metadata` follow-up merged at `a70f36c`, after
+`specs/feature-backlog.md` (the latest features, `account-post-metadata` merged
+at `a70f36c` and account-posts-feed's `account-profile-link` follow-up merged at
+`81c47cb`, after `account-posts-feed` at `2470bc8` and
 `set-bio-existing-and-cancel` at `4467e6e`). The
 `psf-memo-cli` Memo-protocol backlog below is complete except for the deferred
 W14–W16. The

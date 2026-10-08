@@ -35,6 +35,24 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Account sidebar profile link (`account-profile-link`, 2026-10-08):**
+  Client-only. The `/account` left sidebar now shows a `Profile` link between
+  the bio and the BCH address, linking to the account's own `/profile/:addr`
+  page (`/profile/<encodeURIComponent(addr)>`) and navigating via the client
+  router. `AccountPage.SIDEBAR_SECTIONS` becomes `avatar, bio, profile,
+  address, tokens`; the refactorer extracted the shared pure
+  `src/services/profile-path.js` (`profilePath`) and pointed
+  `notification-entry.js` and `recent-profiles-table.js` at it, replacing the
+  duplicated profile-path builders (gotcha #43). New/updated scenarios
+  `Account Page Layout - 15` (order) and `- 16` (link target + navigation).
+  Merged to `master` at `81c47cb` (fast-forward; architect code-review commit
+  `6b910ae`; the later `81c47cb` adds only the record and summary, so
+  `docs/reviews/account-profile-link-verification.json` is valid for the merged
+  tree). Recorded `verify.sh client` pass 5/5 at `6b910ae` (unit 819/0, property
+  224/0, acceptance all 49 suites, lint ok, build ok). Independent acceptance
+  check after merge: account-page-layout 21/21. Architect summary:
+  `docs/reviews/account-profile-link-summary.md`.
+
 - **Account post metadata (`account-post-metadata`, 2026-10-08):** Client-only
   fix for the account posts feed. Each `/account` post card now shows the
   post's timestamp and `Block <height>` at the top, matching the

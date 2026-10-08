@@ -15,7 +15,7 @@
 'use strict'
 
 const test = require('node:test')
-const { seededRandom, forAll } = require('./harness')
+const { seededRandom, forAll, randomFrom } = require('./harness')
 const AccountPage = require('../../src/services/account-page')
 
 const rng = seededRandom(20260905)
@@ -88,5 +88,32 @@ test('getAvatarUrl round-trips the stored profile URL', async () => {
       return page.getAvatarUrl() === url
     },
     { label: 'getAvatarUrl round trip' }
+  )
+})
+
+// A random base32 address so the profile path is exercised with varying ids.
+const ADDR_ALPHABET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+function randomAddress () {
+  return 'bitcoincash:' + randomFrom(rng, ADDR_ALPHABET, 20, 42)
+}
+
+test('getProfilePath round-trips the account address and clickProfileLink navigates to it', async () => {
+  await forAll(
+    (i) => randomAddress(),
+    (addr) => {
+      const navigated = []
+      const page = new AccountPage({
+        wallet: makeWallet(addr),
+        navigate: (path) => navigated.push(path)
+      })
+      const expected = `/profile/${encodeURIComponent(addr)}`
+
+      page.clickProfileLink()
+
+      return page.getProfilePath() === expected &&
+        navigated.length === 1 &&
+        navigated[0] === expected
+    },
+    { label: 'account profile path round trip' }
   )
 })
