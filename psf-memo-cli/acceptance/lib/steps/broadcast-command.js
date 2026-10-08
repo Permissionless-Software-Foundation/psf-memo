@@ -27,6 +27,7 @@ import { createRecordingWallet } from '../wallet-support.js'
 import {
   assertEqual,
   resolveParam,
+  resolveTemplate,
   resolveUrlTemplate
 } from '../step-support.js'
 
@@ -154,7 +155,7 @@ const broadcastCommandHandlers = [
     pattern: /^the (memo-post|memo-reply|memo-like|memo-name|memo-bio|memo-avatar|memo-follow|memo-unfollow|memo-mute|memo-unmute|memo-topic-post|memo-topic-follow|memo-topic-unfollow) command reported the error "(.+)"$/,
     run (m, example, world) {
       assertEqual(world.resultExitCode, 1, `${m[1]} exit code`)
-      assertEqual(parseStderrError(world, 'result').error, resolveParam(m[2], example), 'error', { quote: true })
+      assertEqual(parseStderrError(world, 'result').error, resolveTemplate(m[2], example), 'error', { quote: true })
     }
   }
 ]

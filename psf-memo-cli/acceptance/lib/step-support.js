@@ -16,8 +16,10 @@ export function resolveParam (value, example) {
 }
 
 // Substitute <param> placeholders embedded anywhere in a template, such as a
-// URL with an example-supplied txid.
-export function resolveUrlTemplate (template, example) {
+// URL with an example-supplied txid or an expected error message with the
+// example-supplied wallet error. A template with no placeholders is returned
+// unchanged.
+export function resolveTemplate (template, example) {
   return String(template).replace(/<([A-Za-z0-9_]+)>/g, (match, name) => {
     if (!(name in example)) {
       throw new Error(`Missing example value for "${name}"`)
@@ -25,6 +27,9 @@ export function resolveUrlTemplate (template, example) {
     return example[name]
   })
 }
+
+// Backwards-compatible alias for URL-shaped templates.
+export const resolveUrlTemplate = resolveTemplate
 
 // Assert a value equals the expected value, with a consistent failure message.
 // `quote` wraps both rendered values in double quotes for text assertions.
