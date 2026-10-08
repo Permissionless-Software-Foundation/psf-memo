@@ -67,3 +67,7 @@ class MemoSearch {
 }
 
 export default MemoSearch
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T00:26:51.333Z","module_hash":"d9637dbd6d50a4221b1f3b2230c60aaa2779ad49e47e5d711bcdd8e12ce51ad7","functions":[{"id":"func/MemoSearch.constructor","name":"MemoSearch.constructor","line":22,"end_line":24,"hash":"6cd229735c2bbe41180132ba145e5a6dfeb88cbac87ec552264e07f6fce83f19"},{"id":"func/MemoSearch.run","name":"MemoSearch.run","line":28,"end_line":45,"hash":"4eb217346580e60b9e26463244ae67e21b325282e75729313c04c3ac22073c57"},{"id":"func/MemoSearch.validateFlags","name":"MemoSearch.validateFlags","line":49,"end_line":51,"hash":"155111cd8a7cfd3a797256c404f701c909616da63a619bb945491ab77b7e427c"},{"id":"func/MemoSearch.createClient","name":"MemoSearch.createClient","line":54,"end_line":56,"hash":"54385637d7ccdbdb4482a273dbbf40bd7272b92032c0a6f5d6ac2de757b02e80"},{"id":"func/MemoSearch.readSearch","name":"MemoSearch.readSearch","line":60,"end_line":66,"hash":"6ecce2691bc68d7216405323ea5cf5d552f44fdd27e82f85f24c984ec3266529"}]}
+// mutate4javascript-manifest-end

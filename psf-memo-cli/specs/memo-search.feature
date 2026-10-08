@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T00:28:02.246819219Z","feature_name":"Memo Search","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-search.feature","background_hash":"d03eb672603848efda577c102f44188ff9fba3c6cb58fa078af96a89e5dfe937","implementation_hash":"unknown","scenarios":[{"index":2,"name":"Memo Search - 3 the command returns the requested page","scenario_hash":"30ddf40cb001f294288734bd254ff2e786a6503723dc6f53439d559c5fb21080","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-08T00:28:02.246819219Z"},{"index":4,"name":"Memo Search - 5 each reported result keeps its service fields","scenario_hash":"444ec66ae8a59c6891d2c9d08160c07220fda6b07562ceae3831eac83b92c2bc","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-08T00:28:02.246819219Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Search (R9): the psf-memo-cli full-text search read command. It reads one
 # page of GET /search -- a case-insensitive substring match over top-level post
 # text and profile name/bio -- and reports the matching posts and profiles with

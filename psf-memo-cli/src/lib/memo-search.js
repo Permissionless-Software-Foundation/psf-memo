@@ -61,3 +61,7 @@ export function formatSearchMessage (posts = [], profiles = [], pagination = {})
 
   return lines.join('\n')
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T00:26:34.657Z","module_hash":"9ca901f14febd81a4fdd5e96e12137d4e8d169710d65f85a0a894025f9010312","functions":[{"id":"func/parseSearchFlags","name":"parseSearchFlags","line":24,"end_line":35,"hash":"85c66ac493b26bf8ca88a97969dafe3b6349ee2b5e33309d95ca9c705fdf1731"},{"id":"func/isEmptySearchQuery","name":"isEmptySearchQuery","line":38,"end_line":40,"hash":"ef5b4755bc3bbbcf68c7c0d8c2528dde2395c5362ca4b70076c5b10c1fd856da"},{"id":"func/emptySearchResult","name":"emptySearchResult","line":43,"end_line":49,"hash":"f3307b5a29946fdbc696550f3724fe35925921b443ea65b40c21bbb5fe0aa46f"},{"id":"func/formatSearchMessage","name":"formatSearchMessage","line":53,"end_line":63,"hash":"e92d6d491813dd7f75fd0a9011b0d6166fb159765fb85cf1b39d4ddfe8320811"}]}
+// mutate4javascript-manifest-end
