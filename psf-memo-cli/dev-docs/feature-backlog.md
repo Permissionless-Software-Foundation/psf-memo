@@ -302,9 +302,6 @@ unless noted.
 | W8 | `memo-mute -n <wallet> -a <addr>` / `memo-unmute ...` | `0x6d16` / `0x6d17` | 20-byte hash160 | `memo-mute.js`; persistence depends on the DB `mute` entity route (gotcha #60). |
 | W9 | `memo-topic-post -n <wallet> -r <room> -m <text> [--json]` | `0x6d0c` topic message | room + text ≤ 214 bytes combined | Multi-push (F3); mirrors `memo-topic-post.js`. |
 | W10 | `memo-topic-follow -n <wallet> -r <room>` / `memo-topic-unfollow ...` | `0x6d0d` / `0x6d0e` | topic name | `memo-topic-follow.js`. |
-| W11 | `memo-poll-create -n <wallet> --question <q> --options <n> [--type <n>] [--json]` | `0x6d10` create poll | type byte + option-count byte + question ≤ 209 bytes | Multi-push (F3); mirrors `memo-poll-create.js`. |
-| W12 | `memo-poll-option -n <wallet> -t <poll> -m <option> [--json]` | `0x6d13` add poll option | LE txid (32) + option ≤ 184 bytes | Multi-push (F3). |
-| W13 | `memo-poll-vote -n <wallet> -t <poll> [-m <comment>] [--json]` | `0x6d14` poll vote | LE txid (32) + comment ≤ 184 bytes | Multi-push (F3). |
 
 **W1 status: DONE** (2026-10-07, task `cli-memo-post`; merged at `756747e`;
 acceptance 11/11). Spec: `psf-memo-cli/specs/memo-post.feature`; architect
@@ -349,6 +346,7 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
 | W14 | `memo-repost` | `0x6d0b` repost | Deferred: the v1 indexer does not handle `0x6d0b` yet. Needs indexer + DB read support first. |
 | W15 | `memo-send-money` | `0x6d24` send money | Deferred: not in the v1 indexer handler set; would need indexer + DB support. The existing `send-bch` covers raw transfers. |
 | W16 | `memo-token-*` | MIP-0009 `0x6d30`–`0x6d35` token exchange | Out of scope for now; needs protocol parity work across indexer and DB. |
+| W11–W13 | `memo-poll-create` / `memo-poll-option` / `memo-poll-vote` | `0x6d10` / `0x6d13` / `0x6d14` | Dropped by user decision (2026-10-08); not planned. The read-only `memo-poll` (R13) remains. |
 
 ---
 
@@ -395,12 +393,15 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    and the shared post-page read pipeline are in place. All read commands
    (R1–R16) are complete, and the profile writes W4–W6, the social-graph
    writes W7/W8, and the topic writes W9/W10 (`memo-topic-post`,
-   `memo-topic-follow`/`memo-topic-unfollow`) are done. **Next up: W11–W13** —
-   the poll write commands (`0x6d10` create, `0x6d13` option, `0x6d14` vote;
-   gotcha #35 multi-push).
+   `memo-topic-follow`/`memo-topic-unfollow`) are done. The poll writes
+   W11–W13 were dropped by user decision (2026-10-08), so the shipped write set
+   is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
-5. **Topics and polls**: R7–R9, R13, W9–W13.
+5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
+
+**Next up: the X-series (X1–X7).** Poll writes W11–W13 are intentionally
+not planned (user decision, 2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.

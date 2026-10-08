@@ -1858,8 +1858,10 @@ and the write commands **W1 `memo-post`**, **W2 `memo-reply`**, **W3
 `memo-like`**, **W4 `memo-name`**, **W5 `memo-bio`**, **W6 `memo-avatar`**,
 **W7 `memo-follow`/`memo-unfollow`**, **W8 `memo-mute`/`memo-unmute`**,
 **W9 `memo-topic-post`**, and **W10
-`memo-topic-follow`/`memo-topic-unfollow`** are done. The suggested next item is
-**W11–W13** — the poll writes (`0x6d10` create, `0x6d13` option, `0x6d14` vote;
-gotcha #35 multi-push). The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`.
+`memo-topic-follow`/`memo-topic-unfollow`** are done. The poll writes
+**W11–W13** were dropped by user decision (2026-10-08), so the remaining
+suggested work is the cross-cutting hardening series **X1–X7** in
+`psf-memo-cli/dev-docs/feature-backlog.md`. The earlier client direction
+(front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
