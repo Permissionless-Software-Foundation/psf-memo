@@ -55,14 +55,37 @@ function assertAddressPageRequest (world, path, { addr, limit, offset }) {
   assertPageRequest(world, `/posts/${path}/${encodeURIComponent(addr)}`, limit, offset)
 }
 
+// Assert selected fields on the generic read result's pagination object. Only
+// the named fields are checked, so a step can pin total/hasMore alone or the
+// full limit/offset/total/hasMore set.
+export function assertPagination (world, expected) {
+  const pagination = world.readJson?.pagination || {}
+  for (const [field, value] of Object.entries(expected)) {
+    assertEqual(pagination[field], value, `pagination ${field}`)
+  }
+}
+
 const readResultHandlers = [
   {
     name: 'command reported pagination',
     pattern: /^the command reported pagination total (.+) and hasMore (.+)$/,
     run (m, example, world) {
-      const pagination = world.readJson?.pagination || {}
-      assertEqual(pagination.total, Number.parseInt(resolveParam(m[1], example), 10), 'pagination total')
-      assertEqual(pagination.hasMore, resolveParam(m[2], example) === 'true', 'pagination hasMore')
+      assertPagination(world, {
+        total: Number.parseInt(resolveParam(m[1], example), 10),
+        hasMore: resolveParam(m[2], example) === 'true'
+      })
+    }
+  },
+  {
+    name: 'command reported full pagination',
+    pattern: /^the command reported pagination limit (.+), offset (.+), total (.+), and hasMore (.+)$/,
+    run (m, example, world) {
+      assertPagination(world, {
+        limit: Number.parseInt(resolveParam(m[1], example), 10),
+        offset: Number.parseInt(resolveParam(m[2], example), 10),
+        total: Number.parseInt(resolveParam(m[3], example), 10),
+        hasMore: resolveParam(m[4], example) === 'true'
+      })
     }
   },
   {

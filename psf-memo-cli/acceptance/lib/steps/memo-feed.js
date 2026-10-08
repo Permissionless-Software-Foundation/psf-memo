@@ -46,6 +46,18 @@ const memoFeedHandlers = [
     }
   },
   {
+    name: 'service reports pagination',
+    pattern: /^the service reports pagination limit (.+), offset (.+), total (.+), and hasMore (.+)$/,
+    run (m, example, world) {
+      world.feedPagination = {
+        limit: Number.parseInt(resolveParam(m[1], example), 10),
+        offset: Number.parseInt(resolveParam(m[2], example), 10),
+        total: Number.parseInt(resolveParam(m[3], example), 10),
+        hasMore: resolveParam(m[4], example) === 'true'
+      }
+    }
+  },
+  {
     name: 'memo-feed command runs',
     pattern: /^the memo-feed command runs$/,
     async run (m, example, world) {

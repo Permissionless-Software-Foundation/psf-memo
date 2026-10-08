@@ -384,11 +384,16 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   `acceptance/lib/read-command.js`. Spec:
   `psf-memo-cli/specs/read-only-safety.feature` (6 scenarios); architect
   summary: `docs/reviews/cli-read-only-safety-summary.md`.
-- **X5 — Quality and verification.** Every command ships unit tests, property
-  tests where invariants exist (encoding, pagination, limit math), and Gherkin
-  acceptance (F6 is in place). Keep `verify.sh cli` green and preserve the
-  `cli-quality-hardening` baseline (CRAP ≤ 6, DRY clean, mutation 0 survivors,
-  100% coverage, lint).
+- **X5 — Quality and verification.** **DONE** (2026-10-08, task
+  `cli-quality-audit`; merged to `master` at `cb02cc9`). The full-component
+  audit re-established the `cli-quality-hardening` baseline over the grown
+  command set: 100% statements/branches/functions/lines (579 unit tests), CRAP
+  exit 0 / max 6.0, DRY clean, language mutation 180 killed / 3 intrinsic
+  survivors / 0 uncovered across all `src/`, property 110/0, all 37 acceptance
+  suites, lint clean. The two previously uncovered branches are closed; the
+  refactorer's `defineListReadCommand` removed the last DRY pair. Spec:
+  `psf-memo-cli/dev-docs/quality-audit.md`; architect summary:
+  `docs/reviews/cli-quality-audit-summary.md`.
 - **X6 — Pagination fidelity.** Read commands expose `limit`/`offset` and pass
   through `pagination` unchanged, including the documented total cap
   (`min(actual, 500)`; gotcha #21). Do not imply an exact total beyond the cap.
@@ -418,13 +423,14 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
-6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**, X4 **DONE**; X5–X7
-   remain, plus W14–W16 if protocol support is added upstream.
+6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**, X4 **DONE**, X5
+   **DONE**; X6–X7 remain, plus W14–W16 if protocol support is added upstream.
 
-**Next up: X5 (quality and verification).** X1 command reference docs (merged at
+**Next up: X6 (pagination fidelity).** X1 command reference docs (merged at
 `0541746`), X2 error surfacing (merged at `5be373d`), X3 secret hygiene (merged
-at `ed6d3c5`), and X4 read-only safety (merged at `3d97d79`) are DONE. Poll
-writes W11–W13 are intentionally not planned (user decision, 2026-10-08).
+at `ed6d3c5`), X4 read-only safety (merged at `3d97d79`), and X5 quality audit
+(merged at `cb02cc9`) are DONE. Poll writes W11–W13 are intentionally not
+planned (user decision, 2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.
