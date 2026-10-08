@@ -35,6 +35,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI error surfacing (`cli-error-surfacing`, 2026-10-08):** X2 of the
+  `psf-memo-cli` cross-cutting series. A wallet/node rejection during a Memo
+  broadcast is reported as `Failed to broadcast: <wallet error>` (exit 1),
+  preserving the real message; errors detected before the broadcast keep their
+  own specific messages. The prefix lives once in
+  `psf-memo-cli/src/lib/memo-broadcast.js`; the shared `memo-broadcast` feature
+  and all 13 write-command features assert the prefixed message. Merged to
+  `master` at `5be373d` (fast-forward; verification record
+  `docs/reviews/cli-error-surfacing-verification.json` names the verified tree
+  `dc5a389c57`, and the later `5be373d` adds only records, so it is valid for
+  the merged tree). `verify.sh cli` pass 4/4 at `dc5a389c57` (unit 570/0,
+  property 110/0, acceptance all 35 suites, lint ok); language mutation 6/6 on
+  `memo-broadcast.js`; DRY clean. Independent acceptance check after merge: all
+  35 suites. Architect summary:
+  `docs/reviews/cli-error-surfacing-summary.md`.
+
 - **CLI command reference (`cli-command-reference`, 2026-10-08):** X1 of the
   `psf-memo-cli` cross-cutting series — documentation only. `README.md` and
   `src/commands/README.md` now document all 30 `memo-*` commands (17 reads, 13
@@ -1448,9 +1464,10 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 Active work is the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
 commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
-decision) are done, and X1 (command reference docs) is now complete. The
-remaining cross-cutting hardening items are X2–X7; the suggested next item is
-X2 (error surfacing). The earlier client direction — front-end improvements to
+decision) are done, and X1 (command reference docs) and X2 (error surfacing)
+are now complete. The remaining cross-cutting hardening items are X3–X7; the
+suggested next item is X3 (secret hygiene). The earlier client direction —
+front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next
 feature.
