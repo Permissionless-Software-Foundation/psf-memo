@@ -1122,6 +1122,15 @@ that a single user-facing feature may require specs in more than one component.
     `memo-{name,bio}.unit.js` wrapper pair is accepted per-command config
     boilerplate. Spec: `psf-memo-cli/specs/memo-bio.feature`.
 
+82. **`memoTextFlagParser` now takes a `flag` key (`memo-avatar`, W6).** The
+    shared profile-text validation parser (gotcha #81) gained a `flag` parameter
+    (default `memo`, also `url`), so `memo-avatar` validates its `-u` URL with
+    the same missing/empty/over-long contract and the shared unit/property
+    registrars; `memo-avatar` keeps its own `0x6d0a` prefix and 217-byte limit.
+    Reuse it for any future single-text-field write (the `-u` avatar flag, the
+    `-m` post/name/bio flags). Spec:
+    `psf-memo-cli/specs/memo-avatar.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1178,7 +1187,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-memo-bio`): specified and merged W5, the
+Latest session (2026-10-08, `cli-memo-avatar`): specified and merged W6, the
+set-profile-picture write command. The specifier wrote
+`psf-memo-cli/specs/memo-avatar.feature` (7 scenarios, 11 example executions);
+the coder/refactorer/architect added `src/lib/memo-avatar.js` (0x6d0a prefix,
+217 UTF-8 byte limit, `-u` parsing, summary) and a thin
+`src/commands/memo-avatar.js` over the shared single-field write factory,
+registered as `memo-avatar`. It resolves the signing wallet (`-n`/`--wif`) and
+broadcasts `[6d0a, url]`; missing/empty/over-217-byte URLs are usage errors
+(exit 2), and a rejected broadcast surfaces the wallet's real error (exit 1).
+The refactorer generalized `memoTextFlagParser` to take a `flag` key (backing
+both `-m` and `-u`) and extended the shared text-flag unit/property registrars.
+Merged to `master` at `b7686b1` (fast-forward; architect code-review commit
+`2771df6039`; the later `b7686b1` adds only the record and summary, so
+`docs/reviews/cli-memo-avatar-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `2771df6039` (unit 493/0, property 103/0,
+acceptance all 28 suites, lint ok); language mutation 2 killed / 0 survived;
+soft Gherkin mutation 15 total / 5 killed / 10 intrinsic survivors; DRY only
+the accepted per-command wrapper pair. Independent acceptance check after
+merge: 11/11. Architect summary:
+`docs/reviews/cli-memo-avatar-summary.md`.
+
+Previous session (2026-10-08, `cli-memo-bio`): specified and merged W5, the
 set-profile-text write command. The specifier wrote
 `psf-memo-cli/specs/memo-bio.feature` (7 scenarios, 11 example executions); the
 coder/refactorer/architect added `src/lib/memo-bio.js` (0x6d05 prefix, 217
@@ -1711,7 +1741,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `ab6f909` (`Record cli-memo-bio architect review and verification`).
+Current `master` HEAD: `b7686b1` (`Record cli-memo-avatar architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1759,9 +1789,10 @@ foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,
 `memo-following`/`memo-followers`**, **R12 `memo-muted`**, **R13 `memo-poll`**,
 **R14 `memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done,
 and the write commands **W1 `memo-post`**, **W2 `memo-reply`**, **W3
-`memo-like`**, **W4 `memo-name`**, and **W5 `memo-bio`** are done. The suggested
-next item is **W6 `memo-avatar`** (set profile picture, 0x6d0a, 217 bytes), then
-W7/W8 follow/mute and W9–W13 topics/polls. The earlier client direction
-(front-end improvements to `psf-memo-client`) remains open in
+`memo-like`**, **W4 `memo-name`**, **W5 `memo-bio`**, and **W6 `memo-avatar`**
+are done. The suggested next item is **W7/W8 `memo-follow`/`memo-unfollow` and
+`memo-mute`/`memo-unmute`** (20-byte hash160 writes; gotcha #32: follow/mute
+hashes are NOT byte-reversed), then W9–W13 topics/polls. The earlier client
+direction (front-end improvements to `psf-memo-client`) remains open in
 `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

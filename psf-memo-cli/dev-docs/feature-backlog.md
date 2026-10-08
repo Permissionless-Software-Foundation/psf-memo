@@ -326,6 +326,10 @@ summary: `docs/reviews/cli-memo-name-summary.md`.
 acceptance 11/11). Spec: `psf-memo-cli/specs/memo-bio.feature`; architect
 summary: `docs/reviews/cli-memo-bio-summary.md`.
 
+**W6 status: DONE** (2026-10-08, task `cli-memo-avatar`; merged at `b7686b1`;
+acceptance 11/11). Spec: `psf-memo-cli/specs/memo-avatar.feature`; architect
+summary: `docs/reviews/cli-memo-avatar-summary.md`.
+
 ### Planned / deferred write actions
 
 | ID | Command | Action | Status |
@@ -377,9 +381,11 @@ summary: `docs/reviews/cli-memo-bio-summary.md`.
    **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
    **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
    and the shared post-page read pipeline are in place. All read commands
-   (R1–R16) are complete, and W4 (`memo-name`) and W5 (`memo-bio`) are done.
-   **Next up: W6 (`memo-avatar`)** (set profile picture, 0x6d0a, 217 bytes),
-   then W7/W8 (follow/mute), and W9–W13 (topics/polls).
+   (R1–R16) are complete, and the profile writes W4 (`memo-name`), W5
+   (`memo-bio`), and W6 (`memo-avatar`) are done. **Next up: W7/W8
+   (`memo-follow`/`memo-unfollow`, `memo-mute`/`memo-unmute`)** — 20-byte
+   hash160 follow/mute writes (gotcha #32: do not byte-reverse the hash), then
+   W9–W13 (topics/polls).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

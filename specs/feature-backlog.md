@@ -35,6 +35,26 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI set-avatar write command (`cli-memo-avatar`, 2026-10-08):** W6 of the
+  `psf-memo-cli` Memo-protocol backlog. Added `src/lib/memo-avatar.js` (0x6d0a
+  prefix, 217 UTF-8 byte limit, `-u` parsing, summary) and a thin
+  `src/commands/memo-avatar.js` over the shared single-field write factory,
+  registered as `memo-avatar`. It resolves the signing wallet (`-n`/`--wif`) and
+  broadcasts `[6d0a, url]`; a missing/empty/over-217-byte URL is a usage error
+  (exit 2) with no broadcast, and a rejected broadcast surfaces the wallet's
+  real error (exit 1). The refactorer generalized `memoTextFlagParser` to take a
+  `flag` key so it backs both `-m` (post/name/bio) and `-u` (avatar). Spec:
+  `psf-memo-cli/specs/memo-avatar.feature` (7 scenarios, 11 example executions).
+  Merged to `master` at `b7686b1` (fast-forward; architect code-review commit
+  `2771df6039`; the later `b7686b1` adds only the record and summary, so
+  `docs/reviews/cli-memo-avatar-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `2771df6039` (unit 493/0, property 103/0,
+  acceptance all 28 suites, lint ok); language mutation 2 killed / 0 survived
+  (`memo-text-flag.js`; the avatar module scans as 0 sites); soft Gherkin
+  mutation 15 total / 5 killed / 10 intrinsic survivors; DRY only the accepted
+  per-command wrapper pair. Independent acceptance check after merge: 11/11.
+  Architect summary: `docs/reviews/cli-memo-avatar-summary.md`.
+
 - **CLI set-bio write command (`cli-memo-bio`, 2026-10-08):** W5 of the
   `psf-memo-cli` Memo-protocol backlog. Added `src/lib/memo-bio.js` (0x6d05
   prefix, 217 UTF-8 byte limit, flag parsing, summary) and a thin
