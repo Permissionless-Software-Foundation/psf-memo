@@ -43,6 +43,9 @@ import MemoFollow from './src/commands/memo-follow.js'
 import MemoUnfollow from './src/commands/memo-unfollow.js'
 import MemoMute from './src/commands/memo-mute.js'
 import MemoUnmute from './src/commands/memo-unmute.js'
+import MemoTopicPost from './src/commands/memo-topic-post.js'
+import MemoTopicFollow from './src/commands/memo-topic-follow.js'
+import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -81,6 +84,9 @@ const memoFollow = new MemoFollow()
 const memoUnfollow = new MemoUnfollow()
 const memoMute = new MemoMute()
 const memoUnmute = new MemoUnmute()
+const memoTopicPost = new MemoTopicPost()
+const memoTopicFollow = new MemoTopicFollow()
+const memoTopicUnfollow = new MemoTopicUnfollow()
 
 const program = new Command()
 
@@ -368,5 +374,30 @@ program.command('memo-unmute')
   .option('-a, --addr <string>', 'mutee address')
   .option('--json', 'print the result as one JSON object')
   .action(memoUnmute.run)
+
+program.command('memo-topic-post')
+  .description('Broadcast a 0x6d0c Memo topic message')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-r, --room <string>', 'topic room')
+  .option('-m, --memo <string>', 'topic message text')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoTopicPost.run)
+
+program.command('memo-topic-follow')
+  .description('Broadcast a 0x6d0d Memo topic-follow action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-r, --room <string>', 'topic room')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoTopicFollow.run)
+
+program.command('memo-topic-unfollow')
+  .description('Broadcast a 0x6d0e Memo topic-unfollow action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-r, --room <string>', 'topic room')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoTopicUnfollow.run)
 
 program.parseAsync(process.argv)

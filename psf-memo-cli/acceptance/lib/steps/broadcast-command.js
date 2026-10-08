@@ -144,14 +144,14 @@ const broadcastCommandHandlers = [
   },
   {
     name: 'command reported the usage error',
-    pattern: /^the (memo-post|memo-reply|memo-like|memo-name|memo-bio|memo-avatar|memo-follow|memo-unfollow|memo-mute|memo-unmute) command reported the usage error "(.+)"$/,
+    pattern: /^the (memo-post|memo-reply|memo-like|memo-name|memo-bio|memo-avatar|memo-follow|memo-unfollow|memo-mute|memo-unmute|memo-topic-post|memo-topic-follow|memo-topic-unfollow) command reported the usage error "(.+)"$/,
     run (m, example, world) {
       assertUsageError(world, 'result', m[1], resolveParam(m[2], example))
     }
   },
   {
     name: 'command reported the error',
-    pattern: /^the (memo-post|memo-reply|memo-like|memo-name|memo-bio|memo-avatar|memo-follow|memo-unfollow|memo-mute|memo-unmute) command reported the error "(.+)"$/,
+    pattern: /^the (memo-post|memo-reply|memo-like|memo-name|memo-bio|memo-avatar|memo-follow|memo-unfollow|memo-mute|memo-unmute|memo-topic-post|memo-topic-follow|memo-topic-unfollow) command reported the error "(.+)"$/,
     run (m, example, world) {
       assertEqual(world.resultExitCode, 1, `${m[1]} exit code`)
       assertEqual(parseStderrError(world, 'result').error, resolveParam(m[2], example), 'error', { quote: true })
