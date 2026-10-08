@@ -35,6 +35,31 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI social-graph writes (`cli-follow-mute`, 2026-10-08):** W7/W8 of the
+  `psf-memo-cli` Memo-protocol backlog — four hash160 state writes in one cycle.
+  Added `defineAddressWriteCommand` (`src/lib/address-write-command.js`) and
+  `addressHash160FlagParser` (`src/lib/address-flag.js`, reusing F4
+  `addressToHash160` in display order, never byte-reversed) plus thin
+  declarations `memo-follow` (`6d06`), `memo-unfollow` (`6d07`), `memo-mute`
+  (`6d16`), and `memo-unmute` (`6d17`). Each resolves the signing wallet
+  (`-n`/`--wif`), requires the target cash address (`-a`), broadcasts
+  `[prefix, hash160]`, and reports the txid + explorer link; a missing or
+  malformed address is a usage error (exit 2) with no broadcast, and a rejected
+  broadcast surfaces the wallet's real error (exit 1). The architect table-drove
+  the address-command tests. Specs: `psf-memo-cli/specs/memo-follow.feature`,
+  `memo-unfollow.feature`, `memo-mute.feature`, `memo-unmute.feature` (5
+  scenarios each, 28 example executions total). Merged to `master` at `0e89edc`
+  (fast-forward; architect code-review commit `a53d471595`; the later `0e89edc`
+  adds only the record and summary, so
+  `docs/reviews/cli-follow-mute-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `a53d471595` (unit 530/0, property 105/0,
+  acceptance all 32 suites, lint ok); language mutation 0 sites in the changed
+  files (logic in the covered wire-encoding/address-flag helpers); soft Gherkin
+  mutation 8 total / 4 killed / 4 intrinsic survivors per feature; DRY clean
+  after the table-driven consolidation. Independent acceptance check after
+  merge: 28/28 (7 per feature). Architect summary:
+  `docs/reviews/cli-follow-mute-summary.md`.
+
 - **CLI set-avatar write command (`cli-memo-avatar`, 2026-10-08):** W6 of the
   `psf-memo-cli` Memo-protocol backlog. Added `src/lib/memo-avatar.js` (0x6d0a
   prefix, 217 UTF-8 byte limit, `-u` parsing, summary) and a thin
