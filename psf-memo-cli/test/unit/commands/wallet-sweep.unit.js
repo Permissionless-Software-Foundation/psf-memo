@@ -136,5 +136,31 @@ describe('#wallet-sweep', () => {
 
       assert.equal(result, 0)
     })
+
+    it('should not echo the swept private key in its output', async () => {
+      const wif = 'Kzq8EEyjkXGzDmBbWxHWY8bxayxXawVDmrnmgq7JQmhRgMCrorfj'
+      const txid = 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789'
+
+      // Bypass the network wallet by injecting a fake wallet and sweep result.
+      uut.walletUtil = {
+        instanceWallet: async () => ({
+          walletInfo: { cashAddress: 'bitcoincash:qwallet', privateKey: 'wallet-private-key' }
+        })
+      }
+      sandbox.stub(uut, 'sweepWif').resolves(txid)
+
+      const logs = []
+      const originalLog = console.log
+      console.log = (...args) => logs.push(args.join(' '))
+      try {
+        await uut.run({ name: 'test123', wif })
+      } finally {
+        console.log = originalLog
+      }
+
+      const output = logs.join('\n')
+      assert.notInclude(output, wif)
+      assert.include(output, txid)
+    })
   })
 })

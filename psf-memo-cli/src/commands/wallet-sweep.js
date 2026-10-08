@@ -35,7 +35,7 @@ class WalletSweep {
       // Sweep any BCH and tokens from the private key.
       const txid = await this.sweepWif(flags)
 
-      console.log(`BCH successfully swept from private key ${flags.wif}`)
+      console.log('BCH successfully swept from the private key')
       console.log(`TXID: ${txid}`)
       console.log('\nView this transaction on a block explorer:')
       console.log(`https://bch.loping.net/tx/${txid}`)
