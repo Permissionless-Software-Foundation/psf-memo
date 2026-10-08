@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — proposed.
 **Owner**: specifier.
-**Last updated**: 2026-10-07.
+**Last updated**: 2026-10-08.
 
 ## Purpose
 
@@ -258,6 +258,10 @@ summary: `docs/reviews/cli-memo-topics-summary.md`.
 acceptance 12/12). Spec: `psf-memo-cli/specs/memo-topic.feature`; architect
 summary: `docs/reviews/cli-memo-topic-summary.md`.
 
+**R9 status: DONE** (2026-10-08, task `cli-memo-search`; merged at `850674c`;
+acceptance 11/11). Spec: `psf-memo-cli/specs/memo-search.feature`; architect
+summary: `docs/reviews/cli-memo-search-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -345,8 +349,8 @@ summary: `docs/reviews/cli-memo-like-summary.md`.
    **DONE**, R4 (profile) **DONE**, R5 (posts) **DONE**, R6 (notifications)
    **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
    **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
-   and the shared post-page read pipeline are in place. **Next up: R9
-   (`memo-search`)** — full-text post search.
+   and the shared post-page read pipeline are in place. **Next up: R10
+   (`memo-profiles`)** — recently active profiles with display name and avatar.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-10-07
+**Last updated**: 2026-10-08
 
 ---
 
@@ -34,6 +34,30 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **CLI full-text search command (`cli-memo-search`, 2026-10-08):** R9 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-search.js` (required `-q` query, page defaults,
+  blank-query empty page, human summary) and a thin
+  `src/commands/memo-search.js` over the shared read-command plumbing and
+  `MemoDb.search` (`GET /search`), registered as `memo-search`. It reports one
+  page of matching top-level posts and profiles (case-insensitive substring over
+  post text and profile name/bio) with the combined service pagination
+  unchanged; the optional `--viewer` filters muted authors from the posts
+  (profiles are not mute-filtered). A missing `-q` is a usage error (exit 2); a
+  provided blank query returns an empty result (exit 0); a failed request is an
+  error (exit 1). The refactorer added a shared `toQuery` builder in
+  `src/lib/memo-db.js` and shared usage-error test helpers. Spec:
+  `psf-memo-cli/specs/memo-search.feature` (7 scenarios, 11 example executions).
+  Merged to `master` at `850674c` (fast-forward; architect code-review commit
+  `2cd80790da`; the later `850674c` adds only the record and summary, so
+  `docs/reviews/cli-memo-search-verification.json` is valid for the merged
+  tree). `verify.sh cli` pass 4/4 at `2cd80790da` (unit 389/0, property 76/0,
+  acceptance all 20 suites, lint ok); language mutation 17 killed / 0 survived
+  (`memo-search.js` lib 5, `memo-db.js` 12; the command module scans as 0 sites);
+  soft Gherkin mutation 22 total / 20 killed / 2 intrinsic survivors (viewer
+  address case); DRY clean. Independent acceptance check after merge: 11/11.
+  Architect summary: `docs/reviews/cli-memo-search-summary.md`.
 
 - **CLI topic read command (`cli-memo-topic`, 2026-10-07):** R8 of the
   `psf-memo-cli` Memo-protocol backlog. Added

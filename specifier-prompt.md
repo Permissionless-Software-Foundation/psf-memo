@@ -1052,6 +1052,18 @@ that a single user-facing feature may require specs in more than one component.
     `requestLevelResource`/`assertMissingResource`; the `assertUsageError`
     acceptance helper is now shared across the read features.
 
+76. **`/search` returns posts and profiles under one combined pagination
+    (`memo-search`, R9).** The DB `SearchAll` use case returns
+    `{ posts, profiles, pagination }` where `pagination.total` is
+    `posts + profiles` and the same `limit`/`offset` slice is applied to each
+    list independently, so with a balanced corpus `hasMore` can stay true past
+    the end. `memo-search` reports both collections and passes the pagination
+    through unchanged (X6); the acceptance fixture is posts-only for the offset
+    page scenarios to keep `hasMore` unambiguous, with the combined fixture
+    pinned at offset 0. Do not "fix" the combined pagination in the CLI; that is
+    the service's contract. Spec:
+    `psf-memo-cli/specs/memo-search.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1108,7 +1120,30 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-07, `cli-memo-topic`): specified and merged R8, the
+Latest session (2026-10-08, `cli-memo-search`): specified and merged R9, the
+full-text search read command. The specifier wrote
+`psf-memo-cli/specs/memo-search.feature` (7 scenarios, 11 example executions);
+the coder/refactorer/architect added `src/lib/memo-search.js` (required `-q`
+query, page defaults, blank-query empty page, human summary) and a thin
+`src/commands/memo-search.js` over the shared read-command plumbing and
+`MemoDb.search` (`GET /search`), registered as `memo-search`. It reports one
+page of matching top-level posts and profiles (case-insensitive substring over
+post text and profile name/bio) with the combined service pagination unchanged;
+the optional `--viewer` filters muted authors from the posts (profiles are not
+mute-filtered). A missing `-q` is a usage error (exit 2); a provided blank
+query returns an empty result (exit 0); a failed request is an error (exit 1).
+The refactorer added a shared `toQuery` builder in `src/lib/memo-db.js` and
+shared usage-error test helpers. Merged to `master` at `850674c` (fast-forward;
+architect code-review commit `2cd80790da`; the later `850674c` adds only the
+record and summary, so `docs/reviews/cli-memo-search-verification.json` is valid
+for the merged tree). `verify.sh cli` pass 4/4 at `2cd80790da` (unit 389/0,
+property 76/0, acceptance all 20 suites, lint ok); language mutation 17 killed /
+0 survived (`memo-search.js` lib 5, `memo-db.js` 12; the command module scans as
+0 sites); soft Gherkin mutation 22 total / 20 killed / 2 intrinsic survivors
+(viewer address case); DRY clean. Independent acceptance check after merge:
+11/11. Architect summary: `docs/reviews/cli-memo-search-summary.md`.
+
+Previous session (2026-10-07, `cli-memo-topic`): specified and merged R8, the
 single-topic posts read command. The specifier wrote
 `psf-memo-cli/specs/memo-topic.feature` (7 scenarios, 12 example executions);
 the coder/refactorer/architect added `src/lib/memo-topic.js` (required `-r`
@@ -1494,7 +1529,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `085e873` (`Record cli-memo-topic architect review and verification`).
+Current `master` HEAD: `850674c` (`Record cli-memo-search architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1538,11 +1573,11 @@ Next action: **ask the user for the next feature.** The active backlog is
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
 `memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8
-`memo-topic`**, **R14 `memo-status`**, **R15 `memo-identity`**, **R16
-`memo-wait`**) are done, and the first three write commands **W1 `memo-post`**,
-**W2 `memo-reply`**, and **W3 `memo-like`** are done. The suggested next item is
-**R9 `memo-search`** (full-text post search with an optional viewer filter),
-then R10 `memo-profiles`, R11 `memo-following`/`memo-followers`, R12
-`memo-muted`, and R13 `memo-poll`. The earlier client direction (front-end
+`memo-topic`**, **R9 `memo-search`**, **R14 `memo-status`**, **R15
+`memo-identity`**, **R16 `memo-wait`**) are done, and the first three write
+commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are
+done. The suggested next item is **R10 `memo-profiles`** (recently active
+profiles with display name and avatar), then R11
+`memo-following`/`memo-followers`, R12 `memo-muted`, and R13 `memo-poll`. The earlier client direction (front-end
 improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
