@@ -16,40 +16,13 @@ import {
   formatTopicPostMessage,
   MEMO_TOPIC_POST_PREFIX
 } from '../lib/memo-topic-post.js'
-import { initWriteCommand, runWriteCommand } from '../lib/write-command.js'
+import { defineFieldsWriteCommand } from '../lib/write-command.js'
 
-class MemoTopicPost {
-  constructor (options = {}) {
-    initWriteCommand(this, options)
-  }
-
-  // Validate the room and message, resolve the wallet, broadcast the topic
-  // message, and report the txid and explorer link. Returns the exit code.
-  async run (flags = {}) {
-    return runWriteCommand({
-      command: this,
-      flags,
-      parse: parseTopicPostFlags,
-      format: formatTopicPostMessage
-    })
-  }
-
-  // Validate the room and message. The wallet source is validated by the shared
-  // resolver during run. Returns true when the flags are usable.
-  validateFlags (flags = {}) {
-    parseTopicPostFlags(flags)
-    return true
-  }
-
-  // Broadcast the multi-field topic message action through the shared
-  // scaffolding.
-  post ({ wallet, room, message }) {
-    return this.broadcast({
-      wallet,
-      prefix: MEMO_TOPIC_POST_PREFIX,
-      fields: [room, message]
-    })
-  }
-}
+const MemoTopicPost = defineFieldsWriteCommand({
+  parse: parseTopicPostFlags,
+  format: formatTopicPostMessage,
+  prefix: MEMO_TOPIC_POST_PREFIX,
+  fields: ['room', 'message']
+})
 
 export default MemoTopicPost

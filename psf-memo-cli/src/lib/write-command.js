@@ -63,32 +63,38 @@ export async function runWriteCommand ({ command, flags, parse, format }) {
   return code
 }
 
-// Define a single-field write command. Each command supplies its flag parser,
-// formatter, action prefix, and field name; this factory owns the wiring and
-// broadcasts the one field through the shared scaffolding.
-export function defineFieldWriteCommand ({ parse, format, prefix, field }) {
+// Define a multi-field write command. Each command supplies its flag parser,
+// formatter, action prefix, and ordered field names; this factory owns the
+// wiring and broadcasts those fields through the shared scaffolding.
+export function defineFieldsWriteCommand ({ parse, format, prefix, fields }) {
   return class {
     constructor (options = {}) {
       initWriteCommand(this, options)
     }
 
-    // Validate the field, resolve the wallet, broadcast it, and report.
+    // Validate the fields, resolve the wallet, broadcast them, and report.
     async run (flags = {}) {
       return runWriteCommand({ command: this, flags, parse, format })
     }
 
-    // Validate the field text. The wallet source is validated by the shared
-    // resolver during run. Returns true when the field is usable.
+    // Validate the fields. The wallet source is validated by the shared
+    // resolver during run. Returns true when the fields are usable.
     validateFlags (flags = {}) {
       parse(flags)
       return true
     }
 
-    // Broadcast the single-field Memo action through the shared scaffolding.
-    post ({ wallet, ...fields }) {
-      return this.broadcast({ wallet, prefix, fields: [fields[field]] })
+    // Broadcast the ordered fields through the shared scaffolding.
+    post ({ wallet, ...values }) {
+      return this.broadcast({ wallet, prefix, fields: fields.map((name) => values[name]) })
     }
   }
+}
+
+// Define a single-field write command as the one-field case of the multi-field
+// factory.
+export function defineFieldWriteCommand ({ parse, format, prefix, field }) {
+  return defineFieldsWriteCommand({ parse, format, prefix, fields: [field] })
 }
 
 // mutate4javascript-manifest-begin

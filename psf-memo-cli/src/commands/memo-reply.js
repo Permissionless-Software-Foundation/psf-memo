@@ -16,40 +16,14 @@ import {
   formatReplyMessage,
   MEMO_REPLY_PREFIX
 } from '../lib/memo-reply.js'
-import { initWriteCommand, runWriteCommand } from '../lib/write-command.js'
+import { defineFieldsWriteCommand } from '../lib/write-command.js'
 
-class MemoReply {
-  constructor (options = {}) {
-    initWriteCommand(this, options)
-  }
-
-  // Validate the parent txid and reply, resolve the wallet, broadcast, and
-  // report the txid and explorer link. Returns the exit code (0/1/2).
-  async run (flags = {}) {
-    return runWriteCommand({
-      command: this,
-      flags,
-      parse: parseReplyFlags,
-      format: formatReplyMessage
-    })
-  }
-
-  // Validate the parent txid and reply text. The wallet source is validated by
-  // the shared resolver during run. Returns true when the flags are usable.
-  validateFlags (flags = {}) {
-    parseReplyFlags(flags)
-    return true
-  }
-
-  // Broadcast the two-field Memo reply action through the shared scaffolding.
-  post ({ wallet, parentBytes, text }) {
-    return this.broadcast({
-      wallet,
-      prefix: MEMO_REPLY_PREFIX,
-      fields: [parentBytes, text]
-    })
-  }
-}
+const MemoReply = defineFieldsWriteCommand({
+  parse: parseReplyFlags,
+  format: formatReplyMessage,
+  prefix: MEMO_REPLY_PREFIX,
+  fields: ['parentBytes', 'text']
+})
 
 export default MemoReply
 
