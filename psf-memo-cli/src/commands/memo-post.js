@@ -16,40 +16,14 @@ import {
   formatMemoPostMessage,
   MEMO_POST_PREFIX
 } from '../lib/memo-post.js'
-import { initWriteCommand, runWriteCommand } from '../lib/write-command.js'
+import { defineFieldWriteCommand } from '../lib/write-command.js'
 
-class MemoPost {
-  constructor (options = {}) {
-    initWriteCommand(this, options)
-  }
-
-  // Validate the memo, resolve the wallet, broadcast the post, and report the
-  // txid and explorer link. Returns the exit code (0/1/2).
-  async run (flags = {}) {
-    return runWriteCommand({
-      command: this,
-      flags,
-      parse: parseMemoPostFlags,
-      format: formatMemoPostMessage
-    })
-  }
-
-  // Validate the memo text. The wallet source is validated by the shared
-  // resolver during run. Returns true when the memo is usable.
-  validateFlags (flags = {}) {
-    parseMemoPostFlags(flags)
-    return true
-  }
-
-  // Broadcast the single-field Memo post action through the shared scaffolding.
-  post ({ wallet, memo }) {
-    return this.broadcast({
-      wallet,
-      prefix: MEMO_POST_PREFIX,
-      fields: [memo]
-    })
-  }
-}
+const MemoPost = defineFieldWriteCommand({
+  parse: parseMemoPostFlags,
+  format: formatMemoPostMessage,
+  prefix: MEMO_POST_PREFIX,
+  field: 'memo'
+})
 
 export default MemoPost
 

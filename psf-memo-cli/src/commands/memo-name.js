@@ -16,40 +16,13 @@ import {
   formatMemoNameMessage,
   MEMO_NAME_PREFIX
 } from '../lib/memo-name.js'
-import { initWriteCommand, runWriteCommand } from '../lib/write-command.js'
+import { defineFieldWriteCommand } from '../lib/write-command.js'
 
-class MemoName {
-  constructor (options = {}) {
-    initWriteCommand(this, options)
-  }
-
-  // Validate the name, resolve the wallet, broadcast the set-name action, and
-  // report the txid and explorer link. Returns the exit code (0/1/2).
-  async run (flags = {}) {
-    return runWriteCommand({
-      command: this,
-      flags,
-      parse: parseMemoNameFlags,
-      format: formatMemoNameMessage
-    })
-  }
-
-  // Validate the name text. The wallet source is validated by the shared
-  // resolver during run. Returns true when the name is usable.
-  validateFlags (flags = {}) {
-    parseMemoNameFlags(flags)
-    return true
-  }
-
-  // Broadcast the single-field Memo set-name action through the shared
-  // scaffolding.
-  post ({ wallet, name }) {
-    return this.broadcast({
-      wallet,
-      prefix: MEMO_NAME_PREFIX,
-      fields: [name]
-    })
-  }
-}
+const MemoName = defineFieldWriteCommand({
+  parse: parseMemoNameFlags,
+  format: formatMemoNameMessage,
+  prefix: MEMO_NAME_PREFIX,
+  field: 'name'
+})
 
 export default MemoName
