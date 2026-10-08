@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=96cc1c932d3556df1cfd4394c26a57cb332a3add26204189b432de06205994c4
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T01:14:47.777210962Z","feature_name":"Memo Followers","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-followers.feature","background_hash":"181bdfdb5e953b81db531fe6ea90e5353924881272d1c525e68e81d816dc0487","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Followers (R11b): the psf-memo-cli read command for the addresses that
 # follow a target address. The followee address comes from the required -a
 # flag; the command reads GET /follow/followers/:addr from psf-memo-db and

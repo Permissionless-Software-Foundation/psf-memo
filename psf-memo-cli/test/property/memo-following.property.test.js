@@ -10,21 +10,12 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seededRandom } from './harness.js'
+import { seededRandom, randomAddresses } from './harness.js'
 import MemoFollowing from '../../src/commands/memo-following.js'
 import { captureStream } from '../support/capture.js'
 import { formatFollowListMessage } from '../../src/lib/follow-list.js'
 
 const rng = seededRandom(20261102)
-
-function randomAddresses (maxItems = 10) {
-  const count = Math.floor(rng() * (maxItems + 1))
-  const addresses = []
-  for (let i = 0; i < count; i++) {
-    addresses.push(`addr-${i}-${Math.floor(rng() * 1e9).toString(16)}`)
-  }
-  return addresses
-}
 
 function fakeWalletUtil (address = 'addrA') {
   return {
@@ -38,7 +29,7 @@ test('memo-following JSON mode reports the following list verbatim', async () =>
 
   try {
     for (let i = 0; i < 120; i++) {
-      const following = randomAddresses()
+      const following = randomAddresses(rng)
       const walletUtil = fakeWalletUtil()
 
       class FakeMemoDb {

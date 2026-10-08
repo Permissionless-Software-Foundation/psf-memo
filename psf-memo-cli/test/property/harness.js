@@ -35,3 +35,16 @@ export async function forAll (gen, check, { samples = 500, label = 'property' } 
 export function intGen (rng, min, max) {
   return () => min + Math.floor(rng() * (max - min + 1))
 }
+
+// A random address-like string: `<prefix>-<index>-<hex>`.
+export function randomAddress (rng, prefix, index) {
+  return `${prefix}-${index}-${Math.floor(rng() * 1e9).toString(16)}`
+}
+
+// A random list of address-like strings, bounded by maxItems.
+export function randomAddresses (rng, { prefix = 'addr', maxItems = 10 } = {}) {
+  const count = Math.floor(rng() * (maxItems + 1))
+  const addresses = []
+  for (let i = 0; i < count; i++) addresses.push(randomAddress(rng, prefix, i))
+  return addresses
+}

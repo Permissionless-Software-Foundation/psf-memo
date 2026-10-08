@@ -381,24 +381,34 @@ describe('#memo-db', () => {
     })
   })
 
-  describe('getFollowing and getFollowers', () => {
-    it('requests /follow/following/:addr', async () => {
-      const { client, requestedUrl } = recordingClient({ followerAddr: 'addrA', following: ['addrB'] })
+  describe('follow list routes', () => {
+    const cases = [
+      {
+        method: 'getFollowing',
+        path: '/follow/following/addrA',
+        body: { followerAddr: 'addrA', following: ['addrB'] },
+        resultKey: 'following',
+        firstValue: 'addrB'
+      },
+      {
+        method: 'getFollowers',
+        path: '/follow/followers/addrA',
+        body: { followeeAddr: 'addrA', followers: ['addrD'] },
+        resultKey: 'followers',
+        firstValue: 'addrD'
+      }
+    ]
 
-      const result = await client.getFollowing('addrA')
+    for (const { method, path, body, resultKey, firstValue } of cases) {
+      it(`${method} requests ${path}`, async () => {
+        const { client, requestedUrl } = recordingClient(body)
 
-      assert.equal(requestedUrl().pathname, '/follow/following/addrA')
-      assert.deepEqual(result.following, ['addrB'])
-    })
+        const result = await client[method]('addrA')
 
-    it('requests /follow/followers/:addr', async () => {
-      const { client, requestedUrl } = recordingClient({ followeeAddr: 'addrA', followers: ['addrD'] })
-
-      const result = await client.getFollowers('addrA')
-
-      assert.equal(requestedUrl().pathname, '/follow/followers/addrA')
-      assert.deepEqual(result.followers, ['addrD'])
-    })
+        assert.equal(requestedUrl().pathname, path)
+        assert.deepEqual(result[resultKey], [firstValue])
+      })
+    }
 
     it('percent-encodes the address on both routes', async () => {
       const following = recordingClient({})

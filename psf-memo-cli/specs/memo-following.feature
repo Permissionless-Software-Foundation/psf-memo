@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=17e5891f90375eb271e1cc0c5c44f847d07c699e2fed23ded4ab37577cd15d9d
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T01:14:47.446349824Z","feature_name":"Memo Following","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-following.feature","background_hash":"461befba36011ef99d1c089632f5d51fa689a23a721219d47b50abfd20f4d2a3","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Following (R11a): the psf-memo-cli read command for the addresses the
 # signing wallet follows. It resolves the wallet (-n <wallet> or --wif <wif>,
 # shared F2 wallet-source), reads GET /follow/following/:addr from psf-memo-db,

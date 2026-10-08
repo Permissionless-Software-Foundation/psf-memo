@@ -13,7 +13,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seededRandom } from './harness.js'
+import { seededRandom, randomAddress, randomAddresses } from './harness.js'
 import {
   parseFollowingFlags,
   parseFollowersFlags,
@@ -24,21 +24,10 @@ import { UsageError } from '../../src/lib/reporter.js'
 
 const rng = seededRandom(20261101)
 
-function randomToken (prefix, index) {
-  return `${prefix}-${index}-${Math.floor(rng() * 1e9).toString(16)}`
-}
-
-function randomAddresses (maxItems = 12) {
-  const count = Math.floor(rng() * (maxItems + 1))
-  const addresses = []
-  for (let i = 0; i < count; i++) addresses.push(randomToken('addr', i))
-  return addresses
-}
-
 test('parseFollowingFlags passes through the wallet source or nulls it', () => {
   for (let i = 0; i < 400; i++) {
-    const name = rng() < 0.5 ? randomToken('wallet', i) : null
-    const wif = rng() < 0.5 ? randomToken('wif', i) : null
+    const name = rng() < 0.5 ? randomAddress(rng, 'wallet', i) : null
+    const wif = rng() < 0.5 ? randomAddress(rng, 'wif', i) : null
 
     const flags = parseFollowingFlags({ name, wif })
 
@@ -53,7 +42,7 @@ test('parseFollowingFlags passes through the wallet source or nulls it', () => {
 
 test('parseFollowersFlags resolves the address and rejects every missing value', () => {
   for (let i = 0; i < 300; i++) {
-    const addr = randomToken('addr', i)
+    const addr = randomAddress(rng, 'addr', i)
     assert.deepEqual(parseFollowersFlags({ addr }), { address: addr })
   }
 
@@ -67,7 +56,7 @@ test('parseFollowersFlags resolves the address and rejects every missing value',
 
 test('formatFollowListMessage counts, orders, and pluralizes the address list', () => {
   for (let i = 0; i < 400; i++) {
-    const addresses = randomAddresses()
+    const addresses = randomAddresses(rng, { maxItems: 12 })
     const label = rng() < 0.5 ? 'following' : 'follower'
     const message = formatFollowListMessage(addresses, label)
 

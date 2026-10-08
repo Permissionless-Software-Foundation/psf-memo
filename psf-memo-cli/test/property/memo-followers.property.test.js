@@ -10,31 +10,20 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seededRandom } from './harness.js'
+import { seededRandom, randomAddress, randomAddresses } from './harness.js'
 import MemoFollowers from '../../src/commands/memo-followers.js'
 import { captureStream } from '../support/capture.js'
 import { formatFollowListMessage } from '../../src/lib/follow-list.js'
 
 const rng = seededRandom(20261103)
 
-function randomAddress (prefix, index) {
-  return `${prefix}-${index}-${Math.floor(rng() * 1e9).toString(16)}`
-}
-
-function randomAddresses (maxItems = 10) {
-  const count = Math.floor(rng() * (maxItems + 1))
-  const addresses = []
-  for (let i = 0; i < count; i++) addresses.push(randomAddress('addr', i))
-  return addresses
-}
-
 test('memo-followers JSON mode reports the follower list verbatim', async () => {
   const originalExitCode = process.exitCode
 
   try {
     for (let i = 0; i < 120; i++) {
-      const followers = randomAddresses()
-      const followee = randomAddress('followee', i)
+      const followers = randomAddresses(rng)
+      const followee = randomAddress(rng, 'followee', i)
 
       class FakeMemoDb {
         async getFollowers () {
@@ -68,7 +57,7 @@ test('memo-followers forwards the followee address and rejects a missing one', a
 
   try {
     for (let i = 0; i < 120; i++) {
-      const followee = randomAddress('followee', i)
+      const followee = randomAddress(rng, 'followee', i)
       let requested = null
 
       class FakeMemoDb {
