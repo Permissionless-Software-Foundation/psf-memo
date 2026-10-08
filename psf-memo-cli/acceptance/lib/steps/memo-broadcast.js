@@ -181,6 +181,13 @@ const memoBroadcastHandlers = [
     }
   },
   {
+    name: 'push 2 is the hash160',
+    pattern: /^broadcast push 2 is the hash160 "(.+)"$/,
+    run (m, example, world) {
+      assertEqual(push(world, 2).toString('hex'), resolveParam(m[1], example), 'hash160 push')
+    }
+  },
+  {
     name: 'push 2 is the wire txid',
     pattern: /^broadcast push 2 is the referenced txid "(.+)" in little-endian wire order$/,
     run (m, example, world) {

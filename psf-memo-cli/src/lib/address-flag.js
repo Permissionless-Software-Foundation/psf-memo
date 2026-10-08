@@ -1,14 +1,15 @@
 /*
   Shared parsing for the required -a address flag.
 
-  Several Memo read commands identify a target address, so both the validation
-  and its exact usage message live here rather than being duplicated across
-  feature modules. The message is supplied by the caller because each command
-  names its own address role (profile, author, ...).
+  Several Memo commands identify a target address with -a. Read commands need
+  the address verbatim, so both the presence check and its exact usage message
+  live here. The follow/mute write commands need the address as its 20-byte
+  hash160 in display order, so the shared hash160 parser is here too.
 */
 
 // Local libraries
 import { UsageError } from './reporter.js'
+import { addressToHash160 } from './wire-encoding.js'
 
 // Resolve the required -a address. Throws the supplied UsageError message (exit
 // 2) when it is missing.
@@ -20,6 +21,21 @@ export function parseAddressFlag (flags = {}, message) {
   }
 
   return address
+}
+
+// Build an -a address parser that resolves the address to its 20-byte hash160
+// in display order (never byte-reversed). A missing address throws the supplied
+// message; a malformed address throws its decoder's usage error.
+export function addressHash160FlagParser (missingMessage) {
+  return function parseAddressHash160Flags (flags = {}) {
+    const address = parseAddressFlag(flags, missingMessage)
+
+    try {
+      return { hash160: addressToHash160(address) }
+    } catch (err) {
+      throw new UsageError(err.message)
+    }
+  }
 }
 
 // mutate4javascript-manifest-begin

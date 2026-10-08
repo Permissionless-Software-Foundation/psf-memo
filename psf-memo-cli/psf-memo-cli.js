@@ -39,6 +39,10 @@ import MemoPoll from './src/commands/memo-poll.js'
 import MemoName from './src/commands/memo-name.js'
 import MemoBio from './src/commands/memo-bio.js'
 import MemoAvatar from './src/commands/memo-avatar.js'
+import MemoFollow from './src/commands/memo-follow.js'
+import MemoUnfollow from './src/commands/memo-unfollow.js'
+import MemoMute from './src/commands/memo-mute.js'
+import MemoUnmute from './src/commands/memo-unmute.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -73,6 +77,10 @@ const memoPoll = new MemoPoll()
 const memoName = new MemoName()
 const memoBio = new MemoBio()
 const memoAvatar = new MemoAvatar()
+const memoFollow = new MemoFollow()
+const memoUnfollow = new MemoUnfollow()
+const memoMute = new MemoMute()
+const memoUnmute = new MemoUnmute()
 
 const program = new Command()
 
@@ -328,5 +336,37 @@ program.command('memo-avatar')
   .option('-u, --url <string>', 'avatar image URL to set')
   .option('--json', 'print the result as one JSON object')
   .action(memoAvatar.run)
+
+program.command('memo-follow')
+  .description('Broadcast a 0x6d06 Memo follow action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-a, --addr <string>', 'followee address')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoFollow.run)
+
+program.command('memo-unfollow')
+  .description('Broadcast a 0x6d07 Memo unfollow action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-a, --addr <string>', 'followee address')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoUnfollow.run)
+
+program.command('memo-mute')
+  .description('Broadcast a 0x6d16 Memo mute action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-a, --addr <string>', 'mutee address')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoMute.run)
+
+program.command('memo-unmute')
+  .description('Broadcast a 0x6d17 Memo unmute action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-a, --addr <string>', 'mutee address')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoUnmute.run)
 
 program.parseAsync(process.argv)

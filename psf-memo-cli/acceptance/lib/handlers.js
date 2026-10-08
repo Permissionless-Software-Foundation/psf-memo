@@ -33,6 +33,7 @@ import { memoPollHandlers } from './steps/memo-poll.js'
 import { memoNameHandlers } from './steps/memo-name.js'
 import { memoBioHandlers } from './steps/memo-bio.js'
 import { memoAvatarHandlers } from './steps/memo-avatar.js'
+import { addressCommandHandlers } from './steps/address-commands.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -66,6 +67,7 @@ const handlers = [
   ...memoNameHandlers,
   ...memoBioHandlers,
   ...memoAvatarHandlers,
+  ...addressCommandHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
