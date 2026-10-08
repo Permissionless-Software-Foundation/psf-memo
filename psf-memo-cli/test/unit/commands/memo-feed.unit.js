@@ -75,6 +75,29 @@ describe('#memo-feed command', () => {
     assert.equal(err.text(), '')
   })
 
+  it('echoes the service pagination instead of recomputing it from the page', async () => {
+    const out = captureStream()
+    const { FakeMemoDb } = fakeMemoDb({
+      result: page(
+        [{ txid: 'alpha', text: 'first memo', replyCount: 0, likeCount: 0 }],
+        { limit: 2, offset: 0, total: 10, hasMore: false }
+      )
+    })
+    const command = new MemoFeed({
+      MemoDbClass: FakeMemoDb,
+      envUrl: null,
+      stdout: out.stream,
+      stderr: captureStream().stream
+    })
+
+    const code = await command.run({ json: true, limit: '2', offset: '0' })
+
+    assert.equal(code, 0)
+    const payload = JSON.parse(out.text())
+    assert.equal(payload.posts.length, 1)
+    assert.deepEqual(payload.pagination, { limit: 2, offset: 0, total: 10, hasMore: false })
+  })
+
   it('passes limit, offset, and viewer through to the client', async () => {
     const out = captureStream()
     const { FakeMemoDb, calls } = fakeMemoDb({
