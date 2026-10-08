@@ -450,6 +450,30 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getRecentProfiles', () => {
+    it('requests the recent-profiles page with limit and offset', async () => {
+      const { client, requestedUrl } = recordingClient({ profiles: [{ addr: 'addrA' }], pagination: { total: 1 } })
+
+      const result = await client.getRecentProfiles({ limit: 2, offset: 4 })
+
+      const url = requestedUrl()
+      assert.equal(url.pathname, '/profile/recent')
+      assert.equal(url.searchParams.get('limit'), '2')
+      assert.equal(url.searchParams.get('offset'), '4')
+      assert.equal(result.profiles[0].addr, 'addrA')
+    })
+
+    it('defaults the page to 50/0', async () => {
+      const { client, requestedUrl } = recordingClient({ profiles: [] })
+
+      await client.getRecentProfiles()
+
+      const url = requestedUrl()
+      assert.equal(url.searchParams.get('limit'), '50')
+      assert.equal(url.searchParams.get('offset'), '0')
+    })
+  })
+
   describe('level name and profile-picture resources', () => {
     const resourceCases = [
       { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },

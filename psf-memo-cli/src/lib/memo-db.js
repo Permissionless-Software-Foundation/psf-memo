@@ -89,6 +89,13 @@ class MemoDb {
     return this.getJson(`/search?${toQuery({ q: query, limit, offset, viewer: viewer || null })}`)
   }
 
+  // GET /profile/recent. Returns one page of recently active profiles (address,
+  // bio text, display name, avatar URL, provenance txid, and the most recent
+  // qualifying post's block height and seen) with the service pagination.
+  async getRecentProfiles ({ limit = 50, offset = 0 } = {}) {
+    return this.getJson(`/profile/recent?${toQuery({ limit, offset })}`)
+  }
+
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })

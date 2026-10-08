@@ -76,6 +76,20 @@ const readResultHandlers = [
         offset: resolveParam(m[4], example)
       })
     }
+  },
+  {
+    name: 'command reported the profile addresses',
+    pattern: /^the command reported the profile addresses "(.+)"$/,
+    run (m, example, world) {
+      assertReportedField(world.readJson?.profiles, 'addr', resolveParam(m[1], example), 'profile addresses')
+    }
+  },
+  {
+    name: 'command reported no profiles',
+    pattern: /^the command reported 0 profiles$/,
+    run (m, example, world) {
+      assertEqual((world.readJson?.profiles || []).length, 0, 'profile count')
+    }
   }
 ]
 

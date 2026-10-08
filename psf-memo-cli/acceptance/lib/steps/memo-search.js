@@ -12,7 +12,7 @@
 // Local libraries
 import MemoSearch from '../../../src/commands/memo-search.js'
 import { runReadCommand, assertUsageError, assertReadCommandError } from '../read-command.js'
-import { assertReportedField, findReportedPost, findReportedItem } from './read-result.js'
+import { findReportedPost, findReportedItem } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // The default fixture: two posts and one profile, total 3.
@@ -115,26 +115,12 @@ const memoSearchHandlers = [
     }
   },
   {
-    name: 'command reported the profile addresses',
-    pattern: /^the command reported the profile addresses "(.+)"$/,
-    run (m, example, world) {
-      assertReportedField(world.readJson?.profiles, 'addr', resolveParam(m[1], example), 'profile addresses')
-    }
-  },
-  {
     name: 'command reported a profile with its name',
     pattern: /^the command reported the profile "([^"]+)" with name "([^"]+)"$/,
     run (m, example, world) {
       const addr = resolveParam(m[1], example)
       const profile = findReportedItem(world.readJson?.profiles, 'addr', addr, 'a reported profile')
       assertEqual(profile.name, resolveParam(m[2], example), 'profile name', { quote: true })
-    }
-  },
-  {
-    name: 'command reported no profiles',
-    pattern: /^the command reported 0 profiles$/,
-    run (m, example, world) {
-      assertEqual((world.readJson?.profiles || []).length, 0, 'profile count')
     }
   },
   {

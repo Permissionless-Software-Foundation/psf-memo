@@ -31,6 +31,7 @@ import MemoPosts from './src/commands/memo-posts.js'
 import MemoTopics from './src/commands/memo-topics.js'
 import MemoTopic from './src/commands/memo-topic.js'
 import MemoSearch from './src/commands/memo-search.js'
+import MemoProfiles from './src/commands/memo-profiles.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -57,6 +58,7 @@ const memoPosts = new MemoPosts()
 const memoTopics = new MemoTopics()
 const memoTopic = new MemoTopic()
 const memoSearch = new MemoSearch()
+const memoProfiles = new MemoProfiles()
 
 const program = new Command()
 
@@ -250,5 +252,13 @@ program.command('memo-search')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoSearch.run)
+
+program.command('memo-profiles')
+  .description('Read the recently active Memo profiles')
+  .option('-l, --limit <number>', 'maximum profiles to return (default 50)')
+  .option('-o, --offset <number>', 'profiles to skip (default 0)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoProfiles.run)
 
 program.parseAsync(process.argv)

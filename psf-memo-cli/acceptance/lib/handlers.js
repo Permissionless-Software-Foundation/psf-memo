@@ -25,6 +25,7 @@ import { memoPostsHandlers } from './steps/memo-posts.js'
 import { memoTopicsHandlers } from './steps/memo-topics.js'
 import { memoTopicHandlers } from './steps/memo-topic.js'
 import { memoSearchHandlers } from './steps/memo-search.js'
+import { memoProfilesHandlers } from './steps/memo-profiles.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -50,6 +51,7 @@ const handlers = [
   ...memoTopicsHandlers,
   ...memoTopicHandlers,
   ...memoSearchHandlers,
+  ...memoProfilesHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -82,6 +84,7 @@ async function createWorld () {
     topicPostsByRoom: {},
     searchPosts: [],
     searchProfiles: [],
+    recentProfiles: [],
     status: null,
     nameStore: {},
     profileStore: {},
@@ -216,6 +219,19 @@ async function createWorld () {
         hasMore: offset + posts.length + profiles.length < total
       }
       return jsonResponse({ posts, profiles, pagination }, 200)
+    }
+
+    if (world.lastRequest.pathname === '/profile/recent') {
+      const limit = Number.parseInt(world.lastRequest.searchParams.get('limit') || '50', 10)
+      const offset = Number.parseInt(world.lastRequest.searchParams.get('offset') || '0', 10)
+      const profiles = world.recentProfiles.slice(offset, offset + limit)
+      const pagination = {
+        limit,
+        offset,
+        total: world.recentProfiles.length,
+        hasMore: offset + profiles.length < world.recentProfiles.length
+      }
+      return jsonResponse({ profiles, pagination }, 200)
     }
 
     if (world.lastRequest.pathname === '/posts/recent') {
