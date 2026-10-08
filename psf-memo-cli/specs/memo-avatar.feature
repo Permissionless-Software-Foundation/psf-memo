@@ -89,7 +89,7 @@ Feature: Memo Avatar
     And the avatar URL is "https://example.com/avatar.png"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-avatar command runs
-    Then the memo-avatar command reported the error "<error>"
+    Then the memo-avatar command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |

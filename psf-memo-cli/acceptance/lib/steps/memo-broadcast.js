@@ -10,7 +10,7 @@
 // Local libraries
 import { broadcastMemo } from '../../../src/lib/memo-broadcast.js'
 import { txidToWireBytes } from '../../../src/lib/wire-encoding.js'
-import { assertEqual, resolveParam, resolveUrlTemplate } from '../step-support.js'
+import { assertEqual, resolveParam, resolveTemplate, resolveUrlTemplate } from '../step-support.js'
 import { createRecordingWallet } from '../wallet-support.js'
 
 // Broadcast the configured action, recording either the result or the error.
@@ -233,7 +233,7 @@ const memoBroadcastHandlers = [
     name: 'the reported error',
     pattern: /^the reported error is "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.error?.message, resolveParam(m[1], example), 'error', { quote: true })
+      assertEqual(world.error?.message, resolveTemplate(m[1], example), 'error', { quote: true })
     }
   }
 ]

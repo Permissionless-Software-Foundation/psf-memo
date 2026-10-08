@@ -1807,7 +1807,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `c46a728` (`Record cli-topic-writes architect review and verification`).
+Current `master` HEAD: `0541746` (`Record cli-command-reference architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1859,9 +1859,10 @@ and the write commands **W1 `memo-post`**, **W2 `memo-reply`**, **W3
 **W7 `memo-follow`/`memo-unfollow`**, **W8 `memo-mute`/`memo-unmute`**,
 **W9 `memo-topic-post`**, and **W10
 `memo-topic-follow`/`memo-topic-unfollow`** are done. The poll writes
-**W11–W13** were dropped by user decision (2026-10-08), so the remaining
-suggested work is the cross-cutting hardening series **X1–X7** in
-`psf-memo-cli/dev-docs/feature-backlog.md`. The earlier client direction
-(front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`.
+**W11–W13** were dropped by user decision (2026-10-08). Cross-cutting item
+**X1 (command reference docs)** is now DONE (merged at `0541746`), so the
+remaining suggested work is the cross-cutting hardening series **X2–X7** in
+`psf-memo-cli/dev-docs/feature-backlog.md`, starting with **X2 (error
+surfacing)**. The earlier client direction (front-end improvements to
+`psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

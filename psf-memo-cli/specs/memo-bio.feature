@@ -88,7 +88,7 @@ Feature: Memo Bio
     And the bio is "hello"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-bio command runs
-    Then the memo-bio command reported the error "<error>"
+    Then the memo-bio command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |

@@ -182,5 +182,44 @@ describe('#memo-broadcast', () => {
       assert.equal(result.txid, 'txid-wrapped')
       assert.equal(calls.scripts.length, 1)
     })
+
+    it('prefixes a rejected broadcast while preserving the wallet error', async () => {
+      const wallet = {
+        async initialize () {},
+        async sendOpReturn () {
+          throw new Error('insufficient funds')
+        }
+      }
+
+      let error
+      try {
+        await broadcastMemo({ wallet, prefix: '6d02', fields: ['hello'] })
+      } catch (err) {
+        error = err
+      }
+
+      assert.instanceOf(error, Error)
+      assert.equal(error.message, 'Failed to broadcast: insufficient funds')
+    })
+
+    it('does not prefix an error detected before the broadcast', async () => {
+      const wallet = {
+        async initialize () {
+          throw new Error('wallet file missing')
+        },
+        async sendOpReturn () {
+          throw new Error('should not broadcast')
+        }
+      }
+
+      let error
+      try {
+        await broadcastMemo({ wallet, prefix: '6d02', fields: ['hello'] })
+      } catch (err) {
+        error = err
+      }
+
+      assert.equal(error.message, 'wallet file missing')
+    })
   })
 })

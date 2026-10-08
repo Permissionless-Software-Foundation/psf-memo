@@ -88,7 +88,7 @@ Feature: Memo Post
     And the memo text is "hello memo"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-post command runs
-    Then the memo-post command reported the error "<error>"
+    Then the memo-post command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error              |

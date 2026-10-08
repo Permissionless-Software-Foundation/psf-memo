@@ -35,6 +35,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI command reference (`cli-command-reference`, 2026-10-08):** X1 of the
+  `psf-memo-cli` cross-cutting series — documentation only. `README.md` and
+  `src/commands/README.md` now document all 30 `memo-*` commands (17 reads, 13
+  writes) with flags/defaults, the `{ message, ...data }` JSON shape, exit codes
+  `0/1/2`, the `-n`/`--wif` wallet source, `--db-url`, and the `pagination`
+  contract; `.env.example` documents `MEMO_DB_URL`. No Gherkin (docs-only).
+  Spec: `psf-memo-cli/dev-docs/command-reference.md`. Merged to `master` at
+  `0541746` (fast-forward; architect verification record
+  `docs/reviews/cli-command-reference-verification.json` names the verified tree
+  `81b160ec42`, and the later `0541746` adds only records, so it is valid for
+  the merged tree). `verify.sh cli` pass 4/4 at `81b160ec42` (unit 568/0,
+  property 110/0, acceptance all 35 suites, lint ok); language mutation N/A (no
+  code change). Independent check after merge: all 30 `memo-*` commands present
+  in both docs. Architect summary:
+  `docs/reviews/cli-command-reference-summary.md`.
+
 - **CLI topic writes (`cli-topic-writes`, 2026-10-08):** W9/W10 of the
   `psf-memo-cli` Memo-protocol backlog — the topic message and topic follow
   writes. Added `defineFieldsWriteCommand` (`src/lib/write-command.js`, now also
@@ -1429,10 +1445,12 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ## Next up: TBD
 
-Active work has moved to the new `psf-memo-cli` Memo-protocol backlog:
-`psf-memo-cli/dev-docs/feature-backlog.md` (F1, F5, F4, and F2/F3 done — the CLI
-foundation is complete; next is R1 `memo-feed`). The earlier client direction —
-front-end improvements to
+Active work is the `psf-memo-cli` Memo-protocol backlog:
+`psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
+commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
+decision) are done, and X1 (command reference docs) is now complete. The
+remaining cross-cutting hardening items are X2–X7; the suggested next item is
+X2 (error surfacing). The earlier client direction — front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next
 feature.

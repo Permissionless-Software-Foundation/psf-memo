@@ -75,14 +75,23 @@ export function attachMultiPushOpReturn (wallet) {
 }
 
 // Refresh the wallet's UTXOs and broadcast an ordered list of fields. Returns
-// the txid and its block-explorer link.
+// the txid and its block-explorer link. A wallet or node rejection during the
+// broadcast is reported as `Failed to broadcast: <wallet error>` so the caller
+// exits 1 with the wallet's real message preserved; an error raised before the
+// broadcast (for example a UTXO refresh failure) keeps its own message.
 export async function broadcastMemo ({ wallet, prefix, fields, bchOutput = [] }) {
   await wallet.initialize()
   attachMultiPushOpReturn(wallet)
 
   const normalized = fields.map(toPushBuffer)
   const msg = normalized.length === 1 ? normalized[0] : normalized
-  const txid = await wallet.sendOpReturn(msg, prefix, bchOutput)
+
+  let txid
+  try {
+    txid = await wallet.sendOpReturn(msg, prefix, bchOutput)
+  } catch (err) {
+    throw new Error(`Failed to broadcast: ${err.message}`, { cause: err })
+  }
 
   return { txid, explorerUrl: `${MEMO_EXPLORER_URL}${txid}` }
 }

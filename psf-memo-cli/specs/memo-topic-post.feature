@@ -106,7 +106,7 @@ Feature: Memo Topic Post
     And the topic message is "hello topic"
     And the signing wallet rejects the broadcast with the error "<error>"
     When the memo-topic-post command runs
-    Then the memo-topic-post command reported the error "<error>"
+    Then the memo-topic-post command reported the error "Failed to broadcast: <error>"
 
     Examples:
       | error                |
