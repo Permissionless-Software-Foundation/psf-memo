@@ -10,16 +10,11 @@
 */
 
 const { truncateAddr } = require('../util')
-
-const PROFILE_PATH_PREFIX = '/profile'
+const { profilePath, PROFILE_PATH_PREFIX } = require('./profile-path')
 
 // Column headers, left to right. Account is first; the other columns preserve
 // the pre-existing order, with Follow replacing the former TXID column.
 const RECENT_PROFILES_TABLE_HEADERS = ['Account', 'Address', 'Bio', 'Block', 'Seen', 'Follow']
-
-function profilePath (addr) {
-  return `${PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
-}
 
 // The name to show in the account cell: the display name when present, the
 // truncated address otherwise.

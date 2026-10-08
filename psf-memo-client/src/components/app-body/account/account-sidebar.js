@@ -2,16 +2,18 @@
   Account page sidebar.
 
   Mirrors the profile page sidebar for the authenticated account: the avatar,
-  the bio (or a no-bio message), the copyable BCH address, and the SLP token
-  icons, in that order. Written in plain React.createElement style so the same
-  module can be used by the JSX account page and by the acceptance adapter that
-  renders HTML under Node.
+  the bio (or a no-bio message), a Profile link to the account's own
+  /profile/:addr page, the copyable BCH address, and the SLP token icons, in
+  that order. Written in plain React.createElement style so the same module can
+  be used by the JSX account page and by the acceptance adapter that renders
+  HTML under Node.
 */
 
 const React = require('react')
 const AccountAvatar = require('../../account/account-avatar')
 const ProfileAddress = require('../profile/profile-address')
 const ProfileTokenIcons = require('../profile/profile-token-icons')
+const { profilePath } = require('../../../services/profile-path')
 
 const NO_BIO_TEXT = 'No profile text'
 
@@ -21,6 +23,7 @@ function AccountSidebar ({
   bio = '',
   copied = false,
   onCopyAddress,
+  onProfileClick,
   tokens = []
 }) {
   const sections = [
@@ -38,6 +41,24 @@ function AccountSidebar ({
     ),
     React.createElement(
       'div',
+      { key: 'profile', 'data-section': 'profile', className: 'account-sidebar-profile' },
+      React.createElement(
+        'a',
+        {
+          className: 'account-sidebar-profile-link',
+          href: profilePath(addr),
+          onClick: (event) => {
+            if (onProfileClick) {
+              event.preventDefault()
+              onProfileClick()
+            }
+          }
+        },
+        'Profile'
+      )
+    ),
+    React.createElement(
+      'div',
       { key: 'address', 'data-section': 'address', className: 'account-sidebar-address' },
       React.createElement(ProfileAddress, { address: addr, copied, onClick: onCopyAddress })
     ),
@@ -52,6 +73,7 @@ function AccountSidebar ({
 }
 
 AccountSidebar.NO_BIO_TEXT = NO_BIO_TEXT
+AccountSidebar.profilePath = profilePath
 
 module.exports = AccountSidebar
 

@@ -2033,9 +2033,9 @@ const handlers = [
   },
   {
     name: 'account page shows sidebar sections in order',
-    pattern: /^the account page shows the sidebar sections in the order avatar, bio, address, tokens$/,
+    pattern: /^the account page shows the sidebar sections in the order avatar, bio, profile, address, tokens$/,
     run (m, example, world) {
-      const expected = ['avatar', 'bio', 'address', 'tokens']
+      const expected = ['avatar', 'bio', 'profile', 'address', 'tokens']
       const actual = world.accountPage.getSidebarSections()
       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
         throw new Error(`Expected the account sidebar sections ${expected.join(', ')}, got ${actual.join(', ')}.`)
@@ -2048,6 +2048,27 @@ const handlers = [
       if (JSON.stringify(order) !== JSON.stringify(expected)) {
         throw new Error(`The rendered account sidebar sections are ${order.join(', ')}, expected ${expected.join(', ')}.`)
       }
+    }
+  },
+  {
+    name: 'account sidebar shows a Profile link to a path',
+    pattern: /^the account sidebar shows a Profile link to (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      const html = renderAccountSidebar({ addr: world.accountPage.getAddress() })
+      if (!html.includes(`href="${expected}"`)) {
+        throw new Error(`The rendered account sidebar does not link to ${expected}.`)
+      }
+      if (!html.includes('account-sidebar-profile-link')) {
+        throw new Error('The rendered account sidebar does not show a Profile link.')
+      }
+    }
+  },
+  {
+    name: 'click account sidebar Profile link',
+    pattern: /^I click the account sidebar Profile link$/,
+    run (m, example, world) {
+      world.accountPage.clickProfileLink()
     }
   },
   {

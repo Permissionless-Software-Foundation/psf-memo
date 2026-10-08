@@ -9,15 +9,10 @@
 */
 
 const { truncateAddr } = require('../util')
+const { profilePath, PROFILE_PATH_PREFIX } = require('./profile-path')
 
-const PROFILE_PATH_PREFIX = '/profile'
 const VIEW_POST_LABEL = 'View Post'
 const VIEW_POST_TYPES = ['like', 'reply']
-
-// The profile path for an actor address, with the address URL-encoded.
-function profilePath (addr) {
-  return `${PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
-}
 
 // The name to show for an actor: the Memo display name when present, and the
 // truncated address otherwise.

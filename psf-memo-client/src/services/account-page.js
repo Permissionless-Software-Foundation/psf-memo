@@ -17,13 +17,14 @@
 
 const { setAddressCopied, scheduleAddressCopyReset, clearAddressCopyTimer } = require('./address-copy')
 const { loadTokenIcons: loadTokenIconsFor, loadTokenData: loadTokenDataFor } = require('./token-icon-loader')
+const { profilePath, PROFILE_PATH_PREFIX } = require('./profile-path')
 
 const SET_NAME_PATH = '/memo/set-name'
 const SET_BIO_PATH = '/memo/set-bio'
 const SET_AVATAR_URL_PATH = '/memo/set-avatar-url'
 const ACCOUNT_PATH = '/account'
 const ADDRESS_COPY_CONFIRMATION_MS = 1500
-const SIDEBAR_SECTIONS = ['avatar', 'bio', 'address', 'tokens']
+const SIDEBAR_SECTIONS = ['avatar', 'bio', 'profile', 'address', 'tokens']
 const CONTENT_SECTIONS = ['controls', 'posts']
 const NO_POSTS_MESSAGE = 'You have no posts yet.'
 const TRUNCATE_LENGTH = 24
@@ -134,9 +135,26 @@ class AccountPage {
     }))
   }
 
-  // The sidebar sections in display order: avatar, bio, address, tokens.
+  // The sidebar sections in display order: avatar, bio, profile link,
+  // address, tokens.
   getSidebarSections () {
     return SIDEBAR_SECTIONS.slice()
+  }
+
+  // The /profile/:addr path for the authenticated account, or null without an
+  // address. The address is URL-encoded for use in a route.
+  getProfilePath () {
+    const addr = this.getAddress()
+    return addr ? profilePath(addr) : null
+  }
+
+  // Click the account sidebar Profile link: navigate to the account's own
+  // profile page.
+  clickProfileLink () {
+    const path = this.getProfilePath()
+    if (path) {
+      this.navigate(path)
+    }
   }
 
   // The account page content sections in display order: the Set Name / Set Bio
@@ -278,6 +296,7 @@ AccountPage.SET_AVATAR_URL_PATH = SET_AVATAR_URL_PATH
 AccountPage.ACCOUNT_PATH = ACCOUNT_PATH
 AccountPage.ADDRESS_COPY_CONFIRMATION_MS = ADDRESS_COPY_CONFIRMATION_MS
 AccountPage.SIDEBAR_SECTIONS = SIDEBAR_SECTIONS
+AccountPage.PROFILE_PATH_PREFIX = PROFILE_PATH_PREFIX
 AccountPage.CONTENT_SECTIONS = CONTENT_SECTIONS
 AccountPage.NO_POSTS_MESSAGE = NO_POSTS_MESSAGE
 AccountPage.CONTROL_DESCRIPTIONS = CONTROL_DESCRIPTIONS
