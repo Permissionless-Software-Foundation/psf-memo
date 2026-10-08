@@ -27,8 +27,7 @@ import { createRecordingWallet } from '../wallet-support.js'
 import {
   assertEqual,
   resolveParam,
-  resolveTemplate,
-  resolveUrlTemplate
+  resolveTemplate
 } from '../step-support.js'
 
 function lookupWallet (world, key, kind) {
@@ -133,7 +132,7 @@ const broadcastCommandHandlers = [
     name: 'command reported the explorer link',
     pattern: /^the command reported the explorer link "(.+)"$/,
     run (m, example, world) {
-      assertEqual(world.resultJson?.explorerUrl, resolveUrlTemplate(m[1], example), 'explorer link')
+      assertEqual(world.resultJson?.explorerUrl, resolveTemplate(m[1], example), 'explorer link')
     }
   },
   {

@@ -28,9 +28,6 @@ export function resolveTemplate (template, example) {
   })
 }
 
-// Backwards-compatible alias for URL-shaped templates.
-export const resolveUrlTemplate = resolveTemplate
-
 // Assert a value equals the expected value, with a consistent failure message.
 // `quote` wraps both rendered values in double quotes for text assertions.
 export function assertEqual (actual, expected, label, { quote = false } = {}) {
