@@ -126,6 +126,133 @@ with the public address.
 - Use the `-s` flag to specify the signature to be verified (required).
 
 
+## Memo Protocol Commands
+
+The `memo-*` commands read from and write to the Memo protocol. Reads go
+through the read-only `psf-memo-db` REST API; writes broadcast BCH
+OP_RETURN transactions through the wallet. Every command is
+non-interactive and machine-readable so an agent can chain commands and parse
+results without screen-scraping.
+
+### Shared contracts
+
+- Invocation: `node psf-memo-cli.js <command> [flags]`.
+- `--json` prints exactly one JSON object to stdout; without it, a
+  human-readable summary is printed.
+- Success JSON: `{ "message": "<summary>", ...data }` — `message` plus the
+  command's data fields.
+- Failure JSON: `{ "error": "<message>" }`, printed to stderr. Diagnostics
+  never go to stdout.
+- Exit codes: `0` success, `1` runtime/not-found failure, `2` usage (missing or
+  invalid required flag). A broadcast failure surfaces the wallet's real error
+  (exit `1`), never a generic message.
+- Wallet source: wallet-relative commands require exactly one of
+  `-n, --name <wallet>` or `--wif <wif>`; neither or both is exit `2`.
+- DB endpoint: `--db-url <url>` overrides `MEMO_DB_URL`; the default is the
+  production endpoint `https://memo-api.fullstackcash.net` (local dev:
+  `http://localhost:5021`).
+- Page flags: `-l, --limit <number>` (default `50`) and `-o, --offset <number>`
+  (default `0`). The service pagination object
+  `{ limit, offset, total, hasMore }` is passed through unchanged. `total` is
+  capped at `500`, so do not treat it as an exact count beyond the cap.
+- Read-only safety: read commands do not touch a wallet unless viewer-relative
+  data is requested, so a missing wallet file does not break `memo-feed` or
+  `memo-status`.
+
+### Memo Read Commands
+
+Read commands never broadcast. `--db-url <url>` and `--json` are optional on
+all of them.
+
+| Command | Required flags | Optional flags | JSON data fields |
+|---------|----------------|----------------|------------------|
+| `memo-feed` | — | `-l/--limit` (50), `-o/--offset` (0), `--viewer` | `posts`, `pagination` |
+| `memo-thread` | `-t/--txid` | — | `post` |
+| `memo-get-post` | `-t/--txid` | — | `post` |
+| `memo-status` | — | — | `status` |
+| `memo-identity` | `-n/--name` or `--wif` | — | `address`, `bchBalance`, `tokens`, `name`, `bio`, `avatar` |
+| `memo-wait` | `-t/--txid` | `--timeout` (60000 ms), `--interval` (5000 ms) | `post` |
+| `memo-notifications` | `-n/--name` or `--wif` | `-l/--limit` (50), `-o/--offset` (0) | `notifications`, `pagination` |
+| `memo-profile` | `-a/--addr` | `--viewer`, `-l/--limit` (50), `-o/--offset` (0) | `address`, `name`, `bio`, `avatar`, `following`, `posts`, `pagination` |
+| `memo-posts` | `-a/--addr` | `-l/--limit` (50), `-o/--offset` (0) | `posts`, `pagination` |
+| `memo-topics` | — | `-l/--limit` (50), `-o/--offset` (0) | `topics`, `pagination` |
+| `memo-topic` | `-r/--room` | `--viewer`, `-l/--limit` (50), `-o/--offset` (0) | `posts`, `pagination` |
+| `memo-search` | `-q/--query` | `--viewer`, `-l/--limit` (50), `-o/--offset` (0) | `posts`, `profiles`, `pagination` |
+| `memo-profiles` | — | `-l/--limit` (50), `-o/--offset` (0) | `profiles`, `pagination` |
+| `memo-following` | `-n/--name` or `--wif` | — | `following` |
+| `memo-followers` | `-a/--addr` | — | `followers` |
+| `memo-muted` | `-n/--name` or `--wif` | — | `muted` |
+| `memo-poll` | `-t/--txid` | — | `poll` |
+
+`tokens` entries are `{ ticker, tokenId, qty }`.
+
+Examples (one per command):
+
+```sh
+node psf-memo-cli.js memo-feed --limit 10 --json
+node psf-memo-cli.js memo-thread -t <txid> --json
+node psf-memo-cli.js memo-get-post -t <txid> --json
+node psf-memo-cli.js memo-status --json
+node psf-memo-cli.js memo-identity -n wallet1 --json
+node psf-memo-cli.js memo-wait -t <txid> --timeout 60000 --interval 5000 --json
+node psf-memo-cli.js memo-notifications -n wallet1 --limit 10 --json
+node psf-memo-cli.js memo-profile -a <addr> --viewer <addr> --json
+node psf-memo-cli.js memo-posts -a <addr> --limit 10 --json
+node psf-memo-cli.js memo-topics --limit 10 --json
+node psf-memo-cli.js memo-topic -r general --viewer <addr> --json
+node psf-memo-cli.js memo-search -q memo --limit 10 --json
+node psf-memo-cli.js memo-profiles --limit 10 --json
+node psf-memo-cli.js memo-following -n wallet1 --json
+node psf-memo-cli.js memo-followers -a <addr> --json
+node psf-memo-cli.js memo-muted -n wallet1 --json
+node psf-memo-cli.js memo-poll -t <txid> --json
+```
+
+### Memo Write Commands
+
+Every write command also requires a wallet source (`-n/--name` or `--wif`),
+accepts `--json`, and reports `{ txid, explorerUrl }` as JSON data. The
+explorer link is `https://bch.loping.net/tx/<txid>`.
+
+| Command | Action byte | Required flags | Optional flags | Protocol limit |
+|---------|-------------|----------------|----------------|----------------|
+| `memo-post` | `0x6d02` | `-m/--memo` | — | ≤ 217 UTF-16 code units |
+| `memo-reply` | `0x6d03` | `-t/--txid`, `-m/--memo` | — | 32-byte LE txid + ≤ 184 UTF-8 bytes |
+| `memo-like` | `0x6d04` | `-t/--txid` | `--tip`, `--author` | 32-byte LE txid; `--tip` 600–100000000 sats, `--author` required with `--tip` |
+| `memo-name` | `0x6d01` | `-m/--memo` | — | ≤ 77 UTF-8 bytes |
+| `memo-bio` | `0x6d05` | `-m/--memo` | — | ≤ 217 UTF-8 bytes |
+| `memo-avatar` | `0x6d0a` | `-u/--url` | — | ≤ 217 UTF-8 bytes |
+| `memo-follow` | `0x6d06` | `-a/--addr` | — | 20-byte hash160 (display order, not reversed) |
+| `memo-unfollow` | `0x6d07` | `-a/--addr` | — | 20-byte hash160 |
+| `memo-mute` | `0x6d16` | `-a/--addr` | — | 20-byte hash160 |
+| `memo-unmute` | `0x6d17` | `-a/--addr` | — | 20-byte hash160 |
+| `memo-topic-post` | `0x6d0c` | `-r/--room`, `-m/--memo` | — | room + message ≤ 214 UTF-8 bytes combined |
+| `memo-topic-follow` | `0x6d0d` | `-r/--room` | — | topic room name |
+| `memo-topic-unfollow` | `0x6d0e` | `-r/--room` | — | topic room name |
+
+Write commands that reference a transaction (`memo-reply`, `memo-like`) write
+the txid in little-endian wire order. All multi-field writes are one OP_RETURN
+push per field.
+
+Examples (one per command):
+
+```sh
+node psf-memo-cli.js memo-post -n wallet1 -m "Hello Memo" --json
+node psf-memo-cli.js memo-reply -n wallet1 -t <txid> -m "Nice post" --json
+node psf-memo-cli.js memo-like -n wallet1 -t <txid> --tip 1000 --author <addr> --json
+node psf-memo-cli.js memo-name -n wallet1 -m "Alice" --json
+node psf-memo-cli.js memo-bio -n wallet1 -m "Memo fan" --json
+node psf-memo-cli.js memo-avatar -n wallet1 -u https://example.com/a.png --json
+node psf-memo-cli.js memo-follow -n wallet1 -a <addr> --json
+node psf-memo-cli.js memo-unfollow -n wallet1 -a <addr> --json
+node psf-memo-cli.js memo-mute -n wallet1 -a <addr> --json
+node psf-memo-cli.js memo-unmute -n wallet1 -a <addr> --json
+node psf-memo-cli.js memo-topic-post -n wallet1 -r general -m "Hello topic" --json
+node psf-memo-cli.js memo-topic-follow -n wallet1 -r general --json
+node psf-memo-cli.js memo-topic-unfollow -n wallet1 -r general --json
+```
+
+
 ## Testing and Quality
 
 - Run unit tests with coverage: `npm test`
