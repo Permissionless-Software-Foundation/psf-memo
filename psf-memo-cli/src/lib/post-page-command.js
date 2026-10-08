@@ -24,3 +24,7 @@ export async function runPostsPageCommand ({ command, flags, readMethod }) {
     })
   })
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T00:47:49.868Z","module_hash":"075efc1ee1b49c591f8c1b127e234c6465b70d2613c8f584cf286795ca6e1e6b","functions":[{"id":"func/runPostsPageCommand","name":"runPostsPageCommand","line":16,"end_line":26,"hash":"f60a55cf3d90144b220a69429c398c8b866550a9fa223b635240d35f148ea968"}]}
+// mutate4javascript-manifest-end

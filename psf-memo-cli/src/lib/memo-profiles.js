@@ -39,3 +39,7 @@ export function formatProfilesMessage (profiles = [], pagination = {}) {
     pagination
   )
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T00:48:41.928Z","module_hash":"ae76c855d5c98af4fb270de4baeba4a7c2a598925d09d67827cca223858257e4","functions":[{"id":"func/parseProfilesFlags","name":"parseProfilesFlags","line":19,"end_line":24,"hash":"eed8a1334afa918a7371ea28a6bb874fd0ae41dd21747eea65755ccf8bf21a82"},{"id":"func/formatProfilesMessage","name":"formatProfilesMessage","line":30,"end_line":41,"hash":"f95b9b2a13fe4196e3364119da36fc5d12ae73edc0bafc49521e8248a648167f"}]}
+// mutate4javascript-manifest-end

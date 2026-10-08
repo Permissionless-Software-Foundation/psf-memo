@@ -138,7 +138,8 @@ describe('#memo-db', () => {
   describe('default page', () => {
     const cases = [
       { method: 'getRecentPosts', call: (client) => client.getRecentPosts() },
-      { method: 'getTopics', call: (client) => client.getTopics() }
+      { method: 'getTopics', call: (client) => client.getTopics() },
+      { method: 'getRecentProfiles', call: (client) => client.getRecentProfiles() }
     ]
 
     for (const { method, call } of cases) {
@@ -380,18 +381,37 @@ describe('#memo-db', () => {
     })
   })
 
-  describe('getTopics', () => {
-    it('requests the topic page with limit and offset', async () => {
-      const { client, requestedUrl } = recordingClient({ topics: [{ room: 'memo' }], pagination: { total: 1 } })
+  describe('paged list routes', () => {
+    const cases = [
+      {
+        method: 'getTopics',
+        call: (client) => client.getTopics({ limit: 2, offset: 4 }),
+        path: '/topics',
+        body: { topics: [{ room: 'memo' }], pagination: { total: 1 } },
+        assertBody: (result) => assert.equal(result.topics[0].room, 'memo')
+      },
+      {
+        method: 'getRecentProfiles',
+        call: (client) => client.getRecentProfiles({ limit: 2, offset: 4 }),
+        path: '/profile/recent',
+        body: { profiles: [{ addr: 'addrA' }], pagination: { total: 1 } },
+        assertBody: (result) => assert.equal(result.profiles[0].addr, 'addrA')
+      }
+    ]
 
-      const result = await client.getTopics({ limit: 2, offset: 4 })
+    for (const { method, call, path, body, assertBody } of cases) {
+      it(`${method} requests the page with limit and offset`, async () => {
+        const { client, requestedUrl } = recordingClient(body)
 
-      const url = requestedUrl()
-      assert.equal(url.pathname, '/topics')
-      assert.equal(url.searchParams.get('limit'), '2')
-      assert.equal(url.searchParams.get('offset'), '4')
-      assert.equal(result.topics[0].room, 'memo')
-    })
+        const result = await call(client)
+
+        const url = requestedUrl()
+        assert.equal(url.pathname, path)
+        assert.equal(url.searchParams.get('limit'), '2')
+        assert.equal(url.searchParams.get('offset'), '4')
+        assertBody(result)
+      })
+    }
   })
 
   describe('getTopicPosts', () => {
@@ -447,30 +467,6 @@ describe('#memo-db', () => {
       assert.equal(url.searchParams.get('limit'), '50')
       assert.equal(url.searchParams.get('offset'), '0')
       assert.equal(url.searchParams.get('viewer'), 'bitcoincash:qviewer')
-    })
-  })
-
-  describe('getRecentProfiles', () => {
-    it('requests the recent-profiles page with limit and offset', async () => {
-      const { client, requestedUrl } = recordingClient({ profiles: [{ addr: 'addrA' }], pagination: { total: 1 } })
-
-      const result = await client.getRecentProfiles({ limit: 2, offset: 4 })
-
-      const url = requestedUrl()
-      assert.equal(url.pathname, '/profile/recent')
-      assert.equal(url.searchParams.get('limit'), '2')
-      assert.equal(url.searchParams.get('offset'), '4')
-      assert.equal(result.profiles[0].addr, 'addrA')
-    })
-
-    it('defaults the page to 50/0', async () => {
-      const { client, requestedUrl } = recordingClient({ profiles: [] })
-
-      await client.getRecentProfiles()
-
-      const url = requestedUrl()
-      assert.equal(url.searchParams.get('limit'), '50')
-      assert.equal(url.searchParams.get('offset'), '0')
     })
   })
 
