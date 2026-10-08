@@ -101,8 +101,7 @@ const memoIdentityHandlers = [
         world,
         MemoIdentity,
         'identity',
-        { ...world.identitySource },
-        { walletUtil: world.walletUtil }
+        { ...world.identitySource }
       )
     }
   },

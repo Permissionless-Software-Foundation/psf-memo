@@ -27,8 +27,7 @@ async function runNotifications (world, flags) {
     world,
     MemoNotifications,
     'notifications',
-    { ...world.notifSource, ...flags },
-    { walletUtil: world.walletUtil }
+    { ...world.notifSource, ...flags }
   )
 }
 

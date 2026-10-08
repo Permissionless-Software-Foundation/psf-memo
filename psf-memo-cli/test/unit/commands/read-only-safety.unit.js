@@ -23,19 +23,15 @@ import { captureStream } from '../../support/capture.js'
 // addresses, rejecting any name it does not know.
 function recordingWalletResolver (wallets = {}) {
   const calls = []
-  const wallet = (address) => ({ walletInfo: { cashAddress: address } })
+  const resolve = (key, kind) => {
+    calls.push(key)
+    if (!(key in wallets)) throw new Error(`Unknown ${kind} ${key}`)
+    return { walletInfo: { cashAddress: wallets[key] } }
+  }
   return {
     calls,
-    instanceWallet: async (name) => {
-      calls.push(name)
-      if (!(name in wallets)) throw new Error(`Unknown wallet ${name}`)
-      return wallet(wallets[name])
-    },
-    instanceWalletFromWif: async (wif) => {
-      calls.push(wif)
-      if (!(wif in wallets)) throw new Error(`Unknown wif ${wif}`)
-      return wallet(wallets[wif])
-    }
+    instanceWallet: async (name) => resolve(name, 'wallet'),
+    instanceWalletFromWif: async (wif) => resolve(wif, 'wif')
   }
 }
 
@@ -94,6 +90,18 @@ function readCommand (CommandClass, extra = {}) {
   return { command, out, err }
 }
 
+// Run a viewer-independent read with a resolver available and assert it never
+// touched the wallet boundary.
+async function assertNeverResolvesWallet (CommandClass, flags = { json: true }) {
+  const resolver = recordingWalletResolver()
+  const { command } = readCommand(CommandClass, { walletUtil: resolver })
+
+  const code = await command.run(flags)
+
+  assert.equal(code, 0)
+  assert.deepEqual(resolver.calls, [])
+}
+
 describe('#read-only safety', () => {
   let originalExitCode
 
@@ -106,34 +114,16 @@ describe('#read-only safety', () => {
   })
 
   it('memo-feed never resolves a wallet, even when a resolver is available', async () => {
-    const resolver = recordingWalletResolver()
-    const { command } = readCommand(MemoFeed, { walletUtil: resolver })
-
-    const code = await command.run({ json: true })
-
-    assert.equal(code, 0)
-    assert.deepEqual(resolver.calls, [])
+    await assertNeverResolvesWallet(MemoFeed)
   })
 
   it('memo-status never resolves a wallet, even when a resolver is available', async () => {
-    const resolver = recordingWalletResolver()
-    const { command } = readCommand(MemoStatus, { walletUtil: resolver })
-
-    const code = await command.run({ json: true })
-
-    assert.equal(code, 0)
-    assert.deepEqual(resolver.calls, [])
+    await assertNeverResolvesWallet(MemoStatus)
   })
 
   it('a memo-profile viewer is an address, not a wallet', async () => {
-    const resolver = recordingWalletResolver()
     const viewer = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
-    const { command } = readCommand(MemoProfile, { walletUtil: resolver })
-
-    const code = await command.run({ json: true, addr: viewer, viewer })
-
-    assert.equal(code, 0)
-    assert.deepEqual(resolver.calls, [])
+    await assertNeverResolvesWallet(MemoProfile, { json: true, addr: viewer, viewer })
   })
 
   it('memo-notifications resolves the wallet it is given exactly once', async () => {

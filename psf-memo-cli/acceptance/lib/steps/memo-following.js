@@ -22,8 +22,7 @@ async function runFollowing (world, flags) {
     world,
     MemoFollowing,
     'following',
-    { ...world.followingSource, ...flags },
-    { walletUtil: world.walletUtil }
+    { ...world.followingSource, ...flags }
   )
 }
 

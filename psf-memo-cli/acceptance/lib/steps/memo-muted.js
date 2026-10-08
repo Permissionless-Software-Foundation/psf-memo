@@ -25,8 +25,7 @@ async function runMuted (world, flags) {
     world,
     MemoMuted,
     'muted',
-    { ...world.mutedSource, ...flags },
-    { walletUtil: world.walletUtil }
+    { ...world.mutedSource, ...flags }
   )
 }
 
