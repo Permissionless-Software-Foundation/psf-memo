@@ -29,6 +29,7 @@ describe('#memo-name helper', () => {
   })
 
   it('counts bytes, not characters, for the length limit', () => {
+    assert.deepEqual(parseMemoNameFlags({ memo: 'a'.repeat(MAX_NAME_BYTES) }), { name: 'a'.repeat(MAX_NAME_BYTES) })
     assert.deepEqual(parseMemoNameFlags({ memo: 'é'.repeat(38) }), { name: 'é'.repeat(38) })
 
     const err = captureUsageError(() => parseMemoNameFlags({ memo: 'é'.repeat(39) }))

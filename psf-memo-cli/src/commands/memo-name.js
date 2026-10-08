@@ -26,3 +26,7 @@ const MemoName = defineFieldWriteCommand({
 })
 
 export default MemoName
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T01:51:24.812Z","module_hash":"944011befecf21e6f6e9691bc6ad0d7732f6ff2b04bd74dc919ca927866c9baa","functions":[]}
+// mutate4javascript-manifest-end

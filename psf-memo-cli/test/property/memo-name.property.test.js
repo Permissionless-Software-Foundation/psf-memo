@@ -51,6 +51,9 @@ test('the name limit counts UTF-8 bytes, not characters', () => {
 })
 
 test('the limit is inclusive at 77 bytes for multibyte text', () => {
+  const asciiAtLimit = 'a'.repeat(MAX_NAME_BYTES)
+  assert.deepEqual(parseMemoNameFlags({ memo: asciiAtLimit }), { name: asciiAtLimit })
+
   for (let length = 36; length <= 40; length++) {
     const name = 'é'.repeat(length)
     const bytes = Buffer.byteLength(name, 'utf8')

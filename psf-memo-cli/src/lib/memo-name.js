@@ -41,3 +41,7 @@ export function parseMemoNameFlags (flags = {}) {
 export function formatMemoNameMessage ({ txid, explorerUrl } = {}) {
   return `Set name: ${txid}\nView this transaction on a block explorer:\n${explorerUrl}`
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T01:53:00.722Z","module_hash":"9e0201c3424b99ebfa76aa56c11822543cd06c72fba36d60ef777357e9e6039b","functions":[{"id":"func/parseMemoNameFlags","name":"parseMemoNameFlags","line":22,"end_line":38,"hash":"7116c0d683f1f30cb14977e4281f56b44e2eac21bb61cfed32e5a4ea542234b4"},{"id":"func/formatMemoNameMessage","name":"formatMemoNameMessage","line":41,"end_line":43,"hash":"9b78cff8dfa2638e813152eab51168c54fe0082c574f0b8a6b5e1f4762f2b550"}]}
+// mutate4javascript-manifest-end

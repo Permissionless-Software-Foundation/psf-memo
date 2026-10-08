@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T01:53:25.485800745Z","feature_name":"Memo Name","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-name.feature","background_hash":"931f0abad2189767340d07bbf836cb7a0f5d68e8f173d8735a36b13571d897eb","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Name - 5 an empty name is a usage error","scenario_hash":"c7435465d4bbb8b1325b8ad4ddc488edb5f5f78f97d930c2eb2510656716ac26","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-08T01:53:25.485800745Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Name (W4): the psf-memo-cli set-name write command. It resolves the
 # signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source),
 # validates the name against the 0x6d01 protocol limit of 77 UTF-8 bytes (not
