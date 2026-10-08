@@ -19,6 +19,10 @@ export async function runReadCommand (world, CommandClass, prefix, flags = {}, o
   const command = new CommandClass({
     fetchImpl: world.fetch,
     envUrl: null,
+    // Make the scenario's wallet resolver available to every read command so a
+    // command that wrongly resolves a wallet is observable, not silently
+    // bypassing the injected dependency.
+    walletUtil: world.walletUtil,
     ...options,
     stdout: stdout.stream,
     stderr: stderr.stream

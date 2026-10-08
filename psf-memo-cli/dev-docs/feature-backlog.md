@@ -368,8 +368,12 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   `psf-memo-cli/src/lib/memo-broadcast.js`; the shared `memo-broadcast` feature
   and all 13 write-command features assert the prefixed message. Architect
   summary: `docs/reviews/cli-error-surfacing-summary.md`.
-- **X3 — Secret hygiene.** Never print mnemonics, WIFs, or the wallet JSON.
-  `--json` output must not include key material.
+- **X3 — Secret hygiene.** **DONE** (2026-10-08, task `cli-secret-hygiene`;
+  merged to `master` at `ed6d3c5`). `wallet-sweep` no longer echoes the swept
+  WIF; `--json` results carry no key material, and `wallet-list` reports only
+  name/description. Spec: `psf-memo-cli/specs/secret-hygiene.feature` (3
+  scenarios, negative assertions); architect summary:
+  `docs/reviews/cli-secret-hygiene-summary.md`.
 - **X4 — Read-only safety.** Read commands must not instantiate or unlock a
   wallet unless viewer-relative data is requested; a missing wallet file then
   does not break `memo-feed`/`memo-status`.
@@ -407,12 +411,13 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
-6. **Hardening**: X1 **DONE**, X2 **DONE**; X3–X7 remain, plus W14–W16 if
-   protocol support is added upstream.
+6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**; X4–X7 remain, plus
+   W14–W16 if protocol support is added upstream.
 
-**Next up: X3 (secret hygiene).** X1 command reference docs (merged at
-`0541746`) and X2 error surfacing (merged at `5be373d`) are DONE. Poll writes
-W11–W13 are intentionally not planned (user decision, 2026-10-08).
+**Next up: X4 (read-only safety).** X1 command reference docs (merged at
+`0541746`), X2 error surfacing (merged at `5be373d`), and X3 secret hygiene
+(merged at `ed6d3c5`) are DONE. Poll writes W11–W13 are intentionally not
+planned (user decision, 2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.
