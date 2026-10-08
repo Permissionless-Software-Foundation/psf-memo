@@ -49,8 +49,10 @@ export function assertPageRequest (world, path, limit, offset) {
 }
 
 // Assert the last request hit an address-scoped /posts route with the page.
+// The client percent-encodes the address into the path, so compare the
+// encoded form (a colon in a cash address becomes %3A).
 function assertAddressPageRequest (world, path, { addr, limit, offset }) {
-  assertPageRequest(world, `/posts/${path}/${addr}`, limit, offset)
+  assertPageRequest(world, `/posts/${path}/${encodeURIComponent(addr)}`, limit, offset)
 }
 
 const readResultHandlers = [

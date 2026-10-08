@@ -19,6 +19,10 @@ export async function runReadCommand (world, CommandClass, prefix, flags = {}, o
   const command = new CommandClass({
     fetchImpl: world.fetch,
     envUrl: null,
+    // Make the scenario's wallet resolver available to every read command so a
+    // command that wrongly resolves a wallet is observable, not silently
+    // bypassing the injected dependency.
+    walletUtil: world.walletUtil,
     ...options,
     stdout: stdout.stream,
     stderr: stderr.stream
@@ -44,15 +48,18 @@ export async function runReadCommand (world, CommandClass, prefix, flags = {}, o
 // name or WIF the flags request; the scenario sets `<prefix>Source` to select
 // one.
 export function installWalletFactory (world, prefix) {
-  const wallets = {}
-  world[`${prefix}Wallets`] = wallets
+  world[`${prefix}Wallets`] = {}
   world[`${prefix}Source`] = {}
+  // Count resolutions so a scenario can prove a read command never touched the
+  // wallet boundary when the data it returns is viewer-independent.
+  world.walletResolverCalls = 0
 
   const lookup = (key, kind) => {
-    if (!(key in wallets)) {
+    world.walletResolverCalls++
+    if (!(key in world[`${prefix}Wallets`])) {
       throw new Error(`Unknown ${kind} ${key}`)
     }
-    return wallets[key]
+    return world[`${prefix}Wallets`][key]
   }
 
   world.walletUtil = {
