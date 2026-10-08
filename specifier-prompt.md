@@ -1154,6 +1154,22 @@ that a single user-facing feature may require specs in more than one component.
     measures one flag. Specs:
     `psf-memo-cli/specs/memo-{topic-post,topic-follow,topic-unfollow}.feature`.
 
+85. **The Set Bio existing-bio display reads the in-session profile store, not
+    `memo-db`; scenario 6's two-column examples make the echo mutatable.** The
+    `/memo/set-bio` page shows `SetBioPage.getExistingBio()` (injected profile
+    store, null when absent), and `cancel()` was added to the shared
+    `ProfileTextPage` base. Unlike `/account`, which composes
+    `accountPage.getBio() || memoDb.getProfile(addr).text`, the set-bio view has
+    no `memo-db` fallback, so a bio persisted in a prior session is not shown on
+    a fresh load unless the store is hydrated — a possible follow-up.
+    Scenario 6 deliberately uses two example columns (`stored_bio` and
+    `shown_bio`) with equal values per row: a soft mutation of either column
+    then fails instead of surviving the gotcha #12 tautology. The "above the
+    input" placement is described in the scenario but only presence is asserted
+    (no Node render adapter for set-bio). Spec:
+    `psf-memo-client/specs/set-bio.feature` (scenarios 6–8). Architect summary:
+    `docs/reviews/set-bio-existing-and-cancel-summary.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1210,7 +1226,27 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-topic-writes`): specified and merged W9/W10 as
+Latest session (2026-10-08, `set-bio-existing-and-cancel`): the first client
+front-end feature of the new direction. The specifier extended
+`psf-memo-client/specs/set-bio.feature` with scenarios 6–8 (show the account's
+existing bio above the input, show nothing when none, and a Cancel button that
+returns to `/account` without broadcasting); the coder/refactorer/architect
+added `SetBioPage.getExistingBio()`/`hasExistingBio()`/`showsNoExistingBio()`,
+moved `cancel()` onto the shared `ProfileTextPage` base, rendered `Current bio`
+above the form, and added the Cancel button. Merged to `master` at `4467e6e`
+(merge commit; architect code-review commit `9cd5166`; the later `2357e0c` adds
+only the record and summary, and master's `21040ad` is an unrelated
+`.env.development` commit, so
+`docs/reviews/set-bio-existing-and-cancel-verification.json` is valid for the
+merged tree). Recorded `verify.sh client` pass 5/5 at `9cd5166` (unit 778/0,
+property 217/0, acceptance all 48 suites, lint ok, build ok); soft Gherkin
+mutation 4/4 killed. Independent acceptance check after merge: set-bio 14/14.
+The existing-bio read goes through the in-session profile store only, so a bio
+persisted from a prior session does not show on a fresh load unless the store is
+hydrated; flagged as a follow-up (gotcha #85). Architect summary:
+`docs/reviews/set-bio-existing-and-cancel-summary.md`.
+
+Previous session (2026-10-08, `cli-topic-writes`): specified and merged W9/W10 as
 three topic writes in one cycle. The specifier wrote
 `psf-memo-cli/specs/memo-topic-post.feature` (8 scenarios),
 `memo-topic-follow.feature`, and `memo-topic-unfollow.feature` (4 each); the
@@ -1807,7 +1843,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `7fc7cd0` (`Record cli-async-visibility architect review and verification`).
+Current `master` HEAD: `4467e6e` (`Merge architect set-bio-existing-and-cancel into master`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1846,8 +1882,11 @@ and `psf-memo-client/specs/following-feed.feature` now describe the retired
 following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
 
-Next action: **ask the user for the next feature.** The active backlog is
-`psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
+Next action: **ask the user for the next feature.** The active backlog is the
+client front-end backlog — front-end improvements to `psf-memo-client` in
+`specs/feature-backlog.md` (the first such feature,
+`set-bio-existing-and-cancel`, merged at `4467e6e`). The `psf-memo-cli`
+Memo-protocol backlog below is complete except for the deferred W14–W16. The
 foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
 `memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8
