@@ -39,6 +39,12 @@ class ProfileTextPage extends PageController {
     return this.constructor.config.maxBytes - byteLength(this.input)
   }
 
+  // Leave the page without submitting and return to the account page.
+  cancel () {
+    this.navigate(this.successPath)
+    return this
+  }
+
   // Set the in-flight flag.
   _setBusy (value) {
     this[this.constructor.config.busyKey] = value
@@ -59,5 +65,5 @@ ProfileTextPage.ACCOUNT_PATH = ACCOUNT_PATH
 module.exports = ProfileTextPage
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-27T15:05:32.147Z","module_hash":"d06e97cbcfa2f5fc4b9bc481d8e3520536eb7e7ed8fe35daeedbda55bd243849","functions":[{"id":"func/ProfileTextPage.constructor","name":"ProfileTextPage.constructor","line":28,"end_line":35,"hash":"cc7d5bf86f1fcc5e71acb91ee96d75dd89110c4ff84e7ca3fec57be107a9cc70"},{"id":"func/ProfileTextPage.remainingCount","name":"ProfileTextPage.remainingCount","line":38,"end_line":40,"hash":"99ebb2601bf4ecfc6d9fcfe03a4ffcb3ec2dc7174a12ee668ce35e44083df96d"},{"id":"func/ProfileTextPage._setBusy","name":"ProfileTextPage._setBusy","line":43,"end_line":45,"hash":"b25ece6baf7159cdfbb0ddcd435617965f884d0541108f9e2d677a1e65cba970"},{"id":"func/ProfileTextPage._perform","name":"ProfileTextPage._perform","line":48,"end_line":54,"hash":"b16fe867f293e1aa356a38484a912d112e90157cb7d74966facf6b59861c1495"}]}
+// {"version":1,"tested_at":"2026-10-08T19:32:31.657Z","module_hash":"1fece6d1023846c17256a57df29e3bfa460d445c0ec8675d57209da2daa0328f","functions":[{"id":"func/ProfileTextPage.constructor","name":"ProfileTextPage.constructor","line":28,"end_line":35,"hash":"cc7d5bf86f1fcc5e71acb91ee96d75dd89110c4ff84e7ca3fec57be107a9cc70"},{"id":"func/ProfileTextPage.remainingCount","name":"ProfileTextPage.remainingCount","line":38,"end_line":40,"hash":"99ebb2601bf4ecfc6d9fcfe03a4ffcb3ec2dc7174a12ee668ce35e44083df96d"},{"id":"func/ProfileTextPage.cancel","name":"ProfileTextPage.cancel","line":43,"end_line":46,"hash":"aaaf1acfe850ddac4ffd2ea8d9d11f22e0f2b418ebcc3e036c84eefe83bde4cf"},{"id":"func/ProfileTextPage._setBusy","name":"ProfileTextPage._setBusy","line":49,"end_line":51,"hash":"b25ece6baf7159cdfbb0ddcd435617965f884d0541108f9e2d677a1e65cba970"},{"id":"func/ProfileTextPage._perform","name":"ProfileTextPage._perform","line":54,"end_line":60,"hash":"b16fe867f293e1aa356a38484a912d112e90157cb7d74966facf6b59861c1495"}]}
 // mutate4javascript-manifest-end

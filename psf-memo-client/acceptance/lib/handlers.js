@@ -641,6 +641,8 @@ function createWorld () {
   const memoSetBio = new MemoSetBio({ wallet, profiles })
   world.setBioPage = new SetBioPage({
     memoSetBio,
+    wallet,
+    profiles,
     navigate: (path) => { world.currentPath = path }
   })
 
@@ -1650,6 +1652,30 @@ const handlers = [
     }
   },
   {
+    name: 'set bio page shows existing bio',
+    pattern: /^the set bio page shows the existing bio "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      const expected = example[param]
+      const actual = world.setBioPage.getExistingBio()
+      if (actual !== expected) {
+        throw new Error(`Expected existing bio "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
+    name: 'set bio page shows no existing bio',
+    pattern: /^the set bio page shows no existing bio$/,
+    run (m, example, world) {
+      if (!world.setBioPage.showsNoExistingBio()) {
+        throw new Error(`Expected no existing bio, got "${world.setBioPage.getExistingBio()}".`)
+      }
+    }
+  },
+  {
     name: 'app does not broadcast any transaction',
     pattern: /^(?:the wallet|the app) does not broadcast (?:any|an OP_RETURN) transaction$/,
     run (m, example, world) {
@@ -2145,7 +2171,11 @@ const handlers = [
     name: 'click cancel button',
     pattern: /^I click the cancel button$/,
     run (m, example, world) {
-      world.likeTipPage.close()
+      if (world.likeTipPage && world.likeTipPage.modalOpen) {
+        world.likeTipPage.close()
+      } else {
+        world.setBioPage.cancel()
+      }
     }
   },
   {
