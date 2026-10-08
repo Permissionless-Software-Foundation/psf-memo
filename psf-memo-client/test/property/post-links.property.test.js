@@ -253,7 +253,7 @@ test('isImageUrl recognizes supported image extensions regardless of case or que
   )
 })
 
-test('isImageUrl rejects non-image paths even when a query mentions an image', async () => {
+test('isImageUrl rejects non-image paths with unrelated queries', async () => {
   await forAll(
     () => randomNonImageUrl(),
     async (url) => isImageUrl(url) === false,
