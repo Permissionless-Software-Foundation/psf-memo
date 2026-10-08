@@ -35,6 +35,23 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI read-only safety (`cli-read-only-safety`, 2026-10-08):** X4 of the
+  `psf-memo-cli` cross-cutting series. Wallet-independent reads (`memo-feed`,
+  `memo-status`, `memo-profile`, and a `--viewer` supplied as an address) never
+  resolve a wallet; only wallet-relative reads do, and a missing wallet for
+  such a read is a runtime error. X4 was already satisfied by the module
+  layout, so the task is a characterization lock: new unit tests and
+  recording-resolver acceptance steps, plus an address-path encoding fix in the
+  shared acceptance assertion. Merged to `master` at `3d97d79` (fast-forward;
+  verification record `docs/reviews/cli-read-only-safety-verification.json`
+  names the verified tree `5b54942f3b`, and the later `3d97d79` adds only the
+  record and summary, so it is valid for the merged tree). `verify.sh cli` pass
+  4/4 at `5b54942f3b` (unit 577/0, property 110/0, acceptance all 37 suites,
+  lint ok); language mutation 7 killed / 0 survived / 0 uncovered; DRY clean;
+  soft Gherkin mutation 8 intrinsic survivors (self-consistent example values).
+  Independent acceptance check after merge: read-only-safety 9/9. Architect
+  summary: `docs/reviews/cli-read-only-safety-summary.md`.
+
 - **CLI secret hygiene (`cli-secret-hygiene`, 2026-10-08):** X3 of the
   `psf-memo-cli` cross-cutting series. `wallet-sweep` no longer echoes the swept
   WIF; a wallet-relative `--json` result carries no key material and
@@ -1479,9 +1496,10 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 Active work is the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
 commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
-decision) are done, and X1 (command reference docs), X2 (error surfacing), and X3 (secret hygiene)
-are now complete. The remaining cross-cutting hardening items are X4–X7; the
-suggested next item is X4 (read-only safety). The earlier client direction —
+decision) are done, and X1 (command reference docs), X2 (error surfacing), X3
+(secret hygiene), and X4 (read-only safety) are now complete. The remaining
+cross-cutting hardening items are X5–X7; the suggested next item is X5 (quality
+and verification). The earlier client direction —
 front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next
