@@ -1,20 +1,21 @@
 /*
-  Shared parsing for the required -m Memo text flags.
+  Shared parsing for the required Memo text flags.
 
-  The Memo post, name, and bio commands validate their -m text with the same
-  missing / empty / over-long contract. Only the field label, the usage message,
-  the inclusive limit, and the size measure (UTF-16 code units or UTF-8 bytes)
-  differ, so this module owns that shared validation.
+  The Memo post, name, bio, and avatar commands validate their text flag with the
+  same missing / empty / over-long contract. Only the source flag, the field
+  label, the usage message, the inclusive limit, and the size measure (UTF-16
+  code units or UTF-8 bytes) differ, so this module owns that shared validation.
 */
 
 // Local libraries
 import { UsageError } from './reporter.js'
 
-// Build the -m flag parser for a Memo text command. `measure` returns the size
-// counted against the inclusive `limit`; `unit` names that size in the message.
-export function memoTextFlagParser ({ field, label, missingMessage, limit, measure, unit }) {
+// Build the text flag parser for a Memo command. `flag` names the option's flag
+// property (default `-m`); `measure` returns the size counted against the
+// inclusive `limit`; `unit` names that size in the message.
+export function memoTextFlagParser ({ flag = 'memo', field, label, missingMessage, limit, measure, unit }) {
   return function parseMemoTextFlags (flags = {}) {
-    const value = flags.memo
+    const value = flags[flag]
 
     if (value === undefined || value === null) {
       throw new UsageError(missingMessage)

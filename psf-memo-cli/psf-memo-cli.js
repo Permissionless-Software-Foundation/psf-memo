@@ -38,6 +38,7 @@ import MemoMuted from './src/commands/memo-muted.js'
 import MemoPoll from './src/commands/memo-poll.js'
 import MemoName from './src/commands/memo-name.js'
 import MemoBio from './src/commands/memo-bio.js'
+import MemoAvatar from './src/commands/memo-avatar.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -71,6 +72,7 @@ const memoMuted = new MemoMuted()
 const memoPoll = new MemoPoll()
 const memoName = new MemoName()
 const memoBio = new MemoBio()
+const memoAvatar = new MemoAvatar()
 
 const program = new Command()
 
@@ -318,5 +320,13 @@ program.command('memo-bio')
   .option('-m, --memo <string>', 'profile text to set')
   .option('--json', 'print the result as one JSON object')
   .action(memoBio.run)
+
+program.command('memo-avatar')
+  .description('Broadcast a 0x6d0a Memo set-profile-picture action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-u, --url <string>', 'avatar image URL to set')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoAvatar.run)
 
 program.parseAsync(process.argv)
