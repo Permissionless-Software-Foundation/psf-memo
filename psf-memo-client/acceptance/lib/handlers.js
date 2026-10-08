@@ -5738,6 +5738,18 @@ function assertFeedHasNoElement (world, extract, message) {
   }
 }
 
+// Decode the HTML entities React escapes inside attribute values so acceptance
+// assertions can compare attributes against the original, unescaped values.
+function decodeHtmlEntities (value) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
 // Extract the anchors from a rendered HTML string. The acceptance adapter
 // renders a small, controlled HTML subset, so a regex match is sufficient.
 function anchorsIn (html) {
@@ -5745,7 +5757,7 @@ function anchorsIn (html) {
   const re = /<a\s([^>]*)>([\s\S]*?)<\/a>/g
   let match
   while ((match = re.exec(html)) !== null) {
-    anchors.push({ attrs: match[1], text: match[2] })
+    anchors.push({ attrs: decodeHtmlEntities(match[1]), text: match[2] })
   }
   return anchors
 }
@@ -5800,7 +5812,7 @@ function imagesIn (html) {
   const re = /<img\s([^>]*?)\/?>/g
   let match
   while ((match = re.exec(html)) !== null) {
-    images.push({ attrs: match[1] })
+    images.push({ attrs: decodeHtmlEntities(match[1]) })
   }
   return images
 }

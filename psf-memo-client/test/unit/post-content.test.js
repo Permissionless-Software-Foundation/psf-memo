@@ -82,9 +82,15 @@ test('preserves surrounding text around an image', () => {
 })
 
 test('renders a non-image URL as a plain link with no image element', () => {
-  const html = render('view https://example.com/photo?format=jpg here')
-  assert.match(html, /<a[^>]+href="https:\/\/example\.com\/photo\?format=jpg"/)
+  const html = render('view https://example.com/feed.json?format=json here')
+  assert.match(html, /<a[^>]+href="https:\/\/example\.com\/feed\.json\?format=json"/)
   assert.doesNotMatch(html, /<img/)
+})
+
+test('renders a URL with an image format query parameter as an inline image', () => {
+  const html = render('a photo https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small')
+  assert.match(html, /<img[^>]+src="https:\/\/pbs\.twimg\.com\/media\/HUDsd-2XAAA6KW7\?format=jpg&amp;name=small"/)
+  assert.match(html, /<img[^>]+alt="HUDsd-2XAAA6KW7"/)
 })
 
 test('falls back to a plain link when the image fails to load', () => {
