@@ -36,6 +36,7 @@ import MemoFollowing from './src/commands/memo-following.js'
 import MemoFollowers from './src/commands/memo-followers.js'
 import MemoMuted from './src/commands/memo-muted.js'
 import MemoPoll from './src/commands/memo-poll.js'
+import MemoName from './src/commands/memo-name.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -67,6 +68,7 @@ const memoFollowing = new MemoFollowing()
 const memoFollowers = new MemoFollowers()
 const memoMuted = new MemoMuted()
 const memoPoll = new MemoPoll()
+const memoName = new MemoName()
 
 const program = new Command()
 
@@ -298,5 +300,13 @@ program.command('memo-poll')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoPoll.run)
+
+program.command('memo-name')
+  .description('Broadcast a 0x6d01 Memo set-name action')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('-m, --memo <string>', 'name to set')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoName.run)
 
 program.parseAsync(process.argv)
