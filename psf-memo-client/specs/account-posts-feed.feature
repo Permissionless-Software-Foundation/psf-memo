@@ -2,16 +2,17 @@
 # {"version":1,"tested_at":"2026-10-08T19:57:44.425835924Z","feature_name":"Account Posts Feed","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/account-posts-feed.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[]}
 # acceptance-mutation-manifest-end
 
-# Scenarios: Account Posts Feed - 1, Account Posts Feed - 2, Account Posts Feed - 3, Account Posts Feed - 4, Account Posts Feed - 5
+# Scenarios: Account Posts Feed - 1, Account Posts Feed - 2, Account Posts Feed - 3, Account Posts Feed - 4, Account Posts Feed - 5, Account Posts Feed - 6
 #
 # The /account page shows the authenticated account's own Memo posts in the
 # right column, below the Set Name / Set Bio / Set Avatar URL controls, using
-# the same post card as the /profile/:addr feed: rendered post text (links,
-# images, and YouTube embeds), the post options menu, the interactive like/tip
-# button, and the reply count that opens the thread modal. The feed loads the
-# account's top-level posts newest first and shows a no-posts message when the
-# account has none. This is a client-only read feature in psf-memo-client: it
-# reads GET /posts/by/:addr and broadcasts no Memo action.
+# the same post card as the /profile/:addr feed: the post's timestamp and block
+# number at the top of the card, then the rendered post text (links, images, and
+# YouTube embeds), the post options menu, the interactive like/tip button, and
+# the reply count that opens the thread modal. The feed loads the account's
+# top-level posts newest first and shows a no-posts message when the account has
+# none. This is a client-only read feature in psf-memo-client: it reads
+# GET /posts/by/:addr and broadcasts no Memo action.
 Feature: Account Posts Feed
 
   Background:
@@ -62,3 +63,14 @@ Feature: Account Posts Feed
       | txid |
       | 5555555555555555555555555555555555555555555555555555555555555555 |
       | 6666666666666666666666666666666666666666666666666666666666666666 |
+
+  Scenario Outline: Account Posts Feed - 6 each account post shows its timestamp and block number
+    Given the psf-memo-db API serves a post with txid <txid> authored by my wallet address with text "a dated memo" at block height <height> seen <seen>
+    When I open the account page
+    Then the account post with txid <txid> shows block number <height>
+    And the account post with txid <txid> shows the timestamp for seen <seen>
+
+    Examples:
+      | txid | height | seen |
+      | 7777777777777777777777777777777777777777777777777777777777777777 | 812345 | 1700000000 |
+      | 8888888888888888888888888888888888888888888888888888888888888888 | 900001 | 1700000000000 |
