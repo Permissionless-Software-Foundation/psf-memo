@@ -39,6 +39,43 @@ export class ListReadCommand {
   }
 }
 
+// Build a command class for a paginated list read. The factory owns the
+// validate -> read -> report pipeline and the read-only client wiring, while
+// each command declares only its flag parser, reader, list field, and formatter.
+// `format` receives the list items and the service pagination unchanged.
+export function defineListReadCommand ({ readMethod, clientMethod, listField, parseFlags, format }) {
+  return class extends ListReadCommand {
+    constructor (options = {}) {
+      super(options, readMethod)
+      this.listField = listField
+      this.clientMethod = clientMethod
+      this.parseFlagsImpl = parseFlags
+      this.formatImpl = format
+    }
+
+    // Validate and resolve the page flags before any request. Throws a
+    // UsageError (exit 2) for bad page flags.
+    parseFlags (flags) {
+      return this.parseFlagsImpl(flags)
+    }
+
+    // Render the reported list items and the service pagination unchanged.
+    format (result) {
+      const { [this.listField]: items = [], pagination = {} } = result
+
+      return {
+        message: this.formatImpl(items, pagination),
+        data: { [this.listField]: items, pagination }
+      }
+    }
+
+    // Fetch one page of the list described by the command's client method.
+    async [readMethod] ({ limit, offset, dbUrl }) {
+      return this.createClient(dbUrl)[this.clientMethod]({ limit, offset })
+    }
+  }
+}
+
 // mutate4javascript-manifest-begin
 // {"version":1,"tested_at":"2026-10-08T00:45:40.422Z","module_hash":"84caba208dce064fefd707aec4e481a05e919cd5c9766ceb887a6b766455e363","functions":[{"id":"func/ListReadCommand.constructor","name":"ListReadCommand.constructor","line":14,"end_line":17,"hash":"98fe076523e33c5377249238266af71332d0faeac837b7cacbd7608759cf8416"},{"id":"func/ListReadCommand.run","name":"ListReadCommand.run","line":21,"end_line":28,"hash":"f3f269723024f80109f0ffe6abe5bb9660b62251a911389bf96d78e06c6f7b15"},{"id":"func/ListReadCommand.validateFlags","name":"ListReadCommand.validateFlags","line":32,"end_line":34,"hash":"764e184c7075ff5880e5da41bb4a91d0a67620cc92870b887d1cde5fb9313747"},{"id":"func/ListReadCommand.createClient","name":"ListReadCommand.createClient","line":37,"end_line":39,"hash":"54385637d7ccdbdb4482a273dbbf40bd7272b92032c0a6f5d6ac2de757b02e80"}]}
 // mutate4javascript-manifest-end

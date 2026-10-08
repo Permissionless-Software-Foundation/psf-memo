@@ -8,33 +8,16 @@
 */
 
 // Local libraries
-import { ListReadCommand } from '../lib/list-command.js'
+import { defineListReadCommand } from '../lib/list-command.js'
 import { parseTopicsFlags, formatTopicsMessage } from '../lib/memo-topics.js'
 
-class MemoTopics extends ListReadCommand {
-  constructor (options = {}) {
-    super(options, 'readTopics')
-  }
-
-  // Validate and resolve the page flags before any request. Throws a UsageError
-  // (exit 2) for a bad --limit or --offset.
-  parseFlags (flags) {
-    return parseTopicsFlags(flags)
-  }
-
-  // Render the reported topics and the service pagination.
-  format ({ topics = [], pagination = {} }) {
-    return {
-      message: formatTopicsMessage(topics, pagination),
-      data: { topics, pagination }
-    }
-  }
-
-  // Fetch one page of the topic list.
-  readTopics ({ limit, offset, dbUrl }) {
-    return this.createClient(dbUrl).getTopics({ limit, offset })
-  }
-}
+const MemoTopics = defineListReadCommand({
+  readMethod: 'readTopics',
+  clientMethod: 'getTopics',
+  listField: 'topics',
+  parseFlags: parseTopicsFlags,
+  format: formatTopicsMessage
+})
 
 export default MemoTopics
 

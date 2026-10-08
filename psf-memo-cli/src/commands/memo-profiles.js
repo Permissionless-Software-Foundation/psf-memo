@@ -10,33 +10,16 @@
 */
 
 // Local libraries
-import { ListReadCommand } from '../lib/list-command.js'
+import { defineListReadCommand } from '../lib/list-command.js'
 import { parseProfilesFlags, formatProfilesMessage } from '../lib/memo-profiles.js'
 
-class MemoProfiles extends ListReadCommand {
-  constructor (options = {}) {
-    super(options, 'readProfiles')
-  }
-
-  // Validate and resolve the page flags before any request. Throws a UsageError
-  // (exit 2) for a bad --limit or --offset.
-  parseFlags (flags) {
-    return parseProfilesFlags(flags)
-  }
-
-  // Render the reported profiles and the service pagination.
-  format ({ profiles = [], pagination = {} }) {
-    return {
-      message: formatProfilesMessage(profiles, pagination),
-      data: { profiles, pagination }
-    }
-  }
-
-  // Fetch one page of the recent-profiles list.
-  readProfiles ({ limit, offset, dbUrl }) {
-    return this.createClient(dbUrl).getRecentProfiles({ limit, offset })
-  }
-}
+const MemoProfiles = defineListReadCommand({
+  readMethod: 'readProfiles',
+  clientMethod: 'getRecentProfiles',
+  listField: 'profiles',
+  parseFlags: parseProfilesFlags,
+  format: formatProfilesMessage
+})
 
 export default MemoProfiles
 
