@@ -35,6 +35,23 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI async visibility (`cli-async-visibility`, 2026-10-08):** X7, the final
+  item of the `psf-memo-cli` cross-cutting series. `README.md` gained an "Async
+  visibility" section documenting that a write returns
+  `{ message, txid, explorerUrl }` immediately while reads see only indexed
+  state, that block confirmation + indexing is required, that `memo-status`
+  reports the sync heights, and that `memo-wait` is the post-store
+  write→index→read bridge (with a scriptable example). Documentation-only; the
+  behavior is pinned by `memo-wait` and `memo-status`. Merged to `master` at
+  `7fc7cd0` (fast-forward; verification record
+  `docs/reviews/cli-async-visibility-verification.json` names the verified tree
+  `b5663c7fd3`, and the later `7fc7cd0` adds only the record and summary, so it
+  is valid for the merged tree). `verify.sh cli` pass 4/4 at `b5663c7fd3` (unit
+  580/0, property 110/0, acceptance all 38 suites, lint ok). Independent
+  `verify.sh cli` after merge: pass 4/4. Architect summary:
+  `docs/reviews/cli-async-visibility-summary.md`. With X7, the `psf-memo-cli`
+  X-series (X1–X7) is complete.
+
 - **CLI pagination fidelity (`cli-pagination-fidelity`, 2026-10-08):** X6 of the
   `psf-memo-cli` cross-cutting series. Every paginated read command exposes
   `--limit`/`--offset` and echoes the service pagination unchanged. The new
@@ -1529,15 +1546,13 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 Active work is the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
 commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
-decision) are done, and X1 (command reference docs), X2 (error surfacing), X3
-(secret hygiene), X4 (read-only safety), X5 (quality audit), and X6 (pagination
-fidelity) are now complete. The remaining cross-cutting hardening item is X7
-(async visibility contract); the suggested next item is X7. The earlier client
-direction —
-front-end improvements to
-`psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
-state handling, error surfacing) — remains open. Ask the user for the next
-feature.
+decision) are done, and the full cross-cutting series X1–X7 (command reference
+docs, error surfacing, secret hygiene, read-only safety, quality audit,
+pagination fidelity, async visibility) is now complete. W14–W16 remain deferred
+until the indexer/DB handle those action bytes. The open direction is the client
+front-end backlog — front-end improvements to `psf-memo-client` (UI/UX polish,
+accessibility, performance, responsiveness, state handling, error surfacing).
+Ask the user for the next feature.
 
 ## Notes for future cycles
 

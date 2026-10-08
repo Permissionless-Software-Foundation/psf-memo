@@ -68,8 +68,20 @@ function Topics (props) {
       <Row className='justify-content-center'>
         <Col lg={10} md={10} xs={12}>
           <header className='topics-heading'>
-            <h1>Topics</h1>
-            <p>Discover Memo conversations organized by topic.</p>
+            <div className='topics-heading-row'>
+              <div>
+                <h1>Topics</h1>
+                <p>Discover Memo conversations organized by topic.</p>
+              </div>
+
+              <Button
+                variant='primary'
+                className='topics-new-topic-button'
+                onClick={() => navigate(TopicDiscoveryPage.NEW_TOPIC_PATH)}
+              >
+                New Topic
+              </Button>
+            </div>
 
             {pagination && topics.length > 0 && (
               <span className='topics-count'>

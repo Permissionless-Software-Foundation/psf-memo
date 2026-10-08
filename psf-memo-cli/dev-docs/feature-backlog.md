@@ -404,8 +404,15 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   recomputed. No production change (characterization lock). Spec:
   `psf-memo-cli/specs/pagination-fidelity.feature` (3 scenarios / 6 examples);
   architect summary: `docs/reviews/cli-pagination-fidelity-summary.md`.
-- **X7 — Async visibility contract.** Document that a broadcast is not visible
-  until confirmed and indexed; `memo-wait` (R16) is the scriptable bridge.
+- **X7 — Async visibility contract.** **DONE** (2026-10-08, task
+  `cli-async-visibility`; merged to `master` at `7fc7cd0`). `README.md` gained
+  an "Async visibility" section (with a short note in
+  `src/commands/README.md`) explaining that a write returns
+  `{ message, txid, explorerUrl }` immediately, reads see only indexed state,
+  `memo-status` reports the sync heights, and `memo-wait` is the post-store
+  write→index→read bridge. Docs only; the behavior is pinned by `memo-wait` and
+  `memo-status`. Spec: `psf-memo-cli/dev-docs/async-visibility-contract.md`;
+  architect summary: `docs/reviews/cli-async-visibility-summary.md`.
 
 ---
 
@@ -430,16 +437,18 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
-6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**, X4 **DONE**, X5
-   **DONE**, X6 **DONE**; X7 remains, plus W14–W16 if protocol support is added
-   upstream.
+6. **Hardening**: X1–X7 all **DONE**; the `psf-memo-cli` cross-cutting series
+   is complete. W14–W16 remain deferred until the indexer/DB handle those action
+   bytes upstream.
 
-**Next up: X7 (async visibility contract).** X1 command reference docs (merged
-at `0541746`), X2 error surfacing (merged at `5be373d`), X3 secret hygiene
-(merged at `ed6d3c5`), X4 read-only safety (merged at `3d97d79`), X5 quality
-audit (merged at `cb02cc9`), and X6 pagination fidelity (merged at `e7b59eb`)
-are DONE. Poll writes W11–W13 are intentionally not planned (user decision,
-2026-10-08).
+**Next up: no remaining X item — the `psf-memo-cli` X-series is complete.**
+X1 command reference docs (merged at `0541746`), X2 error surfacing (merged at
+`5be373d`), X3 secret hygiene (merged at `ed6d3c5`), X4 read-only safety (merged
+at `3d97d79`), X5 quality audit (merged at `cb02cc9`), X6 pagination fidelity
+(merged at `e7b59eb`), and X7 async visibility (merged at `7fc7cd0`) are DONE.
+Poll writes W11–W13 are intentionally not planned (user decision, 2026-10-08)
+and W14–W16 await upstream indexer/DB support. The remaining open direction is
+the client front-end backlog in the root `specs/feature-backlog.md`.
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.

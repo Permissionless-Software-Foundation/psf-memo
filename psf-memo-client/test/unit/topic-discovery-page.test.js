@@ -26,6 +26,16 @@ async function loadPage (topics) {
   return page
 }
 
+// Build a controller whose navigate records each path it is sent.
+function makeNavigatingPage () {
+  const calls = []
+  const page = new TopicDiscoveryPage({
+    memoDb: makeMemoDb({ topics: [] }),
+    navigate: (path) => calls.push(path)
+  })
+  return { page, calls }
+}
+
 test('load returns topics with post counts', async () => {
   const topics = [
     { room: 'bitcoin', postCount: 2 },
@@ -131,17 +141,18 @@ test('getLastSeenLabel returns null for an unknown topic', async () => {
   assert.equal(page.getLastSeenLabel('missing', 1800000000000), null)
 })
 
-test('openTopic navigates to the encoded topic feed path', () => {
-  const calls = []
-  const page = new TopicDiscoveryPage({
-    memoDb: makeMemoDb({ topics: [] }),
-    navigate: (path) => calls.push(path)
-  })
+test('openTopic and openNewTopic navigate to their expected paths', () => {
+  const cases = [
+    { open: (page) => page.openTopic('space room'), path: '/topics/space%20room' },
+    { open: (page) => page.openNewTopic(), path: '/topics/new' }
+  ]
 
-  const result = page.openTopic('space room')
+  for (const { open, path } of cases) {
+    const { page, calls } = makeNavigatingPage()
 
-  assert.deepEqual(result, { path: '/topics/space%20room' })
-  assert.deepEqual(calls, ['/topics/space%20room'])
+    assert.deepEqual(open(page), { path })
+    assert.deepEqual(calls, [path])
+  }
 })
 
 test('topicFeedPath percent-encodes the room name', () => {
@@ -156,4 +167,14 @@ test('openTopic uses a no-op navigate by default', () => {
 
 test('exposes the topics page path', () => {
   assert.equal(TopicDiscoveryPage.TOPICS_PATH, '/topics')
+})
+
+test('the topics page offers a New Topic button', () => {
+  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics: [] }) })
+
+  assert.equal(page.hasNewTopicButton(), true)
+})
+
+test('exposes the new topic path', () => {
+  assert.equal(TopicDiscoveryPage.NEW_TOPIC_PATH, '/topics/new')
 })
