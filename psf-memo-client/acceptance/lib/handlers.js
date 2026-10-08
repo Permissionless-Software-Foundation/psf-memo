@@ -62,6 +62,7 @@ const { renderProfilePostLike } = require('./render-profile-post-like')
 const { renderAccountAvatar, renderAccountAvatarView } = require('./render-account-avatar')
 const { renderAccountControls } = require('./render-account-controls')
 const { renderAccountSidebar } = require('./render-account-sidebar')
+const { renderAccountPostsFeed } = require('./render-account-posts-feed')
 const { renderPostOptions } = require('./render-post-options')
 const { renderLikeResult } = require('./render-like-result')
 const { renderMuteResult } = require('./render-mute-result')
@@ -656,6 +657,7 @@ function createWorld () {
   world.accountPage = new AccountPage({
     wallet,
     profiles,
+    memoDb,
     navigate: (path) => { world.currentPath = path },
     tokenSource: wallet,
     copyToClipboard: async (text) => { world.clipboard = text },
@@ -766,6 +768,9 @@ function findDisplayedPost (txid, world) {
 
   const fromProfile = world.profilePage.getPost(txid)
   if (fromProfile) return fromProfile
+
+  const fromAccount = world.accountPage?.getPost(txid)
+  if (fromAccount) return fromAccount
 
   const fromFeed = world.recentFeedPage.getPost(txid)
   if (fromFeed) return fromFeed
@@ -1092,7 +1097,7 @@ const handlers = [
     name: 'click comment icon on post',
     pattern: /^I click the comment icon on the post with txid (.+)$/,
     run (m, example, world) {
-      const txid = m[1].trim()
+      const txid = resolveParam(m[1], example)
       // Opening the thread modal means setting the active thread txid.
       world.thread.rootTxid = txid
       world.replyPage.setParent(txid)
@@ -1759,6 +1764,109 @@ const handlers = [
     async run (m, example, world) {
       await world.accountPage.load()
       world.currentPath = AccountPage.ACCOUNT_PATH
+    }
+  },
+  {
+    name: 'account page shows N posts',
+    pattern: /^the account page shows (\d+) posts$/,
+    run (m, example, world) {
+      const expected = parseInt(m[1], 10)
+      const actual = world.accountPage.posts.length
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} posts on the account page, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'account page shows the account controls above the posts',
+    pattern: /^the account page shows the account controls above the posts$/,
+    run (m, example, world) {
+      const sections = world.accountPage.getContentSections()
+      const expected = ['controls', 'posts']
+      if (JSON.stringify(sections) !== JSON.stringify(expected)) {
+        throw new Error(`Expected account page sections ${expected.join(', ')}, got ${sections.join(', ')}.`)
+      }
+      const controlsHtml = renderAccountControls(world.accountPage.getControls())
+      if (!controlsHtml.includes('account-controls')) {
+        throw new Error('The rendered account page does not show the account controls.')
+      }
+      const postsHtml = renderAccountPostsFeed({
+        posts: world.accountPage.posts,
+        wallet: world.wallet,
+        profiles: world.profiles
+      })
+      if (!postsHtml.includes('data-section="posts"')) {
+        throw new Error('The rendered account page does not show the posts section.')
+      }
+    }
+  },
+  {
+    name: 'account feed shows the message',
+    pattern: /^the account feed shows the message "([^"]+)"$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      const html = renderAccountPostsFeed({
+        posts: world.accountPage.posts,
+        wallet: world.wallet,
+        profiles: world.profiles
+      })
+      if (!html.includes(expected)) {
+        throw new Error(`The rendered account feed does not show the message "${expected}".`)
+      }
+    }
+  },
+  {
+    name: 'account page shows embedded YouTube player',
+    pattern: /^the account page shows an embedded YouTube player for the video (.+)$/,
+    run (m, example, world) {
+      assertRenderedEmbedsVideo(getRenderedAccountPosts(world), resolveParam(m[1], example), 'Account page')
+    }
+  },
+  {
+    name: 'account page does not show raw URL',
+    pattern: /^the account page does not show the raw URL (.+)$/,
+    run (m, example, world) {
+      assertRenderedHidesRawUrl(getRenderedAccountPosts(world), resolveText(m[1], example), 'Account page')
+    }
+  },
+  {
+    name: 'account page shows a post options button for the post',
+    pattern: /^the account page shows a post options button for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const post = world.accountPage.getPost(txid)
+      if (!post) {
+        throw new Error(`The account page does not show a post with txid ${txid}.`)
+      }
+      const menu = getPostOptionsMenu(world, txid)
+      const html = renderPostOptions(txid, { open: menu.open })
+      if (!html.includes('aria-label="Post options"')) {
+        throw new Error(`Post ${txid} does not render a post options button.`)
+      }
+    }
+  },
+  {
+    name: 'account post shows interactive like button',
+    pattern: /^the account post with txid (.+) shows an interactive like button$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const post = world.accountPage.getPost(txid)
+      if (!post) {
+        throw new Error(`No account post found for txid ${txid}.`)
+      }
+      const html = renderProfilePostLike({ post, wallet: world.wallet })
+      if (!/^<button[^>]*class="post-like-button/.test(html)) {
+        throw new Error(`The account post with txid ${txid} does not show an interactive like button.`)
+      }
+    }
+  },
+  {
+    name: 'account page can load more posts',
+    pattern: /^the account page can load more posts$/,
+    run (m, example, world) {
+      if (!world.accountPage.canLoadMore()) {
+        throw new Error('Expected the account page to have more posts, but pagination says there are none.')
+      }
     }
   },
   {
@@ -5369,6 +5477,7 @@ function postsOnCurrentPage (world) {
   const path = world.currentPath || ''
   if (world.threadPage && world.threadPage.rootPost) return world.threadPage.allPosts || []
   if (path.startsWith(ProfilePage.PROFILE_PATH_PREFIX)) return world.profilePage?.posts || []
+  if (path === AccountPage.ACCOUNT_PATH) return world.accountPage?.posts || []
   if (path.startsWith('/topics/')) return world.topicFeedPage?.posts || []
   if (path === FollowingFeedPage.FOLLOWING_FEED_PATH) return world.followingFeedPage?.posts || []
   return world.recentFeedPage?.posts || []
@@ -5404,6 +5513,24 @@ function getRenderedProfilePosts (world) {
     )
   }
   return world.renderedProfilePosts
+}
+
+// Return the cached rendered HTML for the account page's posts, computing it
+// on first use. Uses the same post-text renderer as the profile page so both
+// feeds share link, image, and embed behavior.
+function getRenderedAccountPosts (world) {
+  if (!world.accountPage) {
+    throw new Error('No account page is loaded.')
+  }
+  if (!world.renderedAccountPosts) {
+    world.renderedAccountPosts = world.accountPage.posts.map((post) =>
+      renderProfilePost(post.text, {
+        initialFailedImages: world.failedImages ? [...world.failedImages] : undefined,
+        tiktokVideoIds: world.tiktokVideoIds
+      })
+    )
+  }
+  return world.renderedAccountPosts
 }
 
 // Post-rendering acceptance assertions shared by the feed and profile page
