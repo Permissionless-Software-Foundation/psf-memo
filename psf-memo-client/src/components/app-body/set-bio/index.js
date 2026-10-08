@@ -23,15 +23,17 @@ function SetBio (props) {
   const [err, setErr] = useState('')
   const [settingBio, setSettingBio] = useState(false)
 
-  const address = appData?.wallet?.walletInfo?.cashAddress
-  const existingBio = address && appData?.profiles?.getBio
-    ? (appData.profiles.getBio(address) || null)
-    : null
+  // Build the testable page controller once per render so the existing-bio
+  // display and the cancel behavior live in the unit-tested service rather
+  // than in this view.
+  const memoSetBio = new MemoSetBio({ wallet: appData?.wallet, profiles: appData?.profiles })
+  const page = new SetBioPage({ memoSetBio, navigate })
+  const existingBio = page.getExistingBio()
 
   const remaining = maxBytes - byteLength(input)
 
   function handleCancel () {
-    navigate(SetBioPage.ACCOUNT_PATH)
+    page.cancel()
   }
 
   async function handleSubmit (event) {
@@ -40,8 +42,6 @@ function SetBio (props) {
     setSettingBio(true)
 
     try {
-      const memoSetBio = new MemoSetBio({ wallet: appData?.wallet, profiles: appData?.profiles })
-      const page = new SetBioPage({ memoSetBio, navigate })
       page.setInput(input)
 
       const result = await page.submit()
