@@ -21,6 +21,7 @@ const { seededRandom, forAll, intGen } = require('./harness')
 const MemoSetBio = require('../../src/services/memo-set-bio')
 const SetBioPage = require('../../src/services/set-bio-page')
 const { byteLength } = require('../../src/services/utf8')
+const { makeWallet, makeProfiles } = require('../support/set-bio')
 
 const rng = seededRandom(20260828)
 
@@ -65,28 +66,6 @@ function randomAddress () {
     out += alphabet[Math.floor(rng() * alphabet.length)]
   }
   return out
-}
-
-function makeWallet (address = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d') {
-  return {
-    walletInfo: { cashAddress: address },
-    broadcasts: [],
-    async getUtxos () {
-      return []
-    },
-    async sendOpReturn (msg, prefix) {
-      this.broadcasts.push({ msg, prefix })
-      return 'aa'.repeat(32)
-    }
-  }
-}
-
-function makeProfiles () {
-  const bios = {}
-  return {
-    setBio: (addr, bio) => { bios[addr] = bio },
-    getBio: (addr) => bios[addr] || null
-  }
 }
 
 test('byteLength round-trips through TextEncoder and TextDecoder', async () => {

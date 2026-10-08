@@ -11,34 +11,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const SetBioPage = require('../../src/services/set-bio-page')
 const MemoSetBio = require('../../src/services/memo-set-bio')
-
-function makeWallet (address = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d') {
-  return {
-    walletInfo: { cashAddress: address },
-    broadcasts: [],
-    async getUtxos () {
-      return []
-    },
-    async sendOpReturn (msg, prefix) {
-      this.broadcasts.push({ msg, prefix })
-      return 'aa'.repeat(32)
-    }
-  }
-}
-
-function makeMemoSetBio () {
-  const wallet = makeWallet()
-  return new MemoSetBio({ wallet })
-}
-
-function makeProfiles () {
-  const bios = {}
-  return {
-    bios,
-    setBio: (addr, bio) => { bios[addr] = bio },
-    getBio: (addr) => bios[addr] || null
-  }
-}
+const { makeMemoSetBio, makeProfiles, makeWallet } = require('../support/set-bio')
 
 test('the in-flight flag starts false', () => {
   const page = new SetBioPage({ navigate: () => {} })
