@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-10-08T02:38:12.006228522Z","feature_name":"Memo Topic Unfollow","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-topic-unfollow.feature","background_hash":"2196b933ac45ba76e864d3959a495973a9339a2322baa299f12f9a341b059f57","implementation_hash":"unknown","scenarios":[]}
+# {"version":1,"tested_at":"2026-10-08T03:34:52.710089961Z","feature_name":"Memo Topic Unfollow","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-topic-unfollow.feature","background_hash":"2196b933ac45ba76e864d3959a495973a9339a2322baa299f12f9a341b059f57","implementation_hash":"unknown","scenarios":[]}
 # acceptance-mutation-manifest-end
 
 # Memo Topic Unfollow (W10b): the psf-memo-cli topic-unfollow write command. It
