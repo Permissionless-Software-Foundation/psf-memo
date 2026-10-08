@@ -35,6 +35,7 @@ import MemoProfiles from './src/commands/memo-profiles.js'
 import MemoFollowing from './src/commands/memo-following.js'
 import MemoFollowers from './src/commands/memo-followers.js'
 import MemoMuted from './src/commands/memo-muted.js'
+import MemoPoll from './src/commands/memo-poll.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -65,6 +66,7 @@ const memoProfiles = new MemoProfiles()
 const memoFollowing = new MemoFollowing()
 const memoFollowers = new MemoFollowers()
 const memoMuted = new MemoMuted()
+const memoPoll = new MemoPoll()
 
 const program = new Command()
 
@@ -289,5 +291,12 @@ program.command('memo-muted')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoMuted.run)
+
+program.command('memo-poll')
+  .description('Read a Memo poll with its options and votes')
+  .option('-t, --txid <string>', 'poll transaction id')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoPoll.run)
 
 program.parseAsync(process.argv)

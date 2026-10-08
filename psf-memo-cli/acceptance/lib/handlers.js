@@ -29,6 +29,7 @@ import { memoProfilesHandlers } from './steps/memo-profiles.js'
 import { memoFollowingHandlers } from './steps/memo-following.js'
 import { memoFollowersHandlers } from './steps/memo-followers.js'
 import { memoMutedHandlers } from './steps/memo-muted.js'
+import { memoPollHandlers } from './steps/memo-poll.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -58,6 +59,7 @@ const handlers = [
   ...memoFollowingHandlers,
   ...memoFollowersHandlers,
   ...memoMutedHandlers,
+  ...memoPollHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -83,6 +85,7 @@ async function createWorld () {
     posts: [],
     threads: {},
     postStore: {},
+    pollStore: {},
     notifications: [],
     profilePosts: [],
     followState: false,
@@ -151,6 +154,14 @@ async function createWorld () {
         return jsonResponse({ message: 'not found' }, 404)
       }
       return jsonResponse(world.status, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/polls/')) {
+      const txid = decodeURIComponent(world.lastRequest.pathname.split('/')[2] || '')
+      if (!(txid in world.pollStore)) {
+        return jsonResponse({ message: 'not found' }, 404)
+      }
+      return jsonResponse({ ...world.pollStore[txid], txid }, 200)
     }
 
     if (world.lastRequest.pathname.startsWith('/posts/notifications/')) {

@@ -144,6 +144,12 @@ class MemoDb {
     return this.getJson('/level/status/status', { notFoundValue: null })
   }
 
+  // GET /polls/:txid. Returns the poll with its options and votes. A txid with
+  // no poll resolves to null so the caller can report a not-found failure.
+  async getPoll (txid) {
+    return this.getJson(`/polls/${encodeURIComponent(txid)}`, { notFoundValue: null })
+  }
+
   // GET a JSON resource. Throws on a transport failure or a non-OK response.
   // When notFoundValue is supplied (including null), a 404 returns it instead.
   async getJson (path, { notFoundValue } = {}) {

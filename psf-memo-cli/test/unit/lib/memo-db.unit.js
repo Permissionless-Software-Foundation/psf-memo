@@ -318,6 +318,43 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getPoll', () => {
+    it('requests the poll for the txid', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ txid: 'poll-a', question: 'tea or coffee?', options: [], votes: [] })
+        }
+      })
+
+      const result = await client.getPoll('poll-a')
+
+      assert.equal(new URL(requested).pathname, '/polls/poll-a')
+      assert.equal(result.question, 'tea or coffee?')
+    })
+
+    it('encodes the txid in the request path', async () => {
+      let requested
+      const client = new MemoDb({
+        envUrl: null,
+        fetchImpl: async (url) => {
+          requested = url
+          return jsonResponse({ question: 'q' })
+        }
+      })
+
+      await client.getPoll('a/b')
+
+      assert.equal(new URL(requested).pathname, '/polls/a%2Fb')
+    })
+
+    it('resolves a txid with no poll to null', async () => {
+      await assertMissingResource('getPoll', 'poll-missing')
+    })
+  })
+
   describe('address-scoped post pages', () => {
     const cases = [
       {
