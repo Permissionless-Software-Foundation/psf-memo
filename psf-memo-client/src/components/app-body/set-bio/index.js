@@ -23,7 +23,18 @@ function SetBio (props) {
   const [err, setErr] = useState('')
   const [settingBio, setSettingBio] = useState(false)
 
+  // Build the testable page controller once per render so the existing-bio
+  // display and the cancel behavior live in the unit-tested service rather
+  // than in this view.
+  const memoSetBio = new MemoSetBio({ wallet: appData?.wallet, profiles: appData?.profiles })
+  const page = new SetBioPage({ memoSetBio, navigate })
+  const existingBio = page.getExistingBio()
+
   const remaining = maxBytes - byteLength(input)
+
+  function handleCancel () {
+    page.cancel()
+  }
 
   async function handleSubmit (event) {
     event.preventDefault()
@@ -31,8 +42,6 @@ function SetBio (props) {
     setSettingBio(true)
 
     try {
-      const memoSetBio = new MemoSetBio({ wallet: appData?.wallet, profiles: appData?.profiles })
-      const page = new SetBioPage({ memoSetBio, navigate })
       page.setInput(input)
 
       const result = await page.submit()
@@ -65,6 +74,12 @@ function SetBio (props) {
           </header>
 
           <Form onSubmit={handleSubmit}>
+            {existingBio && (
+              <p className='set-bio-existing'>
+                Current bio: <span className='set-bio-existing-value'>{existingBio}</span>
+              </p>
+            )}
+
             <Form.Group controlId='set-bio-input' className='mb-3'>
               <Form.Label><b>Bio</b></Form.Label>
               <Form.Control
@@ -84,6 +99,15 @@ function SetBio (props) {
 
             <Button type='submit' variant='primary' disabled={settingBio}>
               {settingBio ? 'Setting Bio...' : 'Set Bio'}
+            </Button>
+            <Button
+              type='button'
+              variant='secondary'
+              className='ms-2'
+              onClick={handleCancel}
+              disabled={settingBio}
+            >
+              Cancel
             </Button>
           </Form>
         </Col>

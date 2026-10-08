@@ -57,6 +57,16 @@ function overLimitBio () {
   return s
 }
 
+// Build a random address so existing-bio lookups are keyed by a varying id.
+function randomAddress () {
+  const alphabet = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+  let out = 'bitcoincash:'
+  for (let i = 0; i < 42; i++) {
+    out += alphabet[Math.floor(rng() * alphabet.length)]
+  }
+  return out
+}
+
 function makeWallet (address = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d') {
   return {
     walletInfo: { cashAddress: address },
@@ -153,5 +163,51 @@ test('the Set Bio page remaining count conserves the byte budget', async () => {
       return page.remainingCount() === MemoSetBio.MAX_BIO_BYTES - byteLength(bio)
     },
     { label: 'set-bio remaining byte count is conserved' }
+  )
+})
+
+test('getExistingBio round-trips the stored bio for any address', async () => {
+  await forAll(
+    (i) => ({ address: randomAddress(), bio: randomString(intGen(rng, 0, 120)()) }),
+    ({ address, bio }) => {
+      const wallet = makeWallet(address)
+      const profiles = makeProfiles()
+      profiles.setBio(address, bio)
+      const page = new SetBioPage({
+        memoSetBio: new MemoSetBio({ wallet, profiles }),
+        navigate: () => {}
+      })
+
+      const shown = page.getExistingBio()
+      return shown === (bio || null) &&
+        page.getExistingBio() === shown &&
+        page.hasExistingBio() === (bio.length > 0) &&
+        page.showsNoExistingBio() === (bio.length === 0)
+    },
+    { label: 'set-bio existing bio round trip' }
+  )
+})
+
+test('cancel navigates to the account page without broadcasting for any input', async () => {
+  await forAll(
+    (i) => randomString(intGen(rng, 0, 120)()),
+    (bio) => {
+      const navigated = []
+      const wallet = makeWallet()
+      const profiles = makeProfiles()
+      const memoSetBio = new MemoSetBio({ wallet, profiles })
+      const page = new SetBioPage({
+        memoSetBio,
+        navigate: (path) => navigated.push(path)
+      })
+      page.setInput(bio)
+
+      page.cancel()
+
+      return navigated.length === 1 &&
+        navigated[0] === SetBioPage.ACCOUNT_PATH &&
+        wallet.broadcasts.length === 0
+    },
+    { label: 'set-bio cancel navigates without broadcasting' }
   )
 })
