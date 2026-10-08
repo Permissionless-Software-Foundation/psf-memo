@@ -32,10 +32,18 @@ function sectionOrder (html) {
   return order
 }
 
-test('renders the sidebar sections in the order avatar, bio, address, tokens', () => {
+test('renders the sidebar sections in the order avatar, bio, profile, address, tokens', () => {
   const html = renderSidebar({ bio: 'Building on BCH' })
 
-  assert.deepEqual(sectionOrder(html), ['avatar', 'bio', 'address', 'tokens'])
+  assert.deepEqual(sectionOrder(html), ['avatar', 'bio', 'profile', 'address', 'tokens'])
+})
+
+test('renders a Profile link to the account profile path', () => {
+  const html = renderSidebar()
+
+  assert.ok(html.includes('account-sidebar-profile-link'))
+  assert.ok(html.includes(`href="/profile/${encodeURIComponent(ADDR)}"`))
+  assert.ok(html.includes('>Profile<'))
 })
 
 test('shows the bio when set', () => {

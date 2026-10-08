@@ -182,6 +182,7 @@ function Account (props) {
               bio={displayBio}
               copied={addressCopied}
               onCopyAddress={handleCopyAddress}
+              onProfileClick={() => { if (accountPage) accountPage.clickProfileLink() }}
               tokens={tokenIcons}
             />
           </Col>

@@ -295,7 +295,37 @@ test('getControls lists the controls with their descriptions', () => {
 test('getSidebarSections lists the sidebar sections in order', () => {
   const page = new AccountPage({})
 
-  assert.deepEqual(page.getSidebarSections(), ['avatar', 'bio', 'address', 'tokens'])
+  assert.deepEqual(page.getSidebarSections(), ['avatar', 'bio', 'profile', 'address', 'tokens'])
+})
+
+test('getProfilePath returns the URL-encoded profile path for the account address', () => {
+  const { page } = makePage('bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy')
+
+  assert.equal(
+    page.getProfilePath(),
+    '/profile/bitcoincash%3Aqr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  )
+})
+
+test('getProfilePath returns null without a wallet', () => {
+  const page = new AccountPage({})
+
+  assert.equal(page.getProfilePath(), null)
+})
+
+test('clickProfileLink navigates to the account profile path', () => {
+  const navigated = []
+  const wallet = makeWallet('bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy')
+  const page = new AccountPage({
+    wallet,
+    navigate: (path) => navigated.push(path)
+  })
+
+  page.clickProfileLink()
+
+  assert.deepEqual(navigated, [
+    '/profile/bitcoincash%3Aqr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'
+  ])
 })
 
 test('loadTokenIcons lists the account tokens and shows them with the token ID tooltip', async () => {
