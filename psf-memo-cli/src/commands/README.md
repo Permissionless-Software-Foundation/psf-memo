@@ -33,6 +33,14 @@ async run (flags) {
 A missing required flag throws a `UsageError` (from `reporter.js`) so the
 process exits `2`; any other thrown error exits `1`.
 
+Read commands reflect indexed state only: a `memo-*` write returns its `txid`
+as soon as the wallet broadcasts, but the action is not readable until it is
+confirmed and indexed by `psf-memo-indexer`. `memo-wait` is the shared bridge
+for the post store (`GET /level/post/:txid`); for other actions, wait for the
+containing block with `memo-status` and re-run the read. See
+[README.md → Async visibility](../../README.md#async-visibility) for the full
+contract.
+
 ## Memo command index
 
 Every `memo-*` command and its contract. Reads have no action byte; writes
