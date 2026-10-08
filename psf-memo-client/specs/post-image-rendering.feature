@@ -2,11 +2,13 @@
 # {"version":1,"tested_at":"2026-09-16T14:30:45.236912355Z","feature_name":"Post Image Rendering","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/post-image-rendering.feature","background_hash":"0d66780cb1b8e277f0ada40a8ffe336dec7a8eaf658f19d2ea344815fb9bf26c","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Post Image Rendering - 1 an image URL renders an inline image inside a link","scenario_hash":"7b43dc07b8d3d0c06df1c7afa5d1497a1e555364ae0c27eb3539deff1284b005","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-09-16T14:30:45.236912355Z"},{"index":2,"name":"Post Image Rendering - 3 an image that fails to load falls back to a plain link","scenario_hash":"6fde4a40ced467661bde1c978957b34d93f9ec6162c4276d6ee942d7747af7ba","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-09-16T14:30:45.236912355Z"}]}
 # acceptance-mutation-manifest-end
 
-# Scenarios: Post Image Rendering - 1, Post Image Rendering - 2, Post Image Rendering - 3
+# Scenarios: Post Image Rendering - 1, Post Image Rendering - 2, Post Image Rendering - 3, Post Image Rendering - 4
 #
 # When a post contains a URL whose path ends in a common image file extension
 # (.jpg, .jpeg, .png, .gif, .webp, .bmp; case-insensitive; query string and
-# fragment ignored), the client renders the image inline inside an anchor that
+# fragment ignored) or whose query string carries an image format hint
+# (format=jpg, format=jpeg, format=png, format=gif, format=webp, format=bmp;
+# case-insensitive), the client renders the image inline inside an anchor that
 # opens the original URL in a new tab. The image's alt text is the URL's
 # filename, or "post image" when no filename is present. The URL is not shown
 # as text, and surrounding text is preserved. URLs that are not images keep the
@@ -42,7 +44,7 @@ Feature: Post Image Rendering
     Examples:
       | text | url |
       | read https://example.com/page now | https://example.com/page |
-      | view https://example.com/photo?format=jpg here | https://example.com/photo?format=jpg |
+      | view https://example.com/feed.json?format=json here | https://example.com/feed.json?format=json |
       | logo https://example.com/logo.svg here | https://example.com/logo.svg |
 
   Scenario Outline: Post Image Rendering - 3 an image that fails to load falls back to a plain link
@@ -57,3 +59,18 @@ Feature: Post Image Rendering
       | text | url |
       | https://i.imgur.com/swCI56T.jpeg basil leaves | https://i.imgur.com/swCI56T.jpeg |
       | https://example.com/img/photo.png the view | https://example.com/img/photo.png |
+
+  Scenario Outline: Post Image Rendering - 4 an image format query parameter renders an inline image inside a link
+    Given the psf-memo-db API serves a post with txid 4444444444444444444444444444444444444444444444444444444444444444 authored by the address bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy with text <text>
+    When I open the recent posts feed
+    Then the feed shows an image with the URL <url> and alt text <alt>
+    And the feed shows a link to <url> that opens in a new tab
+    And the feed shows the text <surrounding_text>
+    And the feed does not show the URL <url> as text
+
+    Examples:
+      | text | url | alt | surrounding_text |
+      | https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small a photo | https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small | HUDsd-2XAAA6KW7 | a photo |
+      | https://cdn.example.com/media/abc123?format=png&size=large wide shot | https://cdn.example.com/media/abc123?format=png&size=large | abc123 | wide shot |
+      | https://cdn.example.com/media/xyz789?format=WEBP hi | https://cdn.example.com/media/xyz789?format=WEBP | xyz789 | hi |
+      | https://cdn.example.com/media/clip42?format=jpeg a still | https://cdn.example.com/media/clip42?format=jpeg | clip42 | a still |
