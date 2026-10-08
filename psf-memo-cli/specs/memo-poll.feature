@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=c5c54d7024ad0194b65a5336e96c943cd77391a89646de4d3df028b079d47c12
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T01:41:55.469687122Z","feature_name":"Memo Poll","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-poll.feature","background_hash":"e5b0bec85da2db1b65fc84c117ad1d53d6ead431a33cb711891c8e185eb4d8e0","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Memo Poll - 2 the command reads the poll and reports its question","scenario_hash":"7a7a547d7938f7eadac41bda0911a52aa7fc716feb2ff04070dae602bd149720","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-08T01:41:55.469687122Z"},{"index":2,"name":"Memo Poll - 3 the command reports each option's text and author","scenario_hash":"8868994f872f62fc7b6faaa2a46ae5af4e8a3419b7ee4d94e22a16439ee4e707","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-08T01:41:55.469687122Z"},{"index":3,"name":"Memo Poll - 4 the command reports each vote's comment and voter","scenario_hash":"92ae959a5616447274b0be2e87e8c0c9e1aad33ead80127e03bd22bea4bc76d6","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-08T01:41:55.469687122Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Poll (R13): the psf-memo-cli read command for a single Memo poll. The
 # poll is identified by its transaction id via the required -t flag. It reads
 # GET /polls/:txid, which returns the poll together with its options and votes,
