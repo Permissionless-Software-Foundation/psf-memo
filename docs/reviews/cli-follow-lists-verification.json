@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task": "cli-follow-lists",
+  "component": "psf-memo-cli",
+  "git_sha": "c67e4ac0be599ebdbba3a2903e4b7ee730372b19",
+  "branch": "swarmforge-architect",
+  "timestamp": "2026-10-08T01:15:26.134Z",
+  "commands": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "exit": 0,
+      "duration_ms": 4515,
+      "summary": "423 passing"
+    },
+    {
+      "name": "property",
+      "command": "npm run property",
+      "exit": 0,
+      "duration_ms": 483,
+      "summary": "89 pass / 0 fail"
+    },
+    {
+      "name": "acceptance",
+      "command": "npm run acceptance",
+      "exit": 0,
+      "duration_ms": 4806,
+      "summary": "all 23 acceptance suites passed"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit": 0,
+      "duration_ms": 646,
+      "summary": "ok"
+    }
+  ],
+  "result": "pass"
+}
