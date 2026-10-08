@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T03:44:07.251675344Z","feature_name":"Secret Hygiene","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/secret-hygiene.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Secret Hygiene - 1, Secret Hygiene - 2, Secret Hygiene - 3
 #
 # X3: no psf-memo-cli command prints a mnemonic, a WIF private key, or the raw
