@@ -32,6 +32,7 @@ import SetBio from './set-bio'
 import SetAvatarUrl from './set-avatar-url'
 import Account from './account'
 import Topics from './topics'
+import NewTopic from './new-topic'
 import TopicFeed from './topic-feed'
 import Search from './search'
 import Notifications from './notifications'
@@ -53,6 +54,7 @@ function AppBody (props) {
         <Route path='/posts/recent' element={<RecentPosts appData={appData} />} />
         <Route path='/posts/new' element={<NewPost appData={appData} />} />
         <Route path='/topics' element={<Topics />} />
+        <Route path='/topics/new' element={<NewTopic appData={appData} />} />
         <Route path='/topics/:room' element={<TopicFeed appData={appData} />} />
         <Route path='/search' element={<Search />} />
         <Route path='/notifications' element={<Notifications appData={appData} />} />

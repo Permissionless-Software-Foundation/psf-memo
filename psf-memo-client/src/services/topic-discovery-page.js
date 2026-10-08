@@ -10,6 +10,7 @@ const PaginatedPage = require('./paginated-page')
 const { relativeTime } = require('./relative-time')
 
 const TOPICS_PATH = '/topics'
+const NEW_TOPIC_PATH = '/topics/new'
 
 class TopicDiscoveryPage extends PaginatedPage {
   constructor (deps = {}) {
@@ -39,9 +40,20 @@ class TopicDiscoveryPage extends PaginatedPage {
     this.navigate(path)
     return { path }
   }
+
+  // The page always offers a New Topic entry point.
+  hasNewTopicButton () {
+    return true
+  }
+
+  openNewTopic () {
+    this.navigate(NEW_TOPIC_PATH)
+    return { path: NEW_TOPIC_PATH }
+  }
 }
 
 TopicDiscoveryPage.TOPICS_PATH = TOPICS_PATH
+TopicDiscoveryPage.NEW_TOPIC_PATH = NEW_TOPIC_PATH
 TopicDiscoveryPage.topicFeedPath = function (room) {
   return `${TOPICS_PATH}/${encodeURIComponent(room)}`
 }

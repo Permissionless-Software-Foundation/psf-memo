@@ -10,3 +10,11 @@
     white-space: nowrap;
   }
 }
+
+/* Put the New Topic action on the same row as the page heading. */
+.topics-page .topics-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}

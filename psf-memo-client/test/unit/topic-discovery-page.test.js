@@ -157,3 +157,26 @@ test('openTopic uses a no-op navigate by default', () => {
 test('exposes the topics page path', () => {
   assert.equal(TopicDiscoveryPage.TOPICS_PATH, '/topics')
 })
+
+test('the topics page offers a New Topic button', () => {
+  const page = new TopicDiscoveryPage({ memoDb: makeMemoDb({ topics: [] }) })
+
+  assert.equal(page.hasNewTopicButton(), true)
+})
+
+test('openNewTopic navigates to the new topic path', () => {
+  const calls = []
+  const page = new TopicDiscoveryPage({
+    memoDb: makeMemoDb({ topics: [] }),
+    navigate: (path) => calls.push(path)
+  })
+
+  const result = page.openNewTopic()
+
+  assert.deepEqual(result, { path: '/topics/new' })
+  assert.deepEqual(calls, ['/topics/new'])
+})
+
+test('exposes the new topic path', () => {
+  assert.equal(TopicDiscoveryPage.NEW_TOPIC_PATH, '/topics/new')
+})

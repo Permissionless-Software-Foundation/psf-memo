@@ -49,6 +49,7 @@ const { buildRecentProfilesTable, buildRecentProfileFollow } = require('../../sr
 const MemoTopicFollow = require('../../src/services/memo-topic-follow')
 const MemoTopicPost = require('../../src/services/memo-topic-post')
 const TopicPostPage = require('../../src/services/topic-post-page')
+const NewTopicPage = require('../../src/services/new-topic-page')
 const MemoPollCreate = require('../../src/services/memo-poll-create')
 const PollCreatePage = require('../../src/services/poll-create-page')
 const MemoPollOption = require('../../src/services/memo-poll-option')
@@ -149,7 +150,7 @@ function makeWallet (address) {
             ? Buffer.from(msg)
             : msg)
       const pushes = [Buffer.from(prefix, 'hex'), ...fieldBuffers]
-      this.broadcasts.push({ msg: storedMsg, pushes, prefix, bchOutput })
+      this.broadcasts.push({ msg: storedMsg, pushes, prefix, bchOutput, failed: Boolean(this.failWith) })
       if (this.failWith) throw new Error(this.failWith)
       return 'aa'.repeat(32)
     }
@@ -593,6 +594,14 @@ function createWorld () {
   world.threadPage = new ThreadPage({ memoDb })
   world.topicDiscoveryPage = new TopicDiscoveryPage({
     memoDb,
+    navigate: (path) => { world.currentPath = path }
+  })
+  // The New Topic Page controller wraps the topic-message action with the room
+  // derived from the typed topic name. Its navigate adapter updates the world's
+  // current path and its feed records the optimistic topic post.
+  world.newTopicPage = new NewTopicPage({
+    wallet,
+    feed,
     navigate: (path) => { world.currentPath = path }
   })
   world.searchPage = new SearchPage({
@@ -1644,7 +1653,10 @@ const handlers = [
     name: 'app does not broadcast any transaction',
     pattern: /^(?:the wallet|the app) does not broadcast (?:any|an OP_RETURN) transaction$/,
     run (m, example, world) {
-      if (world.wallet.broadcasts.length !== 0) {
+      // The fake wallet records the attempt before a rejected sendOpReturn
+      // throws. Only an attempt that resolved is a broadcast transaction, so a
+      // rejected attempt does not count here.
+      if (world.wallet.broadcasts.some((broadcast) => !broadcast.failed)) {
         throw new Error('A transaction was broadcast when none was expected.')
       }
     }
@@ -3217,12 +3229,126 @@ const handlers = [
   },
   {
     name: 'navigate to topic feed',
-    pattern: /^the app navigates to the topic feed for (<topic>)$/,
+    pattern: /^the app navigates to the topic feed for (<[A-Za-z0-9_]+>)$/,
     run (m, example, world) {
       const room = resolveParam(m[1], example)
       const expected = TopicFeedPage.topicFeedPath(room)
       if (world.currentPath !== expected) {
         throw new Error(`Expected to navigate to ${expected}, but current path is ${world.currentPath}.`)
+      }
+    }
+  },
+  {
+    name: 'topics page shows New Topic button',
+    pattern: /^the topics page shows a New Topic button$/,
+    run (m, example, world) {
+      if (!world.topicDiscoveryPage.hasNewTopicButton()) {
+        throw new Error('Topics page does not show a New Topic button.')
+      }
+    }
+  },
+  {
+    name: 'click New Topic button',
+    pattern: /^I click the New Topic button$/,
+    run (m, example, world) {
+      world.topicDiscoveryPage.openNewTopic()
+    }
+  },
+  {
+    name: 'new topic page shows name and first message fields',
+    pattern: /^the new topic page shows a topic name field and a first message field$/,
+    run (m, example, world) {
+      if (!world.newTopicPage.hasTopicNameField()) {
+        throw new Error('New topic page does not show a topic name field.')
+      }
+      if (!world.newTopicPage.hasFirstMessageField()) {
+        throw new Error('New topic page does not show a first message field.')
+      }
+    }
+  },
+  {
+    name: 'enter the topic name',
+    pattern: /^I enter the topic name "(.+)"$/,
+    run (m, example, world) {
+      world.newTopicPage.setTopicName(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'enter the first message',
+    pattern: /^I enter the first message "(.+)"$/,
+    run (m, example, world) {
+      world.newTopicPage.setFirstMessage(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'submit the new topic',
+    pattern: /^I submit the new topic$/,
+    async run (m, example, world) {
+      await world.newTopicPage.submit()
+    }
+  },
+  {
+    name: 'new topic page shows a topic name validation error',
+    pattern: /^the new topic page shows a topic name validation error$/,
+    run (m, example, world) {
+      if (world.newTopicPage.submitError !== NewTopicPage.TOPIC_NAME_VALIDATION_CODE) {
+        throw new Error(`Expected ${NewTopicPage.TOPIC_NAME_VALIDATION_CODE}, got ${world.newTopicPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'new topic page shows a first message validation error',
+    pattern: /^the new topic page shows a first message validation error$/,
+    run (m, example, world) {
+      if (world.newTopicPage.submitError !== 'topic_post_validation') {
+        throw new Error(`Expected topic_post_validation, got ${world.newTopicPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'new topic page shows a length error',
+    pattern: /^the new topic page shows a length error$/,
+    run (m, example, world) {
+      if (world.newTopicPage.submitError !== 'topic_post_length') {
+        throw new Error(`Expected topic_post_length, got ${world.newTopicPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'new topic page remaining byte count',
+    pattern: /^the new topic page shows a remaining byte count of (<count>)$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      if (Number.isNaN(expected)) throw new Error(`Invalid expected count for "${m[1]}".`)
+      const actual = world.newTopicPage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'new topic page shows the broadcast error',
+    pattern: /^the new topic page shows the broadcast error "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}"`)
+      const expected = example[param]
+      if (world.newTopicPage.broadcastError !== expected) {
+        throw new Error(`Expected broadcast error "${expected}", got "${world.newTopicPage.broadcastError}".`)
+      }
+    }
+  },
+  {
+    name: 'topic feed shows my first message',
+    pattern: /^the topic feed shows my first message "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) throw new Error(`Missing example value for "${param}"`)
+      const expected = example[param]
+      const myAddr = world.wallet.walletInfo.cashAddress
+      const found = world.feed.posts.find((p) => p.text === expected && p.address === myAddr)
+      if (!found) {
+        throw new Error(`Topic feed does not show my first message "${expected}".`)
       }
     }
   },
