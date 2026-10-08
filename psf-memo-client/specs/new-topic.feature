@@ -29,7 +29,7 @@ Feature: New Topic
     When I enter the topic name "<name>"
     When I enter the first message "<message>"
     When I submit the new topic
-    Then the wallet broadcasts an OP_RETURN with the Memo topic-message prefix and 2 pushes
+    Then the wallet broadcasts an OP_RETURN with the Memo topic-message prefix and 3 pushes
     And the second broadcast push is the UTF-8 topic "<room>"
     And the third broadcast push is the UTF-8 text "<message>"
     And the app navigates to the topic feed for <room>
