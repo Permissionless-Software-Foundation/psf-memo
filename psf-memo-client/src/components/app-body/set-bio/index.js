@@ -23,7 +23,16 @@ function SetBio (props) {
   const [err, setErr] = useState('')
   const [settingBio, setSettingBio] = useState(false)
 
+  const address = appData?.wallet?.walletInfo?.cashAddress
+  const existingBio = address && appData?.profiles?.getBio
+    ? (appData.profiles.getBio(address) || null)
+    : null
+
   const remaining = maxBytes - byteLength(input)
+
+  function handleCancel () {
+    navigate(SetBioPage.ACCOUNT_PATH)
+  }
 
   async function handleSubmit (event) {
     event.preventDefault()
@@ -65,6 +74,12 @@ function SetBio (props) {
           </header>
 
           <Form onSubmit={handleSubmit}>
+            {existingBio && (
+              <p className='set-bio-existing'>
+                Current bio: <span className='set-bio-existing-value'>{existingBio}</span>
+              </p>
+            )}
+
             <Form.Group controlId='set-bio-input' className='mb-3'>
               <Form.Label><b>Bio</b></Form.Label>
               <Form.Control
@@ -84,6 +99,15 @@ function SetBio (props) {
 
             <Button type='submit' variant='primary' disabled={settingBio}>
               {settingBio ? 'Setting Bio...' : 'Set Bio'}
+            </Button>
+            <Button
+              type='button'
+              variant='secondary'
+              className='ms-2'
+              onClick={handleCancel}
+              disabled={settingBio}
+            >
+              Cancel
             </Button>
           </Form>
         </Col>

@@ -31,6 +31,15 @@ function makeMemoSetBio () {
   return new MemoSetBio({ wallet })
 }
 
+function makeProfiles () {
+  const bios = {}
+  return {
+    bios,
+    setBio: (addr, bio) => { bios[addr] = bio },
+    getBio: (addr) => bios[addr] || null
+  }
+}
+
 test('the in-flight flag starts false', () => {
   const page = new SetBioPage({ navigate: () => {} })
 
@@ -113,4 +122,73 @@ test('submit records a broadcast error when no memo set-bio handler is injected'
   assert.equal(result.ok, false)
   assert.equal(result.error, 'broadcast')
   assert.match(result.message, /Set bio requires a memo set-bio handler/)
+})
+
+test('getExistingBio returns null when the account has no stored bio', () => {
+  const wallet = makeWallet()
+  const profiles = makeProfiles()
+  const page = new SetBioPage({
+    memoSetBio: new MemoSetBio({ wallet, profiles }),
+    wallet,
+    profiles,
+    navigate: () => {}
+  })
+
+  assert.equal(page.getExistingBio(), null)
+  assert.equal(page.hasExistingBio(), false)
+  assert.equal(page.showsNoExistingBio(), true)
+})
+
+test('getExistingBio returns the stored bio for the authenticated address', () => {
+  const wallet = makeWallet()
+  const profiles = makeProfiles()
+  profiles.setBio(wallet.walletInfo.cashAddress, 'Building the future on Bitcoin Cash')
+  const page = new SetBioPage({
+    memoSetBio: new MemoSetBio({ wallet, profiles }),
+    wallet,
+    profiles,
+    navigate: () => {}
+  })
+
+  assert.equal(page.getExistingBio(), 'Building the future on Bitcoin Cash')
+  assert.equal(page.hasExistingBio(), true)
+  assert.equal(page.showsNoExistingBio(), false)
+})
+
+test('getExistingBio falls back to the injected action profile store', () => {
+  const wallet = makeWallet()
+  const profiles = makeProfiles()
+  profiles.setBio(wallet.walletInfo.cashAddress, 'Stored in the action store')
+  const page = new SetBioPage({
+    memoSetBio: new MemoSetBio({ wallet, profiles }),
+    navigate: () => {}
+  })
+
+  assert.equal(page.getExistingBio(), 'Stored in the action store')
+})
+
+test('getExistingBio returns null when no bio getter is available', () => {
+  const page = new SetBioPage({
+    memoSetBio: makeMemoSetBio(),
+    profiles: {},
+    navigate: () => {}
+  })
+
+  assert.equal(page.getExistingBio(), null)
+  assert.equal(page.showsNoExistingBio(), true)
+})
+
+test('cancel navigates to the account page without broadcasting', () => {
+  const navigated = []
+  const memoSetBio = makeMemoSetBio()
+  const page = new SetBioPage({
+    memoSetBio,
+    navigate: (path) => navigated.push(path)
+  })
+  page.setInput('Building on BCH')
+
+  page.cancel()
+
+  assert.deepEqual(navigated, [SetBioPage.ACCOUNT_PATH])
+  assert.equal(memoSetBio.wallet.broadcasts.length, 0)
 })

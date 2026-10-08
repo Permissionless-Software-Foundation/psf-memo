@@ -39,6 +39,12 @@ class ProfileTextPage extends PageController {
     return this.constructor.config.maxBytes - byteLength(this.input)
   }
 
+  // Leave the page without submitting and return to the account page.
+  cancel () {
+    this.navigate(this.successPath)
+    return this
+  }
+
   // Set the in-flight flag.
   _setBusy (value) {
     this[this.constructor.config.busyKey] = value
