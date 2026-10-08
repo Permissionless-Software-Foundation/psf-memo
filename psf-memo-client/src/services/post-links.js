@@ -72,11 +72,16 @@ function parsePostLinks (text) {
   return segments
 }
 
-// Common image file extensions recognized in a URL path.
-const IMAGE_EXTENSION_RE = /\.(?:jpg|jpeg|png|gif|webp|bmp)$/i
+// Image file formats recognized either as a URL path extension or as a
+// ?format= query hint. Kept in one list so the two detection paths stay in
+// agreement.
+const IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
 
-// Image format hints that may appear in a URL's query string, e.g. ?format=jpg.
-const IMAGE_FORMAT_VALUES = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'])
+// The path form, e.g. https://host/photo.jpg.
+const IMAGE_EXTENSION_RE = new RegExp(`\\.(?:${IMAGE_FORMATS.join('|')})$`, 'i')
+
+// The query form, e.g. https://host/photo?format=jpg.
+const IMAGE_FORMAT_VALUES = new Set(IMAGE_FORMATS)
 
 /**
  * True when a URL is an image: either its path ends in a recognized image file

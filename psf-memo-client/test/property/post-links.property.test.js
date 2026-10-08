@@ -221,6 +221,30 @@ function randomNonImageUrl () {
   return `https://${randomHost()}/${randomName()}.${ext}${randomQueryOrFragment()}`
 }
 
+const SUPPORTED_IMAGE_FORMATS = new Set(IMAGE_EXTENSIONS)
+
+// Values that look like a format hint but are not supported, including
+// near-misses that must not be accepted by a prefix or substring match.
+const NON_IMAGE_FORMATS = [
+  'json', 'svg', 'txt', 'html', 'js', 'pdf',
+  'jpgs', 'pngx', 'webp2', 'gifv', 'jpeg2'
+]
+
+function randomFormatToken () {
+  if (rng() < 0.5) {
+    return randomCase(IMAGE_EXTENSIONS[Math.floor(rng() * IMAGE_EXTENSIONS.length)])
+  }
+  return NON_IMAGE_FORMATS[Math.floor(rng() * NON_IMAGE_FORMATS.length)]
+}
+
+// A URL whose path has no file extension, so the format query is the only
+// possible image signal.
+function randomFormatHintUrl () {
+  const dir = ['', 'media/', 'a/b/', 'img/'][Math.floor(rng() * 4)]
+  const extra = ['', '&name=small', `&size=${intGen(rng, 1, 2000)()}`, '&w=100&h=200'][Math.floor(rng() * 4)]
+  return `https://${randomHost()}/${dir}${randomName()}?format=${randomFormatToken()}${extra}`
+}
+
 test('isImageUrl recognizes supported image extensions regardless of case or query', async () => {
   await forAll(
     () => randomImageUrl(),
@@ -260,7 +284,7 @@ test('isImageUrl and imageAltText never throw and are deterministic for arbitrar
 
 test('imageAltText returns the URL filename, ignoring query string and fragment', async () => {
   await forAll(
-    () => randomImageUrl(),
+    () => (rng() < 0.5 ? randomImageUrl() : randomFormatHintUrl()),
     async (url) => imageAltText(url) === new URL(url).pathname.split('/').pop(),
     { label: 'imageAltText filename', samples: 2000 }
   )
@@ -274,5 +298,26 @@ test('parsePostLinks keeps an image URL intact so isImageUrl still recognizes it
       return Boolean(link) && link.href === url && isImageUrl(link.href) === true
     },
     { label: 'parsePostLinks image url round trip', samples: 2000 }
+  )
+})
+
+test('isImageUrl treats a format query as an image exactly when it names a supported format', async () => {
+  await forAll(
+    () => randomFormatHintUrl(),
+    async (url) => {
+      const format = new URL(url).searchParams.get('format')
+      return isImageUrl(url) === SUPPORTED_IMAGE_FORMATS.has(format.toLowerCase())
+    },
+    { label: 'isImageUrl format hint equivalence', samples: 3000 }
+  )
+})
+
+test('isImageUrl agrees on the path-extension and format-query forms for the same format', async () => {
+  await forAll(
+    () => randomCase(IMAGE_EXTENSIONS[Math.floor(rng() * IMAGE_EXTENSIONS.length)]),
+    async (format) =>
+      isImageUrl(`https://example.com/photo.${format}`) === true &&
+      isImageUrl(`https://example.com/photo?format=${format}`) === true,
+    { label: 'image format parity', samples: 2000 }
   )
 })
