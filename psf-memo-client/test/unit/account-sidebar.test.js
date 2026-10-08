@@ -2,8 +2,9 @@
   Unit tests for the account page sidebar presentation component.
 
   The account sidebar mirrors the profile page sidebar: the avatar, bio,
-  copyable BCH address, and SLP token icons, in that order. The bio section
-  shows the profile text when set and a "No profile text" message otherwise.
+  Profile link, copyable BCH address, and SLP token icons, in that order. The
+  bio section shows the profile text when set and a "No profile text" message
+  otherwise.
 */
 
 'use strict'
@@ -44,6 +45,29 @@ test('renders a Profile link to the account profile path', () => {
   assert.ok(html.includes('account-sidebar-profile-link'))
   assert.ok(html.includes(`href="/profile/${encodeURIComponent(ADDR)}"`))
   assert.ok(html.includes('>Profile<'))
+})
+
+// Invoke the component function directly so the Profile link's click handler
+// can be exercised without a DOM.
+function profileLink (props = {}) {
+  const sections = AccountSidebar({ addr: ADDR, ...props }).props.children
+  return sections.find((section) => section.props['data-section'] === 'profile').props.children
+}
+
+test('clicking the Profile link prevents the default and calls the handler', () => {
+  let clicks = 0
+  let prevented = 0
+
+  profileLink({ onProfileClick: () => { clicks++ } })
+    .props.onClick({ preventDefault: () => { prevented++ } })
+
+  assert.equal(prevented, 1)
+  assert.equal(clicks, 1)
+})
+
+test('clicking the Profile link without a handler is a no-op', () => {
+  assert.doesNotThrow(() =>
+    profileLink().props.onClick({ preventDefault: () => {} }))
 })
 
 test('shows the bio when set', () => {

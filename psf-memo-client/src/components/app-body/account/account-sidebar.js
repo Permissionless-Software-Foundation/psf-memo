@@ -78,5 +78,5 @@ AccountSidebar.profilePath = profilePath
 module.exports = AccountSidebar
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-02T16:08:35.248Z","module_hash":"02e1b6997414b5d9a0e64464bc46a126b54fcd65711521b75bf0b8ef96d7120c","functions":[{"id":"func/AccountSidebar","name":"AccountSidebar","line":18,"end_line":52,"hash":"2d844fe533880666f76f47fbd323403d7abc0ff208f960d24621d055dd0749d2"}]}
+// {"version":1,"tested_at":"2026-10-08T21:00:40.791Z","module_hash":"6d92ca5e8c49eb71ecc3064b3dac539419481c8bd37f3d7ce6aebded9b3ae3c1","functions":[{"id":"func/AccountSidebar","name":"AccountSidebar","line":20,"end_line":73,"hash":"ef7ac897bfd3f54bbe3003c9d51a71524a3b72b9a295cb7d8db792f1f6b2cf30"}]}
 // mutate4javascript-manifest-end
