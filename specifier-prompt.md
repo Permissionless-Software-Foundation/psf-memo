@@ -1142,6 +1142,18 @@ that a single user-facing feature may require specs in more than one component.
     `UsageError`. New address-payload writes should reuse the factory. Specs:
     `psf-memo-cli/specs/memo-{follow,unfollow,mute,unmute}.feature`.
 
+84. **Multi-field writes share `defineFieldsWriteCommand`, and topic rooms use
+    the shared `-r` parser (`cli-topic-writes`, W9/W10).**
+    `src/lib/write-command.js` now exposes `defineFieldsWriteCommand` for
+    ordered multi-field actions, with `defineFieldWriteCommand` as its one-field
+    case; `memo-reply` and `memo-topic-post` (`fields: ['room', 'message']`) use
+    it. `room-flag.js` owns the required `-r` room check and message, and
+    `topic-room-write-command.js` composes it with the single-field factory for
+    `memo-topic-follow`/`memo-topic-unfollow`. The `0x6d0c` combined room+message
+    limit stays local to `memo-topic-post.js` because `memoTextFlagParser`
+    measures one flag. Specs:
+    `psf-memo-cli/specs/memo-{topic-post,topic-follow,topic-unfollow}.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1198,7 +1210,29 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-follow-mute`): specified and merged W7/W8 as
+Latest session (2026-10-08, `cli-topic-writes`): specified and merged W9/W10 as
+three topic writes in one cycle. The specifier wrote
+`psf-memo-cli/specs/memo-topic-post.feature` (8 scenarios),
+`memo-topic-follow.feature`, and `memo-topic-unfollow.feature` (4 each); the
+coder/refactorer/architect added `defineFieldsWriteCommand`
+(`src/lib/write-command.js`, now backing `memo-reply`), `room-flag.js` (shared
+required `-r` message), and `topic-room-write-command.js`, plus
+`memo-topic-post` (`0x6d0c`, `[6d0c, room, message]`, room+message ≤ 214 UTF-8
+bytes), `memo-topic-follow` (`0x6d0d`), and `memo-topic-unfollow` (`0x6d0e`).
+Each resolves the signing wallet (`-n`/`--wif`), requires the room (`-r`), and
+reports the txid + explorer; missing/empty/over-limit flags are usage errors
+(exit 2) with no broadcast. The architect killed a combined-214-byte boundary
+survivor and shared the property random-text generator. Merged to `master` at
+`c46a728` (fast-forward; architect code-review commit `8bfdfa47ec`; the later
+`c46a728` adds only the record and summary, so
+`docs/reviews/cli-topic-writes-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `8bfdfa47ec` (unit 568/0, property 110/0, acceptance
+all 35 suites, lint ok); language mutation 6 killed / 0 survived; soft Gherkin
+mutation topic-post 21/8, follow/unfollow 6/0 (intrinsic case equivalents); DRY
+clean. Independent acceptance check after merge: 24/24. Architect summary:
+`docs/reviews/cli-topic-writes-summary.md`.
+
+Previous session (2026-10-08, `cli-follow-mute`): specified and merged W7/W8 as
 four hash160 state writes in one cycle. The specifier wrote
 `psf-memo-cli/specs/memo-{follow,unfollow,mute,unmute}.feature` (5 scenarios
 each, 28 example executions); the coder/refactorer/architect added
@@ -1773,7 +1807,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `0e89edc` (`Record cli-follow-mute architect review and verification`).
+Current `master` HEAD: `c46a728` (`Record cli-topic-writes architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1822,9 +1856,12 @@ foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,
 **R14 `memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done,
 and the write commands **W1 `memo-post`**, **W2 `memo-reply`**, **W3
 `memo-like`**, **W4 `memo-name`**, **W5 `memo-bio`**, **W6 `memo-avatar`**,
-**W7 `memo-follow`/`memo-unfollow`**, and **W8 `memo-mute`/`memo-unmute`** are
-done. The suggested next item is **W9–W13** — the multi-push topic and poll
-write commands (`0x6d0c`–`0x6d0e`, `0x6d10`, `0x6d13`, `0x6d14`; gotcha #35
-multi-push). The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`.
+**W7 `memo-follow`/`memo-unfollow`**, **W8 `memo-mute`/`memo-unmute`**,
+**W9 `memo-topic-post`**, and **W10
+`memo-topic-follow`/`memo-topic-unfollow`** are done. The poll writes
+**W11–W13** were dropped by user decision (2026-10-08), so the remaining
+suggested work is the cross-cutting hardening series **X1–X7** in
+`psf-memo-cli/dev-docs/feature-backlog.md`. The earlier client direction
+(front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

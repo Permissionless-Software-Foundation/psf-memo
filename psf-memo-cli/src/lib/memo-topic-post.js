@@ -45,3 +45,7 @@ export function parseTopicPostFlags (flags = {}) {
 export function formatTopicPostMessage ({ txid, explorerUrl } = {}) {
   return `Posted topic message: ${txid}\nView this transaction on a block explorer:\n${explorerUrl}`
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T02:37:22.227Z","module_hash":"3e05547310b627fe56a16c9aace40fd5014e5e7141c01adf3cd89540c28caa24","functions":[{"id":"func/parseTopicPostFlags","name":"parseTopicPostFlags","line":24,"end_line":42,"hash":"df0a332204bf87b7b415200189a8cdd01df1480ab3687c07e1382a899e7fe4df"},{"id":"func/formatTopicPostMessage","name":"formatTopicPostMessage","line":45,"end_line":47,"hash":"0485d2b9614456e696379c0fac29ab9ad586c4f950e926990e90107223550e8c"}]}
+// mutate4javascript-manifest-end

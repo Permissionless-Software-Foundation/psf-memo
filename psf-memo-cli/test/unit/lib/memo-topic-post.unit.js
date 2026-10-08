@@ -32,7 +32,7 @@ describe('#memo-topic-post helper', () => {
   })
 
   it('accepts a room plus message exactly at the combined byte limit', () => {
-    const message = 'é'.repeat(103) // 206 bytes; 7-byte room -> 213 total
+    const message = 'a'.repeat(207) // 207 bytes; 7-byte room -> 214 total
 
     assert.deepEqual(parseTopicPostFlags({ room: 'general', memo: message }), {
       room: 'general',

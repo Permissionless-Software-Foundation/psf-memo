@@ -35,6 +35,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI topic writes (`cli-topic-writes`, 2026-10-08):** W9/W10 of the
+  `psf-memo-cli` Memo-protocol backlog — the topic message and topic follow
+  writes. Added `defineFieldsWriteCommand` (`src/lib/write-command.js`, now also
+  backing `memo-reply`), `room-flag.js` (shared required `-r` message), and
+  `topic-room-write-command.js`, plus `memo-topic-post` (`0x6d0c`,
+  `[6d0c, room, message]`, room+message ≤ 214 UTF-8 bytes),
+  `memo-topic-follow` (`0x6d0d`, `[6d0d, room]`), and `memo-topic-unfollow`
+  (`0x6d0e`, `[6d0e, room]`). Each resolves the signing wallet (`-n`/`--wif`),
+  requires the room (`-r`), and reports the txid + explorer link; missing/empty/
+  over-limit flags are usage errors (exit 2) with no broadcast. Specs:
+  `psf-memo-cli/specs/memo-topic-post.feature` (8 scenarios),
+  `memo-topic-follow.feature` and `memo-topic-unfollow.feature` (4 each); 24
+  example executions total. Merged to `master` at `c46a728` (fast-forward;
+  architect code-review commit `8bfdfa47ec`; the later `c46a728` adds only the
+  record and summary, so `docs/reviews/cli-topic-writes-verification.json` is
+  valid for the merged tree). `verify.sh cli` pass 4/4 at `8bfdfa47ec` (unit
+  568/0, property 110/0, acceptance all 35 suites, lint ok); language mutation 6
+  killed / 0 survived (`write-command.js` 3, `memo-topic-post.js` 3; the command
+  modules scan as 0 sites); soft Gherkin mutation topic-post 21/8, follow/
+  unfollow 6/0 (intrinsic case equivalents); DRY clean after sharing the
+  property random-text generator. Independent acceptance check after merge:
+  24/24. Architect summary: `docs/reviews/cli-topic-writes-summary.md`.
+
 - **CLI social-graph writes (`cli-follow-mute`, 2026-10-08):** W7/W8 of the
   `psf-memo-cli` Memo-protocol backlog — four hash160 state writes in one cycle.
   Added `defineAddressWriteCommand` (`src/lib/address-write-command.js`) and

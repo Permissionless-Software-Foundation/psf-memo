@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:38:11.627743711Z","feature_name":"Memo Topic Follow","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-topic-follow.feature","background_hash":"e17c991b23e7dd6f4fdb450c04e557002baf20b59aeedd1079e91a4f494ede66","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Topic Follow (W10a): the psf-memo-cli topic-follow write command. It
 # resolves the signing wallet (-n <wallet> or --wif <wif>, shared F2
 # wallet-source), requires the topic room (-r), broadcasts the two-push Memo

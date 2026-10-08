@@ -10,7 +10,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seededRandom } from './harness.js'
+import { seededRandom, randomText } from './harness.js'
 import MemoTopicFollow from '../../src/commands/memo-topic-follow.js'
 import MemoTopicUnfollow from '../../src/commands/memo-topic-unfollow.js'
 import { makeCommand } from '../support/write-command-unit.js'
@@ -22,20 +22,13 @@ const COMMANDS = [
 
 const ROOM_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789- é中'
 
-function randomRoom (rng) {
-  const length = 1 + Math.floor(rng() * 20)
-  let room = ''
-  for (let i = 0; i < length; i++) room += ROOM_CHARS[Math.floor(rng() * ROOM_CHARS.length)]
-  return room
-}
-
 test('topic room write commands broadcast the room under their prefix', async () => {
   const rng = seededRandom(20261110)
   const originalExitCode = process.exitCode
 
   try {
     for (let i = 0; i < 150; i++) {
-      const room = randomRoom(rng)
+      const room = randomText(rng, ROOM_CHARS, 20)
 
       for (const { name, Command, prefix } of COMMANDS) {
         const { command, calls } = makeCommand(Command)
