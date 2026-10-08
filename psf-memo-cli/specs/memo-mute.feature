@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:24:23.356590319Z","feature_name":"Memo Mute","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-mute.feature","background_hash":"de880d1fe857a289b6be39d0b4b902a4f870eb3d6b49eb114cb1ae0bf7a2b346","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Mute (W8a): the psf-memo-cli mute write command. It resolves the signing
 # wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source), requires the
 # mutee cash address (-a), converts it to its 20-byte hash160 in display order --

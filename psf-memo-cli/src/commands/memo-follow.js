@@ -20,3 +20,7 @@ const MemoFollow = defineAddressWriteCommand({
 })
 
 export default MemoFollow
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T02:22:47.008Z","module_hash":"cb9efb11501767174884499e567f53698bf0ebebcdfc0c9248b37eadbccf5ebd","functions":[]}
+// mutate4javascript-manifest-end

@@ -39,5 +39,5 @@ export function addressHash160FlagParser (missingMessage) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-07T20:42:49.278Z","module_hash":"3e4c92738ec750d3c477708d1f774740ab9c56092569f88f14d5aa7aa0d97fd9","functions":[{"id":"func/parseAddressFlag","name":"parseAddressFlag","line":15,"end_line":23,"hash":"5f1f23d5045cfc0a12468a8f7d11aa66f5b42c7a9f6cfec2730c42dec4114f38"}]}
+// {"version":1,"tested_at":"2026-10-08T02:22:36.360Z","module_hash":"b3e28e78fa78141c24c5e53ae0ebcd8a25c8d95d182643113f6d80f642a7d4a3","functions":[{"id":"func/parseAddressFlag","name":"parseAddressFlag","line":16,"end_line":24,"hash":"5f1f23d5045cfc0a12468a8f7d11aa66f5b42c7a9f6cfec2730c42dec4114f38"},{"id":"func/addressHash160FlagParser","name":"addressHash160FlagParser","line":29,"end_line":39,"hash":"75e85a4b2dd1efe108a0bf7c53a024ac9d8ac229275a6337765f9cac42286274"}]}
 // mutate4javascript-manifest-end

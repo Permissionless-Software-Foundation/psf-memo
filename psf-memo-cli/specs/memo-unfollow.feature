@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:24:22.964773276Z","feature_name":"Memo Unfollow","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-unfollow.feature","background_hash":"9e380625d4a19da56d709a3e73c0db9d4eb3888ccce488c716f69b5860caedc9","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Unfollow (W7b): the psf-memo-cli unfollow write command. It resolves the
 # signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source), requires
 # the followee cash address (-a), converts it to its 20-byte hash160 in display

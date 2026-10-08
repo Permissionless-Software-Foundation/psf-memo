@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:24:22.592425806Z","feature_name":"Memo Follow","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-follow.feature","background_hash":"feb17a7cb638c4ed99258605d8c236a7d0dacdabde8e3e89c35f7d79d8a11e4a","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Follow (W7a): the psf-memo-cli follow write command. It resolves the
 # signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source), requires
 # the followee cash address (-a), converts it to its 20-byte hash160 in display

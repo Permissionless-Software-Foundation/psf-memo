@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:24:23.766121320Z","feature_name":"Memo Unmute","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-unmute.feature","background_hash":"35c4ea603d2b58c428035b5901811cf776d16c40988442c410418771fefb04fd","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Memo Unmute (W8b): the psf-memo-cli unmute write command. It resolves the
 # signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source), requires
 # the mutee cash address (-a), converts it to its 20-byte hash160 in display
