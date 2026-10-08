@@ -39,5 +39,5 @@ export function formatNotificationsMessage (notifications = [], pagination = {})
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-07T20:55:24.157Z","module_hash":"caff951442ef9ab211e5a6a5c16630764202eaf3f256b2cabdedcea94bc9852f","functions":[{"id":"func/parseNotificationsFlags","name":"parseNotificationsFlags","line":19,"end_line":24,"hash":"3f7d18cedb74c147182cd111cae519f25fe1934b381193971efe11635f498bef"},{"id":"func/formatNotificationsMessage","name":"formatNotificationsMessage","line":29,"end_line":39,"hash":"f0587dbd8b9e7b88cea97354e5c995156f049442a929c673c95facc858d84ea2"}]}
+// {"version":1,"tested_at":"2026-10-08T14:53:01.612Z","module_hash":"caff951442ef9ab211e5a6a5c16630764202eaf3f256b2cabdedcea94bc9852f","functions":[{"id":"func/parseNotificationsFlags","name":"parseNotificationsFlags","line":19,"end_line":24,"hash":"3f7d18cedb74c147182cd111cae519f25fe1934b381193971efe11635f498bef"},{"id":"func/formatNotificationsMessage","name":"formatNotificationsMessage","line":29,"end_line":39,"hash":"f0587dbd8b9e7b88cea97354e5c995156f049442a929c673c95facc858d84ea2"}]}
 // mutate4javascript-manifest-end

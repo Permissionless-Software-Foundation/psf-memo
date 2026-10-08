@@ -21,5 +21,5 @@ export function defineTopicRoomWriteCommand ({ prefix, verb }) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T02:35:31.707Z","module_hash":"2086cb887feb7f74f0eb744211ac6a54fa3906e28f4f487ef0d5b264f5a81e95","functions":[{"id":"func/defineTopicRoomWriteCommand","name":"defineTopicRoomWriteCommand","line":15,"end_line":21,"hash":"9689e99159b887d7002f8d0aa3244ea3f1959556b0921309965935e20ecac488"}]}
+// {"version":1,"tested_at":"2026-10-08T14:58:45.078Z","module_hash":"2086cb887feb7f74f0eb744211ac6a54fa3906e28f4f487ef0d5b264f5a81e95","functions":[{"id":"func/defineTopicRoomWriteCommand","name":"defineTopicRoomWriteCommand","line":15,"end_line":21,"hash":"9689e99159b887d7002f8d0aa3244ea3f1959556b0921309965935e20ecac488"}]}
 // mutate4javascript-manifest-end

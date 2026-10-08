@@ -401,3 +401,7 @@ program.command('memo-topic-unfollow')
   .action(memoTopicUnfollow.run)
 
 program.parseAsync(process.argv)
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T14:45:31.647Z","module_hash":"21cad70c7118dec751f9f44dad01a4fea1be18e4ad8ec7c7798f5f0b6cafb380","functions":[]}
+// mutate4javascript-manifest-end

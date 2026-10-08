@@ -34,5 +34,5 @@ export function formatMemoNameMessage ({ txid, explorerUrl } = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T02:02:06.034Z","module_hash":"c9a0e126f4257e7741d94ad92241e62e3edc5765893336a9ff91badcdd914a72","functions":[{"id":"func/formatMemoNameMessage","name":"formatMemoNameMessage","line":32,"end_line":34,"hash":"9b78cff8dfa2638e813152eab51168c54fe0082c574f0b8a6b5e1f4762f2b550"}]}
+// {"version":1,"tested_at":"2026-10-08T14:53:01.388Z","module_hash":"c9a0e126f4257e7741d94ad92241e62e3edc5765893336a9ff91badcdd914a72","functions":[{"id":"func/formatMemoNameMessage","name":"formatMemoNameMessage","line":32,"end_line":34,"hash":"9b78cff8dfa2638e813152eab51168c54fe0082c574f0b8a6b5e1f4762f2b550"}]}
 // mutate4javascript-manifest-end

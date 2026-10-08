@@ -23,5 +23,5 @@ export function parseRoomFlag (flags = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T02:35:42.385Z","module_hash":"eb15271919b1c95859175cf5117274c3bae32972658f3c5a47600bf202d8efc0","functions":[{"id":"func/parseRoomFlag","name":"parseRoomFlag","line":15,"end_line":23,"hash":"f8f9734d6ae00b22e9c46bedc94ec2cf64d88d47139dd3c5a9f8f6ce7cfc31c4"}]}
+// {"version":1,"tested_at":"2026-10-08T14:58:12.526Z","module_hash":"eb15271919b1c95859175cf5117274c3bae32972658f3c5a47600bf202d8efc0","functions":[{"id":"func/parseRoomFlag","name":"parseRoomFlag","line":15,"end_line":23,"hash":"f8f9734d6ae00b22e9c46bedc94ec2cf64d88d47139dd3c5a9f8f6ce7cfc31c4"}]}
 // mutate4javascript-manifest-end
