@@ -35,6 +35,32 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI follow lists (`cli-follow-lists`, 2026-10-08):** R11 of the
+  `psf-memo-cli` Memo-protocol backlog, delivered as two commands in one cycle.
+  Added `psf-memo-cli/src/lib/follow-list.js` (shared follower `-a` flag and
+  address-list summary), `src/commands/memo-following.js` (resolves the signing
+  wallet through the F2 wallet source, then `GET /follow/following/:addr`) and
+  `src/commands/memo-followers.js` (`GET /follow/followers/:addr`), both over
+  the shared `ListReadCommand` pipeline and `MemoDb.getFollowing`/`getFollowers`,
+  registered as `memo-following` and `memo-followers`. Each reports the
+  address's followee/follower cash addresses; the routes are unpaginated, so
+  there is no `--limit`/`--offset`. `memo-following` requires `-n`/`--wif`
+  (usage error exit 2 when missing); `memo-followers` requires `-a` (usage error
+  exit 2). Read-only; a failed request is an error (exit 1). Specs:
+  `psf-memo-cli/specs/memo-following.feature` and
+  `psf-memo-cli/specs/memo-followers.feature` (4 scenarios each, 8 example
+  executions total). Merged to `master` at `9bffb8a` (fast-forward; architect
+  code-review commit `c67e4ac0be`; the later `9bffb8a` adds only the record and
+  summary, so `docs/reviews/cli-follow-lists-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `c67e4ac0be` (unit 423/0, property
+  89/0, acceptance all 23 suites, lint ok); language mutation 17 killed / 0
+  survived (`follow-list.js` 3, `memo-following.js` command 1, `memo-db.js` 13;
+  `memo-followers.js` command scans as 0 sites); soft Gherkin mutation 0
+  mutations (no Examples tables; gotcha #78); DRY clean after extracting the
+  shared follow-command test scaffolding and property generators. Independent
+  acceptance check after merge: 8/8. Architect summary:
+  `docs/reviews/cli-follow-lists-summary.md`.
+
 - **CLI recent-profiles command (`cli-memo-profiles`, 2026-10-08):** R10 of the
   `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-profiles.js` (page defaults and human summary) and

@@ -1077,6 +1077,17 @@ that a single user-facing feature may require specs in more than one component.
     upward-`limit` survivors (`2 -> 6`, `5 -> 9`), the same intrinsic class as
     #46/#71. Spec: `psf-memo-cli/specs/memo-profiles.feature`.
 
+78. **Scenarios without an `Examples` table are not soft-mutation-tested
+    (`cli-follow-lists`, R11).** `gherkin-mutator --level soft` mutates only
+    example-table values, so `memo-following.feature` and
+    `memo-followers.feature` (whose addresses and lists are step literals) both
+    reported 0 mutations, and the tool wrote empty `scenarios:[]` manifests with
+    a `# mutation-stamp` to each feature. The behavior is still pinned by the
+    unit, property, and acceptance suites, but if a scenario's values should be
+    mutation-covered, express them as a `Scenario Outline` with an `Examples`
+    table. Specs: `psf-memo-cli/specs/memo-following.feature`,
+    `psf-memo-cli/specs/memo-followers.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1133,7 +1144,29 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-memo-profiles`): specified and merged R10, the
+Latest session (2026-10-08, `cli-follow-lists`): specified and merged R11 as two
+commands in one cycle. The specifier wrote
+`psf-memo-cli/specs/memo-following.feature` and
+`psf-memo-cli/specs/memo-followers.feature` (4 scenarios each); the
+coder/refactorer/architect added `src/lib/follow-list.js` (shared follower `-a`
+flag and address-list summary), `src/commands/memo-following.js` (wallet
+resolution via the F2 wallet source then `GET /follow/following/:addr`) and
+`src/commands/memo-followers.js` (`GET /follow/followers/:addr`), plus
+`MemoDb.getFollowing`/`getFollowers`, registration, acceptance steps, unit and
+property tests. Both routes are unpaginated plain address arrays, so no page
+flags. `memo-following` requires `-n`/`--wif`; `memo-followers` requires `-a`.
+The refactorer shared the wallet-address acceptance step and property
+generators; the architect consolidated the follow-command tests and killed all
+mutation sites. Merged to `master` at `9bffb8a` (fast-forward; architect
+code-review commit `c67e4ac0be`; the later `9bffb8a` adds only the record and
+summary, so `docs/reviews/cli-follow-lists-verification.json` is valid for the
+merged tree). `verify.sh cli` pass 4/4 at `c67e4ac0be` (unit 423/0, property
+89/0, acceptance all 23 suites, lint ok); language mutation 17 killed / 0
+survived; soft Gherkin mutation 0 (no Examples tables; gotcha #78); DRY clean.
+Independent acceptance check after merge: 8/8. Architect summary:
+`docs/reviews/cli-follow-lists-summary.md`.
+
+Previous session (2026-10-08, `cli-memo-profiles`): specified and merged R10, the
 recent-profiles read command. The specifier wrote
 `psf-memo-cli/specs/memo-profiles.feature` (6 scenarios, 12 example
 executions); the coder/refactorer/architect added `src/lib/memo-profiles.js`
@@ -1566,7 +1599,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `44e1c1e` (`Record cli-memo-profiles architect review and verification`).
+Current `master` HEAD: `9bffb8a` (`Record cli-follow-lists architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1610,12 +1643,11 @@ Next action: **ask the user for the next feature.** The active backlog is
 foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
 `memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8
-`memo-topic`**, **R9 `memo-search`**, **R10 `memo-profiles`**, **R14
-`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
-first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
-`memo-like`** are done. The suggested next item is **R11
-`memo-following`/`memo-followers`** (the wallet's follows and an address's
-followers), then R12 `memo-muted` and R13 `memo-poll`. The earlier client
-direction (front-end improvements to `psf-memo-client`) remains open in
-`specs/feature-backlog.md`.
+`memo-topic`**, **R9 `memo-search`**, **R10 `memo-profiles`**, **R11
+`memo-following`/`memo-followers`**, **R14 `memo-status`**, **R15
+`memo-identity`**, **R16 `memo-wait`**) are done, and the first three write
+commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3 `memo-like`** are
+done. The suggested next item is **R12 `memo-muted`** (the addresses the wallet
+has muted), then R13 `memo-poll`. The earlier client direction (front-end
+improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
