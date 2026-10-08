@@ -215,7 +215,7 @@ test('getRecentProfiles carries the requested page', async () => {
   }
 })
 
-test('getFollowing and getFollowers percent-encode the address', async () => {
+test('getFollowing, getFollowers, and getMuted percent-encode the address', async () => {
   for (let i = 0; i < 300; i++) {
     const addr = randomAddress()
     let requested
@@ -233,5 +233,8 @@ test('getFollowing and getFollowers percent-encode the address', async () => {
 
     await client.getFollowers(addr)
     assert.equal(new URL(requested).pathname, `/follow/followers/${encodeURIComponent(addr)}`)
+
+    await client.getMuted(addr)
+    assert.equal(new URL(requested).pathname, `/mute/muted/${encodeURIComponent(addr)}`)
   }
 })

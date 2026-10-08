@@ -17,6 +17,7 @@ import { seededRandom, randomAddress, randomAddresses } from './harness.js'
 import {
   parseFollowingFlags,
   parseFollowersFlags,
+  parseWalletSourceFlags,
   formatFollowListMessage,
   MISSING_FOLLOWEE_MESSAGE
 } from '../../src/lib/follow-list.js'
@@ -37,6 +38,22 @@ test('parseFollowingFlags passes through the wallet source or nulls it', () => {
 
   for (const value of [undefined, null, '']) {
     assert.deepEqual(parseFollowingFlags({ name: value, wif: value }), { name: null, wif: null })
+  }
+})
+
+test('parseWalletSourceFlags normalizes the source for every wallet list command', () => {
+  for (let i = 0; i < 400; i++) {
+    const name = rng() < 0.5 ? randomAddress(rng, 'wallet', i) : null
+    const wif = rng() < 0.5 ? randomAddress(rng, 'wif', i) : null
+
+    assert.deepEqual(parseWalletSourceFlags({ name, wif }), {
+      name: name || null,
+      wif: wif || null
+    })
+  }
+
+  for (const value of [undefined, null, '']) {
+    assert.deepEqual(parseWalletSourceFlags({ name: value, wif: value }), { name: null, wif: null })
   }
 })
 

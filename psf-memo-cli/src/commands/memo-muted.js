@@ -9,40 +9,13 @@
 */
 
 // Local libraries
-import { ListReadCommand } from '../lib/list-command.js'
-import { parseWalletSourceFlags, formatFollowListMessage } from '../lib/follow-list.js'
-import { resolveWalletSource } from '../lib/wallet-source.js'
-import WalletUtil from '../lib/wallet-util.js'
+import { defineWalletListCommand } from '../lib/wallet-list-command.js'
 
-class MemoMuted extends ListReadCommand {
-  constructor (options = {}) {
-    super(options, 'readMuted')
-    this.walletUtil = options.walletUtil || new WalletUtil()
-  }
-
-  // Resolve the wallet name/WIF passthrough before any request. The missing or
-  // double source is reported as a UsageError (exit 2) when it is resolved.
-  parseFlags (flags) {
-    return parseWalletSourceFlags(flags)
-  }
-
-  // Render the reported muted addresses.
-  format ({ muted = [] }) {
-    return {
-      message: formatFollowListMessage(muted, 'muted'),
-      data: { muted }
-    }
-  }
-
-  // Resolve the muter wallet and fetch the addresses it mutes.
-  async readMuted ({ name, wif, dbUrl }) {
-    const { address } = await resolveWalletSource(
-      { name, wif },
-      { walletUtil: this.walletUtil }
-    )
-
-    return this.createClient(dbUrl).getMuted(address)
-  }
-}
+const MemoMuted = defineWalletListCommand({
+  readMethod: 'readMuted',
+  clientMethod: 'getMuted',
+  listField: 'muted',
+  label: 'muted'
+})
 
 export default MemoMuted

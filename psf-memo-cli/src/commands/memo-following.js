@@ -9,41 +9,14 @@
 */
 
 // Local libraries
-import { ListReadCommand } from '../lib/list-command.js'
-import { parseFollowingFlags, formatFollowListMessage } from '../lib/follow-list.js'
-import { resolveWalletSource } from '../lib/wallet-source.js'
-import WalletUtil from '../lib/wallet-util.js'
+import { defineWalletListCommand } from '../lib/wallet-list-command.js'
 
-class MemoFollowing extends ListReadCommand {
-  constructor (options = {}) {
-    super(options, 'readFollowing')
-    this.walletUtil = options.walletUtil || new WalletUtil()
-  }
-
-  // Resolve the wallet name/WIF passthrough before any request. The missing or
-  // double source is reported as a UsageError (exit 2) when it is resolved.
-  parseFlags (flags) {
-    return parseFollowingFlags(flags)
-  }
-
-  // Render the reported following addresses.
-  format ({ following = [] }) {
-    return {
-      message: formatFollowListMessage(following, 'following'),
-      data: { following }
-    }
-  }
-
-  // Resolve the follower wallet and fetch the addresses it follows.
-  async readFollowing ({ name, wif, dbUrl }) {
-    const { address } = await resolveWalletSource(
-      { name, wif },
-      { walletUtil: this.walletUtil }
-    )
-
-    return this.createClient(dbUrl).getFollowing(address)
-  }
-}
+const MemoFollowing = defineWalletListCommand({
+  readMethod: 'readFollowing',
+  clientMethod: 'getFollowing',
+  listField: 'following',
+  label: 'following'
+})
 
 export default MemoFollowing
 
