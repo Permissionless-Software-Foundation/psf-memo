@@ -2,10 +2,10 @@
   Unit tests for the New Topic Page controller.
 
   The controller normalizes a typed topic name into a room (trimmed,
-  lowercased, leading '#' stripped), validates that the name and the first
-  message are present and within the combined byte limit, then broadcasts the
-  same Memo topic-message action (0x6d0c) a topic post would and navigates to
-  the new room's feed.
+  lowercased, with a leading run of '#' and whitespace stripped), validates
+  that the name and the first message are present and within the combined byte
+  limit, then broadcasts the same Memo topic-message action (0x6d0c) a topic
+  post would and navigates to the new room's feed.
 */
 
 'use strict'
@@ -56,12 +56,15 @@ test('setTopicName and setFirstMessage store the typed strings', () => {
   assert.equal(page.firstMessage, 'hello')
 })
 
-test('normalizeRoom lowercases, trims, and strips a leading hash', () => {
+test('normalizeRoom trims, strips a leading hash run and whitespace, and lowercases', () => {
   const page = makePage()
 
   assert.equal(page.normalizeRoom('Bitcoin'), 'bitcoin')
   assert.equal(page.normalizeRoom('  bitcoin  '), 'bitcoin')
   assert.equal(page.normalizeRoom('#Cash'), 'cash')
+  assert.equal(page.normalizeRoom('# bitcoin'), 'bitcoin')
+  assert.equal(page.normalizeRoom('##BCH'), 'bch')
+  assert.equal(page.normalizeRoom('  #Cash  '), 'cash')
   assert.equal(page.normalizeRoom('Déjà Vu'), 'déjà vu')
 })
 
@@ -96,7 +99,7 @@ test('submit broadcasts to the normalized room and navigates to its feed', async
 })
 
 test('submit rejects a topic name that is or normalizes to empty', async () => {
-  for (const name of ['', '#']) {
+  for (const name of ['', '#', ' # ']) {
     const calls = []
     const paths = []
     const page = makePage({ calls, paths })

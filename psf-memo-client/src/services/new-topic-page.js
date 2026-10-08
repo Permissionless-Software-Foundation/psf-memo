@@ -6,7 +6,8 @@
   topic is the same on-chain action as posting to a topic, so the page reuses
   the Memo topic-message behavior (src/services/memo-topic-post.js, prefix
   0x6d0c) with the room derived from the typed topic name. The name is
-  normalized by trimming whitespace, stripping a leading '#', and lowercasing.
+  normalized by trimming whitespace, removing a leading run of '#' and
+  whitespace, and lowercasing.
 
   The wallet, feed, and navigate concerns are injected so this module stays free
   of UI/network concerns; environmentally unsuitable I/O lives behind those
@@ -52,10 +53,11 @@ class NewTopicPage extends PageController {
     return this
   }
 
-  // Normalize a typed topic name into its room: trim, strip a leading '#', and
-  // lowercase so "#Cash", " cash", and "Cash" all address the same room.
+  // Normalize a typed topic name into its room: trim surrounding whitespace,
+  // remove a leading run of '#' and whitespace, and lowercase so "# bitcoin",
+  // "##BCH", and "Cash" all address the same room.
   normalizeRoom (name = this.topicName) {
-    return String(name).trim().replace(/^#+/, '').toLowerCase()
+    return String(name).trim().replace(/^[#\s]+/, '').toLowerCase()
   }
 
   // Bytes remaining before the combined room + first message limit is reached.

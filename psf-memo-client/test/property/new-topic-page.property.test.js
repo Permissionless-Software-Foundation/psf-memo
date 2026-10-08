@@ -10,11 +10,9 @@
     - remainingCount equals the combined byte budget minus the normalized room
       and first message byte lengths.
 
-  Known quirk (not changed here; behavior is preserved): normalizeRoom trims
-  before stripping leading '#', so a stripped '#' can expose whitespace and a
-  later trim can expose another '#'. normalizeRoom is therefore not idempotent
-  in one pass, which is why the fixed-point property is stated over repeated
-  application rather than a single one.
+  normalizeRoom trims surrounding whitespace and removes a leading run of '#'
+  and whitespace in one pass, so it is idempotent; the fixed-point property is
+  stated over repeated application to keep it robust to future steps.
 */
 
 'use strict'
@@ -62,9 +60,8 @@ test('repeated normalizeRoom reaches a fixed point within the input length', asy
       const page = newPage()
       let room = name
       let next = page.normalizeRoom(room)
-      // Each non-fixed pass removes at least one character (whitespace via
-      // trim or a leading '#' via replace), so it terminates within
-      // name.length + 1 passes.
+      // Each non-fixed pass removes at least one character (a leading run of
+      // '#' or whitespace), so it terminates within name.length + 1 passes.
       for (let i = 0; i <= name.length + 1 && next !== room; i++) {
         room = next
         next = page.normalizeRoom(room)
