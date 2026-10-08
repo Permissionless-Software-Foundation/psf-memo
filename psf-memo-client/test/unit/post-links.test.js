@@ -145,16 +145,46 @@ test('isImageUrl is case-insensitive', () => {
   assert.equal(isImageUrl('https://example.com/photo.JPEG'), true)
 })
 
-test('isImageUrl ignores query strings and fragments', () => {
+test('isImageUrl ignores unrelated query strings and fragments', () => {
   assert.equal(isImageUrl('https://example.com/photo.webp?w=500'), true)
   assert.equal(isImageUrl('https://example.com/photo.png#section'), true)
+})
+
+test('isImageUrl recognizes an image format query parameter', () => {
+  for (const format of ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']) {
+    assert.equal(isImageUrl(`https://example.com/photo?format=${format}`), true, format)
+  }
+})
+
+test('isImageUrl recognizes a format hint alongside other query parameters', () => {
+  assert.equal(isImageUrl('https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small'), true)
+  assert.equal(isImageUrl('https://cdn.example.com/media/abc123?format=png&size=large'), true)
+})
+
+test('isImageUrl treats the format hint case-insensitively', () => {
+  assert.equal(isImageUrl('https://cdn.example.com/media/xyz789?format=WEBP'), true)
+  assert.equal(isImageUrl('https://example.com/photo?format=JPG'), true)
+})
+
+test('isImageUrl rejects a non-image format query parameter', () => {
+  assert.equal(isImageUrl('https://example.com/photo?format=json'), false)
+  assert.equal(isImageUrl('https://example.com/photo?format=svg'), false)
+  assert.equal(isImageUrl('https://example.com/photo?format='), false)
+  assert.equal(isImageUrl('https://example.com/photo?format=jpgs'), false)
 })
 
 test('isImageUrl rejects URLs that are not images', () => {
   assert.equal(isImageUrl('https://example.com/page'), false)
   assert.equal(isImageUrl('https://example.com/logo.svg'), false)
-  assert.equal(isImageUrl('https://example.com/photo?format=jpg'), false)
+  assert.equal(isImageUrl('https://example.com/feed.json?format=json'), false)
   assert.equal(isImageUrl('not a url'), false)
+})
+
+test('imageAltText uses the path filename even when the URL has a format query', () => {
+  assert.equal(
+    imageAltText('https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small'),
+    'HUDsd-2XAAA6KW7'
+  )
 })
 
 test('isImageUrl rejects non-string input', () => {

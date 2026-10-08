@@ -75,14 +75,22 @@ function parsePostLinks (text) {
 // Common image file extensions recognized in a URL path.
 const IMAGE_EXTENSION_RE = /\.(?:jpg|jpeg|png|gif|webp|bmp)$/i
 
+// Image format hints that may appear in a URL's query string, e.g. ?format=jpg.
+const IMAGE_FORMAT_VALUES = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'])
+
 /**
- * True when a URL's path ends in a recognized image file extension. Only the
- * parsed pathname is examined, so query strings and fragments are ignored.
+ * True when a URL is an image: either its path ends in a recognized image file
+ * extension (only the parsed pathname is examined, so query strings and
+ * fragments are ignored), or its query string carries an image format hint
+ * such as ?format=jpg (case-insensitive).
  */
 function isImageUrl (url) {
   if (typeof url !== 'string') return false
   try {
-    return IMAGE_EXTENSION_RE.test(new URL(url).pathname)
+    const parsed = new URL(url)
+    if (IMAGE_EXTENSION_RE.test(parsed.pathname)) return true
+    const format = parsed.searchParams.get('format')
+    return format !== null && IMAGE_FORMAT_VALUES.has(format.toLowerCase())
   } catch {
     return false
   }
