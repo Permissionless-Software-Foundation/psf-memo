@@ -17,12 +17,12 @@
 
 const { setAddressCopied, scheduleAddressCopyReset, clearAddressCopyTimer } = require('./address-copy')
 const { loadTokenIcons: loadTokenIconsFor, loadTokenData: loadTokenDataFor } = require('./token-icon-loader')
+const { profilePath, PROFILE_PATH_PREFIX } = require('./profile-path')
 
 const SET_NAME_PATH = '/memo/set-name'
 const SET_BIO_PATH = '/memo/set-bio'
 const SET_AVATAR_URL_PATH = '/memo/set-avatar-url'
 const ACCOUNT_PATH = '/account'
-const PROFILE_PATH_PREFIX = '/profile'
 const ADDRESS_COPY_CONFIRMATION_MS = 1500
 const SIDEBAR_SECTIONS = ['avatar', 'bio', 'profile', 'address', 'tokens']
 const CONTENT_SECTIONS = ['controls', 'posts']
@@ -145,7 +145,7 @@ class AccountPage {
   // address. The address is URL-encoded for use in a route.
   getProfilePath () {
     const addr = this.getAddress()
-    return addr ? `${PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}` : null
+    return addr ? profilePath(addr) : null
   }
 
   // Click the account sidebar Profile link: navigate to the account's own

@@ -13,14 +13,9 @@ const React = require('react')
 const AccountAvatar = require('../../account/account-avatar')
 const ProfileAddress = require('../profile/profile-address')
 const ProfileTokenIcons = require('../profile/profile-token-icons')
+const { profilePath } = require('../../../services/profile-path')
 
 const NO_BIO_TEXT = 'No profile text'
-const PROFILE_PATH_PREFIX = '/profile'
-
-// The /profile/:addr path for an address, URL-encoded for use in a route.
-function profilePath (addr) {
-  return `${PROFILE_PATH_PREFIX}/${encodeURIComponent(addr)}`
-}
 
 function AccountSidebar ({
   addr = '',
