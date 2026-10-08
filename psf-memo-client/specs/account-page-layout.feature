@@ -2,11 +2,12 @@
 # {"version":1,"tested_at":"2026-10-02T16:11:06.838604755Z","feature_name":"Account Page Layout","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/account-page-layout.feature","background_hash":"b56d0ab67b08480cf94095f23e8dc15cc25e0a789e74b1cf80fc2cc7750b6522","implementation_hash":"unknown","scenarios":[{"index":9,"name":"Account Page Layout - 10 a token with a mutable-data icon shows that image","scenario_hash":"1317e716fc2fc049858d55dc158725f5aab4e3fc22824c8c925a37afbd6b78b7","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-02T16:11:06.838604755Z"},{"index":13,"name":"Account Page Layout - 14 each account control has a description above it","scenario_hash":"33eb2aa17a9ad776c11c78a533939222ca821e6cb01fe713bca420291f1912d7","mutation_count":6,"result":{"Total":6,"Killed":6,"Survived":0,"Errors":0},"tested_at":"2026-10-02T16:11:06.838604755Z"}]}
 # acceptance-mutation-manifest-end
 
-# Scenarios: Account Page Layout - 1, Account Page Layout - 2, Account Page Layout - 3, Account Page Layout - 4, Account Page Layout - 5, Account Page Layout - 6, Account Page Layout - 7, Account Page Layout - 8, Account Page Layout - 9, Account Page Layout - 10, Account Page Layout - 11, Account Page Layout - 12, Account Page Layout - 13, Account Page Layout - 14, Account Page Layout - 15
+# Scenarios: Account Page Layout - 1, Account Page Layout - 2, Account Page Layout - 3, Account Page Layout - 4, Account Page Layout - 5, Account Page Layout - 6, Account Page Layout - 7, Account Page Layout - 8, Account Page Layout - 9, Account Page Layout - 10, Account Page Layout - 11, Account Page Layout - 12, Account Page Layout - 13, Account Page Layout - 14, Account Page Layout - 15, Account Page Layout - 16
 #
 # The /account page renders the authenticated wallet's identity the same way
-# the /profile/:addr page does: a left sidebar with the avatar, bio, copyable
-# BCH address, and SLP token icons, and a right column containing the existing
+# the /profile/:addr page does: a left sidebar with the avatar, bio, a Profile
+# link to the account's own /profile/:addr page, the copyable BCH address, and
+# the SLP token icons, and a right column containing the existing
 # Set Name, Set Bio, and Set Avatar URL controls. Each control is preceded by
 # a short description of what it does. This is a client-only rendering feature:
 # it broadcasts no Memo action and changes no DB data. Account avatar rendering
@@ -118,4 +119,10 @@ Feature: Account Page Layout
     Given the authenticated account has a bio "Building on BCH"
     Given the authenticated account has an avatar URL "https://example.com/avatar.png"
     Given I open the account page
-    Then the account page shows the sidebar sections in the order avatar, bio, address, tokens
+    Then the account page shows the sidebar sections in the order avatar, bio, profile, address, tokens
+
+  Scenario: Account Page Layout - 16 the account sidebar links to the account's profile page
+    Given I open the account page
+    Then the account sidebar shows a Profile link to /profile/bitcoincash%3Aqr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy
+    When I click the account sidebar Profile link
+    Then I navigate to the path /profile/bitcoincash%3Aqr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy
