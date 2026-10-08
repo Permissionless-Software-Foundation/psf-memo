@@ -35,6 +35,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI pagination fidelity (`cli-pagination-fidelity`, 2026-10-08):** X6 of the
+  `psf-memo-cli` cross-cutting series. Every paginated read command exposes
+  `--limit`/`--offset` and echoes the service pagination unchanged. The new
+  `pagination-fidelity` feature pins the recent-feed total cap (500; gotcha #21)
+  passthrough, page-count/total independence, and `hasMore` echo (not
+  recompute) — properties the small per-command fixtures cannot exercise. No
+  production change (characterization lock). Merged to `master` at `e7b59eb`
+  (fast-forward; verification record
+  `docs/reviews/cli-pagination-fidelity-verification.json` names the verified
+  tree `ab4871be07`, and the later `e7b59eb` adds only the record and summary,
+  so it is valid for the merged tree). `verify.sh cli` pass 4/4 at `ab4871be07`
+  (unit 580/0, property 110/0, acceptance all 38 suites, lint ok); DRY clean;
+  soft Gherkin mutation 22/8 with 14 intrinsic survivors. Independent
+  acceptance check after merge: pagination-fidelity 6/6. Architect summary:
+  `docs/reviews/cli-pagination-fidelity-summary.md`.
+
 - **CLI quality audit (`cli-quality-audit`, 2026-10-08):** X5 of the
   `psf-memo-cli` cross-cutting series. Re-established the
   `cli-quality-hardening` baseline over the complete command set: 100%
@@ -1514,9 +1530,10 @@ Active work is the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
 commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
 decision) are done, and X1 (command reference docs), X2 (error surfacing), X3
-(secret hygiene), X4 (read-only safety), and X5 (quality audit) are now
-complete. The remaining cross-cutting hardening items are X6–X7; the suggested
-next item is X6 (pagination fidelity). The earlier client direction —
+(secret hygiene), X4 (read-only safety), X5 (quality audit), and X6 (pagination
+fidelity) are now complete. The remaining cross-cutting hardening item is X7
+(async visibility contract); the suggested next item is X7. The earlier client
+direction —
 front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next

@@ -159,6 +159,46 @@ results without screen-scraping.
   data is requested, so a missing wallet file does not break `memo-feed` or
   `memo-status`.
 
+### Async visibility
+
+Memo writes are asynchronous: a write command returns as soon as the wallet
+broadcasts the OP_RETURN, but the action is not readable until it is confirmed
+and indexed.
+
+- **Writes return before the action is visible.** Every `memo-*` write command
+  reports `{ message, txid, explorerUrl }` (explorer link
+  `https://bch.loping.net/tx/<txid>`) as soon as the wallet accepts the
+  transaction. The `txid` is real, but nothing has been stored yet.
+- **Reads reflect indexed state only.** Read commands query `psf-memo-db`,
+  which `psf-memo-indexer` populates. A just-broadcast action is absent from
+  `memo-feed`, `memo-thread`, `memo-get-post`, `memo-profile`, `memo-posts`,
+  `memo-search`, `memo-topic`, `memo-notifications`, and the other reads until
+  the transaction is confirmed in a BCH block and the indexer has processed
+  that block. There is no read-after-write consistency: an immediate read is
+  expected to miss the action.
+- **Check the indexer with `memo-status`.** It reports `startBlockHeight`,
+  `syncedBlockHeight` (the last fully indexed block), and `chainBlockHeight`
+  (the chain tip at the last sync), so you can tell whether the indexer has
+  reached the block containing the transaction.
+- **Wait for the post with `memo-wait`.** `memo-wait -t <txid>` queries
+  `GET /level/post/:txid` immediately, then every `--interval` (default 5000
+  ms) until the post is stored, and reports it (exit 0). A timeout is a runtime
+  error (exit 1); the default `--timeout` budget is 60000 ms. It polls the post
+  store only, so it waits for posts (`0x6d02`) and replies (`0x6d03`). Other
+  actions (like, follow/unfollow, name, bio, avatar, topic) have no post
+  document: wait for the containing block with `memo-status`, then re-run the
+  relevant read command.
+- **Scriptable write → index → read:**
+
+  ```sh
+  txid=$(node psf-memo-cli.js memo-post -n wallet1 -m "hello memo" --json | jq -r .txid)
+  node psf-memo-cli.js memo-wait -t "$txid" --timeout 600000 --json
+  node psf-memo-cli.js memo-get-post -t "$txid" --json
+  ```
+
+  Use a long `--timeout` because BCH confirmation plus indexing can exceed the
+  60 s default.
+
 ### Memo Read Commands
 
 Read commands never broadcast. `--db-url <url>` and `--json` are optional on

@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T16:08:47.722675869Z","feature_name":"Pagination Fidelity","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/pagination-fidelity.feature","background_hash":"8ec63aa94461d0b21ff2fd5f064bfe5c652530b00cd17a224d1326ca021e747a","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Pagination Fidelity - 1, Pagination Fidelity - 2, Pagination Fidelity - 3
 #
 # X6: every paginated read command exposes --limit/--offset and reports the
