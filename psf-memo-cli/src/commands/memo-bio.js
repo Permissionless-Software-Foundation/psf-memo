@@ -26,3 +26,7 @@ const MemoBio = defineFieldWriteCommand({
 })
 
 export default MemoBio
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T02:01:55.364Z","module_hash":"b14cde32effc3d970bcec2e23107a9de716705e3d2ba92ad8370a6269137e221","functions":[]}
+// mutate4javascript-manifest-end

@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:04:03.438837741Z","feature_name":"Memo Bio","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-bio.feature","background_hash":"f1a88a83f9f92f43f37401ac7b1c46d44617c43ba6cd6ea49f24f6d2924c9796","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Bio - 5 an empty bio is a usage error","scenario_hash":"e9d5948e7949bfbbc3fadfff2db132f84e46799fd6d60aee340cdb1f12add053","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-08T02:04:03.438837741Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Bio (W5): the psf-memo-cli set-profile-text write command. It resolves the
 # signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source),
 # validates the bio against the 0x6d05 protocol limit of 217 UTF-8 bytes (not

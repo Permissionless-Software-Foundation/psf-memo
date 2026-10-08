@@ -31,3 +31,7 @@ export function memoTextFlagParser ({ field, label, missingMessage, limit, measu
     return { [field]: value }
   }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T02:03:44.001Z","module_hash":"6ab0ad014c46797888d5bf3126c1c39872e24b8520b9971358849db3d8462e6c","functions":[{"id":"func/memoTextFlagParser","name":"memoTextFlagParser","line":15,"end_line":33,"hash":"0f8edacee9f49472253d23e39d2a1971f486f00e430e9381ef7fbc5edcb9beee"}]}
+// mutate4javascript-manifest-end
