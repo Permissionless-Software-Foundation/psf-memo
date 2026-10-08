@@ -6,40 +6,29 @@
   a handler it renders as non-interactive. Written in plain
   React.createElement style so the same view can be used by the JSX post cards
   and by Node acceptance rendering.
+
+  The label, tooltip, accessible name, and interactive attributes come from the
+  unit-tested reply-count service; this module is only the DOM wrapper.
 */
 
 const React = require('react')
 const { FontAwesomeIcon } = require('@fortawesome/react-fontawesome')
 const { faComment } = require('@fortawesome/free-solid-svg-icons/faComment')
+const { buildReplyCountViewModel } = require('../../services/reply-count')
 
 function ReplyCountView ({ count = 0, onClick }) {
-  const label = count === 1 ? '1 reply' : `${count} replies`
-  const clickable = typeof onClick === 'function'
-  const title = clickable ? `${label} — click to view` : label
-  const ariaLabel = clickable ? `${label} — click to view thread` : label
-
-  const handleKeyDown = (event) => {
-    if (clickable && (event.key === 'Enter' || event.key === ' ')) {
-      event.preventDefault()
-      onClick()
-    }
-  }
-
-  const className = [
-    'post-reply-count',
-    clickable ? 'post-reply-count-always-clickable' : 'post-reply-count-disabled'
-  ].join(' ')
+  const view = buildReplyCountViewModel({ count, onClick })
 
   return React.createElement(
     'div',
     {
-      className,
-      title,
-      'aria-label': ariaLabel,
-      role: clickable ? 'button' : undefined,
-      tabIndex: clickable ? 0 : undefined,
-      onClick: clickable ? onClick : undefined,
-      onKeyDown: clickable ? handleKeyDown : undefined
+      className: view.className,
+      title: view.title,
+      'aria-label': view.ariaLabel,
+      role: view.role,
+      tabIndex: view.tabIndex,
+      onClick: view.onClick,
+      onKeyDown: view.onKeyDown
     },
     React.createElement(FontAwesomeIcon, {
       icon: faComment,
