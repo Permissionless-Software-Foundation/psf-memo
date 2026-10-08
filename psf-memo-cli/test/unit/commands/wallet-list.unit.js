@@ -91,6 +91,28 @@ describe('#wallet-list', () => {
 
       assert.equal(result, 0)
     })
+
+    it('should not print a wallet mnemonic when listing wallets', async () => {
+      const mnemonic = 'legal winner thank year wave sausage worth useful legal winner thank yellow'
+      await fs.writeFile(
+        filename,
+        JSON.stringify({ wallet: { mnemonic, description: 'hygiene test' } })
+      )
+
+      const logs = []
+      const originalLog = console.log
+      console.log = (...args) => logs.push(args.join(' '))
+      try {
+        await uut.run()
+      } finally {
+        console.log = originalLog
+        await fs.rm(filename)
+      }
+
+      const output = logs.join('\n')
+      assert.notInclude(output, mnemonic)
+      assert.include(output, 'test123')
+    })
   })
 
   describe('#displayTable', () => {

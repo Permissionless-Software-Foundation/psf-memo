@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-10-08T02:13:06.077681845Z","feature_name":"Memo Avatar","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-avatar.feature","background_hash":"533f4f196e168c6e4c5ff3a4f98bf08d202fc8e71c8194a9376b7b6d8bb2dad8","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Avatar - 5 an empty avatar URL is a usage error","scenario_hash":"10ffdd644d04bbc54d9a5193b92a0b1e4ee6bb3c06be3100d074bb077d61a1bc","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-08T02:13:06.077681845Z"}]}
+# {"version":1,"tested_at":"2026-10-08T03:34:48.825046669Z","feature_name":"Memo Avatar","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-avatar.feature","background_hash":"533f4f196e168c6e4c5ff3a4f98bf08d202fc8e71c8194a9376b7b6d8bb2dad8","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Avatar - 5 an empty avatar URL is a usage error","scenario_hash":"10ffdd644d04bbc54d9a5193b92a0b1e4ee6bb3c06be3100d074bb077d61a1bc","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-08T02:13:06.077681845Z"}]}
 # acceptance-mutation-manifest-end
 
 # Memo Avatar (W6): the psf-memo-cli set-profile-picture write command. It

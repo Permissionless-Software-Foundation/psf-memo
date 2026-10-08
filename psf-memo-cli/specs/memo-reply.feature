@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-10-07T18:28:57.894688892Z","feature_name":"Memo Reply","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-reply.feature","background_hash":"c74a000bdde11145be943809e45231351c50bfd5b3290cbb71994ad056ddf26f","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Reply - 5 an empty reply is a usage error","scenario_hash":"505ecf367957f6e2fd747a03491eebab18b78cd6c47892d6f5e1a9b9f8d86c75","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-07T18:28:57.894688892Z"}]}
+# {"version":1,"tested_at":"2026-10-08T03:34:51.520790668Z","feature_name":"Memo Reply","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-reply.feature","background_hash":"c74a000bdde11145be943809e45231351c50bfd5b3290cbb71994ad056ddf26f","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Reply - 5 an empty reply is a usage error","scenario_hash":"505ecf367957f6e2fd747a03491eebab18b78cd6c47892d6f5e1a9b9f8d86c75","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-07T18:28:57.894688892Z"}]}
 # acceptance-mutation-manifest-end
 
 # Memo Reply (W2): the psf-memo-cli reply write command. It resolves the signing

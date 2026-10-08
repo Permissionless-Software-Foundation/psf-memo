@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task": "cli-error-surfacing",
+  "component": "psf-memo-cli",
+  "git_sha": "dc5a389c57ee9abfff43a4a124d5beed6cf9f079",
+  "branch": "swarmforge-architect",
+  "timestamp": "2026-10-08T03:35:34.079Z",
+  "commands": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "exit": 0,
+      "duration_ms": 4668,
+      "summary": "570 passing"
+    },
+    {
+      "name": "property",
+      "command": "npm run property",
+      "exit": 0,
+      "duration_ms": 613,
+      "summary": "110 pass / 0 fail"
+    },
+    {
+      "name": "acceptance",
+      "command": "npm run acceptance",
+      "exit": 0,
+      "duration_ms": 8550,
+      "summary": "all 35 acceptance suites passed"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit": 0,
+      "duration_ms": 926,
+      "summary": "ok"
+    }
+  ],
+  "result": "pass"
+}

@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-10-07T17:08:51.819471214Z","feature_name":"Memo Post","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-post.feature","background_hash":"7bea6f80b25d9ffd2f92c185c96be0e759970af76c06e0d86f6676c9c5722b29","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Post - 5 an empty memo is a usage error","scenario_hash":"d231aa8cdbb25bca9a0544ed139212dff06c144ccbcb85aa6b9312e61655cb5a","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-07T17:08:51.819471214Z"}]}
+# {"version":1,"tested_at":"2026-10-08T03:34:51.138184368Z","feature_name":"Memo Post","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-post.feature","background_hash":"7bea6f80b25d9ffd2f92c185c96be0e759970af76c06e0d86f6676c9c5722b29","implementation_hash":"unknown","scenarios":[{"index":4,"name":"Memo Post - 5 an empty memo is a usage error","scenario_hash":"d231aa8cdbb25bca9a0544ed139212dff06c144ccbcb85aa6b9312e61655cb5a","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-07T17:08:51.819471214Z"}]}
 # acceptance-mutation-manifest-end
 
 # Memo Post (W1): the first psf-memo-cli write command. It resolves the signing

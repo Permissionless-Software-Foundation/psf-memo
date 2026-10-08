@@ -42,6 +42,7 @@ import { memoBroadcastHandlers } from './steps/memo-broadcast.js'
 import { outputContractHandlers } from './steps/output-contract.js'
 import { walletSourceHandlers } from './steps/wallet-source.js'
 import { wireEncodingHandlers } from './steps/wire-encoding.js'
+import { secretHygieneHandlers } from './steps/secret-hygiene.js'
 
 const handlers = [
   ...memoDbHandlers,
@@ -76,7 +77,8 @@ const handlers = [
   ...memoBroadcastHandlers,
   ...outputContractHandlers,
   ...walletSourceHandlers,
-  ...wireEncodingHandlers
+  ...wireEncodingHandlers,
+  ...secretHygieneHandlers
 ]
 
 // A minimal fetch Response stand-in carrying a JSON body.

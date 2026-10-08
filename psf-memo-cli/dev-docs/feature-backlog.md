@@ -359,9 +359,15 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   source), JSON shape, and exit codes; `.env.example` documents `MEMO_DB_URL`
   (production default). Spec: `psf-memo-cli/dev-docs/command-reference.md`;
   architect summary: `docs/reviews/cli-command-reference-summary.md`.
-- **X2 — Error surfacing.** Broadcast failures print the real node/wallet error
-  (`Failed to broadcast: <msg>`), never a generic "must not be empty"
-  (gotcha #5). Validation errors name the exact flag and limit.
+- **X2 — Error surfacing.** **DONE** (2026-10-08, task `cli-error-surfacing`;
+  merged to `master` at `5be373d`). A wallet/node rejection during a Memo
+  broadcast is reported as `Failed to broadcast: <wallet error>` (exit 1) and
+  preserves the wallet's real message; errors detected before the broadcast
+  (e.g. `memo-like` insufficient balance / tip over balance) keep their own
+  messages and are not prefixed. The prefix lives once in
+  `psf-memo-cli/src/lib/memo-broadcast.js`; the shared `memo-broadcast` feature
+  and all 13 write-command features assert the prefixed message. Architect
+  summary: `docs/reviews/cli-error-surfacing-summary.md`.
 - **X3 — Secret hygiene.** Never print mnemonics, WIFs, or the wallet JSON.
   `--json` output must not include key material.
 - **X4 — Read-only safety.** Read commands must not instantiate or unlock a
@@ -401,12 +407,12 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
-6. **Hardening**: X1 **DONE**; X2–X7 remain, plus W14–W16 if protocol support is
-   added upstream.
+6. **Hardening**: X1 **DONE**, X2 **DONE**; X3–X7 remain, plus W14–W16 if
+   protocol support is added upstream.
 
-**Next up: X2 (error surfacing).** X1 command reference docs are DONE (merged
-at `0541746`). Poll writes W11–W13 are intentionally not planned (user decision,
-2026-10-08).
+**Next up: X3 (secret hygiene).** X1 command reference docs (merged at
+`0541746`) and X2 error surfacing (merged at `5be373d`) are DONE. Poll writes
+W11–W13 are intentionally not planned (user decision, 2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.
