@@ -31,6 +31,7 @@ import { memoFollowersHandlers } from './steps/memo-followers.js'
 import { memoMutedHandlers } from './steps/memo-muted.js'
 import { memoPollHandlers } from './steps/memo-poll.js'
 import { memoNameHandlers } from './steps/memo-name.js'
+import { memoBioHandlers } from './steps/memo-bio.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -62,6 +63,7 @@ const handlers = [
   ...memoMutedHandlers,
   ...memoPollHandlers,
   ...memoNameHandlers,
+  ...memoBioHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
