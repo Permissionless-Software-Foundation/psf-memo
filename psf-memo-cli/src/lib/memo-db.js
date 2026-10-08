@@ -90,6 +90,19 @@ class MemoDb {
     return this.getJson(`/topics/${encodeURIComponent(room)}/posts?${params.toString()}`)
   }
 
+  // GET /search. Returns one page of matching top-level posts and profiles with
+  // the service pagination. The optional viewer filters the posts by the
+  // viewer's mutes (profiles are not mute-filtered).
+  async search (query, { limit = 50, offset = 0, viewer = null } = {}) {
+    const params = new URLSearchParams()
+    params.set('q', query)
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+    if (viewer) params.set('viewer', viewer)
+
+    return this.getJson(`/search?${params.toString()}`)
+  }
+
   // GET /level/profile/:addr. A missing profile resolves to null.
   async getProfile (addr) {
     return this.getJson(`/level/profile/${encodeURIComponent(addr)}`, { notFoundValue: null })

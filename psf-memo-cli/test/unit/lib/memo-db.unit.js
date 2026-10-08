@@ -421,6 +421,35 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('search', () => {
+    it('requests /search with the query and page', async () => {
+      const { client, requestedUrl } = recordingClient({ posts: [{ txid: 'alpha' }], profiles: [{ addr: 'addrA' }], pagination: { total: 2 } })
+
+      const result = await client.search('first memo', { limit: 2, offset: 4 })
+
+      const url = requestedUrl()
+      assert.equal(url.pathname, '/search')
+      assert.equal(url.searchParams.get('q'), 'first memo')
+      assert.equal(url.searchParams.get('limit'), '2')
+      assert.equal(url.searchParams.get('offset'), '4')
+      assert.isFalse(url.searchParams.has('viewer'))
+      assert.equal(result.posts[0].txid, 'alpha')
+      assert.equal(result.profiles[0].addr, 'addrA')
+    })
+
+    it('sends the viewer when one is supplied', async () => {
+      const { client, requestedUrl } = recordingClient({ posts: [], profiles: [] })
+
+      await client.search('memo', { viewer: 'bitcoincash:qviewer' })
+
+      const url = requestedUrl()
+      assert.equal(url.searchParams.get('q'), 'memo')
+      assert.equal(url.searchParams.get('limit'), '50')
+      assert.equal(url.searchParams.get('offset'), '0')
+      assert.equal(url.searchParams.get('viewer'), 'bitcoincash:qviewer')
+    })
+  })
+
   describe('level name and profile-picture resources', () => {
     const resourceCases = [
       { method: 'getName', path: '/level/name/addrA', body: { name: 'alice' }, field: 'name' },

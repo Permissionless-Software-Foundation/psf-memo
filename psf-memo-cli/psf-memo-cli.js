@@ -30,6 +30,7 @@ import MemoProfile from './src/commands/memo-profile.js'
 import MemoPosts from './src/commands/memo-posts.js'
 import MemoTopics from './src/commands/memo-topics.js'
 import MemoTopic from './src/commands/memo-topic.js'
+import MemoSearch from './src/commands/memo-search.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -55,6 +56,7 @@ const memoProfile = new MemoProfile()
 const memoPosts = new MemoPosts()
 const memoTopics = new MemoTopics()
 const memoTopic = new MemoTopic()
+const memoSearch = new MemoSearch()
 
 const program = new Command()
 
@@ -238,5 +240,15 @@ program.command('memo-topic')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoTopic.run)
+
+program.command('memo-search')
+  .description('Search top-level Memo posts and profiles')
+  .option('-q, --query <string>', 'search query')
+  .option('--viewer <string>', 'viewer address for mute filtering')
+  .option('-l, --limit <number>', 'maximum results to return (default 50)')
+  .option('-o, --offset <number>', 'results to skip (default 0)')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoSearch.run)
 
 program.parseAsync(process.argv)
