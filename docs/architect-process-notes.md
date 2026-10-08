@@ -244,6 +244,25 @@ the captured output before the tool's `System/exit`; the JSON report
   determine readiness. Also create the `tmp/aps` symlink first (see the
   worktree note below) or the APS checks fail on the relative path.
 
+- **`--lines` cannot be combined with `--mutate-all`.** `mutate4javascript`
+  rejects the pair (`Cannot combine --mutate-all with --scan, --update-manifest,
+  --lines, or --since-last-run`). To re-run only one line's mutants, call the
+  binary directly with `--lines <n> --max-workers 8`; do not also pass
+  `--mutate-all`. Note that `mutate-file.sh` will append `--mutate-all` when it
+  detects under-selection, so use the raw binary for a targeted single-line run.
+
+- **`--update-manifest` adds an empty manifest to a 0-site file.** Running it on
+  a file that had no embedded manifest (e.g. `psf-memo-cli.js`,
+  `bind-methods.js`) appends `// mutate4javascript-manifest-begin` / `-end` with
+  `"functions":[]`. This is expected tool churn; commit it rather than
+  reverting.
+
+- **A full CLI `src/` sweep is practical.** X5's whole-component audit measured
+  183 sites across 47 files (39 more files are structurally 0-site). Running
+  `mutate-file.sh <file> --mutate-all --max-workers 8` one file at a time takes
+  roughly 15 minutes total; baselines dominate, not the mutation phase. Keep
+  build dirs clean first so the worker copies stay small.
+
 ## Workflow observations
 
 - **`architect-startup.sh` checks `tmp/aps` relative to the worktree, but
