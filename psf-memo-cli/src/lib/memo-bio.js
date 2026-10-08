@@ -8,7 +8,7 @@
 */
 
 // Local libraries
-import { UsageError } from './reporter.js'
+import { memoTextFlagParser } from './memo-text-flag.js'
 
 // The 0x6d05 "set profile text" action prefix.
 export const MEMO_BIO_PREFIX = '6d05'
@@ -18,23 +18,14 @@ export const MAX_BIO_BYTES = 217
 
 // Validate and normalize the -m bio text. A missing, empty, or over-long bio is
 // a usage error so the command exits 2 and names the exact problem.
-export function parseMemoBioFlags (flags = {}) {
-  const bio = flags.memo
-
-  if (bio === undefined || bio === null) {
-    throw new UsageError('You must specify bio text with the -m flag.')
-  }
-
-  if (bio === '') {
-    throw new UsageError('Bio must not be empty.')
-  }
-
-  if (Buffer.byteLength(bio, 'utf8') > MAX_BIO_BYTES) {
-    throw new UsageError(`Bio is too long. Maximum is ${MAX_BIO_BYTES} bytes.`)
-  }
-
-  return { bio }
-}
+export const parseMemoBioFlags = memoTextFlagParser({
+  field: 'bio',
+  label: 'Bio',
+  missingMessage: 'You must specify bio text with the -m flag.',
+  limit: MAX_BIO_BYTES,
+  measure: (text) => Buffer.byteLength(text, 'utf8'),
+  unit: 'bytes'
+})
 
 // Render the human-readable success summary: the txid and its explorer link.
 export function formatMemoBioMessage ({ txid, explorerUrl } = {}) {
