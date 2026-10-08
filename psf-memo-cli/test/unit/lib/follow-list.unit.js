@@ -11,7 +11,6 @@ import { assert } from 'chai'
 
 // Local libraries
 import {
-  parseFollowingFlags,
   parseFollowersFlags,
   parseWalletSourceFlags,
   formatFollowListMessage,
@@ -20,12 +19,6 @@ import {
 import { captureUsageError } from '../../support/usage-error.js'
 
 describe('#follow-list helpers', () => {
-  it('passes through the following wallet source', () => {
-    assert.deepEqual(parseFollowingFlags({ name: 'wallet' }), { name: 'wallet', wif: null })
-    assert.deepEqual(parseFollowingFlags({ wif: 'wif-key' }), { name: null, wif: 'wif-key' })
-    assert.deepEqual(parseFollowingFlags({}), { name: null, wif: null })
-  })
-
   it('normalizes a wallet source for any wallet-scoped list command', () => {
     assert.deepEqual(parseWalletSourceFlags({ name: 'wallet' }), { name: 'wallet', wif: null })
     assert.deepEqual(parseWalletSourceFlags({ wif: 'wif-key' }), { name: null, wif: 'wif-key' })

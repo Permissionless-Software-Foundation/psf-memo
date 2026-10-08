@@ -4,7 +4,7 @@
 
   These exercise broad input ranges to confirm:
 
-    - the following wallet source passes through as name/wif or null.
+    - the wallet source passes through as name/wif or null.
     - the required followee -a address resolves, and every missing value is a
       UsageError with the documented message.
     - the summary counts and orders the address list and singularizes a
@@ -15,7 +15,6 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { seededRandom, randomAddress, randomAddresses } from './harness.js'
 import {
-  parseFollowingFlags,
   parseFollowersFlags,
   parseWalletSourceFlags,
   formatFollowListMessage,
@@ -24,22 +23,6 @@ import {
 import { UsageError } from '../../src/lib/reporter.js'
 
 const rng = seededRandom(20261101)
-
-test('parseFollowingFlags passes through the wallet source or nulls it', () => {
-  for (let i = 0; i < 400; i++) {
-    const name = rng() < 0.5 ? randomAddress(rng, 'wallet', i) : null
-    const wif = rng() < 0.5 ? randomAddress(rng, 'wif', i) : null
-
-    const flags = parseFollowingFlags({ name, wif })
-
-    assert.equal(flags.name, name || null)
-    assert.equal(flags.wif, wif || null)
-  }
-
-  for (const value of [undefined, null, '']) {
-    assert.deepEqual(parseFollowingFlags({ name: value, wif: value }), { name: null, wif: null })
-  }
-})
 
 test('parseWalletSourceFlags normalizes the source for every wallet list command', () => {
   for (let i = 0; i < 400; i++) {

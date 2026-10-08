@@ -21,5 +21,5 @@ const MemoFollowing = defineWalletListCommand({
 export default MemoFollowing
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T01:13:45.489Z","module_hash":"90a0ae5c7a4cebb0c3a55c9bddce5b12d09d943da3ee3c674ff3ec67cf973101","functions":[{"id":"func/MemoFollowing.constructor","name":"MemoFollowing.constructor","line":18,"end_line":21,"hash":"f15918f3237de263f4dce645d652833c73584a647031741e087eec60de5404a6"},{"id":"func/MemoFollowing.parseFlags","name":"MemoFollowing.parseFlags","line":25,"end_line":27,"hash":"9947dd59d897d3c526c2fcf851e83946f24e654d4d185e7278d01dc52fd49e86"},{"id":"func/MemoFollowing.format","name":"MemoFollowing.format","line":30,"end_line":35,"hash":"b5d93e92d309264fda83eda5b9436a7821b7fd9585c9405acc611deab085be47"},{"id":"func/MemoFollowing.readFollowing","name":"MemoFollowing.readFollowing","line":38,"end_line":45,"hash":"151926fd5bded1bcea49e417380e4723922722ff9e1a394af3e50b89b49271b5"}]}
+// {"version":1,"tested_at":"2026-10-08T01:28:43.877Z","module_hash":"bec8f5b6714b828941ec3735c3313d38b2fbe96fbd164a4698a63a59f92d825c","functions":[]}
 // mutate4javascript-manifest-end

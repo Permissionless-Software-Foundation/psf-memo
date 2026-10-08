@@ -19,3 +19,7 @@ const MemoMuted = defineWalletListCommand({
 })
 
 export default MemoMuted
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T01:28:33.383Z","module_hash":"2c6cd0155bcd7c56e75699938501cf49193e4e13cdced0453c7d8275826f01f9","functions":[]}
+// mutate4javascript-manifest-end

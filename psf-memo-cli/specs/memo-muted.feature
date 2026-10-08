@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=d35a79e0e4d4ae531e11bb374b6e7fdebd9c8fa46bd782c9789e71b6d2a82676
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T01:30:02.130263777Z","feature_name":"Memo Muted","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-muted.feature","background_hash":"b9789bc8992d690351d31e7cf14883a1a905baa1620411e9d231e21fa0077e43","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Memo Muted - 2 the command reads the wallet address's muted list","scenario_hash":"a90afbe5170eb80173abf2769613477fd3212510daaf374fdc43740705f0b178","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-08T01:30:02.130263777Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Muted (R12): the psf-memo-cli read command for the addresses the signing
 # wallet has muted. It resolves the wallet (-n <wallet> or --wif <wif>, shared
 # F2 wallet-source), reads GET /mute/muted/:addr from psf-memo-db, and reports

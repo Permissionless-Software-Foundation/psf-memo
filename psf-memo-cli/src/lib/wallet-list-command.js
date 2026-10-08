@@ -54,3 +54,7 @@ export function defineWalletListCommand ({ readMethod, clientMethod, listField, 
     }
   }
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T01:28:18.466Z","module_hash":"c4fc67faadb81f9e19f71a47f5892d72290c8321aa6e04eba5c0c8518b8f3389","functions":[{"id":"func/defineWalletListCommand","name":"defineWalletListCommand","line":20,"end_line":56,"hash":"3c017fd5c3b92e6d616a8b311b1a326fd9d342ae3cf5007d51cf4c03e869654f"},{"id":"func/AnonymousClass.constructor","name":"AnonymousClass.constructor","line":22,"end_line":28,"hash":"b5248c4923f8cdaf336950a94c7ed17682d7e78f2972d453cba0e61b261e819a"},{"id":"func/AnonymousClass.parseFlags","name":"AnonymousClass.parseFlags","line":32,"end_line":34,"hash":"d34b4768a10c6484165c7392614a050091d8083dc5bba0a0d019b646250172f3"},{"id":"func/AnonymousClass.format","name":"AnonymousClass.format","line":37,"end_line":44,"hash":"f5d606236617c94c4538e90f55844982f72b54816ab1a02cd18987717ed5ec51"},{"id":"func/AnonymousClass.readMethod","name":"AnonymousClass.readMethod","line":47,"end_line":54,"hash":"d02fc0ff976c74e47a44f4e95877bc75a1e941e14b7639346d1eb98e5f57cdc1"}]}
+// mutate4javascript-manifest-end

@@ -25,11 +25,6 @@ export function parseWalletSourceFlags (flags = {}) {
   }
 }
 
-// Normalize the wallet source for memo-following.
-export function parseFollowingFlags (flags) {
-  return parseWalletSourceFlags(flags)
-}
-
 // Resolve the required followee -a address for memo-followers. Throws a
 // UsageError (exit 2) when it is missing.
 export function parseFollowersFlags (flags = {}) {
@@ -46,5 +41,5 @@ export function formatFollowListMessage (addresses = [], label) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T01:13:20.378Z","module_hash":"ace9170e2f917defe9bf427e7153e01a460a69bdd256bce9d180fff647b53ffc","functions":[{"id":"func/parseFollowingFlags","name":"parseFollowingFlags","line":20,"end_line":25,"hash":"6c5274219a1af598779576fbe3567907437fb1131005c36ecc2a7b2212ab1408"},{"id":"func/parseFollowersFlags","name":"parseFollowersFlags","line":29,"end_line":33,"hash":"1131d345e893d9a9ba26c05f5d9749b61ce453c42cc0f9fe723ac9ca820ab4c6"},{"id":"func/formatFollowListMessage","name":"formatFollowListMessage","line":37,"end_line":40,"hash":"98f4cd5f9ca7f556cea555f3c713176dd943d3a5a2fcc93ad599b7bf803d3099"}]}
+// {"version":1,"tested_at":"2026-10-08T01:29:09.087Z","module_hash":"3aeafced0c3b0168b154afcaeddc90b7ac8cf3f910d9564dcd21b6225b70ffa0","functions":[{"id":"func/parseWalletSourceFlags","name":"parseWalletSourceFlags","line":21,"end_line":26,"hash":"f39c6b34c5e224085197960cd4fa78d87777148cf61e740b58e6af6a0672da94"},{"id":"func/parseFollowersFlags","name":"parseFollowersFlags","line":30,"end_line":34,"hash":"1131d345e893d9a9ba26c05f5d9749b61ce453c42cc0f9fe723ac9ca820ab4c6"},{"id":"func/formatFollowListMessage","name":"formatFollowListMessage","line":38,"end_line":41,"hash":"98f4cd5f9ca7f556cea555f3c713176dd943d3a5a2fcc93ad599b7bf803d3099"}]}
 // mutate4javascript-manifest-end
