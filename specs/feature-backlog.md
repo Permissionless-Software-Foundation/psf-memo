@@ -35,6 +35,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Set Bio existing bio and cancel (`set-bio-existing-and-cancel`, 2026-10-08):**
+  Client-only front-end feature, the first of the new client direction. The
+  `/memo/set-bio` page now shows the account's existing bio above the input and
+  has a Cancel button that returns to `/account` without broadcasting. The read
+  goes through the injected session profile store
+  (`SetBioPage.getExistingBio()`), and `cancel()` lives on the shared
+  `ProfileTextPage` base. Three new scenarios in
+  `psf-memo-client/specs/set-bio.feature` (6–8; scenario 6 uses separate
+  `stored_bio`/`shown_bio` example columns so a soft mutation of either side
+  fails instead of surviving tautologically). Merged to `master` at `4467e6e`
+  (merge commit; architect code-review commit `9cd5166`; the later `2357e0c`
+  adds only the review record and summary, and master's `21040ad` is an
+  unrelated `.env.development` commit, so
+  `docs/reviews/set-bio-existing-and-cancel-verification.json` is valid for the
+  merged tree). Recorded `verify.sh client` pass 5/5 at `9cd5166` (unit 778/0,
+  property 217/0, acceptance all 48 suites, lint ok, build ok); soft Gherkin
+  mutation 4/4 killed on scenario 6. Independent acceptance check after merge:
+  set-bio 14/14. Follow-up candidate: the page reads only the in-session profile
+  store, so a bio persisted from a previous session is not shown on a fresh load
+  unless the store is hydrated (the `/account` page also falls back to
+  `memo-db`). Architect summary:
+  `docs/reviews/set-bio-existing-and-cancel-summary.md`.
+
 - **CLI async visibility (`cli-async-visibility`, 2026-10-08):** X7, the final
   item of the `psf-memo-cli` cross-cutting series. `README.md` gained an "Async
   visibility" section documenting that a write returns

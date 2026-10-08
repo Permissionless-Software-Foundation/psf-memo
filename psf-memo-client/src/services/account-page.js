@@ -1,13 +1,15 @@
 /*
   Account Page behavior: show the authenticated account's sidebar (avatar,
-  bio, copyable address, and SLP token icons) and the Set Name, Set Bio, and
-  Set Avatar URL controls with their descriptions.
+  bio, copyable address, and SLP token icons), the Set Name, Set Bio, and
+  Set Avatar URL controls with their descriptions, and the account's own posts
+  feed below the controls.
 
   This is the testable controller behind the React "Account" page. It reads
   the current name, bio, and avatar URL from an injected profile store,
-  exposes the navigation targets for the controls, loads the account's token
-  icons from an injected token source, and owns the transient address-copy
-  confirmation. The wallet, profile store, token source, clipboard, timer, and
+  exposes the navigation targets for the controls, loads the account's own
+  posts from an injected memo db client, loads the account's token icons from
+  an injected token source, and owns the transient address-copy confirmation.
+  The wallet, profile store, memo db, token source, clipboard, timer, and
   navigate concerns are injected so this module stays free of UI/network
   concerns; environmentally unsuitable I/O lives behind those small adapter
   boundaries.
@@ -22,6 +24,8 @@ const SET_AVATAR_URL_PATH = '/memo/set-avatar-url'
 const ACCOUNT_PATH = '/account'
 const ADDRESS_COPY_CONFIRMATION_MS = 1500
 const SIDEBAR_SECTIONS = ['avatar', 'bio', 'address', 'tokens']
+const CONTENT_SECTIONS = ['controls', 'posts']
+const NO_POSTS_MESSAGE = 'You have no posts yet.'
 const TRUNCATE_LENGTH = 24
 const CONTROL_DESCRIPTIONS = {
   'Set Name': 'Set the name shown next to your posts and on your profile.',
@@ -34,6 +38,7 @@ class AccountPage {
   constructor (deps = {}) {
     this.wallet = deps.wallet || null
     this.profiles = deps.profiles || null
+    this.memoDb = deps.memoDb || null
     this.navigate = deps.navigate || (() => {})
     this.addr = deps.addr || null
     this.tokenSource = deps.tokenSource || null
@@ -44,6 +49,8 @@ class AccountPage {
     this.clearTimer = deps.clearTimer || ((id) => clearTimeout(id))
     this.tokens = []
     this.tokenIcons = []
+    this.posts = []
+    this.pagination = null
     this.destroyed = false
     this.addressCopied = false
     this.addressCopyTimer = null
@@ -132,10 +139,49 @@ class AccountPage {
     return SIDEBAR_SECTIONS.slice()
   }
 
-  // Load the account page: list the account's SLP tokens and build their icons.
-  async load () {
+  // The account page content sections in display order: the Set Name / Set Bio
+  // / Set Avatar URL controls, then the account's own posts feed.
+  getContentSections () {
+    return CONTENT_SECTIONS.slice()
+  }
+
+  // Load the account page: list the account's SLP tokens and build their icons,
+  // then load the account's own posts.
+  async load ({ limit = 50, offset = 0 } = {}) {
     await this.loadTokenIcons()
-    return { tokenIcons: this.tokenIcons, address: this.getAddress() }
+    if (this.memoDb) {
+      await this.loadPosts({ limit, offset })
+    }
+    return {
+      tokenIcons: this.tokenIcons,
+      address: this.getAddress(),
+      posts: this.posts,
+      pagination: this.pagination
+    }
+  }
+
+  // Load the authenticated account's top-level posts, newest first. Requires a
+  // memo db client and an authenticated address.
+  async loadPosts ({ limit = 50, offset = 0 } = {}) {
+    if (!this.memoDb) {
+      throw new Error('Account page requires a memo db client.')
+    }
+    const addr = this.getAddress()
+    if (!addr) {
+      throw new Error('Account page requires an address.')
+    }
+    const data = await this.memoDb.getPostsByAddr(addr, { limit, offset })
+    this.posts = data.posts || []
+    this.pagination = data.pagination || null
+    return { posts: this.posts, pagination: this.pagination }
+  }
+
+  getPost (txid) {
+    return this.posts.find((post) => post.txid === txid) || null
+  }
+
+  canLoadMore () {
+    return this.pagination?.hasMore ?? false
   }
 
   // Phase one: list the SLP tokens held by the account address and render an
@@ -232,6 +278,8 @@ AccountPage.SET_AVATAR_URL_PATH = SET_AVATAR_URL_PATH
 AccountPage.ACCOUNT_PATH = ACCOUNT_PATH
 AccountPage.ADDRESS_COPY_CONFIRMATION_MS = ADDRESS_COPY_CONFIRMATION_MS
 AccountPage.SIDEBAR_SECTIONS = SIDEBAR_SECTIONS
+AccountPage.CONTENT_SECTIONS = CONTENT_SECTIONS
+AccountPage.NO_POSTS_MESSAGE = NO_POSTS_MESSAGE
 AccountPage.CONTROL_DESCRIPTIONS = CONTROL_DESCRIPTIONS
 
 module.exports = AccountPage

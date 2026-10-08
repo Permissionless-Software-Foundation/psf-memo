@@ -29,6 +29,29 @@ function makeWallet (address = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26
   return { walletInfo: { cashAddress: address } }
 }
 
+// A fake memo-db client serving posts by address with pagination.
+function makeMemoDb (posts = []) {
+  const calls = []
+  return {
+    calls,
+    posts,
+    async getPostsByAddr (addr, { limit = 50, offset = 0 } = {}) {
+      calls.push({ addr, limit, offset })
+      const filtered = posts.filter((post) => post.addr === addr)
+      const page = filtered.slice(offset, offset + limit)
+      return {
+        posts: page,
+        pagination: {
+          total: filtered.length,
+          limit,
+          offset,
+          hasMore: offset + page.length < filtered.length
+        }
+      }
+    }
+  }
+}
+
 // A page with an authenticated wallet and an in-memory profile store, plus the
 // store and wallet so a test can seed a profile field.
 function makePage (address) {
@@ -463,4 +486,109 @@ test('destroy is safe when no copy confirmation timer is pending', () => {
 
   assert.doesNotThrow(() => page.destroy())
   assert.deepEqual(cleared, [])
+})
+
+test('getContentSections lists the controls above the posts', () => {
+  const page = new AccountPage({})
+
+  assert.deepEqual(page.getContentSections(), ['controls', 'posts'])
+})
+
+test('the account feed has a no-posts message', () => {
+  assert.equal(AccountPage.NO_POSTS_MESSAGE, 'You have no posts yet.')
+})
+
+test('load loads the account posts and pagination', async () => {
+  const wallet = makeWallet()
+  const memoDb = makeMemoDb([
+    { txid: '1'.repeat(64), addr: wallet.walletInfo.cashAddress, text: 'first memo' },
+    { txid: '2'.repeat(64), addr: wallet.walletInfo.cashAddress, text: 'second memo' }
+  ])
+  const page = new AccountPage({ wallet, profiles: makeProfiles(), memoDb })
+
+  const result = await page.load()
+
+  assert.equal(result.posts.length, 2)
+  assert.equal(page.posts.length, 2)
+  assert.equal(page.canLoadMore(), false)
+  assert.equal(page.getPost('1'.repeat(64)).text, 'first memo')
+})
+
+test('load requests 50 posts per page', async () => {
+  const wallet = makeWallet()
+  const memoDb = makeMemoDb()
+  const page = new AccountPage({ wallet, profiles: makeProfiles(), memoDb })
+
+  await page.load()
+
+  assert.deepEqual(memoDb.calls, [{
+    addr: wallet.walletInfo.cashAddress,
+    limit: 50,
+    offset: 0
+  }])
+})
+
+test('canLoadMore reflects the pagination hasMore flag', async () => {
+  const wallet = makeWallet()
+  const posts = Array.from({ length: 60 }, (_, i) => ({
+    txid: `${i}`.padStart(64, '0'),
+    addr: wallet.walletInfo.cashAddress,
+    text: `memo ${i}`
+  }))
+  const page = new AccountPage({ wallet, profiles: makeProfiles(), memoDb: makeMemoDb(posts) })
+
+  await page.load()
+
+  assert.equal(page.posts.length, 50)
+  assert.equal(page.canLoadMore(), true)
+})
+
+test('load leaves posts empty when no memo db is injected', async () => {
+  const page = new AccountPage({ wallet: makeWallet(), profiles: makeProfiles() })
+
+  const result = await page.load()
+
+  assert.deepEqual(result.posts, [])
+  assert.equal(page.canLoadMore(), false)
+})
+
+test('getPost returns null for an unknown txid', () => {
+  const page = new AccountPage({})
+
+  assert.equal(page.getPost('unknown'), null)
+})
+
+test('loadPosts requires a memo db client', async () => {
+  const page = new AccountPage({ wallet: makeWallet() })
+
+  await assert.rejects(() => page.loadPosts(), /requires a memo db client/)
+})
+
+test('loadPosts requires an address', async () => {
+  const page = new AccountPage({ memoDb: makeMemoDb() })
+
+  await assert.rejects(() => page.loadPosts(), /requires an address/)
+})
+
+test('loadPosts forwards limit and offset and stores the page', async () => {
+  const wallet = makeWallet()
+  const posts = Array.from({ length: 8 }, (_, i) => ({
+    txid: `${i}`.padStart(64, '0'),
+    addr: wallet.walletInfo.cashAddress,
+    text: `memo ${i}`
+  }))
+  const memoDb = makeMemoDb(posts)
+  const page = new AccountPage({ wallet, memoDb })
+
+  const result = await page.loadPosts({ limit: 10, offset: 5 })
+
+  assert.deepEqual(memoDb.calls, [{
+    addr: wallet.walletInfo.cashAddress,
+    limit: 10,
+    offset: 5
+  }])
+  assert.deepEqual(result.posts, posts.slice(5))
+  assert.equal(result.pagination.offset, 5)
+  assert.equal(page.posts.length, 3)
+  assert.equal(page.canLoadMore(), false)
 })

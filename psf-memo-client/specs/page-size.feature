@@ -2,14 +2,14 @@
 # {"version":1,"tested_at":"2026-09-04T17:42:23.821120012Z","feature_name":"Page Size","feature_path":"/home/trout/work/psf-memo/.worktrees/architect/psf-memo-client/specs/page-size.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
 # acceptance-mutation-manifest-end
 
-# Scenarios: Page Size - 1, Page Size - 2, Page Size - 3, Page Size - 4, Page Size - 5, Page Size - 6, Page Size - 7
+# Scenarios: Page Size - 1, Page Size - 2, Page Size - 3, Page Size - 4, Page Size - 5, Page Size - 6, Page Size - 7, Page Size - 8
 #
 # Every paginated page in the client requests 50 items per page instead of 100.
 # This reduces the payload each page loads and improves page load times. The
 # pages covered are the recent feed, the following feed, the topic feed, the
-# notifications page, the search page, the profile page, and the recent
-# profiles page. Each page requests a page size of 50 and reports that more
-# items are available when the API has more than 50.
+# notifications page, the search page, the profile page, the recent
+# profiles page, and the account page. Each page requests a page size of 50 and
+# reports that more items are available when the API has more than 50.
 Feature: Page Size
 
   Scenario Outline: Page Size - 1 the recent feed loads 50 posts per page
@@ -85,6 +85,17 @@ Feature: Page Size
     When I open the recent profiles page
     Then the recent profiles page shows 50 profiles
     And the recent profiles page can load more profiles
+
+    Examples:
+      | count |
+      | 60 |
+      | 70 |
+
+  Scenario Outline: Page Size - 8 the account page loads 50 posts per page
+    Given the psf-memo-db API serves <count> posts authored by the address bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d
+    When I open the account page
+    Then the account page shows 50 posts
+    And the account page can load more posts
 
     Examples:
       | count |
