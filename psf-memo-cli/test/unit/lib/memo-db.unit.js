@@ -381,7 +381,7 @@ describe('#memo-db', () => {
     })
   })
 
-  describe('follow list routes', () => {
+  describe('unpaginated list routes', () => {
     const cases = [
       {
         method: 'getFollowing',
@@ -396,6 +396,13 @@ describe('#memo-db', () => {
         body: { followeeAddr: 'addrA', followers: ['addrD'] },
         resultKey: 'followers',
         firstValue: 'addrD'
+      },
+      {
+        method: 'getMuted',
+        path: '/mute/muted/addrA',
+        body: { muterAddr: 'addrA', muted: ['addrE'] },
+        resultKey: 'muted',
+        firstValue: 'addrE'
       }
     ]
 
@@ -410,7 +417,7 @@ describe('#memo-db', () => {
       })
     }
 
-    it('percent-encodes the address on both routes', async () => {
+    it('percent-encodes the address on every list route', async () => {
       const following = recordingClient({})
       await following.client.getFollowing('a/b')
       assert.equal(following.requestedUrl().pathname, '/follow/following/a%2Fb')
@@ -418,6 +425,10 @@ describe('#memo-db', () => {
       const followers = recordingClient({})
       await followers.client.getFollowers('a/b')
       assert.equal(followers.requestedUrl().pathname, '/follow/followers/a%2Fb')
+
+      const muted = recordingClient({})
+      await muted.client.getMuted('a/b')
+      assert.equal(muted.requestedUrl().pathname, '/mute/muted/a%2Fb')
     })
   })
 

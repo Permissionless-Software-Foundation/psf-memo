@@ -13,6 +13,7 @@ import { assert } from 'chai'
 import {
   parseFollowingFlags,
   parseFollowersFlags,
+  parseWalletSourceFlags,
   formatFollowListMessage,
   MISSING_FOLLOWEE_MESSAGE
 } from '../../../src/lib/follow-list.js'
@@ -23,6 +24,12 @@ describe('#follow-list helpers', () => {
     assert.deepEqual(parseFollowingFlags({ name: 'wallet' }), { name: 'wallet', wif: null })
     assert.deepEqual(parseFollowingFlags({ wif: 'wif-key' }), { name: null, wif: 'wif-key' })
     assert.deepEqual(parseFollowingFlags({}), { name: null, wif: null })
+  })
+
+  it('normalizes a wallet source for any wallet-scoped list command', () => {
+    assert.deepEqual(parseWalletSourceFlags({ name: 'wallet' }), { name: 'wallet', wif: null })
+    assert.deepEqual(parseWalletSourceFlags({ wif: 'wif-key' }), { name: null, wif: 'wif-key' })
+    assert.deepEqual(parseWalletSourceFlags({}), { name: null, wif: null })
   })
 
   it('requires the followee -a address', () => {

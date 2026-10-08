@@ -34,6 +34,7 @@ import MemoSearch from './src/commands/memo-search.js'
 import MemoProfiles from './src/commands/memo-profiles.js'
 import MemoFollowing from './src/commands/memo-following.js'
 import MemoFollowers from './src/commands/memo-followers.js'
+import MemoMuted from './src/commands/memo-muted.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -63,6 +64,7 @@ const memoSearch = new MemoSearch()
 const memoProfiles = new MemoProfiles()
 const memoFollowing = new MemoFollowing()
 const memoFollowers = new MemoFollowers()
+const memoMuted = new MemoMuted()
 
 const program = new Command()
 
@@ -279,5 +281,13 @@ program.command('memo-followers')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoFollowers.run)
+
+program.command('memo-muted')
+  .description('Read the addresses a wallet has muted')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoMuted.run)
 
 program.parseAsync(process.argv)

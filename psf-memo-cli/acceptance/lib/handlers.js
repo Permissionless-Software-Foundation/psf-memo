@@ -28,6 +28,7 @@ import { memoSearchHandlers } from './steps/memo-search.js'
 import { memoProfilesHandlers } from './steps/memo-profiles.js'
 import { memoFollowingHandlers } from './steps/memo-following.js'
 import { memoFollowersHandlers } from './steps/memo-followers.js'
+import { memoMutedHandlers } from './steps/memo-muted.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -56,6 +57,7 @@ const handlers = [
   ...memoProfilesHandlers,
   ...memoFollowingHandlers,
   ...memoFollowersHandlers,
+  ...memoMutedHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -86,6 +88,7 @@ async function createWorld () {
     followState: false,
     following: [],
     followers: [],
+    mutedByMuter: {},
     topics: [],
     topicPostsByRoom: {},
     searchPosts: [],
@@ -192,6 +195,11 @@ async function createWorld () {
     if (world.lastRequest.pathname.startsWith('/follow/followers/')) {
       const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop() || '')
       return jsonResponse({ followeeAddr: addr, followers: [...world.followers] }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/mute/muted/')) {
+      const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop() || '')
+      return jsonResponse({ muterAddr: addr, muted: [...(world.mutedByMuter[addr] || [])] }, 200)
     }
 
     if (world.lastRequest.pathname === '/topics') {

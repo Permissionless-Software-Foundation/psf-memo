@@ -1,11 +1,12 @@
 /*
-  Pure helpers shared by the follow-list read commands (memo-following and
-  memo-followers).
+  Pure helpers shared by the wallet/list read commands (memo-following,
+  memo-followers, and memo-muted).
 
-  Both commands report an unpaginated list of cash addresses: the addresses a
-  wallet follows, and the addresses that follow a target. This module owns the
-  follower -a flag, the following wallet-source passthrough, and the shared
-  human-readable summary of an address list.
+  The wallet-scoped commands report an unpaginated list of cash addresses: the
+  addresses a wallet follows, the addresses that follow a target, and the
+  addresses a wallet mutes. This module owns the required followee -a flag, the
+  wallet-source passthrough, and the shared human-readable summary of an address
+  list.
 */
 
 // Local libraries
@@ -14,14 +15,19 @@ import { parseAddressFlag } from './address-flag.js'
 export const MISSING_FOLLOWEE_MESSAGE =
   'You must specify a followee address with the -a flag.'
 
-// Normalize the wallet source for memo-following. Its presence is validated
-// when the source is resolved (resolveWalletSource), so only the flags are
-// resolved here.
-export function parseFollowingFlags (flags = {}) {
+// Normalize a wallet source (name/WIF) for a wallet-scoped list command. Its
+// presence is validated when the source is resolved (resolveWalletSource), so
+// only the flags are resolved here.
+export function parseWalletSourceFlags (flags = {}) {
   return {
     name: flags.name || null,
     wif: flags.wif || null
   }
+}
+
+// Normalize the wallet source for memo-following.
+export function parseFollowingFlags (flags) {
+  return parseWalletSourceFlags(flags)
 }
 
 // Resolve the required followee -a address for memo-followers. Throws a

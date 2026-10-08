@@ -81,6 +81,11 @@ class MemoDb {
     return this.getJson(`/follow/followers/${encodeURIComponent(addr)}`)
   }
 
+  // GET /mute/muted/:addr. Returns the addresses the muter has muted.
+  async getMuted (addr) {
+    return this.getJson(`/mute/muted/${encodeURIComponent(addr)}`)
+  }
+
   // GET /topics. Returns one page of the topic list with the service pagination.
   async getTopics ({ limit = 50, offset = 0 } = {}) {
     return this.getJson(`/topics?${toQuery({ limit, offset })}`)
