@@ -21,5 +21,5 @@ const MemoFollowing = defineWalletListCommand({
 export default MemoFollowing
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T01:28:43.877Z","module_hash":"bec8f5b6714b828941ec3735c3313d38b2fbe96fbd164a4698a63a59f92d825c","functions":[]}
+// {"version":1,"tested_at":"2026-10-08T14:45:32.588Z","module_hash":"bec8f5b6714b828941ec3735c3313d38b2fbe96fbd164a4698a63a59f92d825c","functions":[]}
 // mutate4javascript-manifest-end

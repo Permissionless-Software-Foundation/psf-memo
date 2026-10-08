@@ -35,6 +35,23 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI quality audit (`cli-quality-audit`, 2026-10-08):** X5 of the
+  `psf-memo-cli` cross-cutting series. Re-established the
+  `cli-quality-hardening` baseline over the complete command set: 100%
+  statements/branches/functions/lines (579 unit tests), CRAP exit 0 / max 6.0,
+  DRY clean, language mutation 180 killed / 3 intrinsic survivors / 0 uncovered
+  across all `src/`, property 110/0, all 37 acceptance suites, lint clean.
+  Closed the two previously uncovered branches (`memo-profiles` `(unset)`
+  avatar/bio and the `wallet-list-command` missing-list-field fallback), and the
+  refactorer's `defineListReadCommand` removed the last DRY pair. No Gherkin
+  feature (quality deliverable; soft Gherkin mutation not applicable). Merged
+  to `master` at `cb02cc9` (fast-forward; verification record
+  `docs/reviews/cli-quality-audit-verification.json` names the verified tree
+  `4688e628e1`, and the later commits add only records/process notes, so it is
+  valid for the merged tree). Independent acceptance check after merge:
+  memo-profiles 12/12 and memo-topics 10/10. Architect summary:
+  `docs/reviews/cli-quality-audit-summary.md`.
+
 - **CLI read-only safety (`cli-read-only-safety`, 2026-10-08):** X4 of the
   `psf-memo-cli` cross-cutting series. Wallet-independent reads (`memo-feed`,
   `memo-status`, `memo-profile`, and a `--viewer` supplied as an address) never
@@ -1497,9 +1514,9 @@ Active work is the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
 commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
 decision) are done, and X1 (command reference docs), X2 (error surfacing), X3
-(secret hygiene), and X4 (read-only safety) are now complete. The remaining
-cross-cutting hardening items are X5–X7; the suggested next item is X5 (quality
-and verification). The earlier client direction —
+(secret hygiene), X4 (read-only safety), and X5 (quality audit) are now
+complete. The remaining cross-cutting hardening items are X6–X7; the suggested
+next item is X6 (pagination fidelity). The earlier client direction —
 front-end improvements to
 `psf-memo-client` (UI/UX polish, accessibility, performance, responsiveness,
 state handling, error surfacing) — remains open. Ask the user for the next

@@ -51,5 +51,5 @@ export function formatProfileMessage ({
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-07T20:43:46.280Z","module_hash":"e90e9ad90ba65eef65facbefa9f7fe77c616e387a5781e6cd02c6e524dc7e79d","functions":[{"id":"func/parseProfileFlags","name":"parseProfileFlags","line":23,"end_line":30,"hash":"a66b4216b3d0617e5c1317de44de98d7338630b91aeba7d1abb260c932a702d1"},{"id":"func/formatProfileMessage","name":"formatProfileMessage","line":34,"end_line":51,"hash":"d741e24e0c6366d3eba9f02bc441a358d823151ecfe19cc575adc75b48321780"}]}
+// {"version":1,"tested_at":"2026-10-08T14:53:54.445Z","module_hash":"e90e9ad90ba65eef65facbefa9f7fe77c616e387a5781e6cd02c6e524dc7e79d","functions":[{"id":"func/parseProfileFlags","name":"parseProfileFlags","line":23,"end_line":30,"hash":"a66b4216b3d0617e5c1317de44de98d7338630b91aeba7d1abb260c932a702d1"},{"id":"func/formatProfileMessage","name":"formatProfileMessage","line":34,"end_line":51,"hash":"d741e24e0c6366d3eba9f02bc441a358d823151ecfe19cc575adc75b48321780"}]}
 // mutate4javascript-manifest-end

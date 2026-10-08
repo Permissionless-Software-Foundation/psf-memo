@@ -287,7 +287,9 @@ async function createWorld () {
       const limit = Number.parseInt(world.lastRequest.searchParams.get('limit') || '50', 10)
       const offset = Number.parseInt(world.lastRequest.searchParams.get('offset') || '0', 10)
       const page = world.posts.slice(offset, offset + limit)
-      const pagination = {
+      // A scenario may pin the service pagination (for example the documented
+      // recent-feed total cap of 500); otherwise derive it from the fixture.
+      const pagination = world.feedPagination || {
         limit,
         offset,
         total: world.posts.length,

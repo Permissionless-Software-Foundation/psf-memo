@@ -23,5 +23,5 @@ const MemoMute = defineAddressWriteCommand({
 export default MemoMute
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T02:23:08.145Z","module_hash":"a1821a2f78a708c6f785859af751c2f8a2b0c6762a62076981ae43ac25f94101","functions":[]}
+// {"version":1,"tested_at":"2026-10-08T14:46:08.912Z","module_hash":"a1821a2f78a708c6f785859af751c2f8a2b0c6762a62076981ae43ac25f94101","functions":[]}
 // mutate4javascript-manifest-end

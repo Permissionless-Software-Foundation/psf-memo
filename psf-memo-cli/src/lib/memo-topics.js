@@ -36,5 +36,5 @@ export function formatTopicsMessage (topics = [], pagination = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-07T20:54:28.145Z","module_hash":"812ba4edb5352e625444db7c487814b01c0ea4aa87f2b81dfc0da8d8dbd03ac4","functions":[{"id":"func/parseTopicsFlags","name":"parseTopicsFlags","line":19,"end_line":24,"hash":"5d2f0797ba0185023f12ba07500f45713a3214fa96141147575ebecd8435a34c"},{"id":"func/formatTopicsMessage","name":"formatTopicsMessage","line":29,"end_line":36,"hash":"c9803fd53419db53903938056aef895c0ec51ead5ecb34989bf3652e2b6dd933"}]}
+// {"version":1,"tested_at":"2026-10-08T14:56:33.953Z","module_hash":"812ba4edb5352e625444db7c487814b01c0ea4aa87f2b81dfc0da8d8dbd03ac4","functions":[{"id":"func/parseTopicsFlags","name":"parseTopicsFlags","line":19,"end_line":24,"hash":"5d2f0797ba0185023f12ba07500f45713a3214fa96141147575ebecd8435a34c"},{"id":"func/formatTopicsMessage","name":"formatTopicsMessage","line":29,"end_line":36,"hash":"c9803fd53419db53903938056aef895c0ec51ead5ecb34989bf3652e2b6dd933"}]}
 // mutate4javascript-manifest-end

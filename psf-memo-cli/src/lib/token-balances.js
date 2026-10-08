@@ -63,5 +63,5 @@ export function getTokenBalances (tokenUtxos) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-06T22:41:35.931Z","module_hash":"24fe14772c33a2e8107723a2a340975280789b5a14bbbb45c4e9d616821dcd37","functions":[{"id":"func/getTokenBalances","name":"getTokenBalances","line":14,"end_line":63,"hash":"caf0cacdac3162c18ab9158a36a4f52ff952a0c51cfdb8e55db7c11602a6f3ce"}]}
+// {"version":1,"tested_at":"2026-10-08T14:58:28.771Z","module_hash":"24fe14772c33a2e8107723a2a340975280789b5a14bbbb45c4e9d616821dcd37","functions":[{"id":"func/getTokenBalances","name":"getTokenBalances","line":14,"end_line":63,"hash":"caf0cacdac3162c18ab9158a36a4f52ff952a0c51cfdb8e55db7c11602a6f3ce"}]}
 // mutate4javascript-manifest-end

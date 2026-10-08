@@ -23,5 +23,5 @@ export function formatPollMessage (poll = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T01:40:50.167Z","module_hash":"8c9e2aa842811393d0bfb10cbfe18e57c1c0ea9574e3b257e7597cabf4fe8918","functions":[{"id":"func/formatPollMessage","name":"formatPollMessage","line":11,"end_line":23,"hash":"ceca79bf47ff7ab0fbfeaa9012a5c5a51bb2f43c973d8f2b6f3fecc99e72905a"}]}
+// {"version":1,"tested_at":"2026-10-08T14:53:19.059Z","module_hash":"8c9e2aa842811393d0bfb10cbfe18e57c1c0ea9574e3b257e7597cabf4fe8918","functions":[{"id":"func/formatPollMessage","name":"formatPollMessage","line":11,"end_line":23,"hash":"ceca79bf47ff7ab0fbfeaa9012a5c5a51bb2f43c973d8f2b6f3fecc99e72905a"}]}
 // mutate4javascript-manifest-end
