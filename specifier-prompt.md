@@ -1807,7 +1807,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `cb02cc9` (`Note mutate4javascript --lines/--update-manifest behavior and the full CLI sweep`; the X5 architect review commit is `72c70b5`).
+Current `master` HEAD: `e7b59eb` (`Record cli-pagination-fidelity architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1861,10 +1861,11 @@ and the write commands **W1 `memo-post`**, **W2 `memo-reply`**, **W3
 `memo-topic-follow`/`memo-topic-unfollow`** are done. The poll writes
 **W11–W13** were dropped by user decision (2026-10-08). Cross-cutting items
 **X1 (command reference docs)**, **X2 (error surfacing)**, **X3 (secret
-hygiene)**, **X4 (read-only safety)**, and **X5 (quality audit)** are now DONE
-(merged at `0541746`, `5be373d`, `ed6d3c5`, `3d97d79`, and `cb02cc9`), so the
-remaining suggested work is the cross-cutting hardening series **X6–X7** in
-`psf-memo-cli/dev-docs/feature-backlog.md`, starting with **X6 (pagination
-fidelity)**. The earlier client direction (front-end improvements to
+hygiene)**, **X4 (read-only safety)**, **X5 (quality audit)**, and **X6
+(pagination fidelity)** are now DONE (merged at `0541746`, `5be373d`,
+`ed6d3c5`, `3d97d79`, `cb02cc9`, and `e7b59eb`), so the remaining suggested
+work is the final cross-cutting hardening item **X7 (async visibility
+contract)** in `psf-memo-cli/dev-docs/feature-backlog.md`. The earlier client
+direction (front-end improvements to
 `psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

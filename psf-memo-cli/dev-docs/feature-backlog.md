@@ -394,9 +394,16 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   refactorer's `defineListReadCommand` removed the last DRY pair. Spec:
   `psf-memo-cli/dev-docs/quality-audit.md`; architect summary:
   `docs/reviews/cli-quality-audit-summary.md`.
-- **X6 — Pagination fidelity.** Read commands expose `limit`/`offset` and pass
-  through `pagination` unchanged, including the documented total cap
-  (`min(actual, 500)`; gotcha #21). Do not imply an exact total beyond the cap.
+- **X6 — Pagination fidelity.** **DONE** (2026-10-08, task
+  `cli-pagination-fidelity`; merged to `master` at `e7b59eb`). Every paginated
+  read command exposes `--limit`/`--offset` and echoes the service pagination
+  unchanged. The new `pagination-fidelity` feature pins the properties the
+  small per-command fixtures could not: the recent-feed total cap (500;
+  gotcha #21) is passed through and never raised, the returned page count is
+  independent of the service total, and the service `hasMore` is echoed, not
+  recomputed. No production change (characterization lock). Spec:
+  `psf-memo-cli/specs/pagination-fidelity.feature` (3 scenarios / 6 examples);
+  architect summary: `docs/reviews/cli-pagination-fidelity-summary.md`.
 - **X7 — Async visibility contract.** Document that a broadcast is not visible
   until confirmed and indexed; `memo-wait` (R16) is the scriptable bridge.
 
@@ -424,13 +431,15 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
 6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**, X4 **DONE**, X5
-   **DONE**; X6–X7 remain, plus W14–W16 if protocol support is added upstream.
+   **DONE**, X6 **DONE**; X7 remains, plus W14–W16 if protocol support is added
+   upstream.
 
-**Next up: X6 (pagination fidelity).** X1 command reference docs (merged at
-`0541746`), X2 error surfacing (merged at `5be373d`), X3 secret hygiene (merged
-at `ed6d3c5`), X4 read-only safety (merged at `3d97d79`), and X5 quality audit
-(merged at `cb02cc9`) are DONE. Poll writes W11–W13 are intentionally not
-planned (user decision, 2026-10-08).
+**Next up: X7 (async visibility contract).** X1 command reference docs (merged
+at `0541746`), X2 error surfacing (merged at `5be373d`), X3 secret hygiene
+(merged at `ed6d3c5`), X4 read-only safety (merged at `3d97d79`), X5 quality
+audit (merged at `cb02cc9`), and X6 pagination fidelity (merged at `e7b59eb`)
+are DONE. Poll writes W11–W13 are intentionally not planned (user decision,
+2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.
