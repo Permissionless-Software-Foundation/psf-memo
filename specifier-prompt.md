@@ -1186,6 +1186,16 @@ that a single user-facing feature may require specs in more than one component.
     and `page-size.feature` (scenario 8). Architect summary:
     `docs/reviews/account-posts-feed-summary.md`.
 
+87. **Account post metadata is shared via `src/services/post-timestamp.js`.**
+    The account feed's post card shows the same top-of-card timestamp and
+    `Block <height>` as the profile card. The previously duplicated `formatSeen`
+    (profile page + recent profiles page) is now the pure `formatSeen` helper in
+    `src/services/post-timestamp.js`, used by all three surfaces and by the
+    acceptance renderer. The `seen` input may be epoch seconds (< 1e12,
+    multiplied by 1000) or milliseconds; scenario 6 seeds one of each. Spec:
+    `psf-memo-client/specs/account-posts-feed.feature` (scenario 6). Architect
+    summary: `docs/reviews/account-post-metadata-summary.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1242,7 +1252,23 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `account-posts-feed`): the second client front-end
+Latest session (2026-10-08, `account-post-metadata`): a small client-only
+follow-up to `account-posts-feed`. The user reported that the timestamp and
+block number were missing from the top of each `/account` post; the specifier
+added `Account Posts Feed - 6` (seeds a post with `block height` and `seen`, then
+asserts the card shows `Block <height>` and the timestamp), and the
+coder/refactorer/architect added the meta row to the account card, extracted the
+duplicated `formatSeen` into the pure `src/services/post-timestamp.js`, and
+pointed the profile and recent-profiles pages at it. Merged to `master` at
+`a70f36c` (fast-forward; architect code-review commit `9c46b25`; the later
+`a70f36c` adds only the record and summary, so
+`docs/reviews/account-post-metadata-verification.json` is valid for the merged
+tree). Recorded `verify.sh client` pass 5/5 at `9c46b25` (unit 811/0, property
+223/0, acceptance all 49 suites, lint ok, build ok). Independent acceptance
+check after merge: account-posts-feed 10/10. Architect summary:
+`docs/reviews/account-post-metadata-summary.md`.
+
+Previous session (2026-10-08, `account-posts-feed`): the second client front-end
 feature. The specifier added `psf-memo-client/specs/account-posts-feed.feature`
 (5 scenarios: posts below the controls, profile-feed rendering parity, no-posts
 message, interactive like, reply-count→thread) and `Page Size - 8` to
@@ -1875,7 +1901,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `2470bc8` (`Record account-posts-feed architect review and verification`).
+Current `master` HEAD: `a70f36c` (`Record account-post-metadata architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1916,8 +1942,9 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the latest features, `set-bio-existing-and-cancel`
-merged at `4467e6e` and `account-posts-feed` merged at `2470bc8`). The
+`specs/feature-backlog.md` (the latest features, `account-posts-feed` merged at
+`2470bc8` and its `account-post-metadata` follow-up merged at `a70f36c`, after
+`set-bio-existing-and-cancel` at `4467e6e`). The
 `psf-memo-cli` Memo-protocol backlog below is complete except for the deferred
 W14–W16. The
 foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,

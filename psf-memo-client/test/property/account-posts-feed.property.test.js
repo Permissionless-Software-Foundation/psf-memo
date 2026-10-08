@@ -13,8 +13,12 @@
 'use strict'
 
 const test = require('node:test')
+const React = require('react')
+const ReactDOMServer = require('react-dom/server')
 const { seededRandom, forAll, intGen } = require('./harness')
 const AccountPage = require('../../src/services/account-page')
+const { AccountPostsFeed } = require('../../src/components/app-body/account/account-posts-feed')
+const { formatSeen } = require('../../src/services/post-timestamp')
 
 const rng = seededRandom(20261008)
 
@@ -87,5 +91,20 @@ test('getPost round-trips every loaded post by txid and returns null otherwise',
         page.getPost('missing') === null
     },
     { label: 'account getPost round trip' }
+  )
+})
+
+test('renders the block number and formatted timestamp for every post', async () => {
+  await forAll(
+    (i) => ({ blockHeight: intGen(rng, 1, 900000)(), seen: intGen(rng, 1e9, 2e9)() }),
+    ({ blockHeight, seen }) => {
+      const html = ReactDOMServer.renderToStaticMarkup(
+        React.createElement(AccountPostsFeed, {
+          posts: [{ txid: 'a'.repeat(64), addr: ADDRESS, text: 'memo', blockHeight, seen }]
+        })
+      )
+      return html.includes(`Block ${blockHeight}`) && html.includes(formatSeen(seen))
+    },
+    { samples: 50, label: 'account feed post metadata' }
   )
 })
