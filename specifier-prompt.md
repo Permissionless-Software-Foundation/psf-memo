@@ -1155,7 +1155,25 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-memo-muted`): specified and merged R12, the
+Latest session (2026-10-08, `cli-memo-poll`): specified and merged R13, the poll
+read command, completing the read set (R1-R16). The specifier wrote
+`psf-memo-cli/specs/memo-poll.feature` (6 scenarios, 9 example executions); the
+coder/refactorer/architect added `src/lib/memo-poll.js` (summary) and a thin
+`src/commands/memo-poll.js` over the shared read-command plumbing and
+`MemoDb.getPoll` (`GET /polls/:txid`), registered as `memo-poll`. It reads a
+single poll by txid (shared `-t` flag) and reports the question, the options
+(text and author address), and the current votes (comment and voter address);
+the DB 404 maps to a named not-found failure (exit 1). The refactorer deduped
+the poll acceptance steps and txid-path DB tests. Merged to `master` at
+`2a34ccc` (fast-forward; architect code-review commit `1838180cc9`; the later
+`2a34ccc` adds only the record and summary, so
+`docs/reviews/cli-memo-poll-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `1838180cc9` (unit 442/0, property 94/0, acceptance
+all 25 suites, lint ok); language mutation 15 killed / 0 survived; soft Gherkin
+mutation 12/12 killed; DRY clean. Independent acceptance check after merge: 9/9.
+Architect summary: `docs/reviews/cli-memo-poll-summary.md`.
+
+Previous session (2026-10-08, `cli-memo-muted`): specified and merged R12, the
 muted-list read command. The specifier wrote
 `psf-memo-cli/specs/memo-muted.feature` (4 scenarios, 5 example executions;
 scenario 2 is a `Scenario Outline` so the soft mutator has values to mutate);
@@ -1628,7 +1646,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `7367b74` (`Record cli-memo-muted architect review and verification`).
+Current `master` HEAD: `2a34ccc` (`Record cli-memo-poll architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1669,15 +1687,15 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is
 `psf-memo-cli/dev-docs/feature-backlog.md` (Memo-protocol CLI commands). The
-foundation (F1, F5, F4, F2/F3) and the read-first value set (**R1 `memo-feed`**,
+foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
 `memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8
 `memo-topic`**, **R9 `memo-search`**, **R10 `memo-profiles`**, **R11
-`memo-following`/`memo-followers`**, **R12 `memo-muted`**, **R14
-`memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done, and the
-first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and **W3
-`memo-like`** are done. The suggested next item is **R13 `memo-poll`** (a poll
-with its options and current votes), the last read command before the W4+ write
-commands. The earlier client direction (front-end improvements to
-`psf-memo-client`) remains open in `specs/feature-backlog.md`.
+`memo-following`/`memo-followers`**, **R12 `memo-muted`**, **R13 `memo-poll`**,
+**R14 `memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done,
+and the first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and
+**W3 `memo-like`** are done. The suggested next item is the **W4+ write
+commands** — W4 `memo-name` (set name), W5 `memo-bio`, W6 `memo-avatar`, W7/W8
+follow/mute, and W9–W13 topics/polls. The earlier client direction (front-end
+improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.

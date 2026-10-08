@@ -276,6 +276,11 @@ acceptance 8/8 across `memo-following` and `memo-followers`). Specs:
 acceptance 5/5). Spec: `psf-memo-cli/specs/memo-muted.feature`; architect
 summary: `docs/reviews/cli-memo-muted-summary.md`.
 
+**R13 status: DONE** (2026-10-08, task `cli-memo-poll`; merged at `2a34ccc`;
+acceptance 9/9). Spec: `psf-memo-cli/specs/memo-poll.feature`; architect
+summary: `docs/reviews/cli-memo-poll-summary.md`. With R13, all read commands
+(R1–R16) are complete.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -363,8 +368,10 @@ summary: `docs/reviews/cli-memo-like-summary.md`.
    **DONE**, R4 (profile) **DONE**, R5 (posts) **DONE**, R6 (notifications)
    **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
    **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
-   and the shared post-page read pipeline are in place. **Next up: R13
-   (`memo-poll`)** — a poll with its options and current votes.
+   and the shared post-page read pipeline are in place. All read commands
+   (R1–R16) are complete. **Next up: the W4+ write commands** — W4
+   (`memo-name`), W5 (`memo-bio`), W6 (`memo-avatar`), W7/W8 (follow/mute), and
+   W9–W13 (topics/polls).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

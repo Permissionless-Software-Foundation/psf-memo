@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI poll read command (`cli-memo-poll`, 2026-10-08):** R13 of the
+  `psf-memo-cli` Memo-protocol backlog, completing the read-command set
+  (R1–R16). Added `src/lib/memo-poll.js` (summary) and a thin
+  `src/commands/memo-poll.js` over the shared read-command plumbing and
+  `MemoDb.getPoll` (`GET /polls/:txid`), registered as `memo-poll`. It reads a
+  single poll by txid (`-t`, shared txid flag) and reports the question, the
+  options (text and author address), and the current votes (comment and voter
+  address); the DB's 404 maps to a named not-found failure (exit 1). Read-only;
+  no wallet. Spec: `psf-memo-cli/specs/memo-poll.feature` (6 scenarios, 9
+  example executions). Merged to `master` at `2a34ccc` (fast-forward; architect
+  code-review commit `1838180cc9`; the later `2a34ccc` adds only the record and
+  summary, so `docs/reviews/cli-memo-poll-verification.json` is valid for the
+  merged tree). `verify.sh cli` pass 4/4 at `1838180cc9` (unit 442/0, property
+  94/0, acceptance all 25 suites, lint ok); language mutation 15 killed / 0
+  survived (`memo-poll.js` 2, `memo-db.js` 13; the command module scans as 0
+  sites); soft Gherkin mutation 12/12 killed; DRY clean. Independent acceptance
+  check after merge: 9/9. Architect summary:
+  `docs/reviews/cli-memo-poll-summary.md`.
+
 - **CLI muted-list command (`cli-memo-muted`, 2026-10-08):** R12 of the
   `psf-memo-cli` Memo-protocol backlog. Added `src/commands/memo-muted.js` over
   the new shared `defineWalletListCommand` factory and `MemoDb.getMuted`
