@@ -374,9 +374,16 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   name/description. Spec: `psf-memo-cli/specs/secret-hygiene.feature` (3
   scenarios, negative assertions); architect summary:
   `docs/reviews/cli-secret-hygiene-summary.md`.
-- **X4 — Read-only safety.** Read commands must not instantiate or unlock a
-  wallet unless viewer-relative data is requested; a missing wallet file then
-  does not break `memo-feed`/`memo-status`.
+- **X4 — Read-only safety.** **DONE** (2026-10-08, task `cli-read-only-safety`;
+  merged to `master` at `3d97d79`). Wallet-independent reads (`memo-feed`,
+  `memo-status`, `memo-profile`, and a `--viewer` supplied as an address) never
+  resolve a wallet; only wallet-relative reads (`memo-identity`,
+  `memo-notifications`) do, and a missing wallet for such a read is a runtime
+  error. The coder added characterization unit tests and recording-resolver
+  acceptance steps; the refactorer centralized the injected wallet resolver in
+  `acceptance/lib/read-command.js`. Spec:
+  `psf-memo-cli/specs/read-only-safety.feature` (6 scenarios); architect
+  summary: `docs/reviews/cli-read-only-safety-summary.md`.
 - **X5 — Quality and verification.** Every command ships unit tests, property
   tests where invariants exist (encoding, pagination, limit math), and Gherkin
   acceptance (F6 is in place). Keep `verify.sh cli` green and preserve the
@@ -411,13 +418,13 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
    is complete; the remaining work is the cross-cutting X-series (below).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W10 (poll writes W11–W13 dropped).
-6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**; X4–X7 remain, plus
-   W14–W16 if protocol support is added upstream.
+6. **Hardening**: X1 **DONE**, X2 **DONE**, X3 **DONE**, X4 **DONE**; X5–X7
+   remain, plus W14–W16 if protocol support is added upstream.
 
-**Next up: X4 (read-only safety).** X1 command reference docs (merged at
-`0541746`), X2 error surfacing (merged at `5be373d`), and X3 secret hygiene
-(merged at `ed6d3c5`) are DONE. Poll writes W11–W13 are intentionally not
-planned (user decision, 2026-10-08).
+**Next up: X5 (quality and verification).** X1 command reference docs (merged at
+`0541746`), X2 error surfacing (merged at `5be373d`), X3 secret hygiene (merged
+at `ed6d3c5`), and X4 read-only safety (merged at `3d97d79`) are DONE. Poll
+writes W11–W13 are intentionally not planned (user decision, 2026-10-08).
 
 Each numbered item is delivered as its own specifier → coder → refactorer →
 architect cycle.

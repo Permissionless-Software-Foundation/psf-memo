@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T14:10:51.918422002Z","feature_name":"Read-Only Safety","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/read-only-safety.feature","background_hash":"dfbbd9404bb80651225ea0765f09f498029ce17b76284c032e6b43b406300e5c","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Read-Only Safety - 1, Read-Only Safety - 2, Read-Only Safety - 3, Read-Only Safety - 4, Read-Only Safety - 5, Read-Only Safety - 6
 #
 # X4: a psf-memo-cli read command resolves a wallet only when the requested

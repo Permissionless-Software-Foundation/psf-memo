@@ -50,4 +50,18 @@ describe('#memo-profiles helpers', () => {
     assert.include(message, 'addrB: (unset), avatar https://example.com/bob.jpg, bio bob bio')
     assert.include(message, 'pagination: limit 50, offset 0, total 2, hasMore false')
   })
+
+  it('renders (unset) for a profile with no avatar or bio', () => {
+    const message = formatProfilesMessage(
+      [
+        { addr: 'addrC', text: '', name: 'carol', profilePicUrl: '', txid: 'txC', blockHeight: 600100, seen: 100 }
+      ],
+      { limit: 50, offset: 0, total: 1, hasMore: false }
+    )
+
+    assert.include(
+      message,
+      'addrC: carol, avatar (unset), bio (unset), txid txC, blockHeight 600100, seen 100'
+    )
+  })
 })
