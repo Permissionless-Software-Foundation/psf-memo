@@ -318,6 +318,10 @@ summary: `docs/reviews/cli-memo-reply-summary.md`.
 acceptance 20/20). Spec: `psf-memo-cli/specs/memo-like.feature`; architect
 summary: `docs/reviews/cli-memo-like-summary.md`.
 
+**W4 status: DONE** (2026-10-08, task `cli-memo-name`; merged at `14d4407`;
+acceptance 11/11). Spec: `psf-memo-cli/specs/memo-name.feature`; architect
+summary: `docs/reviews/cli-memo-name-summary.md`.
+
 ### Planned / deferred write actions
 
 | ID | Command | Action | Status |
@@ -369,9 +373,9 @@ summary: `docs/reviews/cli-memo-like-summary.md`.
    **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
    **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
    and the shared post-page read pipeline are in place. All read commands
-   (R1–R16) are complete. **Next up: the W4+ write commands** — W4
-   (`memo-name`), W5 (`memo-bio`), W6 (`memo-avatar`), W7/W8 (follow/mute), and
-   W9–W13 (topics/polls).
+   (R1–R16) are complete, and W4 (`memo-name`) is done. **Next up: W5
+   (`memo-bio`)**, then W6 (`memo-avatar`), W7/W8 (follow/mute), and W9–W13
+   (topics/polls).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.

@@ -1099,6 +1099,17 @@ that a single user-facing feature may require specs in more than one component.
     as a `Scenario Outline` made it soft-mutation-testable (4/4 killed),
     confirming gotcha #78. Spec: `psf-memo-cli/specs/memo-muted.feature`.
 
+80. **Single-field write commands share `defineFieldWriteCommand`, and byte
+    limits need the exact boundary case (`memo-name`, W4).**
+    `src/lib/write-command.js` now exposes `defineFieldWriteCommand` for
+    single-field Memo actions; `memo-post` and `memo-name` are declarations of
+    `parse`/`format`/`prefix`/`field`, while `runWriteCommand` still backs the
+    multi-field commands (`memo-reply`, `memo-like`). New single-field writes
+    should reuse the factory. Testing only "just under" and "just over" a byte
+    limit leaves the `>` / `>=` boundary mutation alive (the `memo-name`
+    77-byte `>` -> `>=` survivor); include a test at exactly the limit. Spec:
+    `psf-memo-cli/specs/memo-name.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1155,7 +1166,28 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `cli-memo-poll`): specified and merged R13, the poll
+Latest session (2026-10-08, `cli-memo-name`): specified and merged W4, the first
+profile write command. The specifier wrote
+`psf-memo-cli/specs/memo-name.feature` (7 scenarios, 11 example executions);
+the coder/refactorer/architect added `src/lib/memo-name.js` (0x6d01 prefix, 77
+UTF-8 byte limit via `Buffer.byteLength`, flag parsing, summary) and a thin
+`src/commands/memo-name.js` over the shared write scaffolding, registered as
+`memo-name`. It resolves the signing wallet (`-n`/`--wif`) and broadcasts the
+single-field action `[6d01, name]`; missing/empty/over-77-byte names are usage
+errors (exit 2) with no broadcast, and a rejected broadcast surfaces the
+wallet's real error (exit 1). The refactorer extracted
+`defineFieldWriteCommand` (also backing `memo-post`); the architect added the
+exact-77-byte boundary coverage that killed the `>` -> `>=` survivor. Merged to
+`master` at `14d4407` (fast-forward; architect code-review commit `a020de3ade`;
+the later `14d4407` adds only the record and summary, so
+`docs/reviews/cli-memo-name-verification.json` is valid for the merged tree).
+`verify.sh cli` pass 4/4 at `a020de3ade` (unit 458/0, property 97/0, acceptance
+all 26 suites, lint ok); language mutation 5 killed / 0 survived; soft Gherkin
+mutation 15 total / 5 killed / 10 intrinsic survivors (case/over-limit
+equivalents); DRY clean. Independent acceptance check after merge: 11/11.
+Architect summary: `docs/reviews/cli-memo-name-summary.md`.
+
+Previous session (2026-10-08, `cli-memo-poll`): specified and merged R13, the poll
 read command, completing the read set (R1-R16). The specifier wrote
 `psf-memo-cli/specs/memo-poll.feature` (6 scenarios, 9 example executions); the
 coder/refactorer/architect added `src/lib/memo-poll.js` (summary) and a thin
@@ -1646,7 +1678,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `2a34ccc` (`Record cli-memo-poll architect review and verification`).
+Current `master` HEAD: `14d4407` (`Record cli-memo-name architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1693,9 +1725,10 @@ foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,
 `memo-topic`**, **R9 `memo-search`**, **R10 `memo-profiles`**, **R11
 `memo-following`/`memo-followers`**, **R12 `memo-muted`**, **R13 `memo-poll`**,
 **R14 `memo-status`**, **R15 `memo-identity`**, **R16 `memo-wait`**) are done,
-and the first three write commands **W1 `memo-post`**, **W2 `memo-reply`**, and
-**W3 `memo-like`** are done. The suggested next item is the **W4+ write
-commands** — W4 `memo-name` (set name), W5 `memo-bio`, W6 `memo-avatar`, W7/W8
-follow/mute, and W9–W13 topics/polls. The earlier client direction (front-end
-improvements to `psf-memo-client`) remains open in `specs/feature-backlog.md`.
+and the write commands **W1 `memo-post`**, **W2 `memo-reply`**, **W3
+`memo-like`**, and **W4 `memo-name`** are done. The suggested next item is
+**W5 `memo-bio`** (set profile text, 0x6d05, 217 bytes), then W6 `memo-avatar`,
+W7/W8 follow/mute, and W9–W13 topics/polls. The earlier client direction
+(front-end improvements to `psf-memo-client`) remains open in
+`specs/feature-backlog.md`.
 Run `swarmforge/scripts/state.sh` to refresh the HEAD lines.
