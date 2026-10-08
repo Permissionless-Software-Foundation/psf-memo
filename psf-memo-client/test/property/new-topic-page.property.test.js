@@ -5,16 +5,14 @@
   fixtures. These properties pin down invariants over broad random UTF-8
   inputs:
 
-    - normalizeRoom always returns a lowercased room with no leading '#'.
-    - repeated normalizeRoom reaches a fixed point within the input length.
+    - normalizeRoom always returns a trimmed, lowercased room with no leading
+      '#'.
+    - normalizeRoom is idempotent.
     - remainingCount equals the combined byte budget minus the normalized room
       and first message byte lengths.
 
-  Known quirk (not changed here; behavior is preserved): normalizeRoom trims
-  before stripping leading '#', so a stripped '#' can expose whitespace and a
-  later trim can expose another '#'. normalizeRoom is therefore not idempotent
-  in one pass, which is why the fixed-point property is stated over repeated
-  application rather than a single one.
+  normalizeRoom trims surrounding whitespace and removes a leading run of '#'
+  and whitespace in one pass, so it is idempotent.
 */
 
 'use strict'
@@ -44,34 +42,28 @@ function newPage () {
   return new NewTopicPage({})
 }
 
-test('normalizeRoom is lowercased and has no leading hash', async () => {
+test('normalizeRoom is trimmed, lowercased, and has no leading hash', async () => {
   await forAll(
     textGen,
     (name) => {
       const room = newPage().normalizeRoom(name)
-      return room === room.toLowerCase() && !room.startsWith('#')
+      return room === room.trim() &&
+        room === room.toLowerCase() &&
+        !room.startsWith('#')
     },
     { label: 'normalizeRoom shape' }
   )
 })
 
-test('repeated normalizeRoom reaches a fixed point within the input length', async () => {
+test('normalizeRoom is idempotent', async () => {
   await forAll(
     textGen,
     (name) => {
       const page = newPage()
-      let room = name
-      let next = page.normalizeRoom(room)
-      // Each non-fixed pass removes at least one character (whitespace via
-      // trim or a leading '#' via replace), so it terminates within
-      // name.length + 1 passes.
-      for (let i = 0; i <= name.length + 1 && next !== room; i++) {
-        room = next
-        next = page.normalizeRoom(room)
-      }
-      return next === room
+      const once = page.normalizeRoom(name)
+      return page.normalizeRoom(once) === once
     },
-    { label: 'normalizeRoom convergence' }
+    { label: 'normalizeRoom idempotence' }
   )
 })
 

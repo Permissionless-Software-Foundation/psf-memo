@@ -8,7 +8,11 @@
 # new topic page has a topic name field and a first message field; submitting
 # broadcasts one Memo topic-message action (0x6d0c) carrying the room and the
 # first message, then lands on the new topic's feed with the message shown.
-# The topic name is normalized to a lowercase room with a leading "#" removed.
+# The topic name is normalized to a room by trimming surrounding whitespace,
+# removing a leading run of "#" and whitespace characters (so "# bitcoin",
+# "##BCH", and "#Cash" become "bitcoin", "bch", and "cash"), and lowercasing.
+# A name that normalizes to an empty room (for example "#") is rejected as an
+# empty topic name.
 # Creating a topic is the same on-chain action as posting to a topic: there is
 # no separate "create" action byte, and no indexer or DB change is needed. This
 # is a client-only feature in psf-memo-client.
@@ -45,6 +49,8 @@ Feature: New Topic
       | cash | cash | first post in cash |
       | BCH | bch | a longer message with spaces and punctuation. |
       | #Cash | cash | hello again |
+      | # bitcoin | bitcoin | hello spaced hash |
+      | ##BCH | bch | double hash |
       | Déjà Vu | déjà vu | hello déjà vu |
 
   Scenario Outline: New Topic - 4 an empty topic name is rejected
