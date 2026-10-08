@@ -35,6 +35,33 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **CLI recent-profiles command (`cli-memo-profiles`, 2026-10-08):** R10 of the
+  `psf-memo-cli` Memo-protocol backlog. Added
+  `psf-memo-cli/src/lib/memo-profiles.js` (page defaults and human summary) and
+  a thin `src/commands/memo-profiles.js` over the shared `ListReadCommand`
+  pipeline and `MemoDb.getRecentProfiles` (`GET /profile/recent`), registered as
+  `memo-profiles`. It reports one page of recently active profiles — address,
+  bio text, display name, avatar URL, provenance txid, and the most recent
+  qualifying post's block height and seen, in the service's order — with the
+  service pagination unchanged. A profile with no name record reports a null
+  display name and one with no picture record reports a null avatar URL (raw
+  service values, not the web client's truncated-address/identicon rendering).
+  Read-only; no wallet. The refactorer extracted the shared formatted-page read
+  pipeline (`ListReadCommand`, `runOutcomeCommand`), now used by
+  `memo-profiles`, `memo-topics`, and `memo-search`. Spec:
+  `psf-memo-cli/specs/memo-profiles.feature` (6 scenarios, 12 example
+  executions). Merged to `master` at `44e1c1e` (fast-forward; architect
+  code-review commit `292dfa1c1b`; the later `44e1c1e` adds only the record and
+  summary, so `docs/reviews/cli-memo-profiles-verification.json` is valid for
+  the merged tree). `verify.sh cli` pass 4/4 at `292dfa1c1b` (unit 402/0,
+  property 81/0, acceptance all 21 suites, lint ok); language mutation 18 killed
+  / 0 survived (`memo-profiles.js` 4, `read-command.js` 1, `memo-db.js` 13; the
+  command modules scan as 0 sites); soft Gherkin mutation 33 total / 31 killed /
+  2 intrinsic survivors (fixture-masked upward `limit`); DRY reports one
+  accepted command-glue pair (`memo-profiles`/`memo-topics`). Independent
+  acceptance check after merge: 12/12. Architect summary:
+  `docs/reviews/cli-memo-profiles-summary.md`.
+
 - **CLI full-text search command (`cli-memo-search`, 2026-10-08):** R9 of the
   `psf-memo-cli` Memo-protocol backlog. Added
   `psf-memo-cli/src/lib/memo-search.js` (required `-q` query, page defaults,

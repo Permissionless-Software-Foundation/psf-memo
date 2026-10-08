@@ -262,6 +262,10 @@ summary: `docs/reviews/cli-memo-topic-summary.md`.
 acceptance 11/11). Spec: `psf-memo-cli/specs/memo-search.feature`; architect
 summary: `docs/reviews/cli-memo-search-summary.md`.
 
+**R10 status: DONE** (2026-10-08, task `cli-memo-profiles`; merged at
+`44e1c1e`; acceptance 12/12). Spec: `psf-memo-cli/specs/memo-profiles.feature`;
+architect summary: `docs/reviews/cli-memo-profiles-summary.md`.
+
 ---
 
 ## Write features (Memo broadcasts)
@@ -349,8 +353,9 @@ summary: `docs/reviews/cli-memo-like-summary.md`.
    **DONE**, R4 (profile) **DONE**, R5 (posts) **DONE**, R6 (notifications)
    **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
    **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
-   and the shared post-page read pipeline are in place. **Next up: R10
-   (`memo-profiles`)** — recently active profiles with display name and avatar.
+   and the shared post-page read pipeline are in place. **Next up: R11
+   (`memo-following`/`memo-followers`)** — the wallet's follows and an address's
+   followers.
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
