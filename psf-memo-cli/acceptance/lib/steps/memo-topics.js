@@ -10,7 +10,7 @@
 // Local libraries
 import MemoTopics from '../../../src/commands/memo-topics.js'
 import { runReadCommand, assertReadCommandError } from '../read-command.js'
-import { assertReportedField } from './read-result.js'
+import { assertReportedField, assertPageRequest } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Five topics newest-first with the service metadata.
@@ -65,9 +65,7 @@ const memoTopicsHandlers = [
     name: 'service received a topics request',
     pattern: /^the service received a topics request with limit (.+) and offset (.+)$/,
     run (m, example, world) {
-      assertEqual(world.lastRequest?.pathname, '/topics', 'request path')
-      assertEqual(world.lastRequest?.searchParams.get('limit'), resolveParam(m[1], example), 'limit')
-      assertEqual(world.lastRequest?.searchParams.get('offset'), resolveParam(m[2], example), 'offset')
+      assertPageRequest(world, '/topics', resolveParam(m[1], example), resolveParam(m[2], example))
     }
   },
   {

@@ -10,46 +10,26 @@
 */
 
 // Local libraries
-import { initReadCommand, createMemoDbClient, runReadCommand } from '../lib/read-command.js'
+import { ListReadCommand } from '../lib/list-command.js'
 import { parseProfilesFlags, formatProfilesMessage } from '../lib/memo-profiles.js'
 
-class MemoProfiles {
+class MemoProfiles extends ListReadCommand {
   constructor (options = {}) {
-    initReadCommand(this, options, 'readProfiles')
-  }
-
-  // Read the profile page and report it. Returns the exit code (0/1/2) and
-  // assigns it to process.exitCode for commander.
-  async run (flags = {}) {
-    return runReadCommand({
-      command: this,
-      flags,
-      outcome: async () => {
-        const { limit, offset } = this.validateFlags(flags)
-
-        const { profiles = [], pagination = {} } = await this.readProfiles({
-          limit,
-          offset,
-          dbUrl: flags.dbUrl
-        })
-
-        return {
-          message: formatProfilesMessage(profiles, pagination),
-          data: { profiles, pagination }
-        }
-      }
-    })
+    super(options, 'readProfiles')
   }
 
   // Validate and resolve the page flags before any request. Throws a UsageError
   // (exit 2) for a bad --limit or --offset.
-  validateFlags (flags) {
+  parseFlags (flags) {
     return parseProfilesFlags(flags)
   }
 
-  // Build the read-only Memo DB client, honoring a --db-url override.
-  createClient (dbUrl) {
-    return createMemoDbClient(this, dbUrl)
+  // Render the reported profiles and the service pagination.
+  format ({ profiles = [], pagination = {} }) {
+    return {
+      message: formatProfilesMessage(profiles, pagination),
+      data: { profiles, pagination }
+    }
   }
 
   // Fetch one page of the recent-profiles list.

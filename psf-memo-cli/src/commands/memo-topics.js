@@ -8,46 +8,26 @@
 */
 
 // Local libraries
-import { initReadCommand, createMemoDbClient, runReadCommand } from '../lib/read-command.js'
+import { ListReadCommand } from '../lib/list-command.js'
 import { parseTopicsFlags, formatTopicsMessage } from '../lib/memo-topics.js'
 
-class MemoTopics {
+class MemoTopics extends ListReadCommand {
   constructor (options = {}) {
-    initReadCommand(this, options, 'readTopics')
-  }
-
-  // Read the topic page and report it. Returns the exit code (0/1/2) and
-  // assigns it to process.exitCode for commander.
-  async run (flags = {}) {
-    return runReadCommand({
-      command: this,
-      flags,
-      outcome: async () => {
-        const { limit, offset } = this.validateFlags(flags)
-
-        const { topics = [], pagination = {} } = await this.readTopics({
-          limit,
-          offset,
-          dbUrl: flags.dbUrl
-        })
-
-        return {
-          message: formatTopicsMessage(topics, pagination),
-          data: { topics, pagination }
-        }
-      }
-    })
+    super(options, 'readTopics')
   }
 
   // Validate and resolve the page flags before any request. Throws a UsageError
   // (exit 2) for a bad --limit or --offset.
-  validateFlags (flags) {
+  parseFlags (flags) {
     return parseTopicsFlags(flags)
   }
 
-  // Build the read-only Memo DB client, honoring a --db-url override.
-  createClient (dbUrl) {
-    return createMemoDbClient(this, dbUrl)
+  // Render the reported topics and the service pagination.
+  format ({ topics = [], pagination = {} }) {
+    return {
+      message: formatTopicsMessage(topics, pagination),
+      data: { topics, pagination }
+    }
   }
 
   // Fetch one page of the topic list.

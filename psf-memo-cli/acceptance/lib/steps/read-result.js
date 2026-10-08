@@ -35,11 +35,16 @@ export function findReportedPost (world, txid) {
   return findReportedItem(world.readJson?.posts, 'txid', txid, 'a reported post')
 }
 
-// Assert the last request hit an address-scoped /posts route with the page.
-function assertAddressPageRequest (world, path, { addr, limit, offset }) {
-  assertEqual(world.lastRequest?.pathname, `/posts/${path}/${addr}`, 'request path')
+// Assert the last request hit `path` with the given limit and offset.
+export function assertPageRequest (world, path, limit, offset) {
+  assertEqual(world.lastRequest?.pathname, path, 'request path')
   assertEqual(world.lastRequest?.searchParams.get('limit'), limit, 'limit')
   assertEqual(world.lastRequest?.searchParams.get('offset'), offset, 'offset')
+}
+
+// Assert the last request hit an address-scoped /posts route with the page.
+function assertAddressPageRequest (world, path, { addr, limit, offset }) {
+  assertPageRequest(world, `/posts/${path}/${addr}`, limit, offset)
 }
 
 const readResultHandlers = [

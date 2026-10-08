@@ -11,7 +11,7 @@
 // Local libraries
 import MemoProfiles from '../../../src/commands/memo-profiles.js'
 import { runReadCommand, assertReadCommandError } from '../read-command.js'
-import { findReportedItem } from './read-result.js'
+import { findReportedItem, assertPageRequest } from './read-result.js'
 import { assertEqual, resolveParam } from '../step-support.js'
 
 // Five recent profiles in the service's order (most recent qualifying post
@@ -77,9 +77,7 @@ const memoProfilesHandlers = [
     name: 'service received a recent-profiles request',
     pattern: /^the service received a recent-profiles request with limit (.+) and offset (.+)$/,
     run (m, example, world) {
-      assertEqual(world.lastRequest?.pathname, '/profile/recent', 'request path')
-      assertEqual(world.lastRequest?.searchParams.get('limit'), resolveParam(m[1], example), 'limit')
-      assertEqual(world.lastRequest?.searchParams.get('offset'), resolveParam(m[2], example), 'offset')
+      assertPageRequest(world, '/profile/recent', resolveParam(m[1], example), resolveParam(m[2], example))
     }
   },
   {

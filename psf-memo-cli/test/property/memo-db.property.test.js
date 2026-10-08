@@ -191,3 +191,26 @@ test('search carries the query, page, and viewer', async () => {
     }
   }
 })
+
+test('getRecentProfiles carries the requested page', async () => {
+  for (let i = 0; i < 300; i++) {
+    const limit = 1 + Math.floor(rng() * 100)
+    const offset = Math.floor(rng() * 1000)
+    let requested
+
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async (url) => {
+        requested = url
+        return { ok: true, status: 200, json: async () => ({ profiles: [] }) }
+      }
+    })
+
+    await client.getRecentProfiles({ limit, offset })
+
+    const url = new URL(requested)
+    assert.equal(url.pathname, '/profile/recent')
+    assert.equal(url.searchParams.get('limit'), String(limit))
+    assert.equal(url.searchParams.get('offset'), String(offset))
+  }
+})
