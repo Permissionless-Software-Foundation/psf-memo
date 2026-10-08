@@ -86,27 +86,25 @@ class NewTopicPage extends PageController {
     }
   }
 
-  // Validate the room, broadcast its first message, and navigate to the new
-  // topic's feed on success.
-  async submit () {
-    this._setBusy(true)
-    this.submitError = null
-    this.broadcastError = null
-
+  // Run the topic-message action for the current first message. The shared
+  // PageController.submit owns the in-flight flag, error classification, and
+  // navigation; this records the normalized room and the success path.
+  async _perform () {
     const room = this.normalizeRoom()
     this.normalizedRoom = room
+    this._validateRoom(room)
+    const action = this.memoTopicPostFactory(room)
+    const txid = await action.post(this.firstMessage)
+    this.successPath = TopicFeedPage.topicFeedPath(room)
+    return txid
+  }
 
-    try {
-      this._validateRoom(room)
-      const action = this.memoTopicPostFactory(room)
-      const txid = await action.post(this.firstMessage)
-      this.successPath = TopicFeedPage.topicFeedPath(room)
-      this.navigate(this.successPath)
-      this._setBusy(false)
-      return { ok: true, txid, room }
-    } catch (err) {
-      return this._handleSubmitFailure(err)
-    }
+  // Submit the new topic and, on success, include the normalized room in the
+  // result so callers do not have to re-read the page state.
+  async submit () {
+    const result = await super.submit()
+    if (result.ok) result.room = this.normalizedRoom
+    return result
   }
 }
 

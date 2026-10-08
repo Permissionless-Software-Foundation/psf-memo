@@ -95,31 +95,21 @@ test('submit broadcasts to the normalized room and navigates to its feed', async
   assert.deepEqual(paths, ['/topics/bitcoin'])
 })
 
-test('submit rejects an empty topic name', async () => {
-  const calls = []
-  const paths = []
-  const page = makePage({ calls, paths })
-  page.setTopicName('').setFirstMessage('hello')
+test('submit rejects a topic name that is or normalizes to empty', async () => {
+  for (const name of ['', '#']) {
+    const calls = []
+    const paths = []
+    const page = makePage({ calls, paths })
+    page.setTopicName(name).setFirstMessage('hello')
 
-  const result = await page.submit()
+    const result = await page.submit()
 
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'topic_name_validation')
-  assert.equal(page.submitError, 'topic_name_validation')
-  assert.equal(calls.length, 0)
-  assert.equal(paths.length, 0)
-})
-
-test('submit rejects a topic name that normalizes to empty', async () => {
-  const calls = []
-  const page = makePage({ calls })
-  page.setTopicName('#').setFirstMessage('hello')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'topic_name_validation')
-  assert.equal(calls.length, 0)
+    assert.equal(result.ok, false)
+    assert.equal(result.error, 'topic_name_validation')
+    assert.equal(page.submitError, 'topic_name_validation')
+    assert.equal(calls.length, 0)
+    assert.equal(paths.length, 0)
+  }
 })
 
 test('submit rejects an empty first message', async () => {
