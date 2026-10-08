@@ -59,6 +59,22 @@ async function assertMissingResource (method, arg) {
   assert.isNull(await client[method](arg))
 }
 
+// Assert the given getter percent-encodes its argument in the request path.
+async function assertEncodedPath (method, arg, path, body = {}) {
+  let requested
+  const client = new MemoDb({
+    envUrl: null,
+    fetchImpl: async (url) => {
+      requested = url
+      return jsonResponse(body)
+    }
+  })
+
+  await client[method](arg)
+
+  assert.equal(new URL(requested).pathname, path)
+}
+
 // Build a client whose fetch records the requested URL and returns `body`, run
 // the given getter, assert the request path, and return the parsed result.
 async function requestLevelResource (method, addr, path, body) {
@@ -240,18 +256,7 @@ describe('#memo-db', () => {
     })
 
     it('encodes the txid in the request path', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ post: {} })
-        }
-      })
-
-      await client.getThread('a/b')
-
-      assert.equal(new URL(requested).pathname, '/posts/a%2Fb/thread')
+      await assertEncodedPath('getThread', 'a/b', '/posts/a%2Fb/thread', { post: {} })
     })
 
     it('resolves an unindexed txid to null', async () => {
@@ -277,18 +282,7 @@ describe('#memo-db', () => {
     })
 
     it('encodes the txid in the request path', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ text: 'hi' })
-        }
-      })
-
-      await client.getPost('a/b')
-
-      assert.equal(new URL(requested).pathname, '/level/post/a%2Fb')
+      await assertEncodedPath('getPost', 'a/b', '/level/post/a%2Fb', { text: 'hi' })
     })
 
     it('resolves a txid with no stored post to null', async () => {
@@ -336,18 +330,7 @@ describe('#memo-db', () => {
     })
 
     it('encodes the txid in the request path', async () => {
-      let requested
-      const client = new MemoDb({
-        envUrl: null,
-        fetchImpl: async (url) => {
-          requested = url
-          return jsonResponse({ question: 'q' })
-        }
-      })
-
-      await client.getPoll('a/b')
-
-      assert.equal(new URL(requested).pathname, '/polls/a%2Fb')
+      await assertEncodedPath('getPoll', 'a/b', '/polls/a%2Fb', { question: 'q' })
     })
 
     it('resolves a txid with no poll to null', async () => {

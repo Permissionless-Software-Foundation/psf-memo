@@ -44,6 +44,20 @@ const POLLS = {
   }
 }
 
+// Build a step handler that finds a reported poll item by the first capture
+// and asserts its `field` against the second capture.
+function reportedItemHandler ({ name, pattern, items, matchField, field, label }) {
+  return {
+    name,
+    pattern,
+    run (m, example, world) {
+      const item = findReportedItem(items(world), matchField, resolveParam(m[1], example), label)
+
+      assertEqual(item[field], resolveParam(m[2], example), label, { quote: true })
+    }
+  }
+}
+
 const memoPollHandlers = [
   {
     name: 'service serves the polls',
@@ -96,32 +110,22 @@ const memoPollHandlers = [
       assertEqual(world.readJson?.poll?.question, resolveParam(m[1], example), 'poll question', { quote: true })
     }
   },
-  {
+  reportedItemHandler({
     name: 'command reported an option and its author',
     pattern: /^the command reported the option "(.+)" from "(.+)"$/,
-    run (m, example, world) {
-      const option = findReportedItem(
-        world.readJson?.poll?.options,
-        'option',
-        resolveParam(m[1], example),
-        'a reported option'
-      )
-      assertEqual(option.addr, resolveParam(m[2], example), 'option author', { quote: true })
-    }
-  },
-  {
+    items: (world) => world.readJson?.poll?.options,
+    matchField: 'option',
+    field: 'addr',
+    label: 'a reported option'
+  }),
+  reportedItemHandler({
     name: 'command reported a vote and its comment',
     pattern: /^the command reported the vote from "(.+)" with comment "(.+)"$/,
-    run (m, example, world) {
-      const vote = findReportedItem(
-        world.readJson?.poll?.votes,
-        'addr',
-        resolveParam(m[1], example),
-        'a reported vote'
-      )
-      assertEqual(vote.comment, resolveParam(m[2], example), 'vote comment', { quote: true })
-    }
-  },
+    items: (world) => world.readJson?.poll?.votes,
+    matchField: 'addr',
+    field: 'comment',
+    label: 'a reported vote'
+  }),
   {
     name: 'memo-poll command reported the usage error',
     pattern: /^the memo-poll command reported the usage error "(.+)"$/,
