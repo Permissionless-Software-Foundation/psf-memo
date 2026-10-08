@@ -22,8 +22,20 @@ function randomText (rng, length) {
   return text
 }
 
-// Register the shared UTF-8 byte-limit property tests for one parser.
-export function registerMemoTextByteLimitTests ({ name, parse, field, limit, seed }) {
+// Register the shared UTF-8 byte-limit property tests for one parser. `flag`
+// names the source flag property (default `-m`); `missingHint` is the flag
+// string the missing-value message must name.
+export function registerMemoTextByteLimitTests ({
+  name,
+  parse,
+  field,
+  limit,
+  seed,
+  flag = 'memo',
+  missingHint = '-m flag'
+}) {
+  const flagsWith = (value) => ({ [flag]: value })
+
   test(`the ${name} limit counts UTF-8 bytes, not characters`, () => {
     const rng = seededRandom(seed)
 
@@ -35,7 +47,7 @@ export function registerMemoTextByteLimitTests ({ name, parse, field, limit, see
       let parsed
       let err
       try {
-        parsed = parse({ memo: value })
+        parsed = parse(flagsWith(value))
       } catch (e) {
         err = e
       }
@@ -52,7 +64,7 @@ export function registerMemoTextByteLimitTests ({ name, parse, field, limit, see
 
   test(`the ${name} limit is inclusive at ${limit} bytes`, () => {
     const asciiAtLimit = 'a'.repeat(limit)
-    assert.deepEqual(parse({ memo: asciiAtLimit }), { [field]: asciiAtLimit })
+    assert.deepEqual(parse(flagsWith(asciiAtLimit)), { [field]: asciiAtLimit })
 
     const center = Math.floor(limit / 2)
     for (let length = center - 2; length <= center + 2; length++) {
@@ -60,9 +72,9 @@ export function registerMemoTextByteLimitTests ({ name, parse, field, limit, see
       const bytes = Buffer.byteLength(value, 'utf8')
 
       if (bytes <= limit) {
-        assert.deepEqual(parse({ memo: value }), { [field]: value })
+        assert.deepEqual(parse(flagsWith(value)), { [field]: value })
       } else {
-        assert.throws(() => parse({ memo: value }), UsageError)
+        assert.throws(() => parse(flagsWith(value)), UsageError)
       }
     }
   })
@@ -70,13 +82,13 @@ export function registerMemoTextByteLimitTests ({ name, parse, field, limit, see
   test(`a missing or empty ${name} is always a usage error`, () => {
     for (const value of [undefined, null]) {
       assert.throws(
-        () => parse({ memo: value }),
-        (err) => err instanceof UsageError && err.message.includes('-m flag')
+        () => parse(flagsWith(value)),
+        (err) => err instanceof UsageError && err.message.includes(missingHint)
       )
     }
 
     assert.throws(
-      () => parse({ memo: '' }),
+      () => parse(flagsWith('')),
       (err) => err instanceof UsageError && err.message.includes('must not be empty')
     )
   })
