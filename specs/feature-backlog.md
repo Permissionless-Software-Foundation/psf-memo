@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Account posts feed (`account-posts-feed`, 2026-10-08):** Client-only
+  front-end feature. `/account` now loads the authenticated address's top-level
+  Memo posts (`MemoDb.getPostsByAddr`, `PAGE_SIZE = 50`) and shows them in the
+  right column below the Set Name / Set Bio / Set Avatar URL controls, rendered
+  with the same building blocks as the `/profile/:addr` feed
+  (`ProfilePostContent`, `ProfilePostLike`, `PostOptionsMenu`, and a new pure
+  `ReplyCountView`): link/image/YouTube rendering, options menu, interactive
+  like/tip, reply count → thread, the `Posts` range header, Previous/Next
+  pagination, and an account-specific `You have no posts yet.` empty state. New
+  spec `psf-memo-client/specs/account-posts-feed.feature` (5 scenarios) and
+  `Page Size - 8` in `page-size.feature`. Merged to `master` at `2470bc8`
+  (fast-forward; architect code-review commit `af512e5`; the later `2470bc8`
+  adds only the record and summary, so
+  `docs/reviews/account-posts-feed-verification.json` is valid for the merged
+  tree). Recorded `verify.sh client` pass 5/5 at `af512e5` (unit 806/0,
+  property 219/0, acceptance all 49 suites, lint ok, build ok). Independent
+  acceptance checks after merge: account-posts-feed 8/8 and page-size 16/16.
+  Architect summary: `docs/reviews/account-posts-feed-summary.md`.
+
 - **Set Bio existing bio and cancel (`set-bio-existing-and-cancel`, 2026-10-08):**
   Client-only front-end feature, the first of the new client direction. The
   `/memo/set-bio` page now shows the account's existing bio above the input and

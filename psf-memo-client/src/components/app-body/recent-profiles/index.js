@@ -20,16 +20,11 @@ import RecentProfileAccount from './recent-profile-account'
 import RecentProfileFollowButton from './recent-profile-follow-button'
 import RecentProfileFollowConfirm from './recent-profile-follow-confirm'
 import RecentProfileFollowResult from './recent-profile-follow-result'
+import { formatSeen } from '../../../services/post-timestamp'
 import { truncateAddr } from '../../../util'
 import '../../../App.css'
 
 const PAGE_SIZE = 50
-
-function formatSeen (seen) {
-  if (!seen) return ''
-  const ms = seen > 1e12 ? seen : seen * 1000
-  return new Date(ms).toLocaleString()
-}
 
 function RecentProfiles (props) {
   const { appData } = props

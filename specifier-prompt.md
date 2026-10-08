@@ -1170,6 +1170,22 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/set-bio.feature` (scenarios 6–8). Architect summary:
     `docs/reviews/set-bio-existing-and-cancel-summary.md`.
 
+86. **The account posts feed reuses the profile feed building blocks and
+    extracts a pure reply-count view model.** `/account` loads the
+    authenticated address's top-level posts through `AccountPage` +
+    `MemoDb.getPostsByAddr` (`PAGE_SIZE = 50`) and renders
+    `account-posts-feed.js` from the same pieces as the profile feed
+    (`ProfilePostContent`, `ProfilePostLike`, `PostOptionsMenu`, and the new
+    `ReplyCountView`), so both surfaces share the card behavior. The reply
+    count's singular/plural label, class names, tooltip, accessible name, and
+    keyboard activation moved out of the JSX into `src/services/reply-count.js`
+    (pure) with `reply-count-view.js` as a thin wrapper. Acceptance uses the
+    Node render adapter `acceptance/lib/render-account-posts-feed.js`. The
+    account empty-state message is account-specific (`You have no posts yet.`).
+    Specs: `psf-memo-client/specs/account-posts-feed.feature` (scenarios 1–5)
+    and `page-size.feature` (scenario 8). Architect summary:
+    `docs/reviews/account-posts-feed-summary.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1226,7 +1242,23 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `set-bio-existing-and-cancel`): the first client
+Latest session (2026-10-08, `account-posts-feed`): the second client front-end
+feature. The specifier added `psf-memo-client/specs/account-posts-feed.feature`
+(5 scenarios: posts below the controls, profile-feed rendering parity, no-posts
+message, interactive like, reply-count→thread) and `Page Size - 8` to
+`page-size.feature`; the coder/refactorer/architect extended `AccountPage` with
+post loading/pagination, added the `account-posts-feed.js` presentational
+component plus the `render-account-posts-feed.js` acceptance adapter, and
+extracted the pure `src/services/reply-count.js` view model from the JSX.
+Merged to `master` at `2470bc8` (fast-forward; architect code-review commit
+`af512e5`; the later `2470bc8` adds only the record and summary, so
+`docs/reviews/account-posts-feed-verification.json` is valid for the merged
+tree). Recorded `verify.sh client` pass 5/5 at `af512e5` (unit 806/0, property
+219/0, acceptance all 49 suites, lint ok, build ok). Independent acceptance
+checks after merge: account-posts-feed 8/8 and page-size 16/16. Architect
+summary: `docs/reviews/account-posts-feed-summary.md`.
+
+Previous session (2026-10-08, `set-bio-existing-and-cancel`): the first client
 front-end feature of the new direction. The specifier extended
 `psf-memo-client/specs/set-bio.feature` with scenarios 6–8 (show the account's
 existing bio above the input, show nothing when none, and a Cancel button that
@@ -1843,7 +1875,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `4467e6e` (`Merge architect set-bio-existing-and-cancel into master`).
+Current `master` HEAD: `2470bc8` (`Record account-posts-feed architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1884,9 +1916,10 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the first such feature,
-`set-bio-existing-and-cancel`, merged at `4467e6e`). The `psf-memo-cli`
-Memo-protocol backlog below is complete except for the deferred W14–W16. The
+`specs/feature-backlog.md` (the latest features, `set-bio-existing-and-cancel`
+merged at `4467e6e` and `account-posts-feed` merged at `2470bc8`). The
+`psf-memo-cli` Memo-protocol backlog below is complete except for the deferred
+W14–W16. The
 foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,
 **R2 `memo-thread`**, **R3 `memo-get-post`**, **R4 `memo-profile`**, **R5
 `memo-posts`**, **R6 `memo-notifications`**, **R7 `memo-topics`**, **R8

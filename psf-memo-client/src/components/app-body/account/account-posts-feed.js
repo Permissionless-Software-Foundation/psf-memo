@@ -15,6 +15,7 @@
 const React = require('react')
 const AccountPage = require('../../../services/account-page')
 const { selectLikeState } = require('../../../services/profile-post-like')
+const { formatSeen } = require('../../../services/post-timestamp')
 const PostOptionsMenu = require('../../post-feed/post-options-menu')
 const ProfilePostContent = require('../profile/profile-post-content')
 const ProfilePostLike = require('../profile/profile-post-like')
@@ -31,7 +32,13 @@ function AccountPostCard ({ post, wallet, profiles, likes, onLike, onReply }) {
       { className: 'account-post-body card-body' },
       React.createElement(
         'div',
-        { className: 'account-post-meta d-flex justify-content-end mb-2' },
+        { className: 'account-post-meta d-flex justify-content-between align-items-start text-muted mb-2' },
+        React.createElement(
+          'div',
+          null,
+          React.createElement('span', { className: 'account-post-seen' }, formatSeen(post.seen)),
+          React.createElement('span', { className: 'account-post-block ms-2' }, `Block ${post.blockHeight}`)
+        ),
         React.createElement(PostOptionsMenu, { txid: post.txid })
       ),
       React.createElement(ProfilePostContent, { text: post.text }),

@@ -11,6 +11,7 @@ import MemoDb from '../../../services/memo-db'
 import MemoFollow from '../../../services/memo-follow'
 import MemoMute from '../../../services/memo-mute'
 import ProfilePage from '../../../services/profile-page'
+import { formatSeen } from '../../../services/post-timestamp'
 import { getViewerAddress } from '../../../services/profile-wallet'
 import AppUtil from '../../../util'
 import PostReplyCount from '../../post-reply-count'
@@ -29,12 +30,6 @@ import './profile.css'
 
 const PAGE_SIZE = 50
 const appUtil = new AppUtil()
-
-function formatSeen (seen) {
-  if (!seen) return ''
-  const ms = seen > 1e12 ? seen : seen * 1000
-  return new Date(ms).toLocaleString()
-}
 
 function ProfileAvatar ({ addr, profilePicUrl }) {
   const [picError, setPicError] = useState(false)

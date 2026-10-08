@@ -14,6 +14,7 @@ const React = require('react')
 const ReactDOMServer = require('react-dom/server')
 const { AccountPostsFeed } = require('../../src/components/app-body/account/account-posts-feed')
 const AccountPage = require('../../src/services/account-page')
+const { formatSeen } = require('../../src/services/post-timestamp')
 
 const ADDRESS = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d'
 
@@ -66,4 +67,13 @@ test('renders every post in order', () => {
   })
 
   assert.ok(html.indexOf('first memo') < html.indexOf('second memo'))
+})
+
+test('renders the post timestamp and block number', () => {
+  const html = render({
+    posts: [makePost({ blockHeight: 812345, seen: 1700000000 })]
+  })
+
+  assert.ok(html.includes('Block 812345'))
+  assert.ok(html.includes(formatSeen(1700000000)))
 })
