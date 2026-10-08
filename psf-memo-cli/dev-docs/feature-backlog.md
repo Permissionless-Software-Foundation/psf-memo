@@ -336,6 +336,12 @@ acceptance 28/28 across `memo-follow`, `memo-unfollow`, `memo-mute`,
 `psf-memo-cli/specs/memo-{follow,unfollow,mute,unmute}.feature`; architect
 summary: `docs/reviews/cli-follow-mute-summary.md`.
 
+**W9/W10 status: DONE** (2026-10-08, task `cli-topic-writes`; merged at
+`c46a728`; acceptance 24/24 across `memo-topic-post`, `memo-topic-follow`,
+`memo-topic-unfollow`). Specs:
+`psf-memo-cli/specs/memo-{topic-post,topic-follow,topic-unfollow}.feature`;
+architect summary: `docs/reviews/cli-topic-writes-summary.md`.
+
 ### Planned / deferred write actions
 
 | ID | Command | Action | Status |
@@ -387,10 +393,11 @@ summary: `docs/reviews/cli-follow-mute-summary.md`.
    **DONE**, R7 (topics) **DONE**, R8 (topic posts) **DONE**, and R16 (wait)
    **DONE**. The foundation (F2/F3/F4), the shared write-command scaffolding,
    and the shared post-page read pipeline are in place. All read commands
-   (R1–R16) are complete, and the profile writes W4–W6 plus the social-graph
-   writes W7/W8 (`memo-follow`/`memo-unfollow`, `memo-mute`/`memo-unmute`) are
-   done. **Next up: W9–W13** — the multi-push topic and poll write commands
-   (`0x6d0c`–`0x6d0e`, `0x6d10`, `0x6d13`, `0x6d14`; gotcha #35 multi-push).
+   (R1–R16) are complete, and the profile writes W4–W6, the social-graph
+   writes W7/W8, and the topic writes W9/W10 (`memo-topic-post`,
+   `memo-topic-follow`/`memo-topic-unfollow`) are done. **Next up: W11–W13** —
+   the poll write commands (`0x6d10` create, `0x6d13` option, `0x6d14` vote;
+   gotcha #35 multi-push).
 4. **Social graph**: W7/W8 (follow/mute) with R11/R12, R4/R5 (profiles).
 5. **Topics and polls**: R7–R9, R13, W9–W13.
 6. **Hardening**: X1–X7, W14–W16 if protocol support is added upstream.
