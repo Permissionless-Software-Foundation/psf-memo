@@ -32,6 +32,8 @@ import MemoTopics from './src/commands/memo-topics.js'
 import MemoTopic from './src/commands/memo-topic.js'
 import MemoSearch from './src/commands/memo-search.js'
 import MemoProfiles from './src/commands/memo-profiles.js'
+import MemoFollowing from './src/commands/memo-following.js'
+import MemoFollowers from './src/commands/memo-followers.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -59,6 +61,8 @@ const memoTopics = new MemoTopics()
 const memoTopic = new MemoTopic()
 const memoSearch = new MemoSearch()
 const memoProfiles = new MemoProfiles()
+const memoFollowing = new MemoFollowing()
+const memoFollowers = new MemoFollowers()
 
 const program = new Command()
 
@@ -260,5 +264,20 @@ program.command('memo-profiles')
   .option('--db-url <string>', 'psf-memo-db endpoint override')
   .option('--json', 'print the result as one JSON object')
   .action(memoProfiles.run)
+
+program.command('memo-following')
+  .description('Read the addresses a wallet follows')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoFollowing.run)
+
+program.command('memo-followers')
+  .description('Read the addresses that follow an address')
+  .option('-a, --addr <string>', 'followee address')
+  .option('--db-url <string>', 'psf-memo-db endpoint override')
+  .option('--json', 'print the result as one JSON object')
+  .action(memoFollowers.run)
 
 program.parseAsync(process.argv)

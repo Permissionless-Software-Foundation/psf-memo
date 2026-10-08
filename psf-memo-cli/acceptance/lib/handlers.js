@@ -26,6 +26,8 @@ import { memoTopicsHandlers } from './steps/memo-topics.js'
 import { memoTopicHandlers } from './steps/memo-topic.js'
 import { memoSearchHandlers } from './steps/memo-search.js'
 import { memoProfilesHandlers } from './steps/memo-profiles.js'
+import { memoFollowingHandlers } from './steps/memo-following.js'
+import { memoFollowersHandlers } from './steps/memo-followers.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -52,6 +54,8 @@ const handlers = [
   ...memoTopicHandlers,
   ...memoSearchHandlers,
   ...memoProfilesHandlers,
+  ...memoFollowingHandlers,
+  ...memoFollowersHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -80,6 +84,8 @@ async function createWorld () {
     notifications: [],
     profilePosts: [],
     followState: false,
+    following: [],
+    followers: [],
     topics: [],
     topicPostsByRoom: {},
     searchPosts: [],
@@ -176,6 +182,16 @@ async function createWorld () {
         followeeAddr: world.lastRequest.searchParams.get('followee'),
         following: world.followState === true
       }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/follow/following/')) {
+      const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop() || '')
+      return jsonResponse({ followerAddr: addr, following: [...world.following] }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/follow/followers/')) {
+      const addr = decodeURIComponent(world.lastRequest.pathname.split('/').pop() || '')
+      return jsonResponse({ followeeAddr: addr, followers: [...world.followers] }, 200)
     }
 
     if (world.lastRequest.pathname === '/topics') {

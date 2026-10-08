@@ -35,6 +35,12 @@ export function findReportedPost (world, txid) {
   return findReportedItem(world.readJson?.posts, 'txid', txid, 'a reported post')
 }
 
+// Assert a reported list of plain address strings, joined by ", ", match the
+// expected value.
+export function assertReportedAddresses (addresses, expected, label) {
+  assertEqual((addresses || []).join(', '), expected, label, { quote: true })
+}
+
 // Assert the last request hit `path` with the given limit and offset.
 export function assertPageRequest (world, path, limit, offset) {
   assertEqual(world.lastRequest?.pathname, path, 'request path')

@@ -381,6 +381,36 @@ describe('#memo-db', () => {
     })
   })
 
+  describe('getFollowing and getFollowers', () => {
+    it('requests /follow/following/:addr', async () => {
+      const { client, requestedUrl } = recordingClient({ followerAddr: 'addrA', following: ['addrB'] })
+
+      const result = await client.getFollowing('addrA')
+
+      assert.equal(requestedUrl().pathname, '/follow/following/addrA')
+      assert.deepEqual(result.following, ['addrB'])
+    })
+
+    it('requests /follow/followers/:addr', async () => {
+      const { client, requestedUrl } = recordingClient({ followeeAddr: 'addrA', followers: ['addrD'] })
+
+      const result = await client.getFollowers('addrA')
+
+      assert.equal(requestedUrl().pathname, '/follow/followers/addrA')
+      assert.deepEqual(result.followers, ['addrD'])
+    })
+
+    it('percent-encodes the address on both routes', async () => {
+      const following = recordingClient({})
+      await following.client.getFollowing('a/b')
+      assert.equal(following.requestedUrl().pathname, '/follow/following/a%2Fb')
+
+      const followers = recordingClient({})
+      await followers.client.getFollowers('a/b')
+      assert.equal(followers.requestedUrl().pathname, '/follow/followers/a%2Fb')
+    })
+  })
+
   describe('paged list routes', () => {
     const cases = [
       {

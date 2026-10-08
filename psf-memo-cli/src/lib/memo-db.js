@@ -71,6 +71,16 @@ class MemoDb {
     return this.getJson(`/follow/state?${toQuery({ follower, followee })}`)
   }
 
+  // GET /follow/following/:addr. Returns the addresses the follower follows.
+  async getFollowing (addr) {
+    return this.getJson(`/follow/following/${encodeURIComponent(addr)}`)
+  }
+
+  // GET /follow/followers/:addr. Returns the addresses that follow the followee.
+  async getFollowers (addr) {
+    return this.getJson(`/follow/followers/${encodeURIComponent(addr)}`)
+  }
+
   // GET /topics. Returns one page of the topic list with the service pagination.
   async getTopics ({ limit = 50, offset = 0 } = {}) {
     return this.getJson(`/topics?${toQuery({ limit, offset })}`)
