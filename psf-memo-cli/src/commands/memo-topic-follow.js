@@ -18,3 +18,7 @@ const MemoTopicFollow = defineTopicRoomWriteCommand({
 })
 
 export default MemoTopicFollow
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T02:36:18.877Z","module_hash":"ba78ac557a5c92120904d14e912863d1d70dcd33c7870e232d9b80c8b704adf4","functions":[]}
+// mutate4javascript-manifest-end

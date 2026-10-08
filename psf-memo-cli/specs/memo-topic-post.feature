@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-08T02:38:11.264202830Z","feature_name":"Memo Topic Post","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-topic-post.feature","background_hash":"8de8c7153486300acfd5e553c81b91f77b1d11930634fbc878223a93c032e07e","implementation_hash":"unknown","scenarios":[{"index":5,"name":"Memo Topic Post - 6 an empty message is a usage error","scenario_hash":"bb2cf24e08a05ff572f707c9a74fcae8e2720748ebb25702b3e653a2cac98fcc","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-08T02:38:11.264202830Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Topic Post (W9): the psf-memo-cli topic-message write command. It resolves
 # the signing wallet (-n <wallet> or --wif <wif>, shared F2 wallet-source),
 # requires the topic room (-r) and the message text (-m), validates that the

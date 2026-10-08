@@ -26,3 +26,7 @@ const MemoTopicPost = defineFieldsWriteCommand({
 })
 
 export default MemoTopicPost
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-08T02:36:08.272Z","module_hash":"d2865f76b0c1254efa3ecd96440d78bfc3c097ab795f79c1efee13420b26df03","functions":[]}
+// mutate4javascript-manifest-end

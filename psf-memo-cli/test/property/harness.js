@@ -48,3 +48,11 @@ export function randomAddresses (rng, { prefix = 'addr', maxItems = 10 } = {}) {
   for (let i = 0; i < count; i++) addresses.push(randomAddress(rng, prefix, i))
   return addresses
 }
+
+// A random string of 1..maxLength characters drawn from `alphabet`.
+export function randomText (rng, alphabet, maxLength) {
+  const length = 1 + Math.floor(rng() * maxLength)
+  let text = ''
+  for (let i = 0; i < length; i++) text += alphabet[Math.floor(rng() * alphabet.length)]
+  return text
+}

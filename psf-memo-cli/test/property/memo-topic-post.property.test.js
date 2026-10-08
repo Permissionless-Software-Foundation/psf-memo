@@ -10,7 +10,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seededRandom } from './harness.js'
+import { seededRandom, randomText } from './harness.js'
 import MemoTopicPost from '../../src/commands/memo-topic-post.js'
 import {
   parseTopicPostFlags,
@@ -21,19 +21,12 @@ import { makeCommand } from '../support/write-command-unit.js'
 
 const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789- é中'
 
-function randomText (rng, maxLength) {
-  const length = 1 + Math.floor(rng() * maxLength)
-  let text = ''
-  for (let i = 0; i < length; i++) text += CHARS[Math.floor(rng() * CHARS.length)]
-  return text
-}
-
 test('parseTopicPostFlags enforces the combined room and message byte limit', () => {
   const rng = seededRandom(20261111)
 
   for (let i = 0; i < 300; i++) {
-    const room = randomText(rng, 20)
-    const message = randomText(rng, 120)
+    const room = randomText(rng, CHARS, 20)
+    const message = randomText(rng, CHARS, 120)
     const bytes = Buffer.byteLength(room, 'utf8') + Buffer.byteLength(message, 'utf8')
 
     if (bytes <= MAX_TOPIC_MESSAGE_BYTES) {
@@ -60,6 +53,14 @@ test('parseTopicPostFlags enforces the combined room and message byte limit', ()
   )
 })
 
+test('parseTopicPostFlags accepts exactly the combined byte limit and rejects one over', () => {
+  const room = 'general' // 7 ASCII bytes
+  const atLimit = 'a'.repeat(MAX_TOPIC_MESSAGE_BYTES - room.length)
+
+  assert.deepEqual(parseTopicPostFlags({ room, memo: atLimit }), { room, message: atLimit })
+  assert.throws(() => parseTopicPostFlags({ room, memo: `${atLimit}a` }), UsageError)
+})
+
 test('memo-topic-post broadcasts the room and message unchanged under 6d0c', async () => {
   const rng = seededRandom(20261112)
   const originalExitCode = process.exitCode
@@ -67,8 +68,8 @@ test('memo-topic-post broadcasts the room and message unchanged under 6d0c', asy
   try {
     for (let i = 0; i < 150; i++) {
       // Short fields keep the combined payload within the 214-byte limit.
-      const room = randomText(rng, 8)
-      const message = randomText(rng, 30)
+      const room = randomText(rng, CHARS, 8)
+      const message = randomText(rng, CHARS, 30)
 
       const { command, calls } = makeCommand(MemoTopicPost)
 
