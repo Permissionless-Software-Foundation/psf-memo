@@ -209,6 +209,11 @@ Feature: Host File
     And the visitor waits for the payment to be confirmed
     Then the page does not link to the status page
 
-  Scenario: Host File - 17 the navigation menu links to the host page
+  Scenario Outline: Host File - 17 the navigation menu shows File Upload between Account and BCH
     Given I open the navigation menu
-    Then the menu shows a link to the path /host
+    Then the menu shows a link to the path /host with the label <label>
+    And the menu shows the entries Account, File Upload, File Dashboard, BCH in order
+
+    Examples:
+      | label       |
+      | File Upload |

@@ -86,6 +86,11 @@ Feature: Hosted Files
     When the visitor refreshes the dashboard
     Then the dashboard lists the file names notes.txt
 
-  Scenario: Hosted Files - 8 the navigation menu links to the dashboard page
+  Scenario Outline: Hosted Files - 8 the navigation menu shows File Dashboard below File Upload
     Given I open the navigation menu
-    Then the menu shows a link to the path /dashboard
+    Then the menu shows a link to the path /dashboard with the label <label>
+    And the menu shows the entries Account, File Upload, File Dashboard, BCH in order
+
+    Examples:
+      | label          |
+      | File Dashboard |
