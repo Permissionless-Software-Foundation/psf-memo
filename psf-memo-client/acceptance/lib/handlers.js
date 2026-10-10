@@ -651,8 +651,7 @@ function createWorld () {
   // adapter updates the world's current path so navigation can be asserted.
   world.newPage = new NewPostPage({
     memoPost,
-    navigate: (path) => { world.currentPath = path },
-    menuLinks: []
+    navigate: (path) => { world.currentPath = path }
   })
 
   // The Reply Thread Page controller wraps the memo reply behavior. It does

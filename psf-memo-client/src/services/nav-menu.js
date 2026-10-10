@@ -37,3 +37,7 @@ function isMenuEntryActive (entry, currentPath) {
 }
 
 module.exports = { NAV_MENU_ENTRIES, findMenuEntry, isMenuEntryActive }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-10T03:32:37.538Z","module_hash":"f22947a984d372d80a6ae6c76e2d10257924657f288a6cfb7ab1a740b48fd31e","functions":[{"id":"func/findMenuEntry","name":"findMenuEntry","line":29,"end_line":31,"hash":"83c8f44c72b7148c42741bc9db0a975fbe033348c27ef54c2bb3cc44d515370d"},{"id":"func/isMenuEntryActive","name":"isMenuEntryActive","line":34,"end_line":37,"hash":"39f52ddf6a723750ed8403fbdd74ebb276adbadb58affcf2e360f26900b3a2dd"}]}
+// mutate4javascript-manifest-end
