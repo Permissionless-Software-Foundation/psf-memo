@@ -35,17 +35,33 @@ function jsonResponse (status, body) {
 
 const BASE = 'http://localhost:5050'
 
+// Every endpoint test injects the same config and FormData stand-in; only the
+// fetch transport varies.
+function makeApi (fakeFetch) {
+  return new HostingApi({
+    config: { fileHostingUrl: BASE },
+    fetch: fakeFetch,
+    FormData: FakeFormData
+  })
+}
+
+// Assert that an endpoint call rejects with the server's error message wrapped
+// in a HostingApiError.
+async function assertHostingError (call, message) {
+  await assert.rejects(call, (err) => {
+    assert.ok(err instanceof HostingApiError)
+    assert.equal(err.message, message)
+    return true
+  })
+}
+
 test('uploads the file to POST /files and returns the parsed body', async () => {
   const calls = []
   const fakeFetch = async (url, options) => {
     calls.push({ url, options })
     return jsonResponse(200, { success: true, priceSats: 2000, paymentAddress: 'bitcoincash:qquote' })
   }
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
   const file = { name: 'photo.jpg' }
 
   const body = await api.upload(file)
@@ -72,11 +88,7 @@ test('calls the fetch transport with the browser receiver, not the adapter', asy
     calls.push({ url, options })
     return Promise.resolve(jsonResponse(200, { success: true, priceSats: 2000, paymentAddress: 'bitcoincash:qquote' }))
   }
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: browserFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(browserFetch)
 
   const body = await api.upload({ name: 'photo.jpg' })
 
@@ -87,20 +99,9 @@ test('calls the fetch transport with the browser receiver, not the adapter', asy
 
 test('throws HostingApiError carrying the server error message', async () => {
   const fakeFetch = async () => jsonResponse(413, { error: 'File is too large' })
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
-  await assert.rejects(
-    () => api.upload({ name: 'huge.bin' }),
-    (err) => {
-      assert.ok(err instanceof HostingApiError)
-      assert.equal(err.message, 'File is too large')
-      return true
-    }
-  )
+  await assertHostingError(() => api.upload({ name: 'huge.bin' }), 'File is too large')
 })
 
 test('falls back to the HTTP status when the error body is unreadable', async () => {
@@ -111,11 +112,7 @@ test('falls back to the HTTP status when the error body is unreadable', async ()
       throw new Error('not json')
     }
   })
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
   await assert.rejects(() => api.upload({ name: 'broken.bin' }), /HTTP 500/)
 })
@@ -126,11 +123,7 @@ test('checks a payment at POST /files/check-payment and returns the parsed body'
     calls.push({ url, options })
     return jsonResponse(200, { success: true, status: 'unpaid', receivedSats: 0, requiredSats: 2000 })
   }
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
   const body = await api.checkPayment({ paymentAddress: 'bitcoincash:qinvoice' })
 
@@ -143,19 +136,11 @@ test('checks a payment at POST /files/check-payment and returns the parsed body'
 
 test('maps a check-payment rejection to HostingApiError', async () => {
   const fakeFetch = async () => jsonResponse(404, { error: 'Invoice not found' })
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
-  await assert.rejects(
+  await assertHostingError(
     () => api.checkPayment({ paymentAddress: 'bitcoincash:qmissing' }),
-    (err) => {
-      assert.ok(err instanceof HostingApiError)
-      assert.equal(err.message, 'Invoice not found')
-      return true
-    }
+    'Invoice not found'
   )
 })
 
@@ -165,11 +150,7 @@ test('gets a file status with the CID encoded as one path segment', async () => 
     calls.push({ url, options })
     return jsonResponse(200, { success: true, cid: 'bafy', status: 'pinned' })
   }
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
   const body = await api.getStatus({ cid: 'bafy/../admin' })
 
@@ -180,20 +161,9 @@ test('gets a file status with the CID encoded as one path segment', async () => 
 
 test('maps a status rejection to HostingApiError', async () => {
   const fakeFetch = async () => jsonResponse(404, { error: 'File not found' })
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
-  await assert.rejects(
-    () => api.getStatus({ cid: 'bafymissing' }),
-    (err) => {
-      assert.ok(err instanceof HostingApiError)
-      assert.equal(err.message, 'File not found')
-      return true
-    }
-  )
+  await assertHostingError(() => api.getStatus({ cid: 'bafymissing' }), 'File not found')
 })
 
 test('gets the feed page with the limit and cursor', async () => {
@@ -202,11 +172,7 @@ test('gets the feed page with the limit and cursor', async () => {
     calls.push({ url, options })
     return jsonResponse(200, { success: true, files: [{ cid: 'bafy' }], nextCursor: 'next' })
   }
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
   const body = await api.getFeed({ limit: 2, cursor: 'abc123' })
 
@@ -222,11 +188,7 @@ test('gets the first feed page without a query when no limit or cursor is given'
     calls.push({ url, options })
     return jsonResponse(200, { success: true, files: [], nextCursor: null })
   }
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
   await api.getFeed()
 
@@ -235,18 +197,10 @@ test('gets the first feed page without a query when no limit or cursor is given'
 
 test('maps a feed rejection to HostingApiError', async () => {
   const fakeFetch = async () => jsonResponse(422, { error: 'Page limit must be an integer between 1 and 100' })
-  const api = new HostingApi({
-    config: { fileHostingUrl: BASE },
-    fetch: fakeFetch,
-    FormData: FakeFormData
-  })
+  const api = makeApi(fakeFetch)
 
-  await assert.rejects(
+  await assertHostingError(
     () => api.getFeed({ limit: 0 }),
-    (err) => {
-      assert.ok(err instanceof HostingApiError)
-      assert.equal(err.message, 'Page limit must be an integer between 1 and 100')
-      return true
-    }
+    'Page limit must be an integer between 1 and 100'
   )
 })
