@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "task": "nav-file-hosting-labels",
+  "component": "psf-memo-client",
+  "git_sha": "b3deb8bc7a3e6d0e4aae0bc64c797ce6eac1f94c",
+  "branch": "swarmforge-architect",
+  "timestamp": "2026-10-10T03:36:11.339Z",
+  "commands": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "exit": 0,
+      "duration_ms": 1929,
+      "summary": "916 pass / 0 fail"
+    },
+    {
+      "name": "property",
+      "command": "npm run test:property",
+      "exit": 0,
+      "duration_ms": 2084,
+      "summary": "252 pass / 0 fail"
+    },
+    {
+      "name": "acceptance",
+      "command": "npm run test:acceptance",
+      "exit": 0,
+      "duration_ms": 10350,
+      "summary": "all 51 acceptance suites passed"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit": 0,
+      "duration_ms": 1697,
+      "summary": "ok"
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "exit": 0,
+      "duration_ms": 13534,
+      "summary": "ok"
+    }
+  ],
+  "result": "pass"
+}
