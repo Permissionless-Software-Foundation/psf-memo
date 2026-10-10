@@ -20,6 +20,20 @@ function render (state) {
   return ReactDOMServer.renderToStaticMarkup(React.createElement(UploadQuoteView, { state }))
 }
 
+// A fully populated paid state; individual tests override just the field under
+// test (for example the gateway URLs or file name).
+function paidState (overrides = {}) {
+  return {
+    status: 'paid',
+    filename: 'photo.jpg',
+    cid: 'bafy123',
+    downloadUrl: 'http://localhost:5050/download/bafy123',
+    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg'],
+    txid: 'abc123',
+    ...overrides
+  }
+}
+
 test('renders the file name, price, and payment address for a quote', () => {
   const html = render({
     status: 'quote',
@@ -132,14 +146,7 @@ test('omits the countdown when the quote has none', () => {
 })
 
 test('renders the CID, download URL, gateway URL, and payment transaction', () => {
-  const html = render({
-    status: 'paid',
-    filename: 'photo.jpg',
-    cid: 'bafy123',
-    downloadUrl: 'http://localhost:5050/download/bafy123',
-    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg'],
-    txid: 'abc123'
-  })
+  const html = render(paidState())
 
   assert.ok(html.includes('bafy123'))
   assert.ok(html.includes('http://localhost:5050/download/bafy123'))
@@ -148,41 +155,27 @@ test('renders the CID, download URL, gateway URL, and payment transaction', () =
 })
 
 test('renders exactly one gateway link per gateway URL', () => {
-  const html = render({
-    status: 'paid',
-    filename: 'photo.jpg',
-    cid: 'bafy123',
-    downloadUrl: 'http://localhost:5050/download/bafy123',
-    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg', 'https://dweb.link/ipfs/bafy123/photo.jpg'],
-    txid: 'abc123'
-  })
+  const html = render(paidState({
+    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg', 'https://dweb.link/ipfs/bafy123/photo.jpg']
+  }))
 
   assert.equal((html.match(/file-upload-gateway/g) || []).length, 2)
   assert.ok(!html.includes('Gateway: <a></a>'))
 })
 
 test('opens an image gateway link in a new tab', () => {
-  const html = render({
-    status: 'paid',
-    filename: 'photo.jpg',
-    cid: 'bafy123',
-    downloadUrl: 'http://localhost:5050/download/bafy123',
-    gatewayUrls: ['https://gateway.lighthouse.storage/ipfs/bafy123/photo.jpg'],
-    txid: 'abc123'
-  })
+  const html = render(paidState({
+    gatewayUrls: ['https://gateway.lighthouse.storage/ipfs/bafy123/photo.jpg']
+  }))
 
   assert.ok(html.includes('target="_blank"'))
 })
 
 test('keeps a non-image gateway link in the current tab', () => {
-  const html = render({
-    status: 'paid',
+  const html = render(paidState({
     filename: 'archive.tar',
-    cid: 'bafy123',
-    downloadUrl: 'http://localhost:5050/download/bafy123',
-    gatewayUrls: ['https://gateway.lighthouse.storage/ipfs/bafy123/archive.tar'],
-    txid: 'abc123'
-  })
+    gatewayUrls: ['https://gateway.lighthouse.storage/ipfs/bafy123/archive.tar']
+  }))
 
   assert.ok(!html.includes('target="_blank"'))
 })
@@ -198,14 +191,7 @@ test('renders the expired and pending messages', () => {
 })
 
 test('does not link the paid result to the status page', () => {
-  const html = render({
-    status: 'paid',
-    filename: 'photo.jpg',
-    cid: 'bafy123',
-    downloadUrl: 'http://localhost:5050/download/bafy123',
-    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg'],
-    txid: 'abc123'
-  })
+  const html = render(paidState())
 
   assert.ok(!html.includes('/status'))
 })

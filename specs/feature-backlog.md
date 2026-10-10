@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-10-08
+**Last updated**: 2026-10-10
 
 ---
 
@@ -34,6 +34,29 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 - None.
 
 ## Recently completed
+
+- **Host file pages (`host-file-pages`, 2026-10-10):** Client-only port of the
+  `bch-file-hosting-web` `/host` and `/dashboard` pages. `/host` uploads a file
+  to the bch-file-hosting API, shows the quote (price, payment address, QR,
+  expiry countdown, size and billed size), pays it from the app wallet, polls
+  check-payment, and shows the paid result (CID, download, gateway links, txid)
+  or the expired/pending/error message. `/dashboard` lists the public feed in a
+  table (name, size, paid, hosted-until, truncated CID with a copy control,
+  download, view) with Refresh and Load more. Base URL from
+  `REACT_APP_FILE_HOSTING_URL` (default
+  `https://file-hosting-api.blippost.com`). The `/status` page is intentionally
+  not ported. New specs `psf-memo-client/specs/host-file.feature` (17
+  scenarios) and `psf-memo-client/specs/hosted-files.feature` (8 scenarios).
+  Merged to `master` at `c7c05ee` (fast-forward; architect code-review commit
+  `a6770e2`; the later `c7c05ee` adds only the record and summary and the
+  session-notes commit adds only `specifier-prompt.md` and this backlog, so
+  `docs/reviews/host-file-pages-verification.json` is valid for the merged
+  tree). Recorded `verify.sh client` pass 5/5 at `a6770e2` (unit 911/0,
+  property 247/0, acceptance all 51 suites, lint ok, build ok); language
+  mutation 53/53 killed; soft Gherkin mutation host-file 146/141 and
+  hosted-files 44/40 (9 intrinsic survivors); CRAP clean. Independent
+  acceptance check after merge: host-file 31/31 and hosted-files 13/13.
+  Architect summary: `docs/reviews/host-file-pages-summary.md`.
 
 - **Image format query detection (`image-format-detection`, 2026-10-08):**
   Client-only rendering feature. A post URL now renders as an inline image

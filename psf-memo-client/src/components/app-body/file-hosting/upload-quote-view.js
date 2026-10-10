@@ -120,3 +120,7 @@ function UploadQuoteView ({ state = { status: 'idle' } } = {}) {
 }
 
 module.exports = UploadQuoteView
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-10T03:03:53.186Z","module_hash":"8c371321deb7046e2df64bcd2065c53dd9721a7a737b5e38817d32d093fe8def","functions":[{"id":"func/linkLine","name":"linkLine","line":15,"end_line":24,"hash":"5a49ac27625a2c4411cc8d449fb1782f5d5d62ddeda9c18cb43401af1963d8b6"},{"id":"func/isImageName","name":"isImageName","line":30,"end_line":32,"hash":"d0d46115bc40e8efa485b03c654e8568de0cc60975b74cbbd11031163eb0f3ee"},{"id":"func/quoteChildren","name":"quoteChildren","line":34,"end_line":72,"hash":"3d867295e4a20a31c21b00b4d2db41f2f94bdc2c2df9e3e5521a584d2b7fd031"},{"id":"func/hostedChildren","name":"hostedChildren","line":74,"end_line":76,"hash":"52858c79fca6f4c0825666d1e45c80aa84c78bac810cecbf307d98a879f8be46"},{"id":"func/paidChildren","name":"paidChildren","line":78,"end_line":95,"hash":"45a96258d03067918e5af5f707e34f6983dea5bc5ed967f8526bbd7a2fc6f8c1"},{"id":"func/UploadQuoteView","name":"UploadQuoteView","line":110,"end_line":120,"hash":"7f34f34983ecc59c828d693b3a30e79086f4bac361d921e0e6e9d3eb64649756"}]}
+// mutate4javascript-manifest-end

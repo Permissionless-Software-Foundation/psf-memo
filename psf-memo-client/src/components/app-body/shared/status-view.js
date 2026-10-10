@@ -33,3 +33,7 @@ function messageChildren (key, className) {
 }
 
 module.exports = { line, buildChildren, selectChildren, messageChildren }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-10T03:04:12.266Z","module_hash":"30bcccb14b501693d8731acf759a6bda87354f45eb62ee4268e06bc133242c0a","functions":[{"id":"func/line","name":"line","line":13,"end_line":15,"hash":"84c53a0e41895199e67497e49f9761631ab088f7f2a23813e18cc551cae0abd0"},{"id":"func/buildChildren","name":"buildChildren","line":20,"end_line":22,"hash":"11df0e7ff5b1b1b3b6f3a9f225e552109acf0760abc59712a48c7cfcf378d9c7"},{"id":"func/selectChildren","name":"selectChildren","line":25,"end_line":28,"hash":"f109c38d80331ca3d93ee5e8e8918b7ac20f83c521728833b74eb40735e70de8"},{"id":"func/messageChildren","name":"messageChildren","line":31,"end_line":33,"hash":"c2ad5f2045c5adc1c516e7dcfddf0c96263e7b32b51380c152e1e961eedc4a66"}]}
+// mutate4javascript-manifest-end

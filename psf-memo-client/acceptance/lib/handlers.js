@@ -91,6 +91,7 @@ const DashboardPage = require('../../src/services/dashboard-page')
 const HostingApi = require('../../src/services/hosting-api')
 const UploadQuoteView = require('../../src/components/app-body/file-hosting/upload-quote-view')
 const DashboardView = require('../../src/components/app-body/dashboard/dashboard-view')
+const { findMenuEntry, NAV_MENU_ENTRIES } = require('../../src/services/nav-menu')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
@@ -1193,11 +1194,39 @@ const handlers = [
     }
   },
   {
-    name: 'menu shows link to path',
-    pattern: /^the menu shows a link to the path (.+)$/,
+    name: 'menu shows link to path with label',
+    pattern: /^the menu shows a link to the path (\S+) with the label (.+)$/,
     run (m, example, world) {
-      const target = m[1].trim()
-      if (!world.newPage.hasMenuLink(target)) {
+      const target = resolveParam(m[1], example)
+      const label = resolveParam(m[2], example)
+      const entry = findMenuEntry(target)
+      if (!entry) {
+        throw new Error(`Navigation menu does not link to ${target}.`)
+      }
+      if (entry.label !== label) {
+        throw new Error(`Expected the navigation link to ${target} to be labelled "${label}", got "${entry.label}".`)
+      }
+    }
+  },
+  {
+    name: 'menu shows entries in order',
+    pattern: /^the menu shows the entries (.+) in order$/,
+    run (m, example, world) {
+      const expected = parseList(resolveParam(m[1], example))
+      const actual = NAV_MENU_ENTRIES
+        .map((entry) => entry.label)
+        .filter((label) => expected.includes(label))
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(`Expected the navigation menu to show ${expected.join(', ')} in order, got ${actual.join(', ')}.`)
+      }
+    }
+  },
+  {
+    name: 'menu shows link to path',
+    pattern: /^the menu shows a link to the path (\S+)$/,
+    run (m, example, world) {
+      const target = resolveParam(m[1], example)
+      if (!findMenuEntry(target)) {
         throw new Error(`Navigation menu does not link to ${target}.`)
       }
     }
@@ -5625,9 +5654,6 @@ const handlers = [
         downloadBaseUrl: HOSTING_API_BASE
       })
       world.view = 'upload'
-      // The navigation menu advertises the two hosting pages.
-      world.newPage.addMenuLink('/host')
-      world.newPage.addMenuLink('/dashboard')
     }
   },
   {

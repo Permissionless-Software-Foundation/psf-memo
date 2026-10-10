@@ -11,3 +11,7 @@ function failureMessage (err, fallback) {
 }
 
 module.exports = { failureMessage }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-10T03:02:20.667Z","module_hash":"a3ecbbb19002dd31e4820c1c67f8083f478fc72632a5394eb59160b88347d2e0","functions":[{"id":"func/failureMessage","name":"failureMessage","line":9,"end_line":11,"hash":"c3530956970ce4eeb22ba802c48ebeeb77d92ca21411fc4a9aa17b5e80474640"}]}
+// mutate4javascript-manifest-end

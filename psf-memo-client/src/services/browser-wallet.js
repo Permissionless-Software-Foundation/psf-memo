@@ -24,3 +24,7 @@ class BrowserWallet {
 }
 
 module.exports = BrowserWallet
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-10T03:04:12.085Z","module_hash":"141953e7e1a54c1131d313ebfce4a4b94b3c500411b727c29b55a23be32330c1","functions":[{"id":"func/BrowserWallet.constructor","name":"BrowserWallet.constructor","line":11,"end_line":17,"hash":"8444c09b17ceeb8cb837cbcfe3f43da69a368a79c288f3253c8ca4279adbe44f"},{"id":"func/BrowserWallet.send","name":"BrowserWallet.send","line":21,"end_line":23,"hash":"719709231e48418d0a08504537443ec84f366246199f6b4200d446d5eb4e2a46"}]}
+// mutate4javascript-manifest-end

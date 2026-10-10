@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-10T03:05:29.667496252Z","feature_name":"Hosted Files","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/hosted-files.feature","background_hash":"12fbdded241357f187a94e8ac9637048a085e4f588708a502d95d541132afa51","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Hosted Files - 1 lists the hosted files in a table in feed order","scenario_hash":"463cbbbc7d8ee3e98b89424e11366a1d01cda4d6f08ebb6b91debcf419316e0a","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:29.667496252Z"},{"index":4,"name":"Hosted Files - 5 an API error shows the error","scenario_hash":"76d33d0773557ef746a91e4d8695f6e0b6e2e813ad17207c54545e14642a5bb4","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:29.667496252Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Hosted Files - 1, Hosted Files - 2, Hosted Files - 3, Hosted Files - 4, Hosted Files - 5, Hosted Files - 6, Hosted Files - 7, Hosted Files - 8
 #
 # The /dashboard page lists the files hosted through the bch-file-hosting API
@@ -82,6 +86,11 @@ Feature: Hosted Files
     When the visitor refreshes the dashboard
     Then the dashboard lists the file names notes.txt
 
-  Scenario: Hosted Files - 8 the navigation menu links to the dashboard page
+  Scenario Outline: Hosted Files - 8 the navigation menu shows File Dashboard below File Upload
     Given I open the navigation menu
-    Then the menu shows a link to the path /dashboard
+    Then the menu shows a link to the path /dashboard with the label <label>
+    And the menu shows the entries Account, File Upload, File Dashboard, BCH in order
+
+    Examples:
+      | label          |
+      | File Dashboard |
