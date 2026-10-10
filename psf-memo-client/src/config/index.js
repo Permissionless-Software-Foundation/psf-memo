@@ -16,7 +16,12 @@ const config = {
 
   // Override at build time with REACT_APP_MEMO_DB_URL
   // (e.g. https://api.mydomain.com). Default suits local memo-db.
-  backend: process.env.REACT_APP_MEMO_DB_URL || 'http://localhost:5021'
+  backend: process.env.REACT_APP_MEMO_DB_URL || 'http://localhost:5021',
+
+  // Base URL of the bch-file-hosting REST API used by the /host and
+  // /dashboard pages. Override at build time with
+  // REACT_APP_FILE_HOSTING_URL.
+  fileHostingUrl: process.env.REACT_APP_FILE_HOSTING_URL || 'https://file-hosting-api.blippost.com'
 
 }
 

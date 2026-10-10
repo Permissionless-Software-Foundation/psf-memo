@@ -1208,6 +1208,18 @@ that a single user-facing feature may require specs in more than one component.
     (scenarios 15–16). Architect summary:
     `docs/reviews/account-profile-link-summary.md`.
 
+89. **React escapes `&` as `&amp;` in rendered attributes.** Acceptance
+    assertions for URLs with query strings (e.g. `?format=jpg&name=small`)
+    match `src=`/`href=` values in `renderToStaticMarkup` output, where React
+    HTML-escapes the ampersand. The client acceptance handler decodes HTML
+    entities with a test-layer `decodeHtmlEntities` helper before matching; do
+    not work around this by hard-coding the escaped form in a spec. Separately,
+    `isImageUrl` treats a `format=` image hint as an explicit image even when
+    the path carries a different extension (e.g. `file.txt?format=jpg`); that
+    is specified intent, not a bug. Specs:
+    `psf-memo-client/specs/post-image-rendering.feature`,
+    `psf-memo-client/specs/profile-post-rendering.feature`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1264,7 +1276,27 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `account-profile-link`): a small client-only
+Latest session (2026-10-08, `image-format-detection`): a client-only rendering
+follow-up. The user reported that a query-string image link
+(`https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small`) rendered
+as a plain link. The specifier extended the two rendering feature files so
+`isImageUrl` treats a `?format=jpg|jpeg|png|gif|webp|bmp` hint (case-insensitive)
+as an image in addition to a path extension; the coder/refactorer/architect
+unified the two detection forms behind one module-private `IMAGE_FORMATS` list
+in `src/services/post-links.js`, updated the unit/property tests, and added the
+test-layer `decodeHtmlEntities` acceptance helper (React escapes `&` as
+`&amp;`). Merged to `master` at `87f0d3a` (fast-forward; architect code-review
+commit `ea720e9`; the later `87f0d3a` adds only the record and summary, so
+`docs/reviews/image-format-detection-verification.json` is valid for the merged
+tree). Recorded `verify.sh client` pass 5/5 at `ea720e9` (unit 825/0, property
+226/0, acceptance all 49 suites, lint ok, build ok); soft Gherkin mutation
+post-image-rendering 42/41 and profile-post-rendering 51/49 (3 intrinsic
+case-flip survivors); language mutation 22/22 on `post-links.js`; CRAP max 6.0.
+Independent acceptance check after merge: post-image-rendering 13/13 and
+profile-post-rendering 18/18. Architect summary:
+`docs/reviews/image-format-detection-summary.md`.
+
+Previous session (2026-10-08, `account-profile-link`): a small client-only
 follow-up. The specifier added the `Profile` link to the account sidebar between
 the bio and the BCH address (`Account Page Layout - 16`) and updated the sidebar
 order (`- 15`) to `avatar, bio, profile, address, tokens`; the
@@ -1928,7 +1960,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `81c47cb` (`Record account-profile-link architect review and verification`).
+Current `master` HEAD: `87f0d3a` (`Record image-format-detection architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -1969,10 +2001,10 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the latest features, `account-post-metadata` merged
-at `a70f36c` and account-posts-feed's `account-profile-link` follow-up merged at
-`81c47cb`, after `account-posts-feed` at `2470bc8` and
-`set-bio-existing-and-cancel` at `4467e6e`). The
+`specs/feature-backlog.md` (the latest feature is `image-format-detection`,
+merged at `87f0d3a`, after account-posts-feed's `account-profile-link` follow-up
+at `81c47cb`, `account-post-metadata` at `a70f36c`, `account-posts-feed` at
+`2470bc8`, and `set-bio-existing-and-cancel` at `4467e6e`). The
 `psf-memo-cli` Memo-protocol backlog below is complete except for the deferred
 W14–W16. The
 foundation (F1, F5, F4, F2/F3) and the entire read set (**R1 `memo-feed`**,

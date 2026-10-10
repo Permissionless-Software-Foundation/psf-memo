@@ -62,6 +62,22 @@ function NavMenu (props) {
             </NavLink>
 
             <NavLink
+              className={currentPath === '/host' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/host'
+              onClick={handleClickEvent}
+            >
+              Host
+            </NavLink>
+
+            <NavLink
+              className={currentPath === '/dashboard' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/dashboard'
+              onClick={handleClickEvent}
+            >
+              Dashboard
+            </NavLink>
+
+            <NavLink
               className={currentPath === '/profile/recent' ? 'nav-link-active' : 'nav-link-inactive'}
               to='/profile/recent'
               onClick={handleClickEvent}

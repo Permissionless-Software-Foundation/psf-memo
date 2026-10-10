@@ -35,6 +35,28 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **Image format query detection (`image-format-detection`, 2026-10-08):**
+  Client-only rendering feature. A post URL now renders as an inline image
+  when its path ends in a known image extension **or** its query string
+  carries an image format hint (`?format=jpg|jpeg|png|gif|webp|bmp`,
+  case-insensitive), so X/Twitter-style URLs such as
+  `https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small` render
+  inline instead of as a plain link. `src/services/post-links.js` `isImageUrl`
+  now derives both detection forms from one module-private `IMAGE_FORMATS`
+  list; `img src` stays the full original URL and `imageAltText` falls back to
+  the path segment. New scenarios `Post Image Rendering - 4` and
+  `Profile Post Rendering - 6` (16/16 killed each); the old `?format=jpg`
+  "not an image" examples moved to `?format=json`. Merged to `master` at
+  `87f0d3a` (fast-forward; architect code-review commit `ea720e9`; the later
+  `87f0d3a` adds only the record and summary, so
+  `docs/reviews/image-format-detection-verification.json` is valid for the
+  merged tree). Recorded `verify.sh client` pass 5/5 at `ea720e9` (unit 825/0,
+  property 226/0, acceptance all 49 suites, lint ok, build ok); soft Gherkin
+  mutation post-image-rendering 42/41 and profile-post-rendering 51/49 (3
+  intrinsic case-flip survivors). Independent acceptance check after merge:
+  post-image-rendering 13/13 and profile-post-rendering 18/18. Architect
+  summary: `docs/reviews/image-format-detection-summary.md`.
+
 - **Account sidebar profile link (`account-profile-link`, 2026-10-08):**
   Client-only. The `/account` left sidebar now shows a `Profile` link between
   the bio and the BCH address, linking to the account's own `/profile/:addr`

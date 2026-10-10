@@ -36,6 +36,8 @@ import NewTopic from './new-topic'
 import TopicFeed from './topic-feed'
 import Search from './search'
 import Notifications from './notifications'
+import FileHosting from './file-hosting'
+import Dashboard from './dashboard'
 
 function AppBody (props) {
   // Dependency injection through props
@@ -58,6 +60,8 @@ function AppBody (props) {
         <Route path='/topics/:room' element={<TopicFeed appData={appData} />} />
         <Route path='/search' element={<Search />} />
         <Route path='/notifications' element={<Notifications appData={appData} />} />
+        <Route path='/host' element={<FileHosting appData={appData} />} />
+        <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/memo/set-name' element={<SetName appData={appData} />} />
         <Route path='/memo/set-bio' element={<SetBio appData={appData} />} />
         <Route path='/memo/set-avatar-url' element={<SetAvatarUrl appData={appData} />} />
