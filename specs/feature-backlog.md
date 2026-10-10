@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **File hosting navigation labels (`nav-file-hosting-labels`, 2026-10-10):**
+  Client-only nav-menu change. The two file-hosting entries were renamed
+  (`Host` → `File Upload`, `Dashboard` → `File Dashboard`) and moved to sit
+  between Account and BCH (`Account, File Upload, File Dashboard, BCH`). The
+  refactorer extracted the ordered entries into the data module
+  `psf-memo-client/src/services/nav-menu.js` (`NAV_MENU_ENTRIES`,
+  `findMenuEntry`, `isMenuEntryActive`) and made the component and the
+  acceptance handler read that one source; the architect removed the now
+  orphaned `NewPostPage` menu-link model. Merged to `master` at `ab6a572`
+  (fast-forward; architect code-review commit `b3deb8b`; the later `ab6a572`
+  adds only the record and summary, so
+  `docs/reviews/nav-file-hosting-labels-verification.json` is valid for the
+  merged tree). Recorded `verify.sh client` pass 5/5 at `b3deb8b` (unit 916/0,
+  property 252/0, acceptance all 51 suites, lint ok, build ok); language
+  mutation 10/10 killed (`nav-menu.js` 1, `new-post.js` 9); the two navigation
+  Gherkin mutations were killed; DRY clean. Independent acceptance check after
+  merge: host-file 31/31 and hosted-files 13/13. Architect summary:
+  `docs/reviews/nav-file-hosting-labels-summary.md`.
+
 - **Host file pages (`host-file-pages`, 2026-10-10):** Client-only port of the
   `bch-file-hosting-web` `/host` and `/dashboard` pages. `/host` uploads a file
   to the bch-file-hosting API, shows the quote (price, payment address, QR,
