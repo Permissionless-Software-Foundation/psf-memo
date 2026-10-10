@@ -81,6 +81,17 @@ const { X_EMBED_BASE_URL } = require('../../src/services/x-embed')
 const { TIKTOK_EMBED_BASE_URL } = require('../../src/services/tiktok-embed')
 const { toPushBuffer } = require('../../src/services/memo-multipush')
 
+// File-hosting (/host and /dashboard) services and presentational views. These
+// are required directly so the acceptance run drives the production page
+// controllers and renders the same view components the browser uses.
+const React = require('react')
+const ReactDOMServer = require('react-dom/server')
+const FileUploadPage = require('../../src/services/file-upload-page')
+const DashboardPage = require('../../src/services/dashboard-page')
+const HostingApi = require('../../src/services/hosting-api')
+const UploadQuoteView = require('../../src/components/app-body/file-hosting/upload-quote-view')
+const DashboardView = require('../../src/components/app-body/dashboard/dashboard-view')
+
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
 const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
 const MEMO_SET_NAME_PREFIX = MemoSetName.MEMO_SET_NAME_PREFIX
@@ -577,7 +588,29 @@ function createWorld () {
     currentPath: null,
     clipboard: null,
     menuOpen: false,
-    likedTxids: new Set()
+    likedTxids: new Set(),
+    // File-hosting (/host and /dashboard) acceptance state. `now` is a fixed
+    // clock so countdowns and quote expiry are deterministic.
+    now: () => HOSTING_FIXED_NOW,
+    view: 'upload',
+    page: null,
+    response: null,
+    error: null,
+    state: null,
+    html: null,
+    dashboardPage: null,
+    feedFiles: [],
+    feedNextPageFiles: [],
+    feedNextCursor: null,
+    feedNextPageCursor: null,
+    feedError: null,
+    walletSends: [],
+    walletTxid: null,
+    walletError: null,
+    checkError: null,
+    checkResults: [],
+    pendingPaid: null,
+    browserTransport: null
   }
 
   // Read-only page controllers backed by the fake psf-memo-db API.
@@ -918,6 +951,158 @@ function assertTokenIconField (world, m, example, field, attribute, label, page 
   if (!renderProfileTokenIcon(icon).includes(`${attribute}="${expected}"`)) {
     throw new Error(`Rendered token icon for ${tokenId} does not have the ${label} "${expected}".`)
   }
+}
+
+// ---------------------------------------------------------------------------
+// File-hosting (/host and /dashboard) acceptance support
+// ---------------------------------------------------------------------------
+
+const MINUTE_MS = 60 * 1000
+
+// A fixed clock keeps the countdown and quote-expiry steps deterministic.
+const HOSTING_FIXED_NOW = Date.parse('2026-10-09T12:00:00Z')
+
+// Default API base for the hosting API and the dashboard download links.
+const HOSTING_API_BASE = 'https://file-hosting-api.blippost.com'
+
+// Fake hosting API: upload returns the configured response or throws the
+// configured error; check-payment returns the configured results in order,
+// repeating the last one; the feed returns the configured page.
+function makeHostingApi (world) {
+  let checkIndex = 0
+  return {
+    upload: async () => {
+      if (world.error) throw new Error(world.error)
+      return world.response
+    },
+    checkPayment: async () => {
+      if (world.checkError) throw new Error(world.checkError)
+      if (world.checkResults.length === 0) return { status: 'unpaid' }
+      const index = Math.min(checkIndex, world.checkResults.length - 1)
+      checkIndex++
+      return world.checkResults[index]
+    },
+    getFeed: async ({ cursor } = {}) => {
+      if (world.feedError) throw new Error(world.feedError)
+      if (cursor) {
+        return { success: true, files: world.feedNextPageFiles, nextCursor: world.feedNextPageCursor }
+      }
+      return { success: true, files: world.feedFiles, nextCursor: world.feedNextCursor }
+    }
+  }
+}
+
+// Fake browser wallet: records every send, then returns the configured
+// transaction id or throws the configured error.
+function makeHostingWallet (world) {
+  return {
+    send: async ({ address, amountSats }) => {
+      world.walletSends.push({ address, amountSats })
+      if (world.walletError) throw new Error(world.walletError)
+      return world.walletTxid || 'acceptance-txid'
+    }
+  }
+}
+
+// A browser-like global fetch. A real browser's native fetch rejects any
+// receiver that is not the global object, so this double enforces the same
+// contract: a bare `this.fetch(...)` call by an adapter would throw before any
+// request. It records the calls and answers with the configured upload
+// response.
+function makeBrowserTransport (world) {
+  const calls = []
+  function browserFetch (url, options) {
+    if (this !== globalThis) {
+      throw new TypeError("'fetch' called on an object that does not implement interface Window.")
+    }
+    calls.push({ url, options })
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () => world.response
+    })
+  }
+  return { calls, fetch: browserFetch }
+}
+
+// Render the current hosting page state once, through the same component the
+// browser uses, and cache the static HTML.
+function renderHostingPage (world) {
+  if (world.state === null) {
+    throw new Error('No upload, payment, or dashboard load has happened yet.')
+  }
+  if (world.html === null) {
+    const Component = world.view === 'dashboard' ? DashboardView : UploadQuoteView
+    world.html = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(Component, { state: world.state })
+    )
+  }
+  return world.html
+}
+
+// Escape a literal string for use inside a RegExp.
+function escapeRegExp (value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// The rendered HTML of the dashboard row for one CID.
+function dashboardRow (world, cid) {
+  const pattern = new RegExp(`<tr[^>]*data-cid="${escapeRegExp(cid)}"[^>]*>([\\s\\S]*?)</tr>`)
+  const match = pattern.exec(renderHostingPage(world))
+  if (!match) throw new Error(`The dashboard does not show a row for ${cid}.`)
+  return match[1]
+}
+
+// The rendered HTML of one class-named cell inside a dashboard row.
+function rowCell (rowHtml, cellClass) {
+  const pattern = new RegExp(`<td[^>]*class="[^"]*${cellClass}[^"]*"[^>]*>([\\s\\S]*?)</td>`)
+  const match = pattern.exec(rowHtml)
+  if (!match) throw new Error(`The dashboard row has no ${cellClass} cell.`)
+  return match[1]
+}
+
+// The visible text of one class-named cell inside a dashboard row.
+function rowCellText (rowHtml, cellClass) {
+  return visibleText(rowCell(rowHtml, cellClass)).trim()
+}
+
+// Build a complete feed file record from the fields a scenario configures.
+function feedRecord ({ status, cid, filename = '', sizeBytes = 0, paidAt = '2026-01-02T00:00:00.000Z', hostedUntil = '2027-01-02T00:00:00.000Z', paymentAddress = 'bitcoincash:qfeed', gatewayUrls = [] }) {
+  return { status, cid, filename, sizeBytes: Number(sizeBytes), paidAt, hostedUntil, paymentAddress, gatewayUrls, pins: [] }
+}
+
+// Parse a comma-separated scenario value into trimmed, non-empty items.
+function parseList (value) {
+  return String(value).split(',').map((s) => s.trim()).filter(Boolean)
+}
+
+// Assert the visible text of one class-named cell in a dashboard row, either
+// exactly or as a substring.
+function assertRowCell (world, cid, cellClass, expected, { contains = false } = {}) {
+  const actual = rowCellText(dashboardRow(world, cid), cellClass)
+  const matches = contains ? actual.includes(expected) : actual === expected
+  if (!matches) {
+    throw new Error(`Expected row ${cid} cell ${cellClass} to ${contains ? 'contain' : 'read'} ${expected}, got ${actual}.`)
+  }
+}
+
+// Assert a dashboard row link cell points at the expected URL, optionally in a
+// new tab.
+function assertLinkCell (world, cid, cellClass, href, { newTab = false } = {}) {
+  const cell = rowCell(dashboardRow(world, cid), cellClass)
+  if (!cell.includes(`href="${href}"`)) {
+    throw new Error(`Expected the ${cellClass} cell of row ${cid} to link ${href}, got ${cell}.`)
+  }
+  if (newTab && !/target="_blank"/.test(cell)) {
+    throw new Error(`Expected the ${cellClass} cell of row ${cid} to open in a new tab.`)
+  }
+}
+
+// Apply an async page transition and invalidate the cached render.
+async function transitionHostingPage (world, action) {
+  world.state = await action()
+  world.html = null
+  return world.state
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -5417,6 +5602,583 @@ const handlers = [
       if (!html.includes('tabindex="0"')) {
         throw new Error('The rendered first post options item is not focusable.')
       }
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // File-hosting (/host and /dashboard) steps
+  // -------------------------------------------------------------------------
+  {
+    name: 'a fresh file hosting page',
+    pattern: /^a fresh file hosting page$/,
+    run (m, example, world) {
+      const hostingApi = makeHostingApi(world)
+      world.page = new FileUploadPage({
+        hostingApi,
+        wallet: makeHostingWallet(world),
+        now: world.now,
+        sleep: async () => {},
+        maxConfirmations: 10
+      })
+      world.dashboardPage = new DashboardPage({
+        hostingApi,
+        downloadBaseUrl: HOSTING_API_BASE
+      })
+      world.view = 'upload'
+      // The navigation menu advertises the two hosting pages.
+      world.newPage.addMenuLink('/host')
+      world.newPage.addMenuLink('/dashboard')
+    }
+  },
+  {
+    name: 'an upload page whose API adapter uses the browser fetch transport',
+    pattern: /^an upload page whose API adapter uses the browser fetch transport at (\S+)$/,
+    run (m, example, world) {
+      const apiBase = resolveParam(m[1], example)
+      world.browserTransport = makeBrowserTransport(world)
+      globalThis.fetch = world.browserTransport.fetch
+      const hostingApi = new HostingApi({ config: { fileHostingUrl: apiBase } })
+      world.page = new FileUploadPage({
+        hostingApi,
+        wallet: makeHostingWallet(world),
+        now: world.now,
+        sleep: async () => {},
+        maxConfirmations: 10
+      })
+      world.view = 'upload'
+    }
+  },
+  {
+    name: 'the browser transport replies to the upload',
+    pattern: /^the browser transport replies to the upload with (\S+) satoshis at (\S+)$/,
+    run (m, example, world) {
+      world.response = {
+        alreadyHosted: false,
+        priceSats: Number(resolveParam(m[1], example)),
+        paymentAddress: resolveParam(m[2], example)
+      }
+    }
+  },
+  {
+    name: 'the hosting API quotes a price at an address',
+    pattern: /^the hosting API quotes (\S+) satoshis at (\S+)$/,
+    run (m, example, world) {
+      world.response = {
+        alreadyHosted: false,
+        priceSats: Number(resolveParam(m[1], example)),
+        paymentAddress: resolveParam(m[2], example)
+      }
+    }
+  },
+  {
+    name: 'the quote expires in a number of minutes',
+    pattern: /^the quote expires in (\S+) minutes$/,
+    run (m, example, world) {
+      const minutes = Number(resolveParam(m[1], example))
+      world.response.quoteExpiresAt = new Date(world.now() + minutes * MINUTE_MS).toISOString()
+    }
+  },
+  {
+    name: 'the file is a number of bytes',
+    pattern: /^the file is (\S+) bytes$/,
+    run (m, example, world) {
+      world.response.sizeBytes = Number(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'the billed size is a number of bytes',
+    pattern: /^the billed size is (\S+) bytes$/,
+    run (m, example, world) {
+      world.response.billedBytes = Number(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'an open hosting quote',
+    pattern: /^an open hosting quote$/,
+    async run (m, example, world) {
+      world.response = {
+        alreadyHosted: false,
+        filename: 'upload.bin',
+        priceSats: 2000,
+        paymentAddress: 'bitcoincash:qopenquote'
+      }
+      await transitionHostingPage(world, () => world.page.upload({ name: 'upload.bin' }))
+    }
+  },
+  {
+    name: 'the hosting API reports the file is already hosted',
+    pattern: /^the hosting API reports the file is already hosted at (\S+)$/,
+    run (m, example, world) {
+      world.response = {
+        alreadyHosted: true,
+        downloadUrl: resolveParam(m[1], example)
+      }
+    }
+  },
+  {
+    name: 'the hosting API rejects the upload',
+    pattern: /^the hosting API rejects the upload with error (.+)$/,
+    run (m, example, world) {
+      world.error = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the hosting API reports the payment as unpaid',
+    pattern: /^the hosting API reports the payment as unpaid$/,
+    run (m, example, world) {
+      world.checkResults.push({ status: 'unpaid' })
+    }
+  },
+  {
+    name: 'the hosting API reports the payment as expired',
+    pattern: /^the hosting API reports the payment as expired$/,
+    run (m, example, world) {
+      world.checkResults.push({ status: 'expired' })
+    }
+  },
+  {
+    name: 'the hosting API rejects the payment check',
+    pattern: /^the hosting API rejects the payment check with error (.+)$/,
+    run (m, example, world) {
+      world.checkError = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the hosting API reports a paid invoice with a CID',
+    pattern: /^the hosting API reports a paid invoice with CID (.+)$/,
+    run (m, example, world) {
+      const paid = {
+        status: 'paid',
+        cid: resolveParam(m[1], example),
+        filename: 'upload.bin',
+        downloadUrl: '',
+        gatewayUrls: []
+      }
+      world.pendingPaid = paid
+      world.checkResults.push(paid)
+    }
+  },
+  {
+    name: 'the hosting API reports the download URL of the paid invoice',
+    pattern: /^the hosting API reports the download URL (.+)$/,
+    run (m, example, world) {
+      world.pendingPaid.downloadUrl = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the hosting API reports the paid file name',
+    pattern: /^the hosting API reports the paid file name (\S+)$/,
+    run (m, example, world) {
+      world.pendingPaid.filename = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the hosting API reports a gateway URL of the paid invoice',
+    pattern: /^the hosting API reports the gateway URL (.+)$/,
+    run (m, example, world) {
+      world.pendingPaid.gatewayUrls.push(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'the wallet will broadcast a transaction',
+    pattern: /^the wallet will broadcast the transaction (\S+)$/,
+    run (m, example, world) {
+      world.walletTxid = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the wallet rejects the payment',
+    pattern: /^the wallet rejects the payment with error (.+)$/,
+    run (m, example, world) {
+      world.walletError = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the visitor uploads a file',
+    pattern: /^the visitor uploads a file$/,
+    async run (m, example, world) {
+      await transitionHostingPage(world, () => world.page.upload({ name: 'upload.bin' }))
+    }
+  },
+  {
+    name: 'the visitor uploads a named file',
+    pattern: /^the visitor uploads the file (.+)$/,
+    async run (m, example, world) {
+      const name = resolveParam(m[1], example)
+      // The browser-transport feature drives the real adapter, whose FormData
+      // body only accepts a Blob or File; the other features use a fake
+      // adapter and only need the name.
+      const file = world.browserTransport ? new File(['acceptance'], name) : { name }
+      await transitionHostingPage(world, () => world.page.upload(file))
+    }
+  },
+  {
+    name: 'the visitor uploads no file',
+    pattern: /^the visitor uploads no file$/,
+    async run (m, example, world) {
+      await transitionHostingPage(world, () => world.page.upload(null))
+    }
+  },
+  {
+    name: 'the visitor pays the quote from the wallet',
+    pattern: /^the visitor pays the quote from the wallet$/,
+    async run (m, example, world) {
+      await transitionHostingPage(world, async () => {
+        await world.page.payFromWallet()
+        return world.page.getViewModel()
+      })
+    }
+  },
+  {
+    name: 'the visitor waits for the payment to be confirmed',
+    pattern: /^the visitor waits for the payment to be confirmed$/,
+    async run (m, example, world) {
+      await transitionHostingPage(world, () => world.page.waitForConfirmation())
+    }
+  },
+  {
+    name: 'the wallet paid an amount to an address',
+    pattern: /^the wallet paid (\S+) satoshis to (\S+)$/,
+    run (m, example, world) {
+      const amount = Number(resolveParam(m[1], example))
+      const address = resolveParam(m[2], example)
+      const last = world.walletSends[world.walletSends.length - 1]
+      if (!last) throw new Error('The wallet did not send a payment.')
+      if (last.address !== address) throw new Error(`Expected the wallet to pay ${address}, got ${last.address}.`)
+      if (last.amountSats !== amount) throw new Error(`Expected the wallet to pay ${amount} satoshis, got ${last.amountSats}.`)
+    }
+  },
+  {
+    name: 'the browser transport received a POST with a file',
+    pattern: /^the browser transport received a POST to (\S+) with the file (\S+)$/,
+    run (m, example, world) {
+      const expectedUrl = resolveParam(m[1], example)
+      const expectedName = resolveParam(m[2], example)
+      const calls = (world.browserTransport && world.browserTransport.calls) || []
+      const call = calls.find((entry) => entry.options.method === 'POST')
+      if (!call) throw new Error('The browser transport did not receive a POST.')
+      if (call.url !== expectedUrl) throw new Error(`Expected a POST to ${expectedUrl}, got ${call.url}.`)
+      const sent = call.options.body.get('file')
+      const sentName = sent && sent.name
+      if (sentName !== expectedName) throw new Error(`Expected the POST to carry the file ${expectedName}, got ${sentName}.`)
+    }
+  },
+  {
+    name: 'the page shows the file name',
+    pattern: /^the page shows the file name (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.filename !== expected) throw new Error(`Expected the page to show the file name "${expected}", got "${world.state.filename}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the file name "${expected}".`)
+    }
+  },
+  {
+    name: 'the page shows the price',
+    pattern: /^the page shows the price (\S+) satoshis$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.status !== 'quote' || String(world.state.priceSats) !== String(expected)) throw new Error(`Expected the page to show a quote of ${expected} satoshis, got ${JSON.stringify(world.state)}.`)
+      if (!renderHostingPage(world).includes(`${expected} satoshis`)) throw new Error(`Rendered page does not show the price ${expected} satoshis.`)
+    }
+  },
+  {
+    name: 'the page shows the payment address',
+    pattern: /^the page shows the payment address (\S+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.paymentAddress !== expected) throw new Error(`Expected the page to show the payment address ${expected}, got "${world.state.paymentAddress}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the payment address ${expected}.`)
+    }
+  },
+  {
+    name: 'the page shows a payment QR code',
+    pattern: /^the page shows a payment QR code$/,
+    run (m, example, world) {
+      const html = renderHostingPage(world)
+      if (!html.includes('file-upload-qr') || !html.includes('<svg')) throw new Error('Rendered page does not show a payment QR code.')
+    }
+  },
+  {
+    name: 'the page shows a quote countdown',
+    pattern: /^the page shows a quote countdown of (.+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.countdown !== expected) throw new Error(`Expected the page to show a countdown of "${expected}", got "${world.state.countdown}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the countdown "${expected}".`)
+    }
+  },
+  {
+    name: 'the page shows the download URL',
+    pattern: /^the page shows the download URL (\S+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.downloadUrl !== expected) throw new Error(`Expected the page to show the download URL ${expected}, got "${world.state.downloadUrl}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the download URL ${expected}.`)
+    }
+  },
+  {
+    name: 'the page shows the CID',
+    pattern: /^the page shows the CID (\S+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.cid !== expected) throw new Error(`Expected the page to show the CID ${expected}, got "${world.state.cid}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the CID ${expected}.`)
+    }
+  },
+  {
+    name: 'the page shows the gateway URL',
+    pattern: /^the page shows the gateway URL (\S+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (!(world.state.gatewayUrls || []).includes(expected)) throw new Error(`Expected the page to show the gateway URL ${expected}.`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the gateway URL ${expected}.`)
+    }
+  },
+  {
+    name: 'the gateway URL has a link target',
+    pattern: /^the gateway URL (\S+) has link target (\S+)$/,
+    run (m, example, world) {
+      const url = resolveParam(m[1], example)
+      const expected = resolveParam(m[2], example)
+      const anchors = renderHostingPage(world).match(/<a [^>]*>/g) || []
+      const anchor = anchors.find((tag) => tag.includes(`href="${url}"`))
+      if (!anchor) throw new Error(`Rendered page does not link the gateway URL ${url}.`)
+      const opensInNewTab = anchor.includes('target="_blank"')
+      if (expected === '_blank' && !opensInNewTab) throw new Error(`Expected the gateway link ${url} to open in a new tab.`)
+      if (expected !== '_blank' && opensInNewTab) throw new Error(`Expected the gateway link ${url} to keep the default target.`)
+    }
+  },
+  {
+    name: 'the page shows the payment transaction',
+    pattern: /^the page shows the payment transaction (\S+)$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (world.state.txid !== expected) throw new Error(`Expected the page to show the payment transaction ${expected}, got "${world.state.txid}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the payment transaction ${expected}.`)
+    }
+  },
+  {
+    name: 'the page shows the size',
+    pattern: /^the page shows the size (\S+) bytes$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (String(world.state.sizeBytes) !== String(expected)) throw new Error(`Expected the page to show the size ${expected} bytes, got "${world.state.sizeBytes}".`)
+      if (!renderHostingPage(world).includes(`Size: ${expected} bytes`)) throw new Error(`Rendered page does not show the size ${expected} bytes.`)
+    }
+  },
+  {
+    name: 'the page shows the billed size',
+    pattern: /^the page shows the billed size (\S+) bytes$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (String(world.state.billedBytes) !== String(expected)) throw new Error(`Expected the page to show a billed size of ${expected} bytes, got "${world.state.billedBytes}".`)
+      if (!renderHostingPage(world).includes(`Billed size: ${expected} bytes`)) throw new Error(`Rendered page does not show the billed size ${expected} bytes.`)
+    }
+  },
+  {
+    name: 'the page shows no billed size',
+    pattern: /^the page shows no billed size$/,
+    run (m, example, world) {
+      if (renderHostingPage(world).includes('file-upload-billed-size')) throw new Error('Rendered page shows a separate billed size.')
+    }
+  },
+  {
+    name: 'the page does not link to the status page',
+    pattern: /^the page does not link to the status page$/,
+    run (m, example, world) {
+      if (renderHostingPage(world).includes('/status')) throw new Error('Rendered page links to the status page.')
+    }
+  },
+  {
+    name: 'the page shows a message',
+    pattern: /^the page shows "(.+)"$/,
+    run (m, example, world) {
+      const expected = resolveParam(m[1], example)
+      if (!visibleText(renderHostingPage(world)).includes(expected)) throw new Error(`Rendered page does not show "${expected}".`)
+    }
+  },
+  {
+    name: 'the hosting API base URL',
+    pattern: /^the hosting API base URL is (\S+)$/,
+    run (m, example, world) {
+      const base = resolveParam(m[1], example)
+      if (world.dashboardPage) world.dashboardPage.downloadBaseUrl = base
+    }
+  },
+  {
+    name: 'the hosting API feed lists a pinned file',
+    pattern: /^the hosting API feed lists a pinned file (\S+) named (\S+)$/,
+    run (m, example, world) {
+      world.feedFiles.push(feedRecord({
+        status: 'pinned',
+        cid: resolveParam(m[1], example),
+        filename: resolveParam(m[2], example)
+      }))
+    }
+  },
+  {
+    name: 'the hosting API feed lists a pinned file with a gateway URL',
+    pattern: /^the hosting API feed lists a pinned file (\S+) named (\S+) with the gateway URL (\S+)$/,
+    run (m, example, world) {
+      world.feedFiles.push(feedRecord({
+        status: 'pinned',
+        cid: resolveParam(m[1], example),
+        filename: resolveParam(m[2], example),
+        gatewayUrls: [resolveParam(m[3], example)]
+      }))
+    }
+  },
+  {
+    name: 'the hosting API feed lists a pinned file with size and dates',
+    pattern: /^the hosting API feed lists a pinned file (\S+) named (\S+) of (\S+) bytes paid at (\S+) until (\S+)$/,
+    run (m, example, world) {
+      world.feedFiles.push(feedRecord({
+        status: 'pinned',
+        cid: resolveParam(m[1], example),
+        filename: resolveParam(m[2], example),
+        sizeBytes: resolveParam(m[3], example),
+        paidAt: resolveParam(m[4], example),
+        hostedUntil: resolveParam(m[5], example)
+      }))
+    }
+  },
+  {
+    name: 'the hosting API feed has a next page',
+    pattern: /^the hosting API feed has a next page$/,
+    run (m, example, world) {
+      world.feedNextCursor = 'next-feed-cursor'
+    }
+  },
+  {
+    name: "the hosting API feed's next page lists a pinned file",
+    pattern: /^the hosting API feed's next page lists a pinned file (\S+) named (\S+)$/,
+    run (m, example, world) {
+      world.feedNextPageFiles.push(feedRecord({
+        status: 'pinned',
+        cid: resolveParam(m[1], example),
+        filename: resolveParam(m[2], example)
+      }))
+    }
+  },
+  {
+    name: 'the hosting API feed is replaced with a pinned file',
+    pattern: /^the hosting API feed is replaced with a pinned file (\S+) named (\S+)$/,
+    run (m, example, world) {
+      world.feedFiles = [feedRecord({
+        status: 'pinned',
+        cid: resolveParam(m[1], example),
+        filename: resolveParam(m[2], example)
+      })]
+      world.feedNextCursor = null
+      world.feedNextPageFiles = []
+      world.feedNextPageCursor = null
+      world.feedError = null
+    }
+  },
+  {
+    name: 'the hosting API rejects the feed',
+    pattern: /^the hosting API rejects the feed with error (.+)$/,
+    run (m, example, world) {
+      world.feedError = resolveParam(m[1], example)
+    }
+  },
+  {
+    name: 'the visitor opens the dashboard',
+    pattern: /^the visitor opens the dashboard$/,
+    async run (m, example, world) {
+      world.view = 'dashboard'
+      await transitionHostingPage(world, () => world.dashboardPage.load())
+    }
+  },
+  {
+    name: 'the visitor loads more of the dashboard',
+    pattern: /^the visitor loads more of the dashboard$/,
+    async run (m, example, world) {
+      await transitionHostingPage(world, () => world.dashboardPage.loadMore())
+    }
+  },
+  {
+    name: 'the visitor refreshes the dashboard',
+    pattern: /^the visitor refreshes the dashboard$/,
+    async run (m, example, world) {
+      await transitionHostingPage(world, () => world.dashboardPage.load())
+    }
+  },
+  {
+    name: 'the dashboard lists the file names',
+    pattern: /^the dashboard lists the file names (.+)$/,
+    run (m, example, world) {
+      const expected = parseList(resolveParam(m[1], example))
+      const actual = ((world.state && world.state.files) || []).map((f) => f.filename)
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`Expected the dashboard to list ${expected.join(',')}, got ${actual.join(',')}.`)
+      const html = renderHostingPage(world)
+      let last = -1
+      for (const name of expected) {
+        const at = html.indexOf(name)
+        if (at <= last) throw new Error(`Rendered dashboard does not list ${name} in feed order.`)
+        last = at
+      }
+    }
+  },
+  {
+    name: 'the dashboard shows a table with the columns',
+    pattern: /^the dashboard shows a table with the columns (.+)$/,
+    run (m, example, world) {
+      const expected = parseList(resolveParam(m[1], example))
+      const thead = /<thead>([\s\S]*?)<\/thead>/.exec(renderHostingPage(world))
+      if (!thead) throw new Error('The dashboard does not show a table header.')
+      const headers = [...thead[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map((cell) => visibleText(cell[1]).trim())
+      if (JSON.stringify(headers) !== JSON.stringify(expected)) throw new Error(`Expected the dashboard columns ${expected.join(', ')}, got ${headers.join(', ')}.`)
+    }
+  },
+  {
+    name: 'the CID cell of a dashboard row',
+    pattern: /^the CID cell of row (\S+) holds (.+)$/,
+    run (m, example, world) {
+      assertRowCell(world, resolveParam(m[1], example), 'dashboard-file-cid', resolveParam(m[2], example), { contains: true })
+    }
+  },
+  {
+    name: 'a dashboard row offers a copy control',
+    pattern: /^row (\S+) offers a copy control$/,
+    run (m, example, world) {
+      const cid = resolveParam(m[1], example)
+      if (!/class="[^"]*dashboard-copy[^"]*"/.test(dashboardRow(world, cid))) throw new Error(`Expected row ${cid} to offer a copy control.`)
+    }
+  },
+  {
+    name: 'the download cell of a dashboard row',
+    pattern: /^the download cell of row (\S+) links (.+)$/,
+    run (m, example, world) {
+      assertLinkCell(world, resolveParam(m[1], example), 'dashboard-file-download', resolveParam(m[2], example))
+    }
+  },
+  {
+    name: 'the view cell of a dashboard row',
+    pattern: /^the view cell of row (\S+) opens (.+) in a new tab$/,
+    run (m, example, world) {
+      assertLinkCell(world, resolveParam(m[1], example), 'dashboard-file-view', resolveParam(m[2], example), { newTab: true })
+    }
+  },
+  {
+    name: 'the size cell of a dashboard row',
+    pattern: /^the size cell of row (\S+) measures (.+)$/,
+    run (m, example, world) {
+      assertRowCell(world, resolveParam(m[1], example), 'dashboard-file-size', resolveParam(m[2], example))
+    }
+  },
+  {
+    name: 'a dashboard row shows the paid time',
+    pattern: /^row (\S+) shows the paid time (.+)$/,
+    run (m, example, world) {
+      assertRowCell(world, resolveParam(m[1], example), 'dashboard-file-paid', resolveParam(m[2], example))
+    }
+  },
+  {
+    name: 'a dashboard row shows the hosting end',
+    pattern: /^row (\S+) shows the hosting end (.+)$/,
+    run (m, example, world) {
+      assertRowCell(world, resolveParam(m[1], example), 'dashboard-file-until', resolveParam(m[2], example))
     }
   }
 ]
