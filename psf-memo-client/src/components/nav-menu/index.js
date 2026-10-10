@@ -10,6 +10,9 @@ import React, { useState } from 'react'
 import { Nav, Navbar, Image } from 'react-bootstrap' // Used for Navbar Style and Layouts .
 import { NavLink, Link } from 'react-router-dom' // Used to navigate between routes
 
+// Local libraries
+import { NAV_MENU_ENTRIES, isMenuEntryActive } from '../../services/nav-menu'
+
 // Assets
 const Logo = '/blippost-logo-assets/png/white-on-green/blippost-white-on-green-128.png'
 
@@ -37,125 +40,16 @@ function NavMenu (props) {
         <Navbar.Toggle aria-controls='responsive-navbar-nav' />
         <Navbar.Collapse id='responsive-navbar-nav'>
           <Nav className='mr-auto'>
-            <NavLink
-              className={(currentPath === '/posts/recent' || currentPath === '/') ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/posts/recent'
-              onClick={handleClickEvent}
-            >
-              Posts
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/topics' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/topics'
-              onClick={handleClickEvent}
-            >
-              Topics
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/notifications' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/notifications'
-              onClick={handleClickEvent}
-            >
-              Notifications
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/host' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/host'
-              onClick={handleClickEvent}
-            >
-              Host
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/dashboard' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/dashboard'
-              onClick={handleClickEvent}
-            >
-              Dashboard
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/profile/recent' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/profile/recent'
-              onClick={handleClickEvent}
-            >
-              Profiles
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/posts/new' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/posts/new'
-              onClick={handleClickEvent}
-            >
-              New Post
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/search' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/search'
-              onClick={handleClickEvent}
-            >
-              Search
-            </NavLink>
-
-            <NavLink
-              className={(currentPath === '/account') ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/account'
-              onClick={handleClickEvent}
-            >
-              Account
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/bch' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/bch'
-              onClick={handleClickEvent}
-            >
-              BCH
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/slp-tokens' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/slp-tokens'
-              onClick={handleClickEvent}
-            >
-              Tokens
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/wallet' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/wallet'
-              onClick={handleClickEvent}
-            >
-              Wallet
-            </NavLink>
-
-            <NavLink
-              className={(currentPath === '/sweep') ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/sweep'
-              onClick={handleClickEvent}
-            >
-              Sweep
-            </NavLink>
-
-            <NavLink
-              className={(currentPath === '/sign') ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/sign'
-              onClick={handleClickEvent}
-            >
-              Sign
-            </NavLink>
-
-            <NavLink
-              className={currentPath === '/configuration' ? 'nav-link-active' : 'nav-link-inactive'}
-              to='/configuration'
-              onClick={handleClickEvent}
-            >
-              Configuration
-            </NavLink>
+            {NAV_MENU_ENTRIES.map((entry) => (
+              <NavLink
+                key={entry.path}
+                className={isMenuEntryActive(entry, currentPath) ? 'nav-link-active' : 'nav-link-inactive'}
+                to={entry.path}
+                onClick={handleClickEvent}
+              >
+                {entry.label}
+              </NavLink>
+            ))}
           </Nav>
         </Navbar.Collapse>
       </Navbar>
