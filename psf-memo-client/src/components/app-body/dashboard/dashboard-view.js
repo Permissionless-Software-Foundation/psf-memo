@@ -12,8 +12,11 @@
 const React = require('react')
 const { line, buildChildren, selectChildren, messageChildren } = require('../shared/status-view')
 const { copyToClipboard } = require('../../../services/clipboard')
+const DashboardPage = require('../../../services/dashboard-page')
 
-const EMPTY_MESSAGE = 'No files are hosted yet.'
+// The page service owns the empty-feed message so the controller and the view
+// cannot drift (the same pattern as AccountPage.NO_POSTS_MESSAGE).
+const EMPTY_MESSAGE = DashboardPage.EMPTY_MESSAGE
 const COLUMNS = [
   'File Name',
   'Size',
