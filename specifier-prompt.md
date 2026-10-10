@@ -1220,6 +1220,23 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/post-image-rendering.feature`,
     `psf-memo-client/specs/profile-post-rendering.feature`.
 
+90. **The file-hosting pages are a port of `bch-file-hosting-web`, and the API
+    base is a client env var.** `psf-memo-client/src/services/hosting-api.js`
+    is the network boundary; `dashboard-page.js`/`file-upload-page.js` are the
+    page controllers; the views (`upload-quote-view.js`, `dashboard-view.js`,
+    `shared/status-view.js`) are plain `React.createElement` so the browser and
+    the Node acceptance run share them. The base URL comes from
+    `REACT_APP_FILE_HOSTING_URL`, default
+    `https://file-hosting-api.blippost.com`; the dashboard builds
+    `<base>/download/<cid>`, upload POSTs to `<base>/files`, and payment polls
+    `<base>/files/check-payment`. `HostingApi` must bind the injected `fetch` to
+    `globalThis` (a browser's native fetch rejects a foreign receiver — gotcha
+    #19/#36 class), and `clipboard.js` no-ops outside a browser. The `/status`
+    page was intentionally not ported, so the paid result links to no status
+    page. Specs: `psf-memo-client/specs/host-file.feature`,
+    `psf-memo-client/specs/hosted-files.feature`; architect summary:
+    `docs/reviews/host-file-pages-summary.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1276,7 +1293,29 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-08, `image-format-detection`): a client-only rendering
+Latest session (2026-10-10, `host-file-pages`): a client-only port of the
+`bch-file-hosting-web` `/host` and `/dashboard` pages. The specifier wrote
+`psf-memo-client/specs/host-file.feature` (17 scenarios: choose a file, quote
+with QR/countdown/size, already-hosted, no-file prompt, upload error, pay the
+quote from the app wallet, paid/expired/pending/check-error result, image
+gateway new-tab target, the `<base>/files` transport, no status link, and the
+navigation link) and `psf-memo-client/specs/hosted-files.feature` (8 scenarios:
+feed table and order, CID/copy/download/view cells, size/date formatting, empty
+and error messages, load more, refresh, and the navigation link). The
+coder/refactorer/architect ported the hosting services and views, added the
+routes and nav entries, and set the API base to `REACT_APP_FILE_HOSTING_URL`
+default `https://file-hosting-api.blippost.com`. The `/status` page was
+intentionally not ported. Merged to `master` at `c7c05ee` (fast-forward;
+architect code-review commit `a6770e2`; the later `c7c05ee` adds only the record
+and summary and the session-notes commit adds only the briefing and backlog, so
+`docs/reviews/host-file-pages-verification.json` is valid for the merged tree). Recorded `verify.sh client` pass 5/5 at `a6770e2` (unit 911/0,
+property 247/0, acceptance all 51 suites, lint ok, build ok); language mutation
+53/53 killed; soft Gherkin mutation host-file 146/141 and hosted-files 44/40
+(9 intrinsic survivors); CRAP clean. Independent acceptance check after merge:
+host-file 31/31 and hosted-files 13/13. Architect summary:
+`docs/reviews/host-file-pages-summary.md`.
+
+Previous session (2026-10-08, `image-format-detection`): a client-only rendering
 follow-up. The user reported that a query-string image link
 (`https://pbs.twimg.com/media/HUDsd-2XAAA6KW7?format=jpg&name=small`) rendered
 as a plain link. The specifier extended the two rendering feature files so
@@ -1960,7 +1999,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `87f0d3a` (`Record image-format-detection architect review and verification`).
+Current `master` HEAD: `c7c05ee` (`Record host-file-pages architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2001,8 +2040,9 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the latest feature is `image-format-detection`,
-merged at `87f0d3a`, after account-posts-feed's `account-profile-link` follow-up
+`specs/feature-backlog.md` (the latest feature is `host-file-pages`, merged at
+`c7c05ee`, after `image-format-detection` at `87f0d3a`, account-posts-feed's
+`account-profile-link` follow-up
 at `81c47cb`, `account-post-metadata` at `a70f36c`, `account-posts-feed` at
 `2470bc8`, and `set-bio-existing-and-cancel` at `4467e6e`). The
 `psf-memo-cli` Memo-protocol backlog below is complete except for the deferred
