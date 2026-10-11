@@ -1262,6 +1262,32 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/hosted-files.feature` (Hosted Files - 2) and
     `psf-memo-client/specs/host-file.feature` (Host File - 2, 9, 14).
 
+93. **The planned `psf-memo-cli` file-hosting port is blocked on an external
+    request, with no Gherkin yet.** On 2026-10-11 the user asked to port
+    `bch-file-hosting` CLI capabilities into `psf-memo-cli`: upload-and-pay,
+    check status, and (implicitly, via the returned URLs) get a hosted file. A
+    download/`file-get` command was explicitly dropped — the CLI only prints
+    URLs and the caller fetches them. The agreed commands are `file-upload`
+    (quote-only, no wallet), `file-host` (upload + pay + confirm), `file-status`
+    (by CID), and `file-check` (by payment address), all under a `file-*`
+    prefix. Locked decisions: env var `HOSTING_API_URL` for CLI and web; keep
+    the 2,000-sat PSF donation (`priceSats + 2,000 + fee`); upgrade to the
+    latest `minimal-slp-wallet`; reuse the `-n`/`--wif` wallet source, reporter
+    contract, acceptance harness, and the `memo-wait` injected-clock polling
+    pattern; poll 10 × 3,000 ms (injectable). Full plan and API facts:
+    `psf-memo-cli/dev-docs/file-hosting-features.md`. The changes needed from
+    the `bch-file-hosting` team (standardize `HOSTING_API_URL` incl. the CRA
+    web mirror, bind `fetch` to `globalThis` in `HostingApi`, upgrade
+    `minimal-slp-wallet`, publish/document the reusable adapter, commit
+    `dev-docs/api-contract.md`, keep `downloadUrl`/`viewUrl`/`gatewayUrls`
+    stable) are written up in
+    `psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, which the user is
+    handing to that team. **Do not write these specs until the user confirms
+    the bch team has landed the changes and reconfirms the env-var default and
+    adapter shape.** `GET /files/:cid` returns no URLs (metadata + pins only);
+    links come from `check-payment`/`alreadyHosted`, which is why `file-check`
+    is in the set.
+
 ---
 
 ## 10. Run / verify the app
@@ -1317,6 +1343,21 @@ At the end of each session, update this file:
 - Add any new gotchas to §9.
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
+
+Current session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
+Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
+into `psf-memo-cli` and to capture the decisions before implementation. Created
+`psf-memo-cli/dev-docs/file-hosting-features.md` (plan, locked decisions, API
+facts, risks, next steps) and
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` (the change request the
+user will hand to the `bch-file-hosting` team), and recorded the new FH1–FH4
+commands in `psf-memo-cli/dev-docs/feature-backlog.md` plus the root backlog.
+Commands: `file-upload` (quote-only), `file-host` (upload+pay+confirm),
+`file-status` (by CID), `file-check` (by address). Decisions: `file-*` prefix;
+`HOSTING_API_URL`; keep the 2,000-sat PSF donation; latest
+`minimal-slp-wallet`; reuse existing wallet/reporter/acceptance/polling code;
+10 × 3,000 ms polling; no download command. Blocked until the bch team lands
+its changes; see gotcha #93.
 
 Latest session (2026-10-11, `file-view-api-links`): a client-only port of the
 upstream `bch-file-hosting-web` file-view update (`7fe159b`/`5fc2fa3`). The
@@ -2097,6 +2138,15 @@ and `psf-memo-client/specs/following-feed.feature` now describe the retired
 `/posts/following` surface; retire them when a future feature touches the
 following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
+
+Pending external dependency (2026-10-11): the `psf-memo-cli` file-hosting port
+(`file-upload`, `file-host`, `file-status`, `file-check`) is planned but blocked
+on the `bch-file-hosting` team's changes to its CLI/API. All decisions and the
+change request are captured in
+`psf-memo-cli/dev-docs/file-hosting-features.md` and
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` (gotcha #93). Do not spec
+it until the user confirms the changes landed and reconfirms the env-var default
+and adapter shape.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
