@@ -136,9 +136,11 @@ For each feature:
 3. Run `bb gherkin-ir-dry-checker` to normalize/prune.
 4. Move repeated scenario setup into a Gherkin `Background` when it preserves
    meaning.
-5. **Ask the user for approval** before handing off to the coder. After approval:
-   commit with your byline (`By specifier.`), invent a short stable task name,
-   and send the file-based `git_handoff` (see §8).
+5. **Sound the chime**, then **ask the user for approval** before handing off to
+   the coder. After approval: commit with your byline (`By specifier.`), invent
+   a short stable task name, and send the file-based `git_handoff` (see §8).
+   Chime command:
+   `paplay /usr/share/sounds/freedesktop/stereo/complete.oga >/dev/null 2>&1 || canberra-gtk-play -i complete >/dev/null 2>&1 || printf '\a'`
 
 Also: do not run Gherkin acceptance mutation; run tests only when verification is
 needed.
@@ -249,8 +251,8 @@ that a single user-facing feature may require specs in more than one component.
 - After sending, check the handoff was delivered (daemon). If not, start the
   daemon (GOTCHA #2).
 - Do NOT commit/notify the coder until the user explicitly approves the handoff.
-- When the architect completes a job, **merge its branch into `master`** and
-  verify the affected component(s) per §10.
+- When the architect completes a job, **merge its branch into `master`**, sound
+  the chime, and verify the affected component(s) per §10.
 
 ---
 
