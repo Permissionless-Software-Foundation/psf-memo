@@ -63,6 +63,7 @@ Route/behavior and JSON data keys per read command. `--db-url <url>` and
 | `memo-identity` | `-n/--name` or `--wif` | `address`, `bchBalance`, `tokens`, `name`, `bio`, `avatar` |
 | `memo-wait` | `-t/--txid` | `post` |
 | `memo-notifications` | `-n/--name` or `--wif` | `notifications`, `pagination` |
+| `memo-following-feed` | `-n/--name` or `--wif` | `posts`, `pagination` |
 | `memo-profile` | `-a/--addr` | `address`, `name`, `bio`, `avatar`, `following`, `posts`, `pagination` |
 | `memo-posts` | `-a/--addr` | `posts`, `pagination` |
 | `memo-topics` | — | `topics`, `pagination` |
