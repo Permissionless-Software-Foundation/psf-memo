@@ -48,6 +48,7 @@ import MemoTopicFollow from './src/commands/memo-topic-follow.js'
 import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
 import FileUpload from './src/commands/file-upload.js'
 import FileHost from './src/commands/file-host.js'
+import FileStatus from './src/commands/file-status.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -91,6 +92,7 @@ const memoTopicFollow = new MemoTopicFollow()
 const memoTopicUnfollow = new MemoTopicUnfollow()
 const fileUpload = new FileUpload()
 const fileHost = new FileHost()
+const fileStatus = new FileStatus()
 
 const program = new Command()
 
@@ -418,8 +420,14 @@ program.command('file-host')
   .option('--json', 'print the result as one JSON object')
   .action(fileHost.run)
 
+program.command('file-status')
+  .description('Look up a hosted file by CID and print its status and pins')
+  .option('-c, --cid <string>', 'file CID')
+  .option('--json', 'print the result as one JSON object')
+  .action(fileStatus.run)
+
 program.parseAsync(process.argv)
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T17:19:07.543Z","module_hash":"66875c80a557ff1d88edb8e31f9bf258c24b05486719c6b23e4e8fc99d955801","functions":[]}
+// {"version":1,"tested_at":"2026-10-11T17:30:51.986Z","module_hash":"3fce92cf6a4b2a612dc817b5d304bb5a649e19b1f208bbdb2bbb9350f72bb605","functions":[]}
 // mutate4javascript-manifest-end

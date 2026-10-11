@@ -37,6 +37,7 @@ import { addressCommandHandlers } from './steps/address-commands.js'
 import { topicCommandHandlers } from './steps/topic-commands.js'
 import { fileUploadHandlers } from './steps/file-upload.js'
 import { fileHostHandlers } from './steps/file-host.js'
+import { fileStatusHandlers } from './steps/file-status.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -76,6 +77,7 @@ const handlers = [
   ...topicCommandHandlers,
   ...fileUploadHandlers,
   ...fileHostHandlers,
+  ...fileStatusHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -130,6 +132,12 @@ async function createWorld () {
     hostingUnpaidFirst: false,
     hostingNeverConfirms: false,
     hostingCheckPaymentCount: 0,
+    hostingJson: null,
+    hostingFile: {},
+    hostingFileStatus: null,
+    hostingHostedUntil: null,
+    hostingPins: [],
+    hostingStatusError: null,
     localFiles: { './photo.jpg': 'photo bytes' },
     walletPayments: [],
     sleepCalls: [],
@@ -166,7 +174,25 @@ async function createWorld () {
           200
         )
       }
-      return jsonResponse({ success: true, ...(world.hostingQuote || {}) }, 200)
+      return jsonResponse({ success: true, ...(world.hostingFile || {}), ...(world.hostingQuote || {}) }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/files/') && options.method === 'GET') {
+      if (world.hostingStatusError) {
+        return jsonResponse({ success: false, error: world.hostingStatusError }, 404)
+      }
+      const cid = decodeURIComponent(world.lastRequest.pathname.slice('/files/'.length))
+      return jsonResponse(
+        {
+          success: true,
+          cid,
+          ...(world.hostingFile || {}),
+          status: world.hostingFileStatus,
+          hostedUntil: world.hostingHostedUntil,
+          pins: world.hostingPins
+        },
+        200
+      )
     }
 
     if (world.lastRequest.pathname === '/files/check-payment' && options.method === 'POST') {
