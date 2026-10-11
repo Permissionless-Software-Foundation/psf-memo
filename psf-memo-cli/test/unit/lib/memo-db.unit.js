@@ -351,6 +351,12 @@ describe('#memo-db', () => {
         path: 'by',
         body: { posts: [{ txid: 'alpha' }], pagination: { total: 1 } },
         list: 'posts'
+      },
+      {
+        method: 'getFollowingFeed',
+        path: 'following',
+        body: { posts: [{ txid: 'feed-1' }], pagination: { total: 1 } },
+        list: 'posts'
       }
     ]
 

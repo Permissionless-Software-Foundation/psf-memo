@@ -27,6 +27,7 @@ import { memoTopicHandlers } from './steps/memo-topic.js'
 import { memoSearchHandlers } from './steps/memo-search.js'
 import { memoProfilesHandlers } from './steps/memo-profiles.js'
 import { memoFollowingHandlers } from './steps/memo-following.js'
+import { memoFollowingFeedHandlers } from './steps/memo-following-feed.js'
 import { memoFollowersHandlers } from './steps/memo-followers.js'
 import { memoMutedHandlers } from './steps/memo-muted.js'
 import { memoPollHandlers } from './steps/memo-poll.js'
@@ -68,6 +69,7 @@ const handlers = [
   ...memoSearchHandlers,
   ...memoProfilesHandlers,
   ...memoFollowingHandlers,
+  ...memoFollowingFeedHandlers,
   ...memoFollowersHandlers,
   ...memoMutedHandlers,
   ...memoPollHandlers,
@@ -110,6 +112,7 @@ async function createWorld () {
     pollStore: {},
     notifications: [],
     profilePosts: [],
+    followingFeed: [],
     followState: false,
     following: [],
     followers: [],
@@ -302,6 +305,19 @@ async function createWorld () {
         offset,
         total: world.profilePosts.length,
         hasMore: offset + limit < world.profilePosts.length
+      }
+      return jsonResponse({ posts: page, pagination }, 200)
+    }
+
+    if (world.lastRequest.pathname.startsWith('/posts/following/')) {
+      const limit = Number.parseInt(world.lastRequest.searchParams.get('limit') || '50', 10)
+      const offset = Number.parseInt(world.lastRequest.searchParams.get('offset') || '0', 10)
+      const page = world.followingFeed.slice(offset, offset + limit)
+      const pagination = {
+        limit,
+        offset,
+        total: world.followingFeed.length,
+        hasMore: offset + limit < world.followingFeed.length
       }
       return jsonResponse({ posts: page, pagination }, 200)
     }

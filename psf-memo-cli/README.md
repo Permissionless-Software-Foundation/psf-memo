@@ -213,6 +213,7 @@ all of them.
 | `memo-identity` | `-n/--name` or `--wif` | — | `address`, `bchBalance`, `tokens`, `name`, `bio`, `avatar` |
 | `memo-wait` | `-t/--txid` | `--timeout` (60000 ms), `--interval` (5000 ms) | `post` |
 | `memo-notifications` | `-n/--name` or `--wif` | `-l/--limit` (50), `-o/--offset` (0) | `notifications`, `pagination` |
+| `memo-following-feed` | `-n/--name` or `--wif` | `-l/--limit` (50), `-o/--offset` (0) | `posts`, `pagination` |
 | `memo-profile` | `-a/--addr` | `--viewer`, `-l/--limit` (50), `-o/--offset` (0) | `address`, `name`, `bio`, `avatar`, `following`, `posts`, `pagination` |
 | `memo-posts` | `-a/--addr` | `-l/--limit` (50), `-o/--offset` (0) | `posts`, `pagination` |
 | `memo-topics` | — | `-l/--limit` (50), `-o/--offset` (0) | `topics`, `pagination` |
@@ -236,6 +237,7 @@ node psf-memo-cli.js memo-status --json
 node psf-memo-cli.js memo-identity -n wallet1 --json
 node psf-memo-cli.js memo-wait -t <txid> --timeout 60000 --interval 5000 --json
 node psf-memo-cli.js memo-notifications -n wallet1 --limit 10 --json
+node psf-memo-cli.js memo-following-feed -n wallet1 --limit 10 --json
 node psf-memo-cli.js memo-profile -a <addr> --viewer <addr> --json
 node psf-memo-cli.js memo-posts -a <addr> --limit 10 --json
 node psf-memo-cli.js memo-topics --limit 10 --json

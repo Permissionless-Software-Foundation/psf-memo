@@ -66,6 +66,12 @@ class MemoDb {
     return this.getAddrPage('by', addr, page)
   }
 
+  // GET /posts/following/:addr. Returns one page of the aggregate top-level
+  // posts authored by the addresses the viewer follows.
+  async getFollowingFeed (addr, page = {}) {
+    return this.getAddrPage('following', addr, page)
+  }
+
   // GET /follow/state?follower=&followee=. Returns the follow state document.
   async getFollowState (follower, followee) {
     return this.getJson(`/follow/state?${toQuery({ follower, followee })}`)

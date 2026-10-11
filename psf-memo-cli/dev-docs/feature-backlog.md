@@ -416,9 +416,9 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
 
 ---
 
-## File-hosting commands (in progress — resumed 2026-10-11)
+## File-hosting commands (complete — 2026-10-11)
 
-**Status**: IN PROGRESS. The external blocker is cleared: the `bch-file-hosting`
+**Status**: COMPLETE (all FH1–FH4 merged). The external blocker is cleared: the `bch-file-hosting`
 team landed `HOSTING_API_URL` (default `http://localhost:5050`), the
 `fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, and
 `minimal-slp-wallet` 7.1.5. **FH1 `file-upload` is DONE** (merged to `master` at
@@ -431,8 +431,12 @@ independent acceptance 14/14), including the `minimal-slp-wallet` `5.12.1 →
 **FH3 `file-status` is DONE** (merged to `master` at `b6ec762`; architect review
 `94c671b`; `verify.sh cli` pass 4/4, record
 `docs/reviews/file-status-verification.json`; independent acceptance 8/8).
-**FH4 `file-check` is in progress** (spec
-`psf-memo-cli/specs/file-check.feature`).
+**FH4 `file-check` is DONE** (merged to `master` at `be28c77`; architect review
+`dea6b87`; `verify.sh cli` pass 4/4, record
+`docs/reviews/file-check-verification.json`; independent acceptance 10/10, plus
+file-status 8/8 and file-host 14/14 after the shared `HostingCommand` refactor).
+**FH1–FH4 complete.** The file-hosting port is done; the next direction is the
+client front-end backlog.
 
 A second job beyond the Memo protocol: port a subset of the
 `bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the
@@ -454,6 +458,54 @@ Locked decisions: `file-*` prefix; `HOSTING_API_URL` for CLI and web; keep the
 `-n`/`--wif` wallet source, reporter contract, acceptance harness, and
 `memo-wait` polling pattern; poll 10 × 3,000 ms (injectable). `file-list` and a
 download command are out of scope.
+
+---
+
+## Agent-interface parity (new 2026-10-11)
+
+`psf-memo-cli` is the agent-facing mirror of the `psf-memo-client` web UI, and
+`psf-memo-cli/SKILL.md` documents it for agents. These follow-ups close the
+remaining parity gaps between the two interfaces. Each is delivered as its own
+specifier → coder → refactorer → architect cycle.
+
+### AF1 — The Following feed (`memo-following-feed`) — IN PROGRESS
+
+**Specified:** `psf-memo-cli/specs/memo-following-feed.feature` (wallet-relative
+`memo-following-feed`, reads `GET /posts/following/:addr`, reports
+`{ posts, pagination }`).
+
+Resolved: the single-author feed already exists as `memo-posts -a <addr>`
+(`GET /posts/by/:addr`), so the genuinely missing parity feature is the web's
+**Following** tab — the aggregate of top-level posts from the profiles the
+viewer follows (replies and the viewer's own posts excluded), backed by the
+existing DB route `GET /posts/following/:addr` and the client
+`following-feed-page.js`. The command identifies the viewer from the wallet
+(`-n`/`--wif`) like `memo-notifications`, passes `-l/--limit` (50) and
+`-o/--offset` (0) through, and relies on psf-memo-db for the follow-join,
+exclusion, and ordering (X6 pagination fidelity). A friendlier single-author
+command/alias remains a possible separate tweak, not this item.
+
+### AF2 — `--json` on every command
+
+Resolved decision 4 (2026-10-06) is "`--json` on every command", but the wallet,
+send, and signing commands still print human-readable text only:
+`wallet-create`, `wallet-list`, `wallet-addrs`, `wallet-balance`,
+`wallet-sweep`, `send-bch`, `send-tokens`, `msg-sign`, and `msg-verify`.
+
+Add the shared F5 reporter contract (`--json` prints one JSON object to stdout;
+failures print `{ "error": "<message>" }` to stderr; exit `0`/`1`/`2`) to each,
+with a stable data shape — for example `wallet-list` → `{ wallets: [...] }`,
+`wallet-balance` → `{ address, bchBalance, tokens }`, `send-bch` →
+`{ txid, explorerUrl }`, `msg-sign` → `{ address, message, signature }`, and
+`msg-verify` → `{ address, message, valid }`. Keep the existing human output
+unchanged. This makes the whole CLI machine-readable.
+
+### AF3 — Update `psf-memo-cli/SKILL.md`
+
+After AF1 and AF2 land, update the skill to document the new feed command and
+the new `--json` shapes, and remove the caveat that the
+`wallet-*`/`send-*`/`msg-*` commands lack `--json`. Add the new commands to the
+Web UI → CLI map and the use-case examples.
 
 ---
 
