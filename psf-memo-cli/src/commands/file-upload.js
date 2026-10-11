@@ -83,3 +83,7 @@ class FileUpload {
 }
 
 export default FileUpload
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T16:26:44.008Z","module_hash":"6969e176e2c622dc687390de0f31e5430f9396883d9523904fbd9d0502269a24","functions":[{"id":"func/FileUpload.constructor","name":"FileUpload.constructor","line":25,"end_line":42,"hash":"dcd24fa209ce2800da6b4b38e84032b8ae81c3b2dac223dea2739dd8e4cbc6c9"},{"id":"func/FileUpload.run","name":"FileUpload.run","line":46,"end_line":63,"hash":"644310eadd259a221cc6de20694e9c54a1eaa170b2a3bad640996222ce3273a9"},{"id":"func/FileUpload.validateFlags","name":"FileUpload.validateFlags","line":67,"end_line":73,"hash":"14cbac7224cdb917a6c5c721e1db989de1804292b5036081639d5c1abfb83d4a"},{"id":"func/FileUpload.readLocalFile","name":"FileUpload.readLocalFile","line":76,"end_line":82,"hash":"35bdfa4044f7e030781a2d9964ebc04f75d01a7ead115f296e9f3546b71d18c6"}]}
+// mutate4javascript-manifest-end

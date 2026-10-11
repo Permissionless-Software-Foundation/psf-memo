@@ -167,6 +167,12 @@ describe('#file-upload command', () => {
     assert.equal(parsed.paymentAddress, 'bitcoincash:qother')
   })
 
+  it('returns true from validateFlags when the file flag is present', () => {
+    const command = new FileUpload({ HostingApiClass: fakeHostingApi().FakeHostingApi })
+
+    assert.equal(command.validateFlags({ file: './photo.jpg' }), true)
+  })
+
   it('throws a UsageError with the documented message from validateFlags', () => {
     const command = new FileUpload({ HostingApiClass: fakeHostingApi().FakeHostingApi })
 

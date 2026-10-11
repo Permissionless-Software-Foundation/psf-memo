@@ -20,6 +20,19 @@ export async function resolveWalletSource (
   { name, wif } = {},
   { walletUtil = new WalletUtil() } = {}
 ) {
+  validateWalletSource({ name, wif })
+
+  const wallet = name
+    ? await walletUtil.instanceWallet(name)
+    : await walletUtil.instanceWalletFromWif(wif)
+
+  return { wallet, address: wallet.walletInfo.cashAddress }
+}
+
+// Validate that exactly one wallet source is present, throwing the shared
+// usage error for zero or two sources. Split from resolution so a command can
+// reject a bad source before doing any work.
+export function validateWalletSource ({ name, wif } = {}) {
   if (name && wif) {
     throw new UsageError(BOTH_SOURCES)
   }
@@ -28,11 +41,7 @@ export async function resolveWalletSource (
     throw new UsageError(NO_SOURCE)
   }
 
-  const wallet = name
-    ? await walletUtil.instanceWallet(name)
-    : await walletUtil.instanceWalletFromWif(wif)
-
-  return { wallet, address: wallet.walletInfo.cashAddress }
+  return true
 }
 
 // mutate4javascript-manifest-begin

@@ -14,7 +14,10 @@ import { assertEqual, resolveParam, resolveTemplate } from '../step-support.js'
 import { createRecordingWallet } from '../wallet-support.js'
 
 // Broadcast the configured action, recording either the result or the error.
+// The action is defaulted here so scenarios that only exercise reporting still
+// have a valid prefix and field to broadcast.
 async function broadcastAndReport (world) {
+  defaultAction(world)
   world.result = null
   world.error = null
   try {
@@ -127,7 +130,6 @@ const memoBroadcastHandlers = [
     pattern: /^the wallet returns the transaction id "(.+)"$/,
     run (m, example, world) {
       world.broadcastTxid = resolveParam(m[1], example)
-      defaultAction(world)
     }
   },
   {
@@ -135,7 +137,6 @@ const memoBroadcastHandlers = [
     pattern: /^the wallet rejects the broadcast with the error "(.+)"$/,
     run (m, example, world) {
       world.broadcastError = resolveParam(m[1], example)
-      defaultAction(world)
     }
   },
   {

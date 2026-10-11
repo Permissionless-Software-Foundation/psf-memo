@@ -29,3 +29,19 @@ export function createRecordingWallet (world, { cashAddress, hasSpendableOutput 
     }
   }
 }
+
+// A wallet stand-in for the file-host command. It records every BCH payment it
+// is asked to send and returns the scenario's transaction id.
+export function createPayingWallet (world, { cashAddress } = {}) {
+  return {
+    walletInfo: { cashAddress },
+    initialized: false,
+    async initialize () {
+      this.initialized = true
+    },
+    async send (outputs) {
+      world.walletPayments.push(...outputs)
+      return world.broadcastTxid
+    }
+  }
+}
