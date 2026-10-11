@@ -16,7 +16,7 @@ import path from 'node:path'
 import WalletSweep from '../../../src/commands/wallet-sweep.js'
 import WalletList from '../../../src/commands/wallet-list.js'
 import MemoFollowing from '../../../src/commands/memo-following.js'
-import { captureConsole, captureStream } from '../../../test/support/capture.js'
+import { captureStream } from '../../../test/support/capture.js'
 import { resolveTemplate } from '../step-support.js'
 
 const WALLETS_DIR = path.resolve(import.meta.dirname, '..', '..', '..', '.wallets')
@@ -39,15 +39,19 @@ function walletWithSecrets (cashAddress, wif) {
 // Run the real wallet-sweep command with a fake wallet and a stubbed sweep, so
 // only the command's own output path is exercised.
 async function runWalletSweep (world) {
-  const sweep = new WalletSweep()
-  sweep.walletUtil = {
-    instanceWallet: async () => walletWithSecrets('bitcoincash:qwallet', 'wallet-private-key')
-  }
+  const out = captureStream()
+  const sweep = new WalletSweep({
+    walletUtil: {
+      instanceWallet: async () => walletWithSecrets('bitcoincash:qwallet', 'wallet-private-key')
+    },
+    stdout: out.stream,
+    stderr: captureStream().stream
+  })
   sweep.sweepWif = async () => world.sweepTxid
 
-  world.sweepOutput = await captureConsole(() =>
-    sweep.run({ name: 'wallet1', wif: world.sweepWif })
-  )
+  await sweep.run({ name: 'wallet1', wif: world.sweepWif })
+  process.exitCode = 0
+  world.sweepOutput = out.text()
 }
 
 // Run the real memo-following command in JSON mode against a fake wallet and a
@@ -89,8 +93,11 @@ async function runWalletList (world) {
   )
 
   try {
-    const list = new WalletList()
-    world.walletListOutput = await captureConsole(() => list.run())
+    const out = captureStream()
+    const list = new WalletList({ stdout: out.stream, stderr: captureStream().stream })
+    await list.run()
+    process.exitCode = 0
+    world.walletListOutput = out.text()
   } finally {
     await fs.rm(world.walletListFile, { force: true })
   }

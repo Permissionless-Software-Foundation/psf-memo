@@ -2,42 +2,46 @@
   Cryptographically sign a message with your private key.
 */
 
-// Global npm libraries
-
 // Local libraries
-import WalletUtil from '../lib/wallet-util.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initWalletCommand } from '../lib/init-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
+import { runCommand } from '../lib/reporter.js'
 
 class MsgSign {
-  constructor () {
-    // Encapsulate Dependencies
-    this.walletUtil = new WalletUtil()
-
-    // Bind 'this' object to all subfunctions.
-    bindMethods(this, ['run', 'validateFlags', 'sign'])
+  constructor (options = {}) {
+    initWalletCommand(this, options, ['sign'])
   }
 
-  async run (flags) {
-    try {
+  async run (flags = {}) {
+    const code = await runCommand(async () => {
       this.validateFlags(flags)
 
       // Initialize the wallet.
       this.bchWallet = await this.walletUtil.instanceWallet(flags.name)
 
-      // Sweep any BCH and tokens from the private key.
       const signObj = await this.sign(flags)
 
-      console.log('Signed message with key associated with this address: ', signObj.bchAddr)
-      console.log(`Input message: ${signObj.msg}`)
-      console.log('Signature:')
-      console.log(signObj.signature)
+      return {
+        message: [
+          `Signed message with key associated with this address:  ${signObj.bchAddr}`,
+          `Input message: ${signObj.msg}`,
+          'Signature:',
+          signObj.signature
+        ].join('\n'),
+        data: {
+          cashAddress: signObj.bchAddr,
+          message: signObj.msg,
+          signature: signObj.signature
+        }
+      }
+    }, {
+      json: flags.json,
+      stdout: this.stdout,
+      stderr: this.stderr
+    })
 
-      return true
-    } catch (err) {
-      console.error('Error in msg-sign: ', err)
-      return 0
-    }
+    process.exitCode = code
+    return code
   }
 
   validateFlags (flags = {}) {
@@ -48,24 +52,17 @@ class MsgSign {
   }
 
   async sign (flags) {
-    try {
-      const walletWif = this.bchWallet.walletInfo.privateKey
+    const walletWif = this.bchWallet.walletInfo.privateKey
 
-      const signature = this.bchWallet.bchjs.BitcoinCash.signMessageWithPrivKey(
-        walletWif,
-        flags.msg
-      )
+    const signature = this.bchWallet.bchjs.BitcoinCash.signMessageWithPrivKey(
+      walletWif,
+      flags.msg
+    )
 
-      const outObj = {
-        signature,
-        bchAddr: this.bchWallet.walletInfo.cashAddress,
-        msg: flags.msg
-      }
-
-      return outObj
-    } catch (err) {
-      console.error('Error in sign()')
-      throw err
+    return {
+      signature,
+      bchAddr: this.bchWallet.walletInfo.cashAddress,
+      msg: flags.msg
     }
   }
 }
@@ -73,5 +70,5 @@ class MsgSign {
 export default MsgSign
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T14:47:43.288Z","module_hash":"bcbf737e1b5a5f3518fd2998f9992a82e8950786afe5bf6a0657ee0da44043bc","functions":[{"id":"func/MsgSign.constructor","name":"MsgSign.constructor","line":13,"end_line":19,"hash":"001dbfc0437af2e9663bc384ff00a8da5d1b223e31f28792e7d35b7c443bf6cd"},{"id":"func/MsgSign.run","name":"MsgSign.run","line":21,"end_line":41,"hash":"cd5e5ff22f6bcc5ffee5471aec8438549e9040cbb04e71a06f318e534c68d5b8"},{"id":"func/MsgSign.validateFlags","name":"MsgSign.validateFlags","line":43,"end_line":48,"hash":"0d7781b2dfd5a6ecf25940ae7aa5912b0779d17e2d56cd48e5967d28f7f90337"},{"id":"func/MsgSign.sign","name":"MsgSign.sign","line":50,"end_line":70,"hash":"0f86e0c35c7159cc2090efbe7409ca142168d3b92c64a6a1bb788af8d1ce8caa"}]}
+// {"version":1,"tested_at":"2026-10-11T18:42:33.800Z","module_hash":"c8cbb18813f60a463fa2f59b016a05b0d96a27f622c85f27dfc6997cf2640bea","functions":[{"id":"func/MsgSign.constructor","name":"MsgSign.constructor","line":11,"end_line":13,"hash":"e207891b9f45e51a3d6ba20a4db5f550d69f1432db85868adeabc5b85e73760a"},{"id":"func/MsgSign.run","name":"MsgSign.run","line":15,"end_line":45,"hash":"d562b6e7ef0ba8be8ba6679ca19ec304887b577445808cac7bf79d48cc234ca3"},{"id":"func/MsgSign.validateFlags","name":"MsgSign.validateFlags","line":47,"end_line":52,"hash":"0d7781b2dfd5a6ecf25940ae7aa5912b0779d17e2d56cd48e5967d28f7f90337"},{"id":"func/MsgSign.sign","name":"MsgSign.sign","line":54,"end_line":67,"hash":"6d45e62f1f0bce63f231e7a2102712f0d7267585b2d92129454d75e2a841a776"}]}
 // mutate4javascript-manifest-end

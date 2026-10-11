@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-11T18:52:14.249953595Z","feature_name":"CLI JSON Output","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/cli-json-output.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[{"index":9,"name":"CLI JSON Output - 10 a missing required flag is a usage error in JSON mode","scenario_hash":"a44dca7962e44ec3cacfc620cdf1efea11a99ae8a66f533ab1c9b8ad945cee40","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-11T18:52:14.249953595Z"}]}
+# acceptance-mutation-manifest-end
+
 # CLI JSON Output (AF2): extend the shared F5 output contract to the wallet,
 # send, and signing commands, which until now printed only human text and
 # swallowed errors (catching them and returning 0, so the process still exited

@@ -49,6 +49,7 @@ import { walletSourceHandlers } from './steps/wallet-source.js'
 import { wireEncodingHandlers } from './steps/wire-encoding.js'
 import { secretHygieneHandlers } from './steps/secret-hygiene.js'
 import { readOnlySafetyHandlers } from './steps/read-only-safety.js'
+import { cliJsonOutputHandlers } from './steps/cli-json-output.js'
 
 const handlers = [
   ...memoDbHandlers,
@@ -78,6 +79,7 @@ const handlers = [
   ...memoAvatarHandlers,
   ...addressCommandHandlers,
   ...topicCommandHandlers,
+  ...cliJsonOutputHandlers,
   ...fileUploadHandlers,
   ...fileHostHandlers,
   ...fileStatusHandlers,
