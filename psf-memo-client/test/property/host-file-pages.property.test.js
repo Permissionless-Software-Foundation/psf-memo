@@ -141,7 +141,7 @@ test('waitForConfirmation terminates paid or pending within the window', async (
       await page.payFromWallet()
       const state = await page.waitForConfirmation()
       return paidAfter >= 0
-        ? state.status === 'paid' && state.txid === txid && polls === paidAfter + 1
+        ? state.status === 'paid' && state.txid === txid && state.viewUrl === 'u' && polls === paidAfter + 1
         : state.status === 'pending' && polls === maxConfirmations
     },
     { label: 'host file confirmation window' }

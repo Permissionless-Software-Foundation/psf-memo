@@ -13,6 +13,9 @@
       CID is its first and last eight characters joined by "...".
     - feed mapping: load maps every feed record in order, keeps the public
       fields, and uses the feed's download and view URLs.
+    - URL fallback: a feed record that omits the download URL falls back to
+      the configured base (with any trailing slashes trimmed), and a missing
+      view URL becomes empty.
     - paging: loadMore appends exactly the next page and follows its cursor,
       and is a no-op without a cursor.
     - single source: the view and the page service share one empty message.
@@ -130,6 +133,24 @@ test('load maps every feed record in order and uses its download and view URLs',
       })
     },
     { label: 'dashboard load mapping' }
+  )
+})
+
+test('load falls back to the configured base for the download URL and trims trailing slashes', async () => {
+  await forAll(
+    () => {
+      const cid = randomCid()
+      const slashes = '/'.repeat(intGen(rng, 0, 3)())
+      return { cid, base: BASE + slashes }
+    },
+    async ({ cid, base }) => {
+      const api = { getFeed: async () => ({ files: [{ status: 'pinned', cid, filename: 'f.bin' }], nextCursor: null }) }
+      const page = new DashboardPage({ hostingApi: api, downloadBaseUrl: base })
+      const state = await page.load()
+      const file = state.files[0]
+      return file.downloadUrl === `${BASE}/download/${cid}` && file.viewUrl === ''
+    },
+    { label: 'dashboard URL fallback' }
   )
 })
 
