@@ -41,6 +41,12 @@ describe('#wallet-sweep', () => {
     await fs.rm(filename)
   })
 
+  describe('#constructor', () => {
+    it('defaults the sweep library when none is injected', () => {
+      assert.isFunction(new WalletSweep().BchTokenSweep)
+    })
+  })
+
   describe('#sweepWif', () => {
     it('should sweep funds from a private key', async () => {
       // Instantiate the minimal-slp-wallet

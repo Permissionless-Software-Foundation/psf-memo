@@ -33,5 +33,5 @@ export function initWalletCommand (command, { walletUtil, ...options } = {}, met
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T18:37:56.483Z","module_hash":"286933f9eb969de7885a46c3cea6d0640a1b20792b3cfa81e27c7aee0d49792a","functions":[{"id":"func/initCommand","name":"initCommand","line":16,"end_line":24,"hash":"0509e976131c3112a2cd654ecf1c73a3eba95efd51c0b373f842f2d51166f8a5"},{"id":"func/initWalletCommand","name":"initWalletCommand","line":28,"end_line":33,"hash":"801df140e7f6dee8cb3cb27c8162deb58367ee6b95d130b7c189cf291e281d92"}]}
+// {"version":1,"tested_at":"2026-10-11T18:41:00.293Z","module_hash":"286933f9eb969de7885a46c3cea6d0640a1b20792b3cfa81e27c7aee0d49792a","functions":[{"id":"func/initCommand","name":"initCommand","line":16,"end_line":24,"hash":"0509e976131c3112a2cd654ecf1c73a3eba95efd51c0b373f842f2d51166f8a5"},{"id":"func/initWalletCommand","name":"initWalletCommand","line":28,"end_line":33,"hash":"801df140e7f6dee8cb3cb27c8162deb58367ee6b95d130b7c189cf291e281d92"}]}
 // mutate4javascript-manifest-end

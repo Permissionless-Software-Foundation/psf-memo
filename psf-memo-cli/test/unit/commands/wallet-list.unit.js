@@ -65,6 +65,25 @@ describe('#wallet-list', () => {
 
       assert.deepEqual(data, [])
     })
+
+    it('parses every wallet file the store returns, in order', async () => {
+      // Pin a controlled store so the parse loop is not dependent on which
+      // wallet files happen to be in .wallets/ on the test machine.
+      sandbox.stub(uut.shelljs, 'ls').returns([
+        '/root/.wallets/alpha.json',
+        '/root/.wallets/beta.json'
+      ])
+      sandbox.stub(uut, 'readFile').callsFake(async (file) =>
+        JSON.stringify({ wallet: { description: file.includes('alpha') ? 'desc-A' : 'desc-B' } })
+      )
+
+      const data = await uut.parseWallets()
+
+      assert.deepEqual(data, [
+        ['alpha', 'desc-A'],
+        ['beta', 'desc-B']
+      ])
+    })
   })
 
   describe('#run', () => {
