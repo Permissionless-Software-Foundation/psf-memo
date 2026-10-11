@@ -1751,9 +1751,9 @@ architect review `af7cb4b`, `docs/reviews/file-upload-verification.json` pass
 4/4, independent acceptance 13/13). **FH2 `file-host` is DONE** (spec `7180fc9`,
 merged to `master` at `938bf7c`, architect review `d09f222`,
 `docs/reviews/file-host-verification.json` pass 4/4, independent acceptance
-14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. Next: FH3
-`file-status`, then FH4 `file-check` (prefix `file-*`, keep the 2,000-sat PSF
-donation).
+14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. **FH3
+`file-status` is in progress** (spec `b2adce1`). Next: FH4 `file-check` (prefix
+`file-*`, keep the 2,000-sat PSF donation).
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
