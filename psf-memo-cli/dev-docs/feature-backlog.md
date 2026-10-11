@@ -424,9 +424,10 @@ team landed `HOSTING_API_URL` (default `http://localhost:5050`), the
 `minimal-slp-wallet` 7.1.5. **FH1 `file-upload` is DONE** (merged to `master` at
 `8fbb8d4`; architect review `af7cb4b`; `verify.sh cli` pass 4/4, record
 `docs/reviews/file-upload-verification.json`; independent acceptance 13/13).
-**FH2 `file-host` is in progress** with the `minimal-slp-wallet` `5.12.1 →
-7.1.5` upgrade bundled into the task: do the upgrade first and validate the
-`send()` path (including the 2,000-sat PSF donation), then add `file-host`.
+**FH2 `file-host` is DONE** (merged to `master` at `938bf7c`; architect review
+`d09f222`; `verify.sh cli` pass 4/4, record `docs/reviews/file-host-verification.json`;
+independent acceptance 14/14), including the `minimal-slp-wallet` `5.12.1 →
+7.1.5` upgrade with the `send()` path and the 2,000-sat PSF donation validated.
 FH3–FH4 are queued.
 
 A second job beyond the Memo protocol: port a subset of the

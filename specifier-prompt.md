@@ -1366,7 +1366,10 @@ merged feature's acceptance test re-ran clean (13/13). Then specified FH2
 wallet payment → poll 10 × 3000 ms, already-hosted short-circuit,
 usage/runtime/payment errors, and JSON) and committed it at `7180fc9` with the
 `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade bundled into the task; handed off
-to the coder.
+to the coder. FH2 then completed the pipeline (coder `5fc59f2`, refactorer
+`cdea96d`, architect review `d09f222`, record/summary `692f9ca`), merged to
+`master` at `938bf7c`; the merged feature's acceptance re-ran clean (14/14) and
+the full `verify.sh cli` record passed 4/4 after the wallet upgrade.
 
 Previous session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
 Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
@@ -2124,8 +2127,8 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `7180fc9` (`Specify file-host (FH2): pay and confirm a hosting upload`);
-FH1 is merged/verified and FH2 is in the pipeline.
+Current `master` HEAD: `938bf7c` (`Merge file-host (FH2) into master`);
+FH1/FH2 are merged and verified.
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2172,11 +2175,10 @@ the requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
 `psf-memo-cli/dev-docs/file-hosting-features.md`,
 `psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, and gotcha #93.
 
-Next action: **wait for the architect's completion handoff for `file-host`**,
-then merge, sound the chime, verify (the bundled `minimal-slp-wallet` upgrade
-touches the full CLI suite, so confirm the architect's record covers it), and
-spec FH3 `file-status`. FH1 `file-upload` is merged and verified; FH2
-`file-host` is in the pipeline. The active backlog is the resumed
+Next action: **spec FH3 `file-status`** (look up a file by CID `-c`, print
+name/size/status/hosting window/pins, no wallet) after confirming with the
+user; FH1 `file-upload` and FH2 `file-host` (with the `minimal-slp-wallet`
+upgrade) are merged and verified. The active backlog is the resumed
 `psf-memo-cli` file-hosting port
 (`psf-memo-cli/dev-docs/feature-backlog.md`, FH2–FH4); the client front-end
 backlog remains the fallback — `psf-memo-client` improvements in
