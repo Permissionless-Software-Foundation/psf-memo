@@ -1,5 +1,9 @@
 /*
   Unit tests for the wallet-balance command.
+
+  The balance summarization/rendering is pure and tested directly; the command
+  is tested for the shared output contract (human, JSON, usage exit 2, runtime
+  exit 1) and the wallet UTXO summing.
 */
 
 // Global npm libraries
@@ -11,13 +15,16 @@ import { promises as fs } from 'fs'
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import BchWalletMock from '../../mocks/msw-mock.js'
 import WalletBalance from '../../../src/commands/wallet-balance.js'
-import WalletServiceMock from '../../mocks/wallet-service-mock.js'
+import { summarizeBalance, formatBalanceMessage } from '../../../src/lib/wallet-balance.js'
+import { UsageError } from '../../../src/lib/reporter.js'
+import { captureStream } from '../../support/capture.js'
+
 const walletCreate = new WalletCreate()
 
 const __dirname = import.meta.dirname
 const filename = `${__dirname.toString()}/../../../.wallets/test123.json`
 
-// Build a minimal wallet-shaped object for displayBalance tests.
+// Build a minimal wallet-shaped object for summarizeBalance tests.
 function buildWalletData ({ tokens = [], mintBatons = [] } = {}) {
   return {
     satBalance: 0,
@@ -56,137 +63,71 @@ describe('#wallet-balance', () => {
     await fs.rm(filename)
   })
 
-  describe('#displayBalance', () => {
-    it('should display wallet balances', () => {
-      const mockWallet = new BchWalletMock()
-      // console.log('mockWallet: ', mockWallet)
-
-      const result = uut.displayBalance(mockWallet)
-
-      assert.equal(result, true)
-    })
-
-    it('should display verbose UTXO data when flag is set', () => {
-      const mockWallet = new BchWalletMock()
-      // console.log('mockWallet: ', mockWallet)
-
-      const flags = {
-        verbose: true
-      }
-
-      const result = uut.displayBalance(mockWallet, flags)
-
-      assert.equal(result, true)
-    })
-
-    it('should catch and throw errors', () => {
-      try {
-        uut.displayBalance()
-
-        assert.fail('Unexpected code path')
-      } catch (err) {
-        // console.log(err)
-        assert.include(err.message, 'Cannot read prop')
-      }
-    })
-
-    it('should display minting batons', () => {
-      const mockWallet = new BchWalletMock()
-      // console.log('mockWallet: ', mockWallet)
-
-      // Force UTXOs
-      mockWallet.utxos.utxoStore = {
-        bchUtxos: [{
-          height: 744046,
-          tx_hash: '227354c9827f4e3c9ce24dd9197b314f7da8a2224f4874ca11104c8fdc58f684',
-          tx_pos: 3,
-          value: 577646,
-          txid: '227354c9827f4e3c9ce24dd9197b314f7da8a2224f4874ca11104c8fdc58f684',
-          vout: 3,
-          address: 'bitcoincash:qr2u4f2dmva6yvf3npkd5lquryp09qk7gs5vxl423h',
-          isSlp: false,
-          satoshis: 577646
-        }],
-        slpUtxos: {
-          type1: {
-            tokens: [],
-            mintBatons: []
-          },
-          group: {
-            tokens: [],
-            mintBatons: [{
-              tokenId: '227354c9827f4e3c9ce24dd9197b314f7da8a2224f4874ca11104c8fdc58f684',
-              tx_hash: '227354c9827f4e3c9ce24dd9197b314f7da8a2224f4874ca11104c8fdc58f684',
-              tx_pos: 4,
-              value: 546,
-              tokenType: 129,
-              utxoType: 'group',
-              decimals: 0
-            }]
-          },
-          nft: {
-            tokens: []
-          }
-        }
-      }
-
-      const result = uut.displayBalance(mockWallet)
-
-      assert.equal(result, true)
-    })
-
-    it('should print every token balance', () => {
-      const logged = []
-      sandbox.stub(console, 'log').callsFake((...args) => logged.push(args.join(' ')))
-
-      const walletData = buildWalletData({
-        tokens: [
-          { tokenId: 'a', ticker: 'AAA', qtyStr: '1' },
-          { tokenId: 'b', ticker: 'BBB', qtyStr: '2' }
-        ]
+  describe('#wallet-balance helper', () => {
+    it('summarizes the BCH balance, tokens, and minting batons', () => {
+      const summary = summarizeBalance({
+        ...buildWalletData({
+          tokens: [
+            { tokenId: 'a', ticker: 'AAA', qtyStr: '1' },
+            { tokenId: 'b', ticker: 'BBB', qtyStr: '2' }
+          ],
+          mintBatons: [{ ticker: 'AAA', tokenType: 129, tokenId: 'a' }]
+        }),
+        satBalance: 100000,
+        bchBalance: 0.001
       })
 
-      const result = uut.displayBalance(walletData)
-
-      assert.equal(result, true)
-      const output = logged.join('\n')
-      assert.include(output, 'AAA 1 a')
-      assert.include(output, 'BBB 2 b')
+      assert.equal(summary.satBalance, 100000)
+      assert.equal(summary.bchBalance, 0.001)
+      assert.deepEqual(summary.tokens, [
+        { tokenId: 'a', qty: 1, ticker: 'AAA' },
+        { tokenId: 'b', qty: 2, ticker: 'BBB' }
+      ])
+      assert.equal(summary.mintBatons.length, 1)
     })
 
-    it('should not print a minting-batons section when there are none', () => {
-      const logged = []
-      sandbox.stub(console, 'log').callsFake((...args) => logged.push(args.join(' ')))
+    it('renders the BCH balance, every token, and every minting baton', () => {
+      const message = formatBalanceMessage({
+        satBalance: 100000,
+        bchBalance: 0.001,
+        tokens: [
+          { tokenId: 'a', ticker: 'AAA', qty: 1 },
+          { tokenId: 'b', ticker: 'BBB', qty: 2 }
+        ],
+        mintBatons: [{ ticker: 'AAA', tokenType: 129, tokenId: 'a' }]
+      })
 
-      uut.displayBalance(buildWalletData())
-
-      assert.notInclude(logged.join('\n'), 'Minting Batons')
+      assert.include(message, 'BCH balance: 100000 satoshis or 0.001 BCH')
+      assert.include(message, 'AAA 1 a')
+      assert.include(message, 'BBB 2 b')
+      assert.include(message, 'Minting Batons')
+      assert.include(message, 'AAA (Group) a')
     })
 
-    it('should print every minting baton', () => {
-      const logged = []
-      sandbox.stub(console, 'log').callsFake((...args) => logged.push(args.join(' ')))
-
-      const walletData = buildWalletData({
+    it('labels a type-1 baton as Fungible', () => {
+      const message = formatBalanceMessage({
+        satBalance: 0,
+        bchBalance: 0,
+        tokens: [],
         mintBatons: [{ ticker: 'AAA', tokenType: 1, tokenId: 'a' }]
       })
 
-      uut.displayBalance(walletData)
+      assert.include(message, 'AAA (Fungible) a')
+    })
 
-      const output = logged.join('\n')
-      assert.include(output, 'Minting Batons')
-      assert.include(output, 'AAA (Fungible) a')
+    it('omits the minting-batons section when there are none', () => {
+      const message = formatBalanceMessage({ satBalance: 0, bchBalance: 0, tokens: [], mintBatons: [] })
+
+      assert.notInclude(message, 'Minting Batons')
     })
   })
 
   describe('#getBalances', () => {
     it('should return wallet instance with updated UTXOs', async () => {
       // Mock dependencies
-      uut.walletService = new WalletServiceMock()
       uut.bchWallet = new BchWalletMock()
 
       const result = await uut.getBalances()
-      // console.log('result: ', result)
 
       assert.property(result, 'walletInfo')
       assert.property(result, 'utxos')
@@ -201,7 +142,6 @@ describe('#wallet-balance', () => {
 
         assert.fail('Unexpected code path')
       } catch (err) {
-        // console.log('err: ', err)
         assert.include(err.message, 'read properties')
       }
     })
@@ -212,10 +152,13 @@ describe('#wallet-balance', () => {
       assert.equal(uut.validateFlags({ name: 'test' }), true, 'return true')
     })
 
-    it('validateFlags() should throw error if name is not supplied.', () => {
+    it('validateFlags() should throw a UsageError if name is not supplied.', () => {
       try {
         uut.validateFlags({})
+
+        assert.fail('Unexpected code path')
       } catch (err) {
+        assert.instanceOf(err, UsageError)
         assert.include(
           err.message,
           'You must specify a wallet name with the -n flag',
@@ -226,25 +169,72 @@ describe('#wallet-balance', () => {
   })
 
   describe('#run', () => {
-    it('should execute the run function', async () => {
-      // Mock dependencies
-      sandbox.stub(uut, 'getBalances').resolves({})
-      sandbox.stub(uut, 'displayBalance').resolves({})
-      sandbox.stub(uut.walletUtil, 'instanceWallet').resolves(new BchWalletMock())
+    it('prints one JSON object with the BCH and token balances', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const wallet = new BchWalletMock()
+      wallet.utxos.utxoStore.slpUtxos.type1.tokens = [
+        { tokenId: 'tkn', ticker: 'TKN', qtyStr: '42.5' }
+      ]
+      const command = new WalletBalance({
+        walletUtil: { instanceWallet: async () => wallet },
+        stdout: out.stream,
+        stderr: err.stream
+      })
 
-      const flags = {
-        name: 'test123'
-      }
+      const code = await command.run({ name: 'agent', json: true })
 
-      const result = await uut.run(flags)
-
-      assert.equal(result, true)
+      assert.equal(code, 0)
+      assert.equal(err.text(), '')
+      const parsed = JSON.parse(out.text())
+      assert.equal(parsed.bchBalance, 20406 / 1e8)
+      const token = parsed.tokens.find((entry) => entry.ticker === 'TKN')
+      assert.equal(token.qty, 42.5)
     })
 
-    it('should handle an error without a message', async () => {
-      const result = await uut.run()
+    it('prints the human balance lines', async () => {
+      const out = captureStream()
+      const wallet = new BchWalletMock()
+      const command = new WalletBalance({
+        walletUtil: { instanceWallet: async () => wallet },
+        stdout: out.stream
+      })
 
-      assert.equal(result, 0)
+      const code = await command.run({ name: 'agent' })
+
+      assert.equal(code, 0)
+      assert.include(out.text(), 'BCH balance: 20406 satoshis')
+      assert.include(out.text(), 'Tokens:')
+    })
+
+    it('reports a missing name as a usage error (exit 2)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = new WalletBalance({ stdout: out.stream, stderr: err.stream })
+
+      const code = await command.run({ json: true })
+
+      assert.equal(code, 2)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), {
+        error: 'You must specify a wallet name with the -n flag.'
+      })
+    })
+
+    it('reports a wallet backend failure as a runtime error (exit 1)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = new WalletBalance({
+        walletUtil: { instanceWallet: async () => { throw new Error('wallet backend unavailable') } },
+        stdout: out.stream,
+        stderr: err.stream
+      })
+
+      const code = await command.run({ name: 'agent', json: true })
+
+      assert.equal(code, 1)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), { error: 'wallet backend unavailable' })
     })
   })
 })

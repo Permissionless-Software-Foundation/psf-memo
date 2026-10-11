@@ -6,8 +6,8 @@ All commands should follow the same structure:
 
 ## Output and exit codes
 
-New `memo-*` commands adopt the shared reporter in `src/lib/reporter.js` so
-every command has one machine-readable interface:
+All commands adopt the shared reporter in `src/lib/reporter.js` so every
+command has one machine-readable interface:
 
 - Human mode prints a readable result to stdout; `--json` prints exactly one
   JSON object to stdout (`{ "message": ..., ...fields }`).

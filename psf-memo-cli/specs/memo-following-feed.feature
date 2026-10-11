@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=1123163b352c80e8ca2460e471717ae67ae14362ec8784291399c5c06b8f1a24
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-11T18:23:11.232893108Z","feature_name":"Memo Following Feed","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/memo-following-feed.feature","background_hash":"dc81911c04a511add2b1254622c8d9f810044c211bbde03a04b5a3a11863fd47","implementation_hash":"unknown","scenarios":[{"index":2,"name":"Memo Following Feed - 3 the command returns the requested page","scenario_hash":"5c6a537321045eb49dea92cd9d54438d6a1e50f5f99198d6d1f7b6a201c987ce","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-11T18:23:11.232893108Z"},{"index":3,"name":"Memo Following Feed - 4 each reported post keeps its author and text","scenario_hash":"f29909640268b322fe93cdb11f3e0e73bdcedf1ad703c1ad53c9b02066bd9c09","mutation_count":15,"result":{"Total":15,"Killed":15,"Survived":0,"Errors":0},"tested_at":"2026-10-11T18:23:11.232893108Z"}]}
+# acceptance-mutation-manifest-end
+
 # Memo Following Feed (AF1/R17): the psf-memo-cli read command for the viewer's
 # Following feed — the top-level posts (replies excluded, the viewer's own posts
 # excluded) authored by the profiles the viewer follows, newest first. It

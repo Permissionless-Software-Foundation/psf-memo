@@ -1767,7 +1767,8 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ## Next up: agent-interface parity (AF1–AF3)
 
-**In progress: `psf-memo-cli` file-hosting commands.** On 2026-10-11 the user
+**Complete: `psf-memo-cli` file-hosting (FH1–FH4) and AF1; in progress:
+agent-interface parity AF2–AF3.** On 2026-10-11 the user
 asked to port three `bch-file-hosting` CLI capabilities into `psf-memo-cli`:
 upload-and-pay, check status, and (via the returned URLs) get a hosted file. A
 download/`file-get` command was explicitly dropped. The decisions and plan are
@@ -1790,12 +1791,13 @@ architect review `94c671b`, `docs/reviews/file-status-verification.json` pass
 architect review `dea6b87`, `docs/reviews/file-check-verification.json` pass
 4/4, independent acceptance 10/10, plus file-status 8/8 and file-host 14/14).
 **The FH1–FH4 `psf-memo-cli` file-hosting port is complete.** The next direction
-is the `psf-memo-cli` **agent-interface parity** work queued as AF1–AF3 in
-`psf-memo-cli/dev-docs/feature-backlog.md`: (AF1) a first-class feed for one
-address or the Following feed, (AF2) `--json` on every command that lacks it
-(`wallet-*`/`send-*`/`msg-*`), and (AF3) update `psf-memo-cli/SKILL.md` after
-AF1/AF2 land. The client front-end backlog remains the fallback. Ask the user
-for the next feature.
+is the `psf-memo-cli` **agent-interface parity** work in
+`psf-memo-cli/dev-docs/feature-backlog.md`: **AF1 is DONE** — `memo-following-feed`,
+the wallet-relative viewer's Following feed (`GET /posts/following/:addr`, spec
+`2af4690`, merged at `7a2614c`, independent acceptance 13/13) — plus (AF2)
+`--json` on every command that lacks it (`wallet-*`/`send-*`/`msg-*`) and (AF3)
+update `psf-memo-cli/SKILL.md` after AF2 lands. The client front-end backlog
+remains the fallback.
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read

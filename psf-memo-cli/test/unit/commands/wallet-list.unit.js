@@ -1,5 +1,8 @@
 /*
   Unit tests for the wallet-list command.
+
+  The command adopts the shared output contract: human mode prints the table,
+  --json prints `{ wallets: [{ name, description }] }`, and a failure exits 1.
 */
 
 // Global npm libraries
@@ -10,10 +13,18 @@ import { promises as fs } from 'fs'
 // Local libraries
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import WalletList from '../../../src/commands/wallet-list.js'
-import { captureConsole } from '../../support/capture.js'
+import { captureStream } from '../../support/capture.js'
 
 const __dirname = import.meta.dirname
 const filename = `${__dirname.toString()}/../../../.wallets/test123.json`
+
+// Build a wallet-list command with the supplied capture streams and an
+// injectable wallet store.
+function makeCommand ({ wallets, stdout, stderr } = {}) {
+  const command = new WalletList({ stdout: stdout?.stream, stderr: stderr?.stream })
+  if (wallets !== undefined) command.parseWallets = async () => wallets
+  return command
+}
 
 describe('#wallet-list', () => {
   let sandbox
@@ -36,11 +47,9 @@ describe('#wallet-list', () => {
       await createWallet.createWallet(filename)
 
       const data = await uut.parseWallets()
-      // console.log('data: ', data)
 
       // Find the wallet that was just created.
       const testWallet = data.find(wallet => wallet[0].indexOf('test123') > -1)
-      // console.log('testWallet: ', testWallet)
 
       assert.equal(testWallet[0], 'test123')
 
@@ -48,81 +57,90 @@ describe('#wallet-list', () => {
       await fs.rm(filename)
     })
 
-    it('should return empty array on missing wallets data', async () => {
+    it('should return an empty array when no wallets are found', async () => {
       // Force shelljs.ls to return an empty array.
       sandbox.stub(uut.shelljs, 'ls').returns([])
 
-      let data
+      const data = await uut.parseWallets()
 
-      try {
-        data = await uut.parseWallets()
-      } catch (error) {
-        assert.equal(data, [], 'Empty array')
-        assert.equal(error, 'No wallets found.', 'Proper error message')
-      }
+      assert.deepEqual(data, [])
     })
   })
 
   describe('#run', () => {
-    it('should display wallets table', async () => {
-      const createWallet = new WalletCreate()
-      await createWallet.createWallet(filename, 'test wallet')
+    it('prints one JSON object listing the wallets', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = makeCommand({
+        wallets: [['savings', 'long term'], ['spending', 'daily']],
+        stdout: out,
+        stderr: err
+      })
 
-      // Promise.resolve(uut.run()).then(function (table) {
-      //   assert.include(table, 'Name')
-      //   assert.include(table, 'Balance (BCH)')
-      // })
+      const code = await command.run({ json: true })
 
-      sinon.stub(uut, 'parseWallets').resolves({})
-      sandbox.stub(uut, 'displayTable').resolves('')
-
-      // Clean up
-      await fs.rm(filename)
-
-      const result = await uut.run()
-
-      assert.equal(result, true)
+      assert.equal(code, 0)
+      assert.equal(err.text(), '')
+      assert.deepEqual(JSON.parse(out.text()).wallets, [
+        { name: 'savings', description: 'long term' },
+        { name: 'spending', description: 'daily' }
+      ])
     })
 
-    it('should return 0 on error', async () => {
-      // Force an error
-      sandbox.stub(uut, 'parseWallets').throws(new Error('test error'))
+    it('prints the wallets table in human mode', async () => {
+      const out = captureStream()
+      const command = makeCommand({ wallets: [['savings', 'long term']], stdout: out })
 
-      const result = await uut.run()
+      const code = await command.run()
 
-      assert.equal(result, 0)
+      assert.equal(code, 0)
+      assert.include(out.text(), 'savings')
+      assert.include(out.text(), 'long term')
     })
 
-    it('should not print a wallet mnemonic when listing wallets', async () => {
-      const mnemonic = 'legal winner thank year wave sausage worth useful legal winner thank yellow'
-      await fs.writeFile(
-        filename,
-        JSON.stringify({ wallet: { mnemonic, description: 'hygiene test' } })
-      )
+    it('prints a no-wallets message in human mode when the store is empty', async () => {
+      const out = captureStream()
+      const command = makeCommand({ wallets: [], stdout: out })
 
-      let output
-      try {
-        output = await captureConsole(() => uut.run())
-      } finally {
-        await fs.rm(filename)
-      }
+      const code = await command.run()
 
-      assert.notInclude(output, mnemonic)
-      assert.include(output, 'test123')
+      assert.equal(code, 0)
+      assert.equal(out.text(), 'No wallets found.\n')
+    })
+
+    it('does not print a wallet mnemonic when listing wallets', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = makeCommand({
+        wallets: [['savings', 'long term']],
+        stdout: out,
+        stderr: err
+      })
+
+      await command.run({ json: true })
+
+      assert.notInclude(out.text(), 'mnemonic')
+    })
+
+    it('reports a failed wallet listing as a runtime error (exit 1)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = makeCommand({ stdout: out, stderr: err })
+      command.parseWallets = async () => { throw new Error('cannot read wallets') }
+
+      const code = await command.run({ json: true })
+
+      assert.equal(code, 1)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), { error: 'cannot read wallets' })
     })
   })
 
   describe('#displayTable', () => {
     it('should display the data in a console table', () => {
       const walletData = [
-        [
-          'msg1',
-          'Used for sending and receiving messages'
-        ],
-        [
-          'msg2',
-          'Used for sending and receiving message'
-        ]
+        ['msg1', 'Used for sending and receiving messages'],
+        ['msg2', 'Used for sending and receiving message']
       ]
 
       const tableStr = uut.displayTable(walletData)

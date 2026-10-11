@@ -14,19 +14,24 @@ import BchTokenSweep from 'bch-token-sweep'
 import WalletUtil from '../lib/wallet-util.js'
 import { bindMethods } from '../lib/bind-methods.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
+import { runCommand } from '../lib/reporter.js'
+
+const SWEEP_EXPLORER_URL = 'https://bch.loping.net/tx/'
 
 class WalletSweep {
-  constructor () {
-    // Encapsulate Dependencies
-    this.BchTokenSweep = BchTokenSweep
-    this.walletUtil = new WalletUtil()
+  constructor ({ BchTokenSweep: SweepClass = BchTokenSweep, walletUtil, stdout, stderr } = {}) {
+    // Encapsulate dependencies
+    this.BchTokenSweep = SweepClass
+    this.walletUtil = walletUtil || new WalletUtil()
+    this.stdout = stdout
+    this.stderr = stderr
 
     // Bind 'this' object to all subfunctions.
     bindMethods(this, ['run', 'validateFlags', 'sweepWif'])
   }
 
-  async run (flags) {
-    try {
+  async run (flags = {}) {
+    const code = await runCommand(async () => {
       this.validateFlags(flags)
 
       // Initialize the wallet.
@@ -34,17 +39,26 @@ class WalletSweep {
 
       // Sweep any BCH and tokens from the private key.
       const txid = await this.sweepWif(flags)
+      const explorerUrl = `${SWEEP_EXPLORER_URL}${txid}`
 
-      console.log('BCH successfully swept from the private key')
-      console.log(`TXID: ${txid}`)
-      console.log('\nView this transaction on a block explorer:')
-      console.log(`https://bch.loping.net/tx/${txid}`)
+      return {
+        message: [
+          'BCH successfully swept from the private key',
+          `TXID: ${txid}`,
+          '',
+          'View this transaction on a block explorer:',
+          explorerUrl
+        ].join('\n'),
+        data: { txid, explorerUrl }
+      }
+    }, {
+      json: flags.json,
+      stdout: this.stdout,
+      stderr: this.stderr
+    })
 
-      return true
-    } catch (err) {
-      console.error('Error in wallet-sweep: ', err)
-      return 0
-    }
+    process.exitCode = code
+    return code
   }
 
   validateFlags (flags = {}) {
@@ -55,33 +69,24 @@ class WalletSweep {
   }
 
   async sweepWif (flags) {
-    try {
-      const walletWif = this.bchWallet.walletInfo.privateKey
+    const walletWif = this.bchWallet.walletInfo.privateKey
 
-      // Prepare the BCH Token Sweep library.
-      const sweeper = new this.BchTokenSweep(
-        flags.wif,
-        walletWif,
-        this.bchWallet
-      )
-      await sweeper.populateObjectFromNetwork()
+    // Prepare the BCH Token Sweep library.
+    const sweeper = new this.BchTokenSweep(
+      flags.wif,
+      walletWif,
+      this.bchWallet
+    )
+    await sweeper.populateObjectFromNetwork()
 
-      // Sweep the private key
-      const hex = await sweeper.sweepTo(this.bchWallet.walletInfo.slpAddress)
+    // Sweep the private key
+    const hex = await sweeper.sweepTo(this.bchWallet.walletInfo.slpAddress)
 
-      // Broadcast the transaction.
-      const txid = await this.bchWallet.ar.sendTx(hex)
+    // Broadcast the transaction.
+    const txid = await this.bchWallet.ar.sendTx(hex)
 
-      return txid
-    } catch (err) {
-      console.error('Error in sweepWif()')
-      throw err
-    }
+    return txid
   }
 }
 
 export default WalletSweep
-
-// mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T14:50:11.657Z","module_hash":"7f2e84295eb5942930e7e8d55b2698e06699cff563ca78b0727983b9a81b9f88","functions":[{"id":"func/WalletSweep.constructor","name":"WalletSweep.constructor","line":19,"end_line":26,"hash":"ab63c345e3fa0384d785e73d29d950e0c7b1ecdd9cde0c6a451ece98d4117ff1"},{"id":"func/WalletSweep.run","name":"WalletSweep.run","line":28,"end_line":48,"hash":"62b3dc4057053b9e820f1be755ad466191ed5b265ce26787f777a11c1439862d"},{"id":"func/WalletSweep.validateFlags","name":"WalletSweep.validateFlags","line":50,"end_line":55,"hash":"a3476b3118f86e162fdc8eef030d4d2b9af24b05f197346fed6bee59ea98fe87"},{"id":"func/WalletSweep.sweepWif","name":"WalletSweep.sweepWif","line":57,"end_line":80,"hash":"790b7ea8f53fc3710561109ef974e0137b7eb126d936bb183a3084d95be0a776"}]}
-// mutate4javascript-manifest-end
