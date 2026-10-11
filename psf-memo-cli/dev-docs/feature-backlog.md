@@ -490,7 +490,11 @@ existing DB route `GET /posts/following/:addr` and the client
 exclusion, and ordering (X6 pagination fidelity). A friendlier single-author
 command/alias remains a possible separate tweak, not this item.
 
-### AF2 — `--json` on every command
+### AF2 — `--json` on every command — IN PROGRESS
+
+**Specified:** `psf-memo-cli/specs/cli-json-output.feature` — one JSON object per
+command, usage errors exit 2, runtime errors exit 1 (fixing the legacy
+swallowed-error exit 0), human output unchanged, no key material in JSON.
 
 Resolved decision 4 (2026-10-06) is "`--json` on every command", but the wallet,
 send, and signing commands still print human-readable text only:
