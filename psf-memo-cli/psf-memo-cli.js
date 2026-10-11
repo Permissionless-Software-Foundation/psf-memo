@@ -47,6 +47,7 @@ import MemoTopicPost from './src/commands/memo-topic-post.js'
 import MemoTopicFollow from './src/commands/memo-topic-follow.js'
 import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
 import FileUpload from './src/commands/file-upload.js'
+import FileHost from './src/commands/file-host.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -89,6 +90,7 @@ const memoTopicPost = new MemoTopicPost()
 const memoTopicFollow = new MemoTopicFollow()
 const memoTopicUnfollow = new MemoTopicUnfollow()
 const fileUpload = new FileUpload()
+const fileHost = new FileHost()
 
 const program = new Command()
 
@@ -408,8 +410,16 @@ program.command('file-upload')
   .option('--json', 'print the result as one JSON object')
   .action(fileUpload.run)
 
+program.command('file-host')
+  .description('Upload a file, pay the hosting quote, and print the hosted result')
+  .option('-f, --file <string>', 'local file to upload')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('--json', 'print the result as one JSON object')
+  .action(fileHost.run)
+
 program.parseAsync(process.argv)
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T16:26:01.761Z","module_hash":"02ed9249507ed7726b20b613d9fbc6b818d76c205c43981265fee9e6a69fb2cf","functions":[]}
+// {"version":1,"tested_at":"2026-10-11T17:19:07.543Z","module_hash":"66875c80a557ff1d88edb8e31f9bf258c24b05486719c6b23e4e8fc99d955801","functions":[]}
 // mutate4javascript-manifest-end
