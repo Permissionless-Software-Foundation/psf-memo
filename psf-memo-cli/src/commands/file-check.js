@@ -23,5 +23,5 @@ export default createHostingCommand({
 })
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T17:36:49.030Z","module_hash":"3d655193d9319940608aa16b8d1972034cdd9ae9f6e07d7a7632f64f9fdf315c","functions":[]}
+// {"version":1,"tested_at":"2026-10-11T17:39:09.200Z","module_hash":"3d655193d9319940608aa16b8d1972034cdd9ae9f6e07d7a7632f64f9fdf315c","functions":[]}
 // mutate4javascript-manifest-end
