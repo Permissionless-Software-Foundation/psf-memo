@@ -468,23 +468,22 @@ download command are out of scope.
 remaining parity gaps between the two interfaces. Each is delivered as its own
 specifier → coder → refactorer → architect cycle.
 
-### AF1 — A first-class feed for one address (or the Following feed)
+### AF1 — The Following feed (`memo-following-feed`) — IN PROGRESS
 
-Add a dedicated command that returns one page of a specific address's posts in
-the same feed shape as `memo-feed` (`{ posts, pagination }`). Today that data is
-reachable only through the generically named `memo-posts -a <addr>` (R5); the web
-UI surfaces it as the profile feed and, separately, as a "Following" feed tab
-that aggregates posts from every followed address.
+**Specified:** `psf-memo-cli/specs/memo-following-feed.feature` (wallet-relative
+`memo-following-feed`, reads `GET /posts/following/:addr`, reports
+`{ posts, pagination }`).
 
-Questions to settle before speccing:
-
-- Is the target the **single-address feed** (a feed-shaped command, possibly an
-alias/rename of `memo-posts`), or the **Following feed** tab — the genuinely
-  missing aggregate (`memo-following` then each address's posts)?
-- Command name and flags (e.g. `memo-user-feed -a <addr>`, or a
-  `memo-feed --from <addr>` filter).
-- For the Following feed, reuse `memo-feed`'s caps/pagination or compose the
-  per-address pages client-side.
+Resolved: the single-author feed already exists as `memo-posts -a <addr>`
+(`GET /posts/by/:addr`), so the genuinely missing parity feature is the web's
+**Following** tab — the aggregate of top-level posts from the profiles the
+viewer follows (replies and the viewer's own posts excluded), backed by the
+existing DB route `GET /posts/following/:addr` and the client
+`following-feed-page.js`. The command identifies the viewer from the wallet
+(`-n`/`--wif`) like `memo-notifications`, passes `-l/--limit` (50) and
+`-o/--offset` (0) through, and relies on psf-memo-db for the follow-join,
+exclusion, and ordering (X6 pagination fidelity). A friendlier single-author
+command/alias remains a possible separate tweak, not this item.
 
 ### AF2 — `--json` on every command
 
