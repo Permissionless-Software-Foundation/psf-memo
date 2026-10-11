@@ -64,3 +64,7 @@ class FileStatus {
 }
 
 export default FileStatus
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T17:29:25.745Z","module_hash":"7b3fb666629c5c5730a082b9ce29c23a763c90a80c04233e55da7f5e4ce11987","functions":[{"id":"func/FileStatus.constructor","name":"FileStatus.constructor","line":20,"end_line":35,"hash":"57708a11e0ea9505be20cdbd8a6da71d1942e7c4324ee2e4a07d97c956dc29cb"},{"id":"func/FileStatus.run","name":"FileStatus.run","line":39,"end_line":53,"hash":"7dfe3b0d7a5393ed348f177906b1db664e1796369f71f24eb65933080ad86e4a"},{"id":"func/FileStatus.validateFlags","name":"FileStatus.validateFlags","line":57,"end_line":63,"hash":"6044b063049a4229132b41279c570ab4220ae01a20dc5fda4dff9a97824afbc7"}]}
+// mutate4javascript-manifest-end
