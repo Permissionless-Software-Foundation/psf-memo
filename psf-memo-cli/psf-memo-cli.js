@@ -49,6 +49,7 @@ import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
 import FileUpload from './src/commands/file-upload.js'
 import FileHost from './src/commands/file-host.js'
 import FileStatus from './src/commands/file-status.js'
+import FileCheck from './src/commands/file-check.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -93,6 +94,7 @@ const memoTopicUnfollow = new MemoTopicUnfollow()
 const fileUpload = new FileUpload()
 const fileHost = new FileHost()
 const fileStatus = new FileStatus()
+const fileCheck = new FileCheck()
 
 const program = new Command()
 
@@ -425,6 +427,12 @@ program.command('file-status')
   .option('-c, --cid <string>', 'file CID')
   .option('--json', 'print the result as one JSON object')
   .action(fileStatus.run)
+
+program.command('file-check')
+  .description('Look up a hosting payment by address and print the result')
+  .option('-a, --address <string>', 'payment address')
+  .option('--json', 'print the result as one JSON object')
+  .action(fileCheck.run)
 
 program.parseAsync(process.argv)
 

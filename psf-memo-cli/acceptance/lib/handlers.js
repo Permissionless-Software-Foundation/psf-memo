@@ -38,6 +38,7 @@ import { topicCommandHandlers } from './steps/topic-commands.js'
 import { fileUploadHandlers } from './steps/file-upload.js'
 import { fileHostHandlers } from './steps/file-host.js'
 import { fileStatusHandlers } from './steps/file-status.js'
+import { fileCheckHandlers } from './steps/file-check.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -78,6 +79,7 @@ const handlers = [
   ...fileUploadHandlers,
   ...fileHostHandlers,
   ...fileStatusHandlers,
+  ...fileCheckHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -132,6 +134,10 @@ async function createWorld () {
     hostingUnpaidFirst: false,
     hostingNeverConfirms: false,
     hostingCheckPaymentCount: 0,
+    hostingCheckPaymentAddress: null,
+    hostingUnpaid: null,
+    hostingExpired: false,
+    hostingCheckError: null,
     hostingJson: null,
     hostingFile: {},
     hostingFileStatus: null,
@@ -197,6 +203,25 @@ async function createWorld () {
 
     if (world.lastRequest.pathname === '/files/check-payment' && options.method === 'POST') {
       world.hostingCheckPaymentCount++
+      world.hostingCheckPaymentAddress = JSON.parse(options.body).paymentAddress
+
+      if (world.hostingCheckError) {
+        return jsonResponse({ success: false, error: world.hostingCheckError }, 404)
+      }
+      if (world.hostingExpired) {
+        return jsonResponse({ success: true, status: 'expired' }, 200)
+      }
+      if (world.hostingUnpaid) {
+        return jsonResponse(
+          {
+            success: true,
+            status: 'unpaid',
+            ...world.hostingUnpaid,
+            quoteExpiresAt: world.hostingQuote?.quoteExpiresAt
+          },
+          200
+        )
+      }
       if (world.hostingNeverConfirms || (world.hostingUnpaidFirst && world.hostingCheckPaymentCount === 1)) {
         return jsonResponse({ success: true, status: 'unpaid' }, 200)
       }
