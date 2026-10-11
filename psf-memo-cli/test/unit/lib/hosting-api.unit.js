@@ -135,4 +135,53 @@ describe('#hosting-api', () => {
       assert.equal(err.message, 'Invoice not found')
     }
   })
+
+  it('GETs /files/:cid and returns the parsed body', async () => {
+    const fetch = sandbox.stub().resolves({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, cid: 'bafy-known', status: 'pinned' })
+    })
+    const uut = new HostingApi({ config, fetch })
+
+    const result = await uut.getStatus({ cid: 'bafy-known' })
+
+    assert.equal(result.status, 'pinned')
+    sinon.assert.calledOnce(fetch)
+
+    const [url, options] = fetch.firstCall.args
+    assert.equal(url, 'http://localhost:5050/files/bafy-known')
+    assert.equal(options.method, 'GET')
+  })
+
+  it('encodes the CID so it cannot change the request path', async () => {
+    const fetch = sandbox.stub().resolves({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, cid: 'bafy-unknown', status: 'unknown' })
+    })
+    const uut = new HostingApi({ config, fetch })
+
+    await uut.getStatus({ cid: '../admin/invoices?x=1' })
+
+    const [url] = fetch.firstCall.args
+    assert.equal(url, 'http://localhost:5050/files/..%2Fadmin%2Finvoices%3Fx%3D1')
+  })
+
+  it('throws the API error message when a status lookup is not ok', async () => {
+    const fetch = sandbox.stub().resolves({
+      ok: false,
+      status: 404,
+      json: async () => ({ success: false, error: 'File not found' })
+    })
+    const uut = new HostingApi({ config, fetch })
+
+    try {
+      await uut.getStatus({ cid: 'bafy-missing' })
+      assert.fail('Unexpected result')
+    } catch (err) {
+      assert.instanceOf(err, HostingApiError)
+      assert.equal(err.message, 'File not found')
+    }
+  })
 })

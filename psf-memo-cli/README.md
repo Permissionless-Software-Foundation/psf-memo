@@ -303,6 +303,7 @@ protocol action). The API base URL comes from `HOSTING_API_URL` (default
 |---------|----------------|----------------|------------------|
 | `file-upload` | `-f/--file` | `--json` | the API quote (`filename`, `sizeBytes`, `billedBytes`, `priceSats`, `paymentAddress`, `quoteExpiresAt`) or the already-hosted `downloadUrl`/`viewUrl` |
 | `file-host` | `-f/--file` and a wallet source (`-n/--name` or `--wif`) | `--json` | the hosted result (`cid`, `downloadUrl`, `viewUrl`, `gatewayUrls`, `txid`, `paymentAddress`) or the already-hosted `downloadUrl`/`viewUrl` |
+| `file-status` | `-c/--cid` | `--json` | the file record (`cid`, `filename`, `sizeBytes`, `status`, `hostedUntil`, `pins`) |
 
 `file-upload` is quote-only: it reads a local file, uploads it, and prints the
 price quote (or the already-hosted links). It never touches a wallet, so a
@@ -315,9 +316,15 @@ An already-hosted upload short-circuits without paying. Payment goes through
 `minimal-slp-wallet`'s `send()`, which adds a 2,000-sat PSF donation on top of
 the quote plus the miner fee.
 
+`file-status` is a read-only CID lookup (`GET /files/:cid`). It reports the
+file's name, size, status, hosting window (or `not paid`), and pins. That route
+returns no download/view URLs; `file-check` is how a payment address recovers
+them.
+
 ```sh
 node psf-memo-cli.js file-upload -f ./photo.jpg --json
 node psf-memo-cli.js file-host -f ./photo.jpg -n wallet1 --json
+node psf-memo-cli.js file-status -c bafy... --json
 ```
 
 
