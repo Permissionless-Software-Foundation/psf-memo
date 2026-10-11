@@ -461,6 +461,55 @@ download command are out of scope.
 
 ---
 
+## Agent-interface parity (new 2026-10-11)
+
+`psf-memo-cli` is the agent-facing mirror of the `psf-memo-client` web UI, and
+`psf-memo-cli/SKILL.md` documents it for agents. These follow-ups close the
+remaining parity gaps between the two interfaces. Each is delivered as its own
+specifier → coder → refactorer → architect cycle.
+
+### AF1 — A first-class feed for one address (or the Following feed)
+
+Add a dedicated command that returns one page of a specific address's posts in
+the same feed shape as `memo-feed` (`{ posts, pagination }`). Today that data is
+reachable only through the generically named `memo-posts -a <addr>` (R5); the web
+UI surfaces it as the profile feed and, separately, as a "Following" feed tab
+that aggregates posts from every followed address.
+
+Questions to settle before speccing:
+
+- Is the target the **single-address feed** (a feed-shaped command, possibly an
+alias/rename of `memo-posts`), or the **Following feed** tab — the genuinely
+  missing aggregate (`memo-following` then each address's posts)?
+- Command name and flags (e.g. `memo-user-feed -a <addr>`, or a
+  `memo-feed --from <addr>` filter).
+- For the Following feed, reuse `memo-feed`'s caps/pagination or compose the
+  per-address pages client-side.
+
+### AF2 — `--json` on every command
+
+Resolved decision 4 (2026-10-06) is "`--json` on every command", but the wallet,
+send, and signing commands still print human-readable text only:
+`wallet-create`, `wallet-list`, `wallet-addrs`, `wallet-balance`,
+`wallet-sweep`, `send-bch`, `send-tokens`, `msg-sign`, and `msg-verify`.
+
+Add the shared F5 reporter contract (`--json` prints one JSON object to stdout;
+failures print `{ "error": "<message>" }` to stderr; exit `0`/`1`/`2`) to each,
+with a stable data shape — for example `wallet-list` → `{ wallets: [...] }`,
+`wallet-balance` → `{ address, bchBalance, tokens }`, `send-bch` →
+`{ txid, explorerUrl }`, `msg-sign` → `{ address, message, signature }`, and
+`msg-verify` → `{ address, message, valid }`. Keep the existing human output
+unchanged. This makes the whole CLI machine-readable.
+
+### AF3 — Update `psf-memo-cli/SKILL.md`
+
+After AF1 and AF2 land, update the skill to document the new feed command and
+the new `--json` shapes, and remove the caveat that the
+`wallet-*`/`send-*`/`msg-*` commands lack `--json`. Add the new commands to the
+Web UI → CLI map and the use-case examples.
+
+---
+
 ## Suggested delivery order
 
 1. **Foundation**: F1 **DONE**; F5 **DONE**; F4 **DONE**; F2/F3 (wallet

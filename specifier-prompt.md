@@ -1384,7 +1384,11 @@ pipeline (coder `7f42724`, refactorer `bf90819`, architect review `dea6b87`,
 record/summary `bf06727`), merged to `master` at `be28c77`; the independent
 acceptance re-ran clean (file-check 10/10, file-status 8/8, file-host 14/14) and
 `verify.sh cli` passed 4/4 (42 suites). **The FH1–FH4 file-hosting port is
-complete.**
+complete.** Then created `psf-memo-cli/SKILL.md` (the agent skill documenting
+the CLI as the web UI's mirror; committed at `ef335f2`) and queued
+agent-interface parity items AF1–AF3 in the CLI backlog: AF1 a first-class
+one-address or Following feed command, AF2 `--json` on every command that lacks
+it (`wallet-*`/`send-*`/`msg-*`), AF3 update the skill after AF1/AF2 land.
 
 Previous session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
 Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
@@ -2142,8 +2146,8 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `be28c77` (`Merge file-check (FH4) into master`);
-FH1–FH4 are merged and verified; the file-hosting port is complete.
+Current `master` HEAD: `ef335f2` (`Add psf-memo-cli agent skill`); this session's
+backlog/briefing docs follow. FH1–FH4 are merged and verified.
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2190,9 +2194,11 @@ the requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
 `psf-memo-cli/dev-docs/file-hosting-features.md`,
 `psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, and gotcha #93.
 
-Next action: **ask the user for the next feature.** The `psf-memo-cli`
-file-hosting port (FH1–FH4) is complete and merged. The fallback direction is
-the client front-end backlog — front-end improvements to `psf-memo-client` in
+Next action: **settle the AF1 question with the user** — a one-address feed
+command (feed-shaped `memo-posts`, possibly an alias) versus the missing
+Following feed (aggregate across followed addresses) — then spec AF1, then AF2
+(`--json` on every command), then AF3 (update `SKILL.md`). The fallback is the
+client front-end backlog — front-end improvements to `psf-memo-client` in
 `specs/feature-backlog.md`. The active backlog is otherwise the completed
 `psf-memo-cli` file-hosting port
 (`psf-memo-cli/dev-docs/feature-backlog.md`, FH2–FH4); the client front-end

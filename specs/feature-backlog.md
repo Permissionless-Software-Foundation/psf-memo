@@ -1765,7 +1765,7 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
   small; handoffs are blocked on a dirty tree. See `docs/process-improvements.md`
   for the what/why, commits, and verification evidence.
 
-## Next up: TBD
+## Next up: agent-interface parity (AF1–AF3)
 
 **In progress: `psf-memo-cli` file-hosting commands.** On 2026-10-11 the user
 asked to port three `bch-file-hosting` CLI capabilities into `psf-memo-cli`:
@@ -1790,8 +1790,12 @@ architect review `94c671b`, `docs/reviews/file-status-verification.json` pass
 architect review `dea6b87`, `docs/reviews/file-check-verification.json` pass
 4/4, independent acceptance 10/10, plus file-status 8/8 and file-host 14/14).
 **The FH1–FH4 `psf-memo-cli` file-hosting port is complete.** The next direction
-is the client front-end backlog — front-end improvements to `psf-memo-client`
-in `specs/feature-backlog.md`. Ask the user for the next feature.
+is the `psf-memo-cli` **agent-interface parity** work queued as AF1–AF3 in
+`psf-memo-cli/dev-docs/feature-backlog.md`: (AF1) a first-class feed for one
+address or the Following feed, (AF2) `--json` on every command that lacks it
+(`wallet-*`/`send-*`/`msg-*`), and (AF3) update `psf-memo-cli/SKILL.md` after
+AF1/AF2 land. The client front-end backlog remains the fallback. Ask the user
+for the next feature.
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
@@ -1799,10 +1803,13 @@ commands (R1–R16), and the shipped writes (W1–W10; W11–W13 dropped by user
 decision) are done, and the full cross-cutting series X1–X7 (command reference
 docs, error surfacing, secret hygiene, read-only safety, quality audit,
 pagination fidelity, async visibility) is now complete. W14–W16 remain deferred
-until the indexer/DB handle those action bytes. The open direction is the client
-front-end backlog — front-end improvements to `psf-memo-client` (UI/UX polish,
-accessibility, performance, responsiveness, state handling, error surfacing).
-Ask the user for the next feature.
+until the indexer/DB handle those action bytes. New agent-interface parity items
+AF1–AF3 are queued in `psf-memo-cli/dev-docs/feature-backlog.md` (one-address /
+Following feed command; `--json` on every command; update the skill after those
+land). The client front-end backlog remains the fallback — front-end
+improvements to `psf-memo-client` (UI/UX polish, accessibility, performance,
+responsiveness, state handling, error surfacing). Ask the user for the next
+feature.
 
 ## Notes for future cycles
 
