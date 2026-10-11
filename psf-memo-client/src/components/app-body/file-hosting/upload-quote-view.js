@@ -23,8 +23,8 @@ function linkLine (key, className, label, url, target) {
   )
 }
 
-// Gateway links for images open in a new tab so the browser does not navigate
-// away from the hosting result; other files keep the default target.
+// The API view link for an image opens in a new tab so the browser does not
+// navigate away from the hosting result; other files keep the default target.
 const IMAGE_NAME = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
 
 function isImageName (filename) {
@@ -72,26 +72,15 @@ function quoteChildren (state) {
 }
 
 function hostedChildren (state) {
-  return [linkLine('download', 'file-upload-download', 'Download: ', state.downloadUrl)]
+  return [linkLine('view', 'file-upload-view', 'View: ', state.viewUrl)]
 }
 
 function paidChildren (state) {
-  const children = [
+  return [
     React.createElement('p', { key: 'cid', className: 'file-upload-cid' }, `CID: ${state.cid}`),
-    linkLine('download', 'file-upload-download', 'Download: ', state.downloadUrl)
-  ]
-
-  const gateways = state.gatewayUrls || []
-  const gatewayTarget = isImageName(state.filename) ? '_blank' : undefined
-  for (let i = 0; i < gateways.length; i++) {
-    children.push(linkLine(`gateway-${i}`, 'file-upload-gateway', 'Gateway: ', gateways[i], gatewayTarget))
-  }
-
-  children.push(
+    linkLine('view', 'file-upload-view', 'View: ', state.viewUrl, isImageName(state.filename) ? '_blank' : undefined),
     React.createElement('p', { key: 'txid', className: 'file-upload-txid' }, `Payment: ${state.txid}`)
-  )
-
-  return children
+  ]
 }
 
 // Display status to children builder. A null prototype keeps an unexpected

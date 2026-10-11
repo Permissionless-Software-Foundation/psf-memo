@@ -3,7 +3,7 @@
 
   Renders the DashboardPage display state as a Bootstrap table: one row per
   file with its formatted size and times, a truncated CID with a copy control,
-  a download link, and a gateway view link; or the empty-feed message, or the
+  a download link, and an API view link; or the empty-feed message, or the
   API error. Written in plain React.createElement style so the same view can be
   used by the browser page and by the Node acceptance rendering, without a
   browser.
@@ -92,8 +92,8 @@ function downloadCell (file) {
   )
 }
 
-// A gateway view link opens the file in a new tab. Without a gateway URL the
-// cell is empty.
+// A view link opens the file in a new tab. Without a view URL the cell is
+// empty.
 function viewCell (file) {
   const link = file.viewUrl
     ? React.createElement(

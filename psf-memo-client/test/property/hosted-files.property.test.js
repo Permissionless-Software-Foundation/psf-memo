@@ -12,7 +12,7 @@
     - truncateCid: a CID of at most sixteen characters is unchanged; a longer
       CID is its first and last eight characters joined by "...".
     - feed mapping: load maps every feed record in order, keeps the public
-      fields, and builds the download and view URLs.
+      fields, and uses the feed's download and view URLs.
     - paging: loadMore appends exactly the next page and follows its cursor,
       and is a no-op without a cursor.
     - single source: the view and the page service share one empty message.
@@ -38,15 +38,17 @@ function randomCid () {
 }
 
 function randomFeedFile () {
+  const cid = randomCid()
   return {
     status: 'pinned',
-    cid: randomCid(),
+    cid,
     filename: randomFrom(rng, 'abcXYZ0123._-', 1, 12) + '.bin',
     sizeBytes: intGen(rng, 0, 5000000)(),
     paidAt: new Date(intGen(rng, 0, 4000000000000)()).toISOString(),
     hostedUntil: new Date(intGen(rng, 4000000000000, 8000000000000)()).toISOString(),
     paymentAddress: 'bitcoincash:q' + randomFrom(rng, CID_CHARS, 5, 20),
-    gatewayUrls: rng() < 0.5 ? ['https://ipfs.io/ipfs/' + randomCid()] : [],
+    downloadUrl: `${BASE}/download/${cid}`,
+    viewUrl: `${BASE}/view/${cid}`,
     pins: []
   }
 }
@@ -103,7 +105,7 @@ test('truncateCid leaves a short CID and trims a long one to eight plus eight', 
   )
 })
 
-test('load maps every feed record in order and builds its download and view URLs', async () => {
+test('load maps every feed record in order and uses its download and view URLs', async () => {
   await forAll(
     () => {
       const count = intGen(rng, 0, 6)()
@@ -123,8 +125,8 @@ test('load maps every feed record in order and builds its download and view URLs
           mapped.sizeBytes === source.sizeBytes &&
           mapped.paidAt === source.paidAt &&
           mapped.hostedUntil === source.hostedUntil &&
-          mapped.downloadUrl === `${BASE}/download/${source.cid}` &&
-          mapped.viewUrl === ((source.gatewayUrls || [])[0] || '')
+          mapped.downloadUrl === source.downloadUrl &&
+          mapped.viewUrl === source.viewUrl
       })
     },
     { label: 'dashboard load mapping' }
