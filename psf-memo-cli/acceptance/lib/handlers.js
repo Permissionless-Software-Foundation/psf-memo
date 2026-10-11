@@ -35,6 +35,7 @@ import { memoBioHandlers } from './steps/memo-bio.js'
 import { memoAvatarHandlers } from './steps/memo-avatar.js'
 import { addressCommandHandlers } from './steps/address-commands.js'
 import { topicCommandHandlers } from './steps/topic-commands.js'
+import { fileUploadHandlers } from './steps/file-upload.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -72,6 +73,7 @@ const handlers = [
   ...memoAvatarHandlers,
   ...addressCommandHandlers,
   ...topicCommandHandlers,
+  ...fileUploadHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -117,6 +119,10 @@ async function createWorld () {
     profilePicStore: {},
     identityWallets: {},
     missingProfiles: new Set(),
+    hostingQuote: null,
+    hostingAlreadyHosted: null,
+    hostingError: null,
+    localFiles: { './photo.jpg': 'photo bytes' },
     unreachable: false,
     lastRequest: null,
     lastResult: null,
@@ -128,11 +134,24 @@ async function createWorld () {
     stderrText: ''
   }
 
-  world.fetch = async (url) => {
+  world.fetch = async (url, options = {}) => {
     world.lastRequest = new URL(url)
 
     if (world.unreachable) {
       throw new TypeError('fetch failed')
+    }
+
+    if (world.lastRequest.pathname === '/files' && options.method === 'POST') {
+      if (world.hostingError) {
+        return jsonResponse({ success: false, error: world.hostingError }, 422)
+      }
+      if (world.hostingAlreadyHosted) {
+        return jsonResponse(
+          { success: true, alreadyHosted: true, ...world.hostingAlreadyHosted },
+          200
+        )
+      }
+      return jsonResponse({ success: true, ...(world.hostingQuote || {}) }, 200)
     }
 
     if (world.lastRequest.pathname.startsWith('/level/name/')) {
@@ -316,6 +335,15 @@ async function createWorld () {
     envUrl: world.envUrl,
     fetchImpl: world.fetch
   })
+
+  // Read a local file for the file-* commands. Known files resolve to bytes;
+  // anything else fails the way a missing path does, without touching disk.
+  world.readFile = (filePath) => {
+    if (Object.prototype.hasOwnProperty.call(world.localFiles, filePath)) {
+      return Buffer.from(world.localFiles[filePath])
+    }
+    throw new Error(`ENOENT: no such file or directory, open '${filePath}'`)
+  }
 
   // Reproduce the scenario's command outcome as a runnable command.
   world.command = async () => {

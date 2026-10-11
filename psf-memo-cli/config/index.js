@@ -23,7 +23,12 @@ const config = {
 
   // The read-only psf-memo-db REST API. Production by default; local
   // development overrides it with MEMO_DB_URL or the --db-url flag.
-  memoDbUrl: resolveMemoDbUrl({ envUrl: process.env.MEMO_DB_URL })
+  memoDbUrl: resolveMemoDbUrl({ envUrl: process.env.MEMO_DB_URL }),
+
+  // The bch-file-hosting REST API used by the file-* commands. Local
+  // development defaults to the API's own default; production is served at
+  // https://file-hosting-api.blippost.com (set HOSTING_API_URL).
+  hostingApiUrl: process.env.HOSTING_API_URL || 'http://localhost:5050'
 }
 
 export default config

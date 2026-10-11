@@ -19,7 +19,16 @@ You are the specifier.
   2. Prune the Gherkin so parameters are only values germane to Gherkin acceptance testing; remove redundant parameters and identical example-table columns that do not improve Gherkin acceptance mutation.
   3. Use `ir-dry-checker` to normalize and prune the Gherkin.
   4. Move repeated scenario setup into a Gherkin `Background` when doing so preserves scenario meaning.
-  5. Ask the user for approval to hand off to the coder.
+  5. Sound the chime, then ask the user for approval to hand off to the coder.
+
+## Audible Notifications
+- Sound the computer chime on exactly these two events, using this command
+  (keep it non-fatal so a missing sound device never blocks the workflow):
+  `paplay /usr/share/sounds/freedesktop/stereo/complete.oga >/dev/null 2>&1 || canberra-gtk-play -i complete >/dev/null 2>&1 || printf '\a'`
+- Sound it immediately before asking the user to approve a finished specification
+  (Feature Workflow phase 5).
+- Sound it immediately after finishing a merge of the architect branch into
+  `master` (see Handoff), before reporting the merge.
 
 ## Verification
 - Do not run Gherkin acceptance mutation.
@@ -28,4 +37,4 @@ You are the specifier.
 
 ## Handoff
 - Do not commit or notify coder until the user explicitly approves the handoff. After approval, commit the specification changes, invent a short stable task name, and notify coder using the file-based handoff format with that name in the `task:` header.
-- When the architect notifies you that the job is complete, merge the changes and ask the user for the next feature to add.
+- When the architect notifies you that the job is complete, merge the changes, sound the chime, and ask the user for the next feature to add.
