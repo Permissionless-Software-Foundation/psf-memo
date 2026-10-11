@@ -1794,10 +1794,10 @@ architect review `dea6b87`, `docs/reviews/file-check-verification.json` pass
 is the `psf-memo-cli` **agent-interface parity** work in
 `psf-memo-cli/dev-docs/feature-backlog.md`: **AF1 is DONE** — `memo-following-feed`,
 the wallet-relative viewer's Following feed (`GET /posts/following/:addr`, spec
-`2af4690`, merged at `7a2614c`, independent acceptance 13/13) — plus (AF2)
-`--json` on every command that lacks it (`wallet-*`/`send-*`/`msg-*`) and (AF3)
-update `psf-memo-cli/SKILL.md` after AF2 lands. The client front-end backlog
-remains the fallback.
+`2af4690`, merged at `7a2614c`, independent acceptance 13/13) — plus **AF2 is in
+progress** (`cli-json-output`, spec `b8b892c`: `--json` on every command that
+lacks it, `wallet-*`/`send-*`/`msg-*`) and (AF3) update `psf-memo-cli/SKILL.md`
+after AF2 lands. The client front-end backlog remains the fallback.
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
