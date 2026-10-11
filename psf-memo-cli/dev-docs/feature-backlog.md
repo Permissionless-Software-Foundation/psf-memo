@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — proposed.
 **Owner**: specifier.
-**Last updated**: 2026-10-08.
+**Last updated**: 2026-10-11.
 
 ## Purpose
 
@@ -413,6 +413,34 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
   write→index→read bridge. Docs only; the behavior is pinned by `memo-wait` and
   `memo-status`. Spec: `psf-memo-cli/dev-docs/async-visibility-contract.md`;
   architect summary: `docs/reviews/cli-async-visibility-summary.md`.
+
+---
+
+## File-hosting commands (planned — new 2026-10-11)
+
+**Status**: PLANNED, blocked on an external request to the `bch-file-hosting`
+team. No Gherkin or handoff yet.
+
+A second job beyond the Memo protocol: port a subset of the
+`bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the
+`bch-file-hosting` REST API. The CLI surfaces the API's URLs; it does not
+download files. See `psf-memo-cli/dev-docs/file-hosting-features.md` for the
+full plan, decisions, and API facts, and
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` for the request to the
+bch-file-hosting team.
+
+| ID | Command | Purpose | Wallet? | Reference spec |
+|----|---------|---------|---------|----------------|
+| FH1 | `file-upload` | Quote-only upload (print quote or already-hosted links) | no | `file-upload.feature` |
+| FH2 | `file-host` | Upload + pay + confirm, print CID/links/txid | yes (`-n`/`--wif`) | `file-host.feature` |
+| FH3 | `file-status` | Look up a file by CID (`-c`), print status and pins | no | `file-status.feature` |
+| FH4 | `file-check` | Look up a payment by address (`-a`), print paid/unpaid/expired | no | `file-check.feature` |
+
+Locked decisions: `file-*` prefix; `HOSTING_API_URL` for CLI and web; keep the
+2,000-sat PSF donation; upgrade to the latest `minimal-slp-wallet`; reuse the
+`-n`/`--wif` wallet source, reporter contract, acceptance harness, and
+`memo-wait` polling pattern; poll 10 × 3,000 ms (injectable). `file-list` and a
+download command are out of scope.
 
 ---
 

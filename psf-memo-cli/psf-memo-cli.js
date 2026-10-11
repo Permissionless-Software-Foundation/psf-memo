@@ -46,6 +46,7 @@ import MemoUnmute from './src/commands/memo-unmute.js'
 import MemoTopicPost from './src/commands/memo-topic-post.js'
 import MemoTopicFollow from './src/commands/memo-topic-follow.js'
 import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
+import FileUpload from './src/commands/file-upload.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -87,6 +88,7 @@ const memoUnmute = new MemoUnmute()
 const memoTopicPost = new MemoTopicPost()
 const memoTopicFollow = new MemoTopicFollow()
 const memoTopicUnfollow = new MemoTopicUnfollow()
+const fileUpload = new FileUpload()
 
 const program = new Command()
 
@@ -399,6 +401,12 @@ program.command('memo-topic-unfollow')
   .option('-r, --room <string>', 'topic room')
   .option('--json', 'print the result as one JSON object')
   .action(memoTopicUnfollow.run)
+
+program.command('file-upload')
+  .description('Upload a file to the hosting API and print the price quote')
+  .option('-f, --file <string>', 'local file to upload')
+  .option('--json', 'print the result as one JSON object')
+  .action(fileUpload.run)
 
 program.parseAsync(process.argv)
 

@@ -136,9 +136,11 @@ For each feature:
 3. Run `bb gherkin-ir-dry-checker` to normalize/prune.
 4. Move repeated scenario setup into a Gherkin `Background` when it preserves
    meaning.
-5. **Ask the user for approval** before handing off to the coder. After approval:
-   commit with your byline (`By specifier.`), invent a short stable task name,
-   and send the file-based `git_handoff` (see §8).
+5. **Sound the chime**, then **ask the user for approval** before handing off to
+   the coder. After approval: commit with your byline (`By specifier.`), invent
+   a short stable task name, and send the file-based `git_handoff` (see §8).
+   Chime command:
+   `paplay /usr/share/sounds/freedesktop/stereo/complete.oga >/dev/null 2>&1 || canberra-gtk-play -i complete >/dev/null 2>&1 || printf '\a'`
 
 Also: do not run Gherkin acceptance mutation; run tests only when verification is
 needed.
@@ -249,8 +251,8 @@ that a single user-facing feature may require specs in more than one component.
 - After sending, check the handoff was delivered (daemon). If not, start the
   daemon (GOTCHA #2).
 - Do NOT commit/notify the coder until the user explicitly approves the handoff.
-- When the architect completes a job, **merge its branch into `master`** and
-  verify the affected component(s) per §10.
+- When the architect completes a job, **merge its branch into `master`**, sound
+  the chime, and verify the affected component(s) per §10.
 
 ---
 
@@ -1248,6 +1250,44 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/hosted-files.feature` (Hosted Files - 8); architect
     summary: `docs/reviews/nav-file-hosting-labels-summary.md`.
 
+92. **The file-hosting feed owns the download and view URLs.** After the
+    `file-view-api-links` port, `psf-memo-client`'s dashboard and upload views
+    render the hosting feed's `downloadUrl`/`viewUrl` (the API's own
+    `/download/<cid>` and `/view/<cid>`) instead of third-party IPFS gateway
+    URLs; the configured `REACT_APP_FILE_HOSTING_URL` base is retained only as
+    a download fallback, and the client derives no view URL from gateways. This
+    mirrors the upstream `bch-file-hosting-web` file-view update
+    (`7fe159b`/`5fc2fa3`); the shared `DashboardPage.loadPage` maps the first
+    page and Load more through one projection. Specs:
+    `psf-memo-client/specs/hosted-files.feature` (Hosted Files - 2) and
+    `psf-memo-client/specs/host-file.feature` (Host File - 2, 9, 14).
+
+93. **The planned `psf-memo-cli` file-hosting port is blocked on an external
+    request, with no Gherkin yet.** On 2026-10-11 the user asked to port
+    `bch-file-hosting` CLI capabilities into `psf-memo-cli`: upload-and-pay,
+    check status, and (implicitly, via the returned URLs) get a hosted file. A
+    download/`file-get` command was explicitly dropped — the CLI only prints
+    URLs and the caller fetches them. The agreed commands are `file-upload`
+    (quote-only, no wallet), `file-host` (upload + pay + confirm), `file-status`
+    (by CID), and `file-check` (by payment address), all under a `file-*`
+    prefix. Locked decisions: env var `HOSTING_API_URL` for CLI and web; keep
+    the 2,000-sat PSF donation (`priceSats + 2,000 + fee`); upgrade to the
+    latest `minimal-slp-wallet`; reuse the `-n`/`--wif` wallet source, reporter
+    contract, acceptance harness, and the `memo-wait` injected-clock polling
+    pattern; poll 10 × 3,000 ms (injectable). Full plan and API facts:
+    `psf-memo-cli/dev-docs/file-hosting-features.md`. The changes needed from
+    the `bch-file-hosting` team (standardize `HOSTING_API_URL` incl. the CRA
+    web mirror, bind `fetch` to `globalThis` in `HostingApi`, upgrade
+    `minimal-slp-wallet`, publish/document the reusable adapter, commit
+    `dev-docs/api-contract.md`, keep `downloadUrl`/`viewUrl`/`gatewayUrls`
+    stable) are written up in
+    `psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, which the user is
+    handing to that team. **Do not write these specs until the user confirms
+    the bch team has landed the changes and reconfirms the env-var default and
+    adapter shape.** `GET /files/:cid` returns no URLs (metadata + pins only);
+    links come from `check-payment`/`alreadyHosted`, which is why `file-check`
+    is in the set.
+
 ---
 
 ## 10. Run / verify the app
@@ -1304,7 +1344,40 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-10, `nav-file-hosting-labels`): a client-only
+Current session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
+Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
+into `psf-memo-cli` and to capture the decisions before implementation. Created
+`psf-memo-cli/dev-docs/file-hosting-features.md` (plan, locked decisions, API
+facts, risks, next steps) and
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` (the change request the
+user will hand to the `bch-file-hosting` team), and recorded the new FH1–FH4
+commands in `psf-memo-cli/dev-docs/feature-backlog.md` plus the root backlog.
+Commands: `file-upload` (quote-only), `file-host` (upload+pay+confirm),
+`file-status` (by CID), `file-check` (by address). Decisions: `file-*` prefix;
+`HOSTING_API_URL`; keep the 2,000-sat PSF donation; latest
+`minimal-slp-wallet`; reuse existing wallet/reporter/acceptance/polling code;
+10 × 3,000 ms polling; no download command. Blocked until the bch team lands
+its changes; see gotcha #93.
+
+Latest session (2026-10-11, `file-view-api-links`): a client-only port of the
+upstream `bch-file-hosting-web` file-view update (`7fe159b`/`5fc2fa3`). The
+specifier pointed the `Hosted Files - 2` dashboard View cell and the
+`Host File - 2` already-hosted and `Host File - 9` paid results at the hosting
+API's own `/view/<cid>` URL carried by the feed/paid/already-hosted payloads
+(and the feed `downloadUrl`) instead of third-party IPFS gateway links, and
+retargeted `Host File - 14` to the API view link. The refactorer single-sourced
+`DashboardPage.loadPage` for the first page and Load more. Merged to `master` at
+`5ce6f0c` (fast-forward; architect review commit `f793e52`; the later `5ce6f0c`
+adds only the record and summary, so
+`docs/reviews/file-view-api-links-verification.json` is valid for the merged
+tree). Recorded `verify.sh client` pass 5/5 at `f793e52` (unit 916/0, property
+253/0, acceptance all 51 suites, lint ok, build ok); language mutation 28/28
+killed; soft Gherkin mutation hosted-files 36/33 and host-file 30/25 (8
+intrinsic survivors); DRY only pre-existing patterns. Independent acceptance
+check after merge: host-file 31/31 and hosted-files 13/13. Architect summary:
+`docs/reviews/file-view-api-links-summary.md`.
+
+Previous session (2026-10-10, `nav-file-hosting-labels`): a client-only
 navigation-menu change. The specifier updated `Host File - 17` and
 `Hosted Files - 8` to pin the renamed entries and their order (label
 `File Upload` at `/host` between Account and BCH, and `File Dashboard` at
@@ -2027,7 +2100,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `ab6a572` (`Record nav-file-hosting-labels architect review and verification`).
+Current `master` HEAD: `5ce6f0c` (`Record file-view-api-links architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2066,10 +2139,20 @@ and `psf-memo-client/specs/following-feed.feature` now describe the retired
 following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
 
+Pending external dependency (2026-10-11): the `psf-memo-cli` file-hosting port
+(`file-upload`, `file-host`, `file-status`, `file-check`) is planned but blocked
+on the `bch-file-hosting` team's changes to its CLI/API. All decisions and the
+change request are captured in
+`psf-memo-cli/dev-docs/file-hosting-features.md` and
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` (gotcha #93). Do not spec
+it until the user confirms the changes landed and reconfirms the env-var default
+and adapter shape.
+
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the latest feature is `nav-file-hosting-labels`,
-merged at `ab6a572`, after `host-file-pages` at `c7c05ee`, after
+`specs/feature-backlog.md` (the latest feature is `file-view-api-links`,
+merged at `5ce6f0c`, after `nav-file-hosting-labels` at `ab6a572`, after
+`host-file-pages` at `c7c05ee`, after
 `image-format-detection` at `87f0d3a`, account-posts-feed's
 `account-profile-link` follow-up
 at `81c47cb`, `account-post-metadata` at `a70f36c`, `account-posts-feed` at

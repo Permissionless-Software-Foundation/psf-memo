@@ -292,6 +292,25 @@ node psf-memo-cli.js memo-topic-follow -n wallet1 -r general --json
 node psf-memo-cli.js memo-topic-unfollow -n wallet1 -r general --json
 ```
 
+## File Hosting Commands
+
+The `file-*` commands talk to the `bch-file-hosting` REST API to host files.
+They are separate from the `memo-*` namespace (file hosting is not a Memo
+protocol action). The API base URL comes from `HOSTING_API_URL` (default
+`http://localhost:5050`).
+
+| Command | Required flags | Optional flags | JSON data fields |
+|---------|----------------|----------------|------------------|
+| `file-upload` | `-f/--file` | `--json` | the API quote (`filename`, `sizeBytes`, `billedBytes`, `priceSats`, `paymentAddress`, `quoteExpiresAt`) or the already-hosted `downloadUrl`/`viewUrl` |
+
+`file-upload` is quote-only: it reads a local file, uploads it, and prints the
+price quote (or the already-hosted links). It never touches a wallet, so a
+caller can pay the quote from any external wallet.
+
+```sh
+node psf-memo-cli.js file-upload -f ./photo.jpg --json
+```
+
 
 ## Testing and Quality
 
