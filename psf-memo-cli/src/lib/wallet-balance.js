@@ -44,14 +44,32 @@ export function formatBalanceMessage (summary = {}) {
     lines.push(`${token.ticker} ${token.qty} ${token.tokenId}`)
   }
 
-  if ((summary.mintBatons || []).length > 0) {
-    lines.push('', 'Minting Batons: ')
-
-    for (const baton of summary.mintBatons) {
-      const type = baton.tokenType === 129 ? 'Group' : 'Fungible'
-      lines.push(`${baton.ticker} (${type}) ${baton.tokenId}`)
-    }
-  }
+  lines.push(...formatMintBatonLines(summary.mintBatons))
 
   return lines.join('\n')
 }
+
+// The minting-baton section: one labelled line per baton, or nothing when the
+// wallet holds none.
+function formatMintBatonLines (mintBatons = []) {
+  if (mintBatons.length === 0) {
+    return []
+  }
+
+  const lines = ['', 'Minting Batons: ']
+
+  for (const baton of mintBatons) {
+    lines.push(`${baton.ticker} (${batonType(baton)}) ${baton.tokenId}`)
+  }
+
+  return lines
+}
+
+// A type-129 baton mints a group token; every other type mints a fungible one.
+function batonType (baton) {
+  return baton.tokenType === 129 ? 'Group' : 'Fungible'
+}
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:37:56.635Z","module_hash":"c5e70e2c1b466c6593c14479125e86905ec75d1990d266be40162c1edecb5137","functions":[{"id":"func/summarizeBalance","name":"summarizeBalance","line":14,"end_line":32,"hash":"11c9dd2d048e792a1cfa2e689692359d1eb78c5818dcd285d16562d51c7338e3"},{"id":"func/formatBalanceMessage","name":"formatBalanceMessage","line":36,"end_line":50,"hash":"adf0ba13f19bcc932c2dc4e79353f1b143b954b991f039b3d533d3791ec2bfea"},{"id":"func/formatMintBatonLines","name":"formatMintBatonLines","line":54,"end_line":66,"hash":"272b3e1abc244c5125539b4b9aef2c4477ca79ab58d52e01001aafcd583dda74"},{"id":"func/batonType","name":"batonType","line":69,"end_line":71,"hash":"2fc8ea3a523b5693dda8f6a7dbeabce69758557f61952d949dc2066d57f96124"}]}
+// mutate4javascript-manifest-end

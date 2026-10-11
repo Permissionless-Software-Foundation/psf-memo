@@ -7,19 +7,13 @@
 import BchWallet from 'minimal-slp-wallet'
 
 // Local libraries
-import { bindMethods } from '../lib/bind-methods.js'
+import { initCommand } from '../lib/init-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
 import { runCommand } from '../lib/reporter.js'
 
 class MsgVerify {
-  constructor ({ BchWallet: WalletClass = BchWallet, stdout, stderr } = {}) {
-    // Encapsulate dependencies
-    this.BchWallet = WalletClass
-    this.stdout = stdout
-    this.stderr = stderr
-
-    // Bind 'this' object to all subfunctions.
-    bindMethods(this, ['run', 'validateFlags', 'verify'])
+  constructor (options = {}) {
+    initCommand(this, options, ['verify'], { BchWallet: options.BchWallet || BchWallet })
   }
 
   async run (flags = {}) {
@@ -68,3 +62,7 @@ class MsgVerify {
 }
 
 export default MsgVerify
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:37:56.810Z","module_hash":"ff326b0854192ed439f58201f7838fe6787e617c372ec11f1d65ed14177e0a95","functions":[{"id":"func/MsgVerify.constructor","name":"MsgVerify.constructor","line":15,"end_line":17,"hash":"9900c6e0935c368727300ebd5ae5d8900159960d9885c1614e72243f910cd3e4"},{"id":"func/MsgVerify.run","name":"MsgVerify.run","line":19,"end_line":45,"hash":"66f99562d4b687d1ceda7f4501166e5240e4cf50e24dea017043ab6ea02ff1c8"},{"id":"func/MsgVerify.validateFlags","name":"MsgVerify.validateFlags","line":47,"end_line":53,"hash":"9ec625c409f7b331222f182196fbb528cfc396ab26635380c42f2a3675e6dab2"},{"id":"func/MsgVerify.verify","name":"MsgVerify.verify","line":55,"end_line":61,"hash":"e185f61338a37862827f1ed8f678131372fc2828cd5b84e1e30608482bedd315"}]}
+// mutate4javascript-manifest-end

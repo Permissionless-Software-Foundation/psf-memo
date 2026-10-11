@@ -120,6 +120,14 @@ describe('#wallet-balance', () => {
 
       assert.notInclude(message, 'Minting Batons')
     })
+
+    it('renders the empty summary with no tokens or batons', () => {
+      const message = formatBalanceMessage()
+
+      assert.include(message, 'BCH balance: undefined satoshis or undefined BCH')
+      assert.include(message, 'Tokens:')
+      assert.notInclude(message, 'Minting Batons')
+    })
   })
 
   describe('#getBalances', () => {

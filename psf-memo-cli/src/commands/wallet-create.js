@@ -6,8 +6,7 @@
 import BchWallet from 'minimal-slp-wallet'
 
 // Local libraries
-import WalletUtil from '../lib/wallet-util.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initWalletCommand } from '../lib/init-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
 import { runCommand } from '../lib/reporter.js'
 
@@ -15,15 +14,8 @@ import { runCommand } from '../lib/reporter.js'
 const __dirname = import.meta.dirname
 
 class WalletCreate {
-  constructor ({ BchWallet: WalletClass = BchWallet, walletUtil, stdout, stderr } = {}) {
-    // Encapsulate all dependencies
-    this.BchWallet = WalletClass
-    this.walletUtil = walletUtil || new WalletUtil()
-    this.stdout = stdout
-    this.stderr = stderr
-
-    // Bind 'this' object to all subfunctions
-    bindMethods(this, ['run', 'validateFlags', 'createWallet'])
+  constructor (options = {}) {
+    initWalletCommand(this, options, ['createWallet'], { BchWallet: options.BchWallet || BchWallet })
   }
 
   async run (flags = {}) {
@@ -95,3 +87,7 @@ class WalletCreate {
 }
 
 export default WalletCreate
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:37:57.316Z","module_hash":"78b06791bcdb096f63f94c5ccdbeaeaf5b1b587baa2ffdd399b05fde653eb2c6","functions":[{"id":"func/WalletCreate.constructor","name":"WalletCreate.constructor","line":17,"end_line":19,"hash":"46389899802cd3ae4495c3676915b9d3567e47b0c5e07ee4e1cf8e1ca916cb07"},{"id":"func/WalletCreate.run","name":"WalletCreate.run","line":21,"end_line":52,"hash":"66f7438d888a88be4819ffbda98c34bcce110205c68d3a066f30da3d12a9762d"},{"id":"func/WalletCreate.validateFlags","name":"WalletCreate.validateFlags","line":54,"end_line":58,"hash":"30f3abcad0c161990ba603b85114028f03c80fa51bc831d5b19bfbec8c247177"},{"id":"func/WalletCreate.createWallet","name":"WalletCreate.createWallet","line":61,"end_line":86,"hash":"7e0eb80c93c7f235008fd822753f64c0af544b0b2689e39c08f6cfe28e429444"}]}
+// mutate4javascript-manifest-end

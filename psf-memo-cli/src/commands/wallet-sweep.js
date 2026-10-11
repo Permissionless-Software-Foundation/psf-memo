@@ -11,23 +11,15 @@
 import BchTokenSweep from 'bch-token-sweep'
 
 // Local libraries
-import WalletUtil from '../lib/wallet-util.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initWalletCommand } from '../lib/init-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
 import { runCommand } from '../lib/reporter.js'
 
 const SWEEP_EXPLORER_URL = 'https://bch.loping.net/tx/'
 
 class WalletSweep {
-  constructor ({ BchTokenSweep: SweepClass = BchTokenSweep, walletUtil, stdout, stderr } = {}) {
-    // Encapsulate dependencies
-    this.BchTokenSweep = SweepClass
-    this.walletUtil = walletUtil || new WalletUtil()
-    this.stdout = stdout
-    this.stderr = stderr
-
-    // Bind 'this' object to all subfunctions.
-    bindMethods(this, ['run', 'validateFlags', 'sweepWif'])
+  constructor (options = {}) {
+    initWalletCommand(this, options, ['sweepWif'], { BchTokenSweep: options.BchTokenSweep || BchTokenSweep })
   }
 
   async run (flags = {}) {
@@ -90,3 +82,7 @@ class WalletSweep {
 }
 
 export default WalletSweep
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:37:57.481Z","module_hash":"f52757281d7d55d87ce81bb2a5d2ba5c32ee9f98b194c7799e3d9975fd076658","functions":[{"id":"func/WalletSweep.constructor","name":"WalletSweep.constructor","line":21,"end_line":23,"hash":"867c777c403ea1b1c81bd5849e90eef401f33e19ceaf4a00aeeadb0e0c3c075d"},{"id":"func/WalletSweep.run","name":"WalletSweep.run","line":25,"end_line":54,"hash":"a3ec1d3033400fbbe72535eac864698ff3c6f543ad25a98af81552507666cf37"},{"id":"func/WalletSweep.validateFlags","name":"WalletSweep.validateFlags","line":56,"end_line":61,"hash":"a3476b3118f86e162fdc8eef030d4d2b9af24b05f197346fed6bee59ea98fe87"},{"id":"func/WalletSweep.sweepWif","name":"WalletSweep.sweepWif","line":63,"end_line":81,"hash":"d2fe93671f607738ce7da9674bd7c90256eb9dfca9a0bfb446938663202b0c45"}]}
+// mutate4javascript-manifest-end

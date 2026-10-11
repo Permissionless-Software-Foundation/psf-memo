@@ -3,20 +3,13 @@
 */
 
 // Local libraries
-import WalletUtil from '../lib/wallet-util.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initWalletCommand } from '../lib/init-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
 import { runCommand } from '../lib/reporter.js'
 
 class MsgSign {
-  constructor ({ walletUtil, stdout, stderr } = {}) {
-    // Encapsulate dependencies
-    this.walletUtil = walletUtil || new WalletUtil()
-    this.stdout = stdout
-    this.stderr = stderr
-
-    // Bind 'this' object to all subfunctions.
-    bindMethods(this, ['run', 'validateFlags', 'sign'])
+  constructor (options = {}) {
+    initWalletCommand(this, options, ['sign'])
   }
 
   async run (flags = {}) {
@@ -75,3 +68,7 @@ class MsgSign {
 }
 
 export default MsgSign
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:37:57.667Z","module_hash":"c8cbb18813f60a463fa2f59b016a05b0d96a27f622c85f27dfc6997cf2640bea","functions":[{"id":"func/MsgSign.constructor","name":"MsgSign.constructor","line":11,"end_line":13,"hash":"e207891b9f45e51a3d6ba20a4db5f550d69f1432db85868adeabc5b85e73760a"},{"id":"func/MsgSign.run","name":"MsgSign.run","line":15,"end_line":45,"hash":"d562b6e7ef0ba8be8ba6679ca19ec304887b577445808cac7bf79d48cc234ca3"},{"id":"func/MsgSign.validateFlags","name":"MsgSign.validateFlags","line":47,"end_line":52,"hash":"0d7781b2dfd5a6ecf25940ae7aa5912b0779d17e2d56cd48e5967d28f7f90337"},{"id":"func/MsgSign.sign","name":"MsgSign.sign","line":54,"end_line":67,"hash":"6d45e62f1f0bce63f231e7a2102712f0d7267585b2d92129454d75e2a841a776"}]}
+// mutate4javascript-manifest-end
