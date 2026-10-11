@@ -35,6 +35,23 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **File upload (`file-upload`, 2026-10-11):** FH1 of the `psf-memo-cli`
+  file-hosting port. Adds the quote-only `file-upload` command: it uploads a
+  local file to the `bch-file-hosting` REST API (`POST /files`, multipart field
+  `file`) and prints the price quote (file name, size, billed size when it
+  differs, price, payment address, expiry) or the already-hosted download/view
+  links. No wallet and no payment. The pure renderer is
+  `psf-memo-cli/src/lib/file-upload.js`; the adapter is
+  `psf-memo-cli/src/lib/hosting-api.js` (injected `fetch`, `HostingApiError`,
+  bound to `globalThis`); the API base URL comes from `HOSTING_API_URL`
+  (default `http://localhost:5050`). Spec: `psf-memo-cli/specs/file-upload.feature`.
+  Merged to `master` at `8fbb8d4` (architect review commit `af7cb4b`; the later
+  `e06080e` adds only the record and summary, so
+  `docs/reviews/file-upload-verification.json` is valid for the merged tree).
+  Recorded `verify.sh cli` pass 4/4 at `af7cb4b` (unit 601/0, property 118/0,
+  acceptance all 39 suites, lint ok); independent acceptance check after merge:
+  `file-upload` 13/13 example executions.
+
 - **File-view API links (`file-view-api-links`, 2026-10-11):** Client-only port
   of the upstream `bch-file-hosting-web` file-view update (`7fe159b`/`5fc2fa3`).
   The dashboard View cell and the upload already-hosted/paid results now render
@@ -1700,18 +1717,20 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ## Next up: TBD
 
-**Planned (blocked externally): `psf-memo-cli` file-hosting commands.** On
-2026-10-11 the user asked to port three `bch-file-hosting` CLI capabilities into
-`psf-memo-cli`: upload-and-pay, check status, and (via the returned URLs) get a
-hosted file. A download/`file-get` command was explicitly dropped. The decisions
-and plan are captured in
-`psf-memo-cli/dev-docs/file-hosting-features.md`, and the required changes to
-the `bch-file-hosting` CLI/API were written up in
-`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` for the user to hand to
-that team. **No Gherkin has been written.** When the bch team lands its
-changes, resume here and reconfirm the env-var default and adapter shape with
-the user before speccing `file-upload`, `file-host`, `file-status`, and
-`file-check` (prefix `file-*`, env var `HOSTING_API_URL`, keep the 2,000-sat PSF
+**In progress: `psf-memo-cli` file-hosting commands.** On 2026-10-11 the user
+asked to port three `bch-file-hosting` CLI capabilities into `psf-memo-cli`:
+upload-and-pay, check status, and (via the returned URLs) get a hosted file. A
+download/`file-get` command was explicitly dropped. The decisions and plan are
+captured in `psf-memo-cli/dev-docs/file-hosting-features.md`, and the request to
+the `bch-file-hosting` team is in
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`. The team landed the
+requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
+`fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, `minimal-slp-wallet`
+7.1.5), the user reconfirmed the env-var default and adapter shape, and **FH1
+`file-upload` is DONE** (spec `bcacc9d274`, merged to `master` at `8fbb8d4`,
+architect review `af7cb4b`, `docs/reviews/file-upload-verification.json` pass
+4/4, independent acceptance 13/13). Next: FH2 `file-host`, then FH3
+`file-status` and FH4 `file-check` (prefix `file-*`, keep the 2,000-sat PSF
 donation, latest `minimal-slp-wallet`).
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
