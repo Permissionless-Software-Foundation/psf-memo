@@ -52,4 +52,15 @@ describe('#send-payment', () => {
       assert.include(err.message, 'Unexpected transaction id')
     }
   })
+
+  it('rejects an empty transaction id from the wallet backend', async () => {
+    const wallet = fakeWallet({ txid: '' })
+
+    try {
+      await sendPayment({ wallet, toAddress: 'bitcoincash:qto', amountSats: 1 })
+      assert.fail('Unexpected result')
+    } catch (err) {
+      assert.include(err.message, 'Unexpected transaction id')
+    }
+  })
 })

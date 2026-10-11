@@ -421,5 +421,5 @@ program.command('file-host')
 program.parseAsync(process.argv)
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T16:26:01.761Z","module_hash":"02ed9249507ed7726b20b613d9fbc6b818d76c205c43981265fee9e6a69fb2cf","functions":[]}
+// {"version":1,"tested_at":"2026-10-11T17:19:07.543Z","module_hash":"66875c80a557ff1d88edb8e31f9bf258c24b05486719c6b23e4e8fc99d955801","functions":[]}
 // mutate4javascript-manifest-end

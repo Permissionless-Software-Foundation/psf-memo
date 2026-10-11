@@ -45,5 +45,5 @@ export function validateWalletSource ({ name, wif } = {}) {
 }
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T14:59:01.018Z","module_hash":"30c91fbd4492013df98aab192fed9eb87836f54cb7548422456a9f6d47c5c054","functions":[{"id":"func/resolveWalletSource","name":"resolveWalletSource","line":19,"end_line":36,"hash":"f66007f5bca8dc26f592d51c1916139124627f8c77bb53f7f4e3b916e17ebc0f"}]}
+// {"version":1,"tested_at":"2026-10-11T17:18:37.543Z","module_hash":"e7fb9102585291836694f162ee01042aecceb20b48fb157598a3f133eff14a75","functions":[{"id":"func/resolveWalletSource","name":"resolveWalletSource","line":19,"end_line":30,"hash":"49771e54098898c9328b26d21c0ceb94879c78ca0df7e0ea753518cbd99c951e"},{"id":"func/validateWalletSource","name":"validateWalletSource","line":35,"end_line":45,"hash":"ee4994002845da7baf167a2cffb5028ba79ab844379f446484028d72c6802bf2"}]}
 // mutate4javascript-manifest-end
