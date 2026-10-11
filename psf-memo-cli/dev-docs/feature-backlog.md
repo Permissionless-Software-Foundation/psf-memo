@@ -416,9 +416,9 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
 
 ---
 
-## File-hosting commands (in progress — resumed 2026-10-11)
+## File-hosting commands (complete — 2026-10-11)
 
-**Status**: IN PROGRESS. The external blocker is cleared: the `bch-file-hosting`
+**Status**: COMPLETE (all FH1–FH4 merged). The external blocker is cleared: the `bch-file-hosting`
 team landed `HOSTING_API_URL` (default `http://localhost:5050`), the
 `fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, and
 `minimal-slp-wallet` 7.1.5. **FH1 `file-upload` is DONE** (merged to `master` at
@@ -431,8 +431,12 @@ independent acceptance 14/14), including the `minimal-slp-wallet` `5.12.1 →
 **FH3 `file-status` is DONE** (merged to `master` at `b6ec762`; architect review
 `94c671b`; `verify.sh cli` pass 4/4, record
 `docs/reviews/file-status-verification.json`; independent acceptance 8/8).
-**FH4 `file-check` is in progress** (spec
-`psf-memo-cli/specs/file-check.feature`).
+**FH4 `file-check` is DONE** (merged to `master` at `be28c77`; architect review
+`dea6b87`; `verify.sh cli` pass 4/4, record
+`docs/reviews/file-check-verification.json`; independent acceptance 10/10, plus
+file-status 8/8 and file-host 14/14 after the shared `HostingCommand` refactor).
+**FH1–FH4 complete.** The file-hosting port is done; the next direction is the
+client front-end backlog.
 
 A second job beyond the Memo protocol: port a subset of the
 `bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the

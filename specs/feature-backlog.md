@@ -35,6 +35,22 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **File check (`file-check`, 2026-10-11):** FH4 of the `psf-memo-cli`
+  file-hosting port, completing FH1–FH4. Adds the read-only `file-check`
+  command: look up a hosting payment by address (`-a`) via
+  `POST /files/check-payment` and report `paid` (CID + download/view/gateway
+  links), `unpaid` (received/required sats + quote expiry), or `expired`, closing
+  the `GET /files/:cid` URL asymmetry. No wallet. The refactorer shared one
+  `HostingCommand` pipeline across `file-check`/`file-status` and a
+  `hosted-result` renderer across `file-check`/`file-host`. Spec:
+  `psf-memo-cli/specs/file-check.feature`.
+  Merged to `master` at `be28c77` (architect review commit `dea6b87`; the later
+  `bf06727` adds only the record/summary and a tool-written mutation manifest,
+  so `docs/reviews/file-check-verification.json` is valid for the merged tree).
+  Recorded `verify.sh cli` pass 4/4 at `dea6b87` (unit 659/0, property 140/0,
+  acceptance all 42 suites, lint ok); independent checks after merge:
+  `file-check` 10/10, `file-status` 8/8, `file-host` 14/14 example executions.
+
 - **File status (`file-status`, 2026-10-11):** FH3 of the `psf-memo-cli`
   file-hosting port. Adds the read-only `file-status` command: look up a file
   record by CID (`-c`) via `GET /files/:cid` and print its CID, name, size,
@@ -1769,9 +1785,13 @@ merged to `master` at `938bf7c`, architect review `d09f222`,
 14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. **FH3
 `file-status` is DONE** (spec `b2adce1`, merged to `master` at `b6ec762`,
 architect review `94c671b`, `docs/reviews/file-status-verification.json` pass
-4/4, independent acceptance 8/8). **FH4 `file-check` is in progress** (spec
-`13bfd94`). After FH4 the FH1–FH4 file-hosting port is complete; the next
-direction is the client front-end backlog.
+4/4, independent acceptance 8/8). **FH4
+`file-check` is DONE** (spec `13bfd94`, merged to `master` at `be28c77`,
+architect review `dea6b87`, `docs/reviews/file-check-verification.json` pass
+4/4, independent acceptance 10/10, plus file-status 8/8 and file-host 14/14).
+**The FH1–FH4 `psf-memo-cli` file-hosting port is complete.** The next direction
+is the client front-end backlog — front-end improvements to `psf-memo-client`
+in `specs/feature-backlog.md`. Ask the user for the next feature.
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
