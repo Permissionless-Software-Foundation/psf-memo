@@ -11,6 +11,7 @@ import { promises as fs } from 'fs'
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import SendBch from '../../../src/commands/send-bch.js'
+import { captureStream } from '../../support/capture.js'
 
 const walletCreate = new WalletCreate()
 const walletUtil = new WalletUtil()
@@ -168,25 +169,70 @@ describe('#send-bch', () => {
   })
 
   describe('#run', () => {
-    it('should execute the run function', async () => {
+    it('prints one JSON object with the transaction and explorer link', async () => {
       // Mock dependencies
       sandbox.stub(uut, 'sendBch').resolves('fake-txid')
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
 
-      const flags = {
+      const code = await uut.run({
         name: 'test123',
         qty: 0.01,
-        addr: 'bitcoincash:qr2zqrnqdulfmeqs2qe9c5p605lrwe90v5v735s2jl'
-      }
+        addr: 'bitcoincash:qto',
+        json: true
+      })
 
-      const result = await uut.run(flags)
-
-      assert.equal(result, true)
+      assert.equal(code, 0)
+      assert.equal(err.text(), '')
+      const parsed = JSON.parse(out.text())
+      assert.equal(parsed.txid, 'fake-txid')
+      assert.equal(parsed.explorerUrl, 'https://bch.loping.net/tx/fake-txid')
     })
 
-    it('should handle an error', async () => {
-      const result = await uut.run()
+    it('prints the human TXID lines', async () => {
+      sandbox.stub(uut, 'sendBch').resolves('fake-txid')
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      uut.stdout = out.stream
 
-      assert.equal(result, 0)
+      const code = await uut.run({ name: 'test123', qty: 0.01, addr: 'bitcoincash:qto' })
+
+      assert.equal(code, 0)
+      assert.include(out.text(), 'TXID: fake-txid')
+      assert.include(out.text(), 'https://bch.loping.net/tx/fake-txid')
+    })
+
+    it('reports a missing flag as a usage error (exit 2)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ json: true })
+
+      assert.equal(code, 2)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), {
+        error: 'You must specify a wallet name with the -n flag.'
+      })
+    })
+
+    it('reports insufficient funds as a runtime error (exit 1)', async () => {
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      sandbox.stub(uut, 'sendBch').rejects(new Error('insufficient funds'))
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ name: 'test123', qty: 1, addr: 'bitcoincash:qto', json: true })
+
+      assert.equal(code, 1)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), { error: 'insufficient funds' })
     })
   })
 })

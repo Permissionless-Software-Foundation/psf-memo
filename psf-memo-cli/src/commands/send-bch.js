@@ -2,31 +2,22 @@
   Command to send BCH to a given address.
 */
 
-// Global npm libraries
-
 // Local libraries
-import WalletUtil from '../lib/wallet-util.js'
-import { bindMethods } from '../lib/bind-methods.js'
+import { initWalletCommand } from '../lib/init-command.js'
 import { runSendCommand } from '../lib/send-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
 
 class SendBch {
-  constructor () {
-    // Encapsulate dependencies
-    this.walletUtil = new WalletUtil()
-    this.bchWallet = {} // Placeholder for instance of wallet.
-
-    // Bind 'this' object to all subfunctions.
-    bindMethods(this, ['run', 'validateFlags', 'sendBch'])
+  constructor (options = {}) {
+    initWalletCommand(this, options, ['sendBch'], { bchWallet: {} })
   }
 
-  async run (flags) {
+  async run (flags = {}) {
     return runSendCommand({
       command: this,
       flags,
       send: this.sendBch,
-      explorerUrl: 'https://bch.loping.net/tx/',
-      errorLabel: 'send-bch'
+      explorerUrl: 'https://bch.loping.net/tx/'
     })
   }
 
@@ -38,41 +29,33 @@ class SendBch {
     ])
   }
 
-  // Give an instance of a wallet, an address, and a quantity, send the BCH.
+  // Given an instance of a wallet, an address, and a quantity, send the BCH.
   // Returns a TXID from a broadcasted transaction.
   async sendBch (flags) {
-    try {
-      // Update the wallet UTXOs.
-      await this.bchWallet.initialize()
+    // Update the wallet UTXOs.
+    await this.bchWallet.initialize()
 
-      const walletBalance = await this.bchWallet.getBalance()
-      // console.log('walletBalance: ', walletBalance)
+    const walletBalance = await this.bchWallet.getBalance()
 
-      if (walletBalance < flags.qty) {
-        throw new Error(
-          `Insufficient funds. You are trying to send ${flags.qty} BCH, but the wallet only has ${walletBalance} BCH`
-        )
-      }
-
-      const receivers = [
-        {
-          address: flags.addr,
-          amountSat: this.bchWallet.bchjs.BitcoinCash.toSatoshi(flags.qty)
-        }
-      ]
-
-      const txid = await this.bchWallet.send(receivers)
-
-      return txid
-    } catch (err) {
-      console.error('Error in sendBCH()')
-      throw err
+    if (walletBalance < flags.qty) {
+      throw new Error(
+        `Insufficient funds. You are trying to send ${flags.qty} BCH, but the wallet only has ${walletBalance} BCH`
+      )
     }
+
+    const receivers = [
+      {
+        address: flags.addr,
+        amountSat: this.bchWallet.bchjs.BitcoinCash.toSatoshi(flags.qty)
+      }
+    ]
+
+    return this.bchWallet.send(receivers)
   }
 }
 
 export default SendBch
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-08T14:48:20.863Z","module_hash":"ca4c1399676534dd187b4f0126821a5d8fd22956750c613f79f1d59ce43cf676","functions":[{"id":"func/SendBch.constructor","name":"SendBch.constructor","line":14,"end_line":21,"hash":"2966924b3c6220be2885324710d0a92e658521600a3a7f5962d3edb40496337f"},{"id":"func/SendBch.run","name":"SendBch.run","line":23,"end_line":31,"hash":"7fbe134d9dba2d618e8ead01e13ac852d791481c55eebccb7e0fdc2311370c47"},{"id":"func/SendBch.validateFlags","name":"SendBch.validateFlags","line":33,"end_line":39,"hash":"710e2891ce5cbf115f6eea04b6fb8a8bd6066dfb79542d166b49b4d83b72da49"},{"id":"func/SendBch.sendBch","name":"SendBch.sendBch","line":43,"end_line":71,"hash":"abc593006c75e67090b61851abbc842db64bc3fccc76d51900b4f51d28960047"}]}
+// {"version":1,"tested_at":"2026-10-11T18:37:57.844Z","module_hash":"b19f190cf25440030fa2a349ed9d4088676959fd5ddb5f88263f8ef8f00bcad8","functions":[{"id":"func/SendBch.constructor","name":"SendBch.constructor","line":11,"end_line":13,"hash":"a81fac6adbcd03a5ab8a777a54e721b728406c6171766a0947b3da32d7db499f"},{"id":"func/SendBch.run","name":"SendBch.run","line":15,"end_line":22,"hash":"67448fb81f71104d9ea89c359d9033da7127a9fb640446ea8f5e8bf3e487cbde"},{"id":"func/SendBch.validateFlags","name":"SendBch.validateFlags","line":24,"end_line":30,"hash":"710e2891ce5cbf115f6eea04b6fb8a8bd6066dfb79542d166b49b4d83b72da49"},{"id":"func/SendBch.sendBch","name":"SendBch.sendBch","line":34,"end_line":54,"hash":"c07845cfff73a88e4eb1f5e62326e86198c8b0f7e1ad4dd6a7638a139b08ee7f"}]}
 // mutate4javascript-manifest-end

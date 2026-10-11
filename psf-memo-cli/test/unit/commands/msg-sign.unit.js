@@ -11,6 +11,7 @@ import { promises as fs } from 'fs'
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import MsgSign from '../../../src/commands/msg-sign.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
+import { captureStream } from '../../support/capture.js'
 
 const walletUtil = new WalletUtil()
 const walletCreate = new WalletCreate()
@@ -108,21 +109,68 @@ describe('#msg-sign', () => {
   })
 
   describe('#run', () => {
-    it('should execute the run function', async () => {
-      const flags = {
-        name: 'test123',
-        msg: 'test message'
-      }
-
-      const result = await uut.run(flags)
-
-      assert.equal(result, true)
+    const signingWallet = () => ({
+      walletInfo: { cashAddress: 'bitcoincash:qagent', privateKey: 'wif' },
+      bchjs: { BitcoinCash: { signMessageWithPrivKey: () => 'SIGNATURE' } }
     })
 
-    it('should handle an error', async () => {
-      const result = await uut.run()
+    it('prints one JSON object with the address, message, and signature', async () => {
+      uut.walletUtil = { instanceWallet: async () => signingWallet() }
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
 
-      assert.equal(result, 0)
+      const code = await uut.run({ name: 'agent', msg: 'hello memo', json: true })
+
+      assert.equal(code, 0)
+      assert.equal(err.text(), '')
+      const parsed = JSON.parse(out.text())
+      assert.equal(parsed.cashAddress, 'bitcoincash:qagent')
+      assert.equal(parsed.message, 'hello memo')
+      assert.equal(parsed.signature, 'SIGNATURE')
+    })
+
+    it('prints the human signing lines', async () => {
+      uut.walletUtil = { instanceWallet: async () => signingWallet() }
+      const out = captureStream()
+      uut.stdout = out.stream
+
+      const code = await uut.run({ name: 'agent', msg: 'hello memo' })
+
+      assert.equal(code, 0)
+      assert.include(out.text(), 'Signed message with key associated with this address:  bitcoincash:qagent')
+      assert.include(out.text(), 'Input message: hello memo')
+      assert.include(out.text(), 'Signature:')
+    })
+
+    it('reports a missing flag as a usage error (exit 2)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ json: true })
+
+      assert.equal(code, 2)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), {
+        error: 'You must specify a wallet name with the -n flag.'
+      })
+    })
+
+    it('reports a signing failure as a runtime error (exit 1)', async () => {
+      uut.walletUtil = { instanceWallet: async () => { throw new Error('signing failed') } }
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ name: 'agent', msg: 'hello memo', json: true })
+
+      assert.equal(code, 1)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), { error: 'signing failed' })
     })
   })
 })

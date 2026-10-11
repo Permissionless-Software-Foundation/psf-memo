@@ -11,6 +11,7 @@ import { promises as fs } from 'fs'
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import SendTokens from '../../../src/commands/send-tokens.js'
+import { captureStream } from '../../support/capture.js'
 
 const walletCreate = new WalletCreate()
 const walletUtil = new WalletUtil()
@@ -345,26 +346,70 @@ describe('#send-tokens', () => {
   })
 
   describe('#run', () => {
-    it('should execute the run function', async () => {
+    it('prints one JSON object with the transaction and token explorer link', async () => {
       // Mock dependencies
       sandbox.stub(uut, 'sendTokens').resolves('fake-txid')
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
 
-      const flags = {
+      const code = await uut.run({
         name: 'test123',
         qty: 0.01,
-        addr: 'bitcoincash:qr2zqrnqdulfmeqs2qe9c5p605lrwe90v5v735s2jl',
-        tokenId: '38e97c5d7d3585a2cbf3f9580c82ca33985f9cb0845d4dcce220cb709f9538b0'
-      }
+        addr: 'bitcoincash:qto',
+        tokenId: 'token-id',
+        json: true
+      })
 
-      const result = await uut.run(flags)
-
-      assert.equal(result, true)
+      assert.equal(code, 0)
+      assert.equal(err.text(), '')
+      const parsed = JSON.parse(out.text())
+      assert.equal(parsed.txid, 'fake-txid')
+      assert.equal(parsed.explorerUrl, 'https://token.fullstack.cash/transactions/?txid=fake-txid')
     })
 
-    it('should handle an error', async () => {
-      const result = await uut.run()
+    it('prints the human TXID lines', async () => {
+      sandbox.stub(uut, 'sendTokens').resolves('fake-txid')
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      uut.stdout = out.stream
 
-      assert.equal(result, 0)
+      const code = await uut.run({ name: 'test123', qty: 0.01, addr: 'bitcoincash:qto', tokenId: 'token-id' })
+
+      assert.equal(code, 0)
+      assert.include(out.text(), 'TXID: fake-txid')
+    })
+
+    it('reports a missing flag as a usage error (exit 2)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ json: true })
+
+      assert.equal(code, 2)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), {
+        error: 'You must specify a wallet name with the -n flag.'
+      })
+    })
+
+    it('reports a missing token as a runtime error (exit 1)', async () => {
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      sandbox.stub(uut, 'sendTokens').rejects(new Error('no matching token'))
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ name: 'test123', qty: 1, addr: 'bitcoincash:qto', tokenId: 'token-id', json: true })
+
+      assert.equal(code, 1)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), { error: 'no matching token' })
     })
   })
 })
