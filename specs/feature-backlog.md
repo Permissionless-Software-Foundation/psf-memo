@@ -31,7 +31,14 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **File-view API links (`file-view-api-links`, 2026-10-10):** Client-only port
+  of the upstream `bch-file-hosting-web` file-view update (`7fe159b`/`5fc2fa3`).
+  The dashboard View cell and the upload already-hosted/paid results now use the
+  hosting API's own `/view/<cid>` URL carried by the feed/paid/already-hosted
+  payloads instead of third-party IPFS gateway links; the paid result drops the
+  separate download and gateway links. Specs:
+  `psf-memo-client/specs/hosted-files.feature` (Hosted Files - 2) and
+  `psf-memo-client/specs/host-file.feature` (Host File - 2, 9, 14).
 
 ## Recently completed
 

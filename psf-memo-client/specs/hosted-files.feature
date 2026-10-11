@@ -9,8 +9,8 @@
 # from REACT_APP_FILE_HOSTING_URL, default
 # https://file-hosting-api.blippost.com), one page of 20 at a time, and shows
 # each file's name, size, paid time, hosting expiry, truncated CID with a copy
-# control, a download link built from the same base URL, and a gateway view
-# link. Refresh reloads the first page; Load more appends the next page. This is
+# control, and the API download and view links carried by the feed. Refresh
+# reloads the first page; Load more appends the next page. This is
 # a client-only read feature: it broadcasts no Memo action and changes no
 # psf-memo-db data.
 Feature: Hosted Files
@@ -30,8 +30,7 @@ Feature: Hosted Files
       | photo.jpg,notes.txt |
 
   Scenario Outline: Hosted Files - 2 shows the CID, download, and view of each hosted file in its row
-    Given the hosting API base URL is <api_base>
-    And the hosting API feed lists a pinned file <cid> named <filename> with the gateway URL <api_gateway_url>
+    Given the hosting API feed lists a pinned file <cid> named photo.jpg with the view URL <api_view_url> and download URL <api_download_url>
     When the visitor opens the dashboard
     Then the CID cell of row <cid> holds <shown_cid>
     And row <cid> offers a copy control
@@ -39,10 +38,10 @@ Feature: Hosted Files
     And the view cell of row <cid> opens <shown_view_url> in a new tab
 
     Examples:
-      | api_base                              | cid                                                          | filename    | api_gateway_url                                                                                  | shown_cid           | shown_download                                                                                                     | shown_view_url                                                                                   |
-      | https://file-hosting-api.blippost.com | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | photo.jpg   | https://ipfs.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg       | bafybeig...y55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://ipfs.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg       |
-      | http://localhost:5050                 | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | notes.txt   | https://dweb.link/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/notes.txt | bafybeia...aaaaaaaa | http://localhost:5050/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa               | https://dweb.link/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/notes.txt |
-      | https://file-hosting-api.blippost.com | bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc | archive.tar | https://ipfs.io/ipfs/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc/archive.tar | bafybeic...cccccccc | https://file-hosting-api.blippost.com/download/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc | https://ipfs.io/ipfs/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc/archive.tar |
+      | cid                                                          | api_view_url                                                                                      | api_download_url                                                                                  | shown_cid           | shown_download                                                                                    | shown_view_url                                                                                    |
+      | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | bafybeig...y55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi |
+      | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | bafybeia...aaaaaaaa | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
+      | bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc | https://file-hosting-api.blippost.com/view/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc | https://file-hosting-api.blippost.com/download/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc | bafybeic...cccccccc | https://file-hosting-api.blippost.com/download/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc | https://file-hosting-api.blippost.com/view/bafybeicccccccccccccccccccccccccccccccccccccccccccccccccccccccc |
 
   Scenario Outline: Hosted Files - 3 formats the size and dates of a hosted file
     Given the hosting API feed lists a pinned file bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi named photo.jpg of <api_size> bytes paid at <api_paid_at> until <api_hosted_until>
