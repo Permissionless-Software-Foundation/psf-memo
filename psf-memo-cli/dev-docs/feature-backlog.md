@@ -428,7 +428,8 @@ team landed `HOSTING_API_URL` (default `http://localhost:5050`), the
 `d09f222`; `verify.sh cli` pass 4/4, record `docs/reviews/file-host-verification.json`;
 independent acceptance 14/14), including the `minimal-slp-wallet` `5.12.1 →
 7.1.5` upgrade with the `send()` path and the 2,000-sat PSF donation validated.
-FH3–FH4 are queued.
+**FH3 `file-status` is in progress** (spec
+`psf-memo-cli/specs/file-status.feature`); FH4 is queued.
 
 A second job beyond the Memo protocol: port a subset of the
 `bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the
