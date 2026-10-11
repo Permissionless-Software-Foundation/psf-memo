@@ -1375,7 +1375,11 @@ scenarios: CID lookup metadata + pins, staged/no-window, missing-CID usage,
 API error, JSON) and committed it at `b2adce1`; handed off. FH3 then completed
 the pipeline (coder `7b082d0`, refactorer `3431ec7`, architect review `94c671b`,
 record/summary `3527bfc`), merged to `master` at `b6ec762`; the merged feature's
-acceptance re-ran clean (8/8) and `verify.sh cli` passed 4/4.
+acceptance re-ran clean (8/8) and `verify.sh cli` passed 4/4. Then specified FH4
+`file-check` (`psf-memo-cli/specs/file-check.feature`, 6 scenarios: paid links,
+unpaid amounts + expiry, expired, missing-address usage, API error, JSON) and
+committed it at `13bfd94`; handed off. FH4 is the last of the four file-hosting
+commands; when it merges the FH1–FH4 port is complete.
 
 Previous session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
 Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
@@ -2133,8 +2137,8 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `b6ec762` (`Merge file-status (FH3) into master`);
-FH1–FH3 are merged and verified.
+Current `master` HEAD: `13bfd94` (`Specify file-check (FH4): recover a hosted file's links by payment address`);
+FH1–FH3 are merged/verified and FH4 is in the pipeline.
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2181,10 +2185,12 @@ the requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
 `psf-memo-cli/dev-docs/file-hosting-features.md`,
 `psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, and gotcha #93.
 
-Next action: **spec FH4 `file-check`** (payment lookup by address `-a`: paid →
-CID + download/view/gateway links; unpaid → received/required/expiry; expired →
-status; no wallet) after confirming with the user. FH1–FH3 are merged and
-verified. The active backlog is the resumed
+Next action: **wait for the architect's completion handoff for `file-check`**,
+then merge, sound the chime, and verify. That completes the FH1–FH4
+`psf-memo-cli` file-hosting port; afterwards **ask the user for the next
+feature** (the fallback is the client front-end backlog — front-end
+improvements to `psf-memo-client` in `specs/feature-backlog.md`). The active
+backlog is the resumed
 `psf-memo-cli` file-hosting port
 (`psf-memo-cli/dev-docs/feature-backlog.md`, FH2–FH4); the client front-end
 backlog remains the fallback — `psf-memo-client` improvements in

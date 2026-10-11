@@ -1769,8 +1769,9 @@ merged to `master` at `938bf7c`, architect review `d09f222`,
 14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. **FH3
 `file-status` is DONE** (spec `b2adce1`, merged to `master` at `b6ec762`,
 architect review `94c671b`, `docs/reviews/file-status-verification.json` pass
-4/4, independent acceptance 8/8). Next: FH4 `file-check` (prefix `file-*`, keep
-the 2,000-sat PSF donation).
+4/4, independent acceptance 8/8). **FH4 `file-check` is in progress** (spec
+`13bfd94`). After FH4 the FH1–FH4 file-hosting port is complete; the next
+direction is the client front-end backlog.
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
