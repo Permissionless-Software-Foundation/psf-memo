@@ -1237,6 +1237,17 @@ that a single user-facing feature may require specs in more than one component.
     `psf-memo-client/specs/hosted-files.feature`; architect summary:
     `docs/reviews/host-file-pages-summary.md`.
 
+91. **The navigation menu is a data model at `src/services/nav-menu.js`.**
+    `NAV_MENU_ENTRIES` is the ordered `{ label, path, activePaths? }` source of
+    truth; `nav-menu/index.js` maps over it and the acceptance handler reads
+    `findMenuEntry`/`NAV_MENU_ENTRIES`, so the Gherkin label/order assertions
+    exercise the same data the component renders. Add or reorder a nav entry
+    there, not in the JSX. The old `NewPostPage.menuLinks`/`addMenuLink`/
+    `hasMenuLink` stand-in model was removed as orphaned. Specs:
+    `psf-memo-client/specs/host-file.feature` (Host File - 17),
+    `psf-memo-client/specs/hosted-files.feature` (Hosted Files - 8); architect
+    summary: `docs/reviews/nav-file-hosting-labels-summary.md`.
+
 ---
 
 ## 10. Run / verify the app
@@ -1293,7 +1304,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Latest session (2026-10-10, `host-file-pages`): a client-only port of the
+Latest session (2026-10-10, `nav-file-hosting-labels`): a client-only
+navigation-menu change. The specifier updated `Host File - 17` and
+`Hosted Files - 8` to pin the renamed entries and their order (label
+`File Upload` at `/host` between Account and BCH, and `File Dashboard` at
+`/dashboard` below File Upload). The refactorer extracted the ordered entries
+into `psf-memo-client/src/services/nav-menu.js` and made the component and the
+acceptance handler read that one source; the architect removed the orphaned
+`NewPostPage` menu-link model. Merged to `master` at `ab6a572` (fast-forward;
+architect code-review commit `b3deb8b`; the later `ab6a572` adds only the record
+and summary, so `docs/reviews/nav-file-hosting-labels-verification.json` is
+valid for the merged tree). Recorded `verify.sh client` pass 5/5 at `b3deb8b`
+(unit 916/0, property 252/0, acceptance all 51 suites, lint ok, build ok);
+language mutation 10/10 killed (`nav-menu.js` 1, `new-post.js` 9); both new
+navigation Gherkin mutations killed; DRY clean. Independent acceptance check
+after merge: host-file 31/31 and hosted-files 13/13. Architect summary:
+`docs/reviews/nav-file-hosting-labels-summary.md`.
+
+Previous session (2026-10-10, `host-file-pages`): a client-only port of the
 `bch-file-hosting-web` `/host` and `/dashboard` pages. The specifier wrote
 `psf-memo-client/specs/host-file.feature` (17 scenarios: choose a file, quote
 with QR/countdown/size, already-hosted, no-file prompt, upload error, pay the
@@ -1999,7 +2027,7 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `c7c05ee` (`Record host-file-pages architect review and verification`).
+Current `master` HEAD: `ab6a572` (`Record nav-file-hosting-labels architect review and verification`).
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2040,8 +2068,9 @@ implementations (#53) as an accepted, documented tradeoff.
 
 Next action: **ask the user for the next feature.** The active backlog is the
 client front-end backlog — front-end improvements to `psf-memo-client` in
-`specs/feature-backlog.md` (the latest feature is `host-file-pages`, merged at
-`c7c05ee`, after `image-format-detection` at `87f0d3a`, account-posts-feed's
+`specs/feature-backlog.md` (the latest feature is `nav-file-hosting-labels`,
+merged at `ab6a572`, after `host-file-pages` at `c7c05ee`, after
+`image-format-detection` at `87f0d3a`, account-posts-feed's
 `account-profile-link` follow-up
 at `81c47cb`, `account-post-metadata` at `a70f36c`, `account-posts-feed` at
 `2470bc8`, and `set-bio-existing-and-cancel` at `4467e6e`). The

@@ -2,8 +2,8 @@
   Page-controller service for the hosted-files dashboard.
 
   The service owns the dashboard display state. It loads the public feed from
-  the hosting API, shows every file in feed order with its size, times,
-  download URL, CID, and a gateway view link, and supports two actions:
+  the hosting API, shows every file in feed order with its size, times, and
+  the API download and view URLs, and supports two actions:
   Refresh (reload the first page) and Load more (append the next page). It
   keeps no browser storage and does not poll.
 
@@ -22,7 +22,9 @@ function downloadUrl (base, cid) {
   return `${String(base).replace(/\/+$/, '')}/download/${cid}`
 }
 
-// Keep only the fields the dashboard shows.
+// Keep only the fields the dashboard shows. The feed carries the API download
+// and view URLs; the configured base is a fallback for a feed that omits the
+// download URL.
 function toDashboardFile (file, downloadBaseUrl) {
   return {
     cid: file.cid,
@@ -30,8 +32,8 @@ function toDashboardFile (file, downloadBaseUrl) {
     sizeBytes: file.sizeBytes,
     paidAt: file.paidAt,
     hostedUntil: file.hostedUntil,
-    downloadUrl: downloadUrl(downloadBaseUrl, file.cid),
-    viewUrl: (file.gatewayUrls || [])[0] || ''
+    downloadUrl: file.downloadUrl || downloadUrl(downloadBaseUrl, file.cid),
+    viewUrl: file.viewUrl || ''
   }
 }
 
@@ -58,15 +60,22 @@ class DashboardPage {
     this.getViewModel = this.getViewModel.bind(this)
   }
 
+  // Map a feed page to the dashboard state, appending to the files already
+  // shown, and remember its cursor for the next page.
+  loadPage (page, priorFiles = []) {
+    const files = [
+      ...priorFiles,
+      ...(page.files || []).map((file) => toDashboardFile(file, this.downloadBaseUrl))
+    ]
+    this.cursor = page.nextCursor || null
+    return pageState(files, this.cursor)
+  }
+
   // Load (or reload) the first page of the feed.
   async load () {
     try {
       const page = await this.hostingApi.getFeed({ limit: this.pageSize })
-      this.cursor = page.nextCursor || null
-      this.state = pageState(
-        (page.files || []).map((file) => toDashboardFile(file, this.downloadBaseUrl)),
-        this.cursor
-      )
+      this.state = this.loadPage(page)
     } catch (err) {
       this.cursor = null
       this.state = { status: 'error', message: failureMessage(err, GENERIC_ERROR_MESSAGE) }
@@ -81,14 +90,7 @@ class DashboardPage {
 
     try {
       const page = await this.hostingApi.getFeed({ limit: this.pageSize, cursor: this.cursor })
-      this.cursor = page.nextCursor || null
-      this.state = pageState(
-        [
-          ...this.state.files,
-          ...(page.files || []).map((file) => toDashboardFile(file, this.downloadBaseUrl))
-        ],
-        this.cursor
-      )
+      this.state = this.loadPage(page, this.state.files)
     } catch (err) {
       this.state = { status: 'error', message: failureMessage(err, GENERIC_ERROR_MESSAGE) }
     }
@@ -106,5 +108,5 @@ module.exports.DEFAULT_PAGE_SIZE = DEFAULT_PAGE_SIZE
 module.exports.EMPTY_MESSAGE = EMPTY_MESSAGE
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-10T03:02:02.696Z","module_hash":"92499b08b7e94ddd6a542bd4cafc57ad27f3a7807a1408bd80479dd11c81b7be","functions":[{"id":"func/downloadUrl","name":"downloadUrl","line":21,"end_line":23,"hash":"44ebf0f055eaade112f4fb6b4f735c1b42a036e4b179f94541ac1cd76ac08e0d"},{"id":"func/toDashboardFile","name":"toDashboardFile","line":26,"end_line":36,"hash":"9a5a74d32c79a6fa26d8a95935e2723f322480e27ffdca85019eb6cef9d70ff0"},{"id":"func/pageState","name":"pageState","line":38,"end_line":44,"hash":"52a12d4cbc460683dcd79787de9802aa33fe3c9a3c9b0db2efbd263baf9f69f9"},{"id":"func/DashboardPage.constructor","name":"DashboardPage.constructor","line":47,"end_line":59,"hash":"a22b49be62a27243e5d49a0bf5ec76a7f5fbc96dcad2b12019ed17f4c340b0e1"},{"id":"func/DashboardPage.load","name":"DashboardPage.load","line":62,"end_line":76,"hash":"9dfd3a85309e8cfe65c2aecfe677c46678993a92724190f965b453b49ee8cb3b"},{"id":"func/DashboardPage.loadMore","name":"DashboardPage.loadMore","line":79,"end_line":97,"hash":"196b047002d1f070fed1093264b48d051b4550a2d0df796878a58b35731ff405"},{"id":"func/DashboardPage.getViewModel","name":"DashboardPage.getViewModel","line":99,"end_line":101,"hash":"d79cf84c13b8df722e7d9e622b42f98158c05ad037c02781acf9f39ea3011a95"}]}
+// {"version":1,"tested_at":"2026-10-11T00:21:24.343Z","module_hash":"368a162811292b5e5a98be99a0d2729abccd17c310500f90fab35351d3d61e91","functions":[{"id":"func/downloadUrl","name":"downloadUrl","line":21,"end_line":23,"hash":"44ebf0f055eaade112f4fb6b4f735c1b42a036e4b179f94541ac1cd76ac08e0d"},{"id":"func/toDashboardFile","name":"toDashboardFile","line":28,"end_line":38,"hash":"11a831bc18963b9a1fb5f38142705b7aeca0b27fc602da598fbbc911ae392bab"},{"id":"func/pageState","name":"pageState","line":40,"end_line":46,"hash":"52a12d4cbc460683dcd79787de9802aa33fe3c9a3c9b0db2efbd263baf9f69f9"},{"id":"func/DashboardPage.constructor","name":"DashboardPage.constructor","line":49,"end_line":61,"hash":"a22b49be62a27243e5d49a0bf5ec76a7f5fbc96dcad2b12019ed17f4c340b0e1"},{"id":"func/DashboardPage.loadPage","name":"DashboardPage.loadPage","line":65,"end_line":72,"hash":"586d2c5907a728eacf4047b84475d3bb79116e84ab5ec5f2902d57bfc529f92f"},{"id":"func/DashboardPage.load","name":"DashboardPage.load","line":75,"end_line":85,"hash":"c0e94b8b381f27b4fa0d92d47c289b01094372a56781ae5dd804459fe0dfeddd"},{"id":"func/DashboardPage.loadMore","name":"DashboardPage.loadMore","line":88,"end_line":99,"hash":"cd03d4587ff1e1165a1de3daefa7daf1eeabf66101416621d4911fe74756ebdf"},{"id":"func/DashboardPage.getViewModel","name":"DashboardPage.getViewModel","line":101,"end_line":103,"hash":"d79cf84c13b8df722e7d9e622b42f98158c05ad037c02781acf9f39ea3011a95"}]}
 // mutate4javascript-manifest-end

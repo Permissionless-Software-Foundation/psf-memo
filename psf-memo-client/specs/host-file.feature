@@ -9,9 +9,10 @@
 # read from REACT_APP_FILE_HOSTING_URL and defaults to
 # https://file-hosting-api.blippost.com. A chosen file is POSTed to
 # <base>/files, which answers with a quote (priceSats + paymentAddress) or an
-# already-hosted record; Pay now sends the quote amount to the payment address,
-# then the page polls <base>/files/check-payment until the invoice is paid
-# (showing the CID, download URL, gateway URLs, and payment txid) or expired.
+# already-hosted record with a view URL; Pay now sends the quote amount to the
+# payment address, then the page polls <base>/files/check-payment until the
+# invoice is paid (showing the CID, the API view URL, and the payment txid) or
+# expired.
 # This is a client-only feature: it broadcasts no Memo action and changes no
 # psf-memo-db data. The /status page is intentionally not ported, so the paid
 # result links to no status page.
@@ -32,16 +33,16 @@ Feature: Host File
       | photo.jpg   | 2000     | bitcoincash:qquoteaddress00000000000000000000000000000 | photo.jpg   | 2000       | bitcoincash:qquoteaddress00000000000000000000000000000 |
       | archive.tar | 62500    | bitcoincash:qotheraddress00000000000000000000000000000 | archive.tar | 62500      | bitcoincash:qotheraddress00000000000000000000000000000 |
 
-  Scenario Outline: Host File - 2 an already hosted file shows the download link
-    Given the hosting API reports the file is already hosted at <api_download_url>
+  Scenario Outline: Host File - 2 an already hosted file shows the view link
+    Given the hosting API reports the file is already hosted at <api_view_url>
     When the visitor uploads the file <upload_name>
     Then the page shows the file name <shown_name>
-    And the page shows the download URL <shown_download_url>
+    And the page shows the view URL <shown_view_url>
 
     Examples:
-      | upload_name | api_download_url                                                                             | shown_name  | shown_download_url                                                                           |
-      | photo.jpg   | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | photo.jpg   | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi |
-      | archive.tar | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | archive.tar | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
+      | upload_name | api_view_url                                                                                 | shown_name  | shown_view_url                                                                               |
+      | photo.jpg   | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | photo.jpg   | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi |
+      | archive.tar | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | archive.tar | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 
   Scenario: Host File - 3 uploading without a file shows a prompt
     When the visitor uploads no file
@@ -122,19 +123,17 @@ Feature: Host File
     And the wallet will broadcast the transaction <api_txid>
     And the hosting API reports the payment as unpaid
     And the hosting API reports a paid invoice with CID <paid_cid>
-    And the hosting API reports the download URL <paid_download_url>
-    And the hosting API reports the gateway URL <paid_gateway_url>
+    And the hosting API reports the view URL <paid_view_url>
     When the visitor pays the quote from the wallet
     And the visitor waits for the payment to be confirmed
     Then the page shows the CID <shown_cid>
-    And the page shows the download URL <shown_download_url>
-    And the page shows the gateway URL <shown_gateway_url>
+    And the page shows the view URL <shown_view_url>
     And the page shows the payment transaction <shown_txid>
 
     Examples:
-      | api_txid                                                     | paid_cid                                                     | paid_download_url                                                                                                   | paid_gateway_url                                                                                   | shown_cid                                                    | shown_download_url                                                                                                 | shown_gateway_url                                                                                 | shown_txid                                                   |
-      | 1111111111111111111111111111111111111111111111111111111111111111 | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://ipfs.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://ipfs.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg | 1111111111111111111111111111111111111111111111111111111111111111 |
-      | 2222222222222222222222222222222222222222222222222222222222222222 | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://dweb.link/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://dweb.link/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | 2222222222222222222222222222222222222222222222222222222222222222 |
+      | api_txid                                                     | paid_cid                                                     | paid_view_url                                                                     | shown_cid                                                    | shown_view_url                                                                    | shown_txid                                                   |
+      | 1111111111111111111111111111111111111111111111111111111111111111 | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | 1111111111111111111111111111111111111111111111111111111111111111 |
+      | 2222222222222222222222222222222222222222222222222222222222222222 | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | 2222222222222222222222222222222222222222222222222222222222222222 |
 
   Scenario: Host File - 10 an expired quote shows the expired message
     Given an open hosting quote
@@ -173,20 +172,20 @@ Feature: Host File
       | Hosting API unavailable | Hosting API unavailable |
       | Payment check failed    | Payment check failed    |
 
-  Scenario Outline: Host File - 14 an image gateway link opens in a new tab
+  Scenario Outline: Host File - 14 an image view link opens in a new tab
     Given an open hosting quote
     And the hosting API reports the payment as unpaid
     And the hosting API reports a paid invoice with CID <paid_cid>
     And the hosting API reports the paid file name <paid_name>
-    And the hosting API reports the gateway URL <paid_gateway_url>
+    And the hosting API reports the view URL <paid_view_url>
     When the visitor pays the quote from the wallet
     And the visitor waits for the payment to be confirmed
-    Then the gateway URL <shown_gateway_url> has link target <shown_target>
+    Then the view URL <shown_view_url> has link target <shown_target>
 
     Examples:
-      | paid_name   | paid_cid                                                     | paid_gateway_url                                                                                                  | shown_gateway_url                                                                                                 | shown_target |
-      | photo.jpg   | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://gateway.lighthouse.storage/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg   | https://gateway.lighthouse.storage/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg   | _blank       |
-      | archive.tar | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://gateway.lighthouse.storage/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | https://gateway.lighthouse.storage/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | none         |
+      | paid_name   | paid_cid                                                     | paid_view_url                                                                                     | shown_view_url                                                                                    | shown_target |
+      | photo.jpg   | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | _blank       |
+      | archive.tar | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | none         |
 
   Scenario Outline: Host File - 15 the upload is posted to the configured hosting API URL
     Given an upload page whose API adapter uses the browser fetch transport at <api_base>

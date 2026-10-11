@@ -29,7 +29,7 @@ function file (overrides = {}) {
     paidAt: '2026-01-02T00:00:00.000Z',
     hostedUntil: '2027-01-02T00:00:00.000Z',
     downloadUrl: `http://localhost:5050/download/${CID}`,
-    viewUrl: `https://ipfs.io/ipfs/${CID}/photo.jpg`,
+    viewUrl: `http://localhost:5050/view/${CID}`,
     ...overrides
   }
 }
@@ -102,15 +102,15 @@ test('links the download cell to the file download URL', () => {
   assert.ok(html.includes('href="http://localhost:5050/download/bafy-x"'))
 })
 
-test('links the view cell to the gateway URL in a new tab', () => {
-  const html = renderFile({ viewUrl: 'https://ipfs.io/ipfs/bafy-x/photo.jpg' })
+test('links the view cell to the API view URL in a new tab', () => {
+  const html = renderFile({ viewUrl: 'http://localhost:5050/view/bafy-x' })
 
-  assert.ok(html.includes('href="https://ipfs.io/ipfs/bafy-x/photo.jpg"'))
+  assert.ok(html.includes('href="http://localhost:5050/view/bafy-x"'))
   assert.ok(/<a[^>]*class="[^"]*dashboard-view[^"]*"[^>]*target="_blank"/.test(html))
   assert.ok(/<a[^>]*dashboard-view[^>]*rel="noreferrer"/.test(html))
 })
 
-test('renders an empty view cell when the file has no gateway URL', () => {
+test('renders an empty view cell when the file has no view URL', () => {
   const html = renderFile({ viewUrl: '' })
 
   assert.ok(!html.includes('dashboard-view-link'))

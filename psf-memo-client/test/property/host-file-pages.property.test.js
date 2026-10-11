@@ -9,7 +9,7 @@
       local file name, the numeric price, the payment address, and the sizes
       exactly when the API reports them.
     - hosted mapping: an already-hosted response becomes the hosted state with
-      its download URL.
+      its view URL.
     - error and no-file: a rejected upload carries the failure message, and a
       missing file carries the prompt.
     - confirmation: polling terminates paid on the first paid response within
@@ -71,16 +71,16 @@ test('a quote response maps to the quote state', async () => {
   )
 })
 
-test('an already-hosted response maps to the hosted state with its URL', async () => {
+test('an already-hosted response maps to the hosted state with its view URL', async () => {
   await forAll(
     () => {
-      const url = 'https://file-hosting-api.blippost.com/download/' + randomFrom(rng, 'abcdef', 4, 20)
+      const url = 'https://file-hosting-api.blippost.com/view/' + randomFrom(rng, 'abcdef', 4, 20)
       return { url, uploadName: 'local-' + randomFrom(rng, 'abc', 1, 6) }
     },
     async ({ url, uploadName }) => {
-      const page = new FileUploadPage({ hostingApi: fakeApi({ alreadyHosted: true, downloadUrl: url }) })
+      const page = new FileUploadPage({ hostingApi: fakeApi({ alreadyHosted: true, viewUrl: url }) })
       const state = await page.upload({ name: uploadName })
-      return state.status === 'hosted' && state.downloadUrl === url
+      return state.status === 'hosted' && state.viewUrl === url
     },
     { label: 'host file hosted mapping' }
   )
@@ -128,7 +128,7 @@ test('waitForConfirmation terminates paid or pending within the window', async (
           checkPayment: async () => {
             const index = polls++
             if (paidAfter >= 0 && index === paidAfter) {
-              return { status: 'paid', cid: 'bafy-1', filename: 'f.bin', downloadUrl: 'u', gatewayUrls: [] }
+              return { status: 'paid', cid: 'bafy-1', filename: 'f.bin', viewUrl: 'u' }
             }
             return { status: 'unpaid' }
           }
@@ -141,7 +141,7 @@ test('waitForConfirmation terminates paid or pending within the window', async (
       await page.payFromWallet()
       const state = await page.waitForConfirmation()
       return paidAfter >= 0
-        ? state.status === 'paid' && state.txid === txid && polls === paidAfter + 1
+        ? state.status === 'paid' && state.txid === txid && state.viewUrl === 'u' && polls === paidAfter + 1
         : state.status === 'pending' && polls === maxConfirmations
     },
     { label: 'host file confirmation window' }

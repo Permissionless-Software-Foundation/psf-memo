@@ -21,14 +21,13 @@ function render (state) {
 }
 
 // A fully populated paid state; individual tests override just the field under
-// test (for example the gateway URLs or file name).
+// test (for example the view URL or file name).
 function paidState (overrides = {}) {
   return {
     status: 'paid',
     filename: 'photo.jpg',
     cid: 'bafy123',
-    downloadUrl: 'http://localhost:5050/download/bafy123',
-    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg'],
+    viewUrl: 'http://localhost:5050/view/bafy123',
     txid: 'abc123',
     ...overrides
   }
@@ -87,16 +86,16 @@ test('omits the sizes when the quote does not report them', () => {
   assert.ok(!html.includes('bytes'))
 })
 
-test('renders the download URL for an already hosted file', () => {
+test('renders the view URL for an already hosted file', () => {
   const html = render({
     status: 'hosted',
     filename: 'archive.tar',
-    downloadUrl: 'http://localhost:5050/download/bafy'
+    viewUrl: 'http://localhost:5050/view/bafy'
   })
 
   assert.ok(html.includes('>archive.tar<'))
-  assert.ok(html.includes('http://localhost:5050/download/bafy'))
-  assert.ok(html.includes('href="http://localhost:5050/download/bafy"'))
+  assert.ok(html.includes('http://localhost:5050/view/bafy'))
+  assert.ok(html.includes('href="http://localhost:5050/view/bafy"'))
 })
 
 test('renders the prompt when no file was chosen', () => {
@@ -145,36 +144,33 @@ test('omits the countdown when the quote has none', () => {
   assert.ok(!html.includes('Quote expires in'))
 })
 
-test('renders the CID, download URL, gateway URL, and payment transaction', () => {
+test('renders the CID, view URL, and payment transaction', () => {
   const html = render(paidState())
 
   assert.ok(html.includes('bafy123'))
-  assert.ok(html.includes('http://localhost:5050/download/bafy123'))
-  assert.ok(html.includes('https://ipfs.io/ipfs/bafy123/photo.jpg'))
+  assert.ok(html.includes('http://localhost:5050/view/bafy123'))
   assert.ok(html.includes('abc123'))
+  assert.ok(!html.includes('file-upload-gateway'))
 })
 
-test('renders exactly one gateway link per gateway URL', () => {
-  const html = render(paidState({
-    gatewayUrls: ['https://ipfs.io/ipfs/bafy123/photo.jpg', 'https://dweb.link/ipfs/bafy123/photo.jpg']
-  }))
+test('renders exactly one view link for a paid file', () => {
+  const html = render(paidState())
 
-  assert.equal((html.match(/file-upload-gateway/g) || []).length, 2)
-  assert.ok(!html.includes('Gateway: <a></a>'))
+  assert.equal((html.match(/file-upload-view/g) || []).length, 1)
+  assert.ok(html.includes('View: '))
+  assert.ok(!html.includes('View: <a></a>'))
 })
 
-test('opens an image gateway link in a new tab', () => {
-  const html = render(paidState({
-    gatewayUrls: ['https://gateway.lighthouse.storage/ipfs/bafy123/photo.jpg']
-  }))
+test('opens an image view link in a new tab', () => {
+  const html = render(paidState())
 
   assert.ok(html.includes('target="_blank"'))
 })
 
-test('keeps a non-image gateway link in the current tab', () => {
+test('keeps a non-image view link in the current tab', () => {
   const html = render(paidState({
     filename: 'archive.tar',
-    gatewayUrls: ['https://gateway.lighthouse.storage/ipfs/bafy123/archive.tar']
+    viewUrl: 'https://file-hosting-api.blippost.com/view/bafy123'
   }))
 
   assert.ok(!html.includes('target="_blank"'))
