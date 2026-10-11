@@ -2,7 +2,7 @@
 
 **Status**: DRAFT — refreshed 2026-09-03.
 **Owner**: specifier.
-**Last updated**: 2026-10-10
+**Last updated**: 2026-10-11
 
 ---
 
@@ -31,17 +31,27 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **File-view API links (`file-view-api-links`, 2026-10-10):** Client-only port
-  of the upstream `bch-file-hosting-web` file-view update (`7fe159b`/`5fc2fa3`).
-  The dashboard View cell and the upload already-hosted/paid results now use the
-  hosting API's own `/view/<cid>` URL carried by the feed/paid/already-hosted
-  payloads instead of third-party IPFS gateway links; the paid result drops the
-  separate download and gateway links. Specs:
-  `psf-memo-client/specs/hosted-files.feature` (Hosted Files - 2) and
-  `psf-memo-client/specs/host-file.feature` (Host File - 2, 9, 14).
+- None.
 
 ## Recently completed
 
+- **File-view API links (`file-view-api-links`, 2026-10-11):** Client-only port
+  of the upstream `bch-file-hosting-web` file-view update (`7fe159b`/`5fc2fa3`).
+  The dashboard View cell and the upload already-hosted/paid results now render
+  the hosting API's own `/view/<cid>` URL carried by the feed/paid/already-hosted
+  payloads instead of the first third-party IPFS gateway URL; the paid result
+  drops the separate download and gateway links, and the dashboard uses the
+  feed's `downloadUrl` when present with the configured base as a fallback. The
+  refactorer single-sourced `DashboardPage.loadPage` (first page + Load more)
+  and covered the URL fallback. Merged to `master` at `5ce6f0c` (fast-forward;
+  architect review commit `f793e52`; the later `5ce6f0c` adds only the record and
+  summary, so `docs/reviews/file-view-api-links-verification.json` is valid for
+  the merged tree). Recorded `verify.sh client` pass 5/5 at `f793e52` (unit
+  916/0, property 253/0, acceptance all 51 suites, lint ok, build ok); language
+  mutation 28/28 killed; soft Gherkin mutation hosted-files 36/33 and host-file
+  30/25 (8 intrinsic survivors); DRY only pre-existing patterns. Independent
+  acceptance check after merge: host-file 31/31 and hosted-files 13/13. Architect
+  summary: `docs/reviews/file-view-api-links-summary.md`.
 - **File hosting navigation labels (`nav-file-hosting-labels`, 2026-10-10):**
   Client-only nav-menu change. The two file-hosting entries were renamed
   (`Host` → `File Upload`, `Dashboard` → `File Dashboard`) and moved to sit
