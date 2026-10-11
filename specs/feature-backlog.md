@@ -1729,9 +1729,10 @@ requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
 7.1.5), the user reconfirmed the env-var default and adapter shape, and **FH1
 `file-upload` is DONE** (spec `bcacc9d274`, merged to `master` at `8fbb8d4`,
 architect review `af7cb4b`, `docs/reviews/file-upload-verification.json` pass
-4/4, independent acceptance 13/13). Next: FH2 `file-host`, then FH3
-`file-status` and FH4 `file-check` (prefix `file-*`, keep the 2,000-sat PSF
-donation, latest `minimal-slp-wallet`).
+4/4, independent acceptance 13/13). **FH2 `file-host` is in progress** (spec
+`7180fc9`, with the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade bundled into
+the task). Next: FH3 `file-status`, then FH4 `file-check` (prefix `file-*`,
+keep the 2,000-sat PSF donation).
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
