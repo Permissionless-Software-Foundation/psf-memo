@@ -304,6 +304,7 @@ protocol action). The API base URL comes from `HOSTING_API_URL` (default
 | `file-upload` | `-f/--file` | `--json` | the API quote (`filename`, `sizeBytes`, `billedBytes`, `priceSats`, `paymentAddress`, `quoteExpiresAt`) or the already-hosted `downloadUrl`/`viewUrl` |
 | `file-host` | `-f/--file` and a wallet source (`-n/--name` or `--wif`) | `--json` | the hosted result (`cid`, `downloadUrl`, `viewUrl`, `gatewayUrls`, `txid`, `paymentAddress`) or the already-hosted `downloadUrl`/`viewUrl` |
 | `file-status` | `-c/--cid` | `--json` | the file record (`cid`, `filename`, `sizeBytes`, `status`, `hostedUntil`, `pins`) |
+| `file-check` | `-a/--address` | `--json` | the payment result: `status`; when paid `cid`, `downloadUrl`, `viewUrl`, `gatewayUrls`; when unpaid `receivedSats`, `requiredSats`, `quoteExpiresAt` |
 
 `file-upload` is quote-only: it reads a local file, uploads it, and prints the
 price quote (or the already-hosted links). It never touches a wallet, so a
@@ -321,10 +322,16 @@ file's name, size, status, hosting window (or `not paid`), and pins. That route
 returns no download/view URLs; `file-check` is how a payment address recovers
 them.
 
+`file-check` looks up a payment by address (`POST /files/check-payment`). A
+paid invoice prints the CID and download/view/gateway links; an unpaid invoice
+prints the amounts received and required plus the quote expiry; an expired
+invoice prints its status. No wallet and no payment.
+
 ```sh
 node psf-memo-cli.js file-upload -f ./photo.jpg --json
 node psf-memo-cli.js file-host -f ./photo.jpg -n wallet1 --json
 node psf-memo-cli.js file-status -c bafy... --json
+node psf-memo-cli.js file-check -a bitcoincash:q... --json
 ```
 
 
