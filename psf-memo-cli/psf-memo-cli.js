@@ -429,5 +429,5 @@ program.command('file-status')
 program.parseAsync(process.argv)
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T17:19:07.543Z","module_hash":"66875c80a557ff1d88edb8e31f9bf258c24b05486719c6b23e4e8fc99d955801","functions":[]}
+// {"version":1,"tested_at":"2026-10-11T17:30:51.986Z","module_hash":"3fce92cf6a4b2a612dc817b5d304bb5a649e19b1f208bbdb2bbb9350f72bb605","functions":[]}
 // mutate4javascript-manifest-end
