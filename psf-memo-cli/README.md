@@ -124,6 +124,23 @@ with the public address.
 - Use the `-a` flag to specify the BCH address you are verifying ownership of (required).
 - Use the `-m` flag to specify the clear text message that was signed (required).
 - Use the `-s` flag to specify the signature to be verified (required).
+### JSON output
+
+Every command supports `--json`, which prints exactly one JSON object to stdout
+with a `message` field plus the command's data fields. A missing required flag
+is a usage error (exit 2) and a runtime failure is a runtime error (exit 1),
+each printing `{ "error": "<message>" }` on stderr in JSON mode. Human mode
+keeps the readable output shown above. `wallet-create --json` reports only the
+new wallet's public metadata; it never prints the mnemonic or private key.
+
+```sh
+node psf-memo-cli.js wallet-create -n agent -d "first agent wallet" --json
+node psf-memo-cli.js wallet-list --json
+node psf-memo-cli.js wallet-addrs -n wallet1 --json
+node psf-memo-cli.js wallet-balance -n wallet1 --json
+node psf-memo-cli.js send-bch -n wallet1 -q 0.00001 -a <addr> --json
+node psf-memo-cli.js msg-sign -n wallet1 -m "test message" --json
+```
 
 
 ## Memo Protocol Commands

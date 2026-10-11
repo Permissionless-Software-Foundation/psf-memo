@@ -11,7 +11,7 @@ import { promises as fs } from 'fs'
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import WalletUtil from '../../../src/lib/wallet-util.js'
 import WalletSweep from '../../../src/commands/wallet-sweep.js'
-import { captureConsole } from '../../support/capture.js'
+import { captureStream } from '../../support/capture.js'
 
 const walletCreate = new WalletCreate()
 const walletUtil = new WalletUtil()
@@ -118,24 +118,67 @@ describe('#wallet-sweep', () => {
   })
 
   describe('#run', () => {
-    it('should execute the run function', async () => {
+    it('prints one JSON object with the sweep transaction', async () => {
       // Mock dependencies
       sandbox.stub(uut, 'sweepWif').resolves('fake-txid')
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
 
-      const flags = {
+      const code = await uut.run({
         name: 'test123',
-        wif: 'Kzq8EEyjkXGzDmBbWxHWY8bxayxXawVDmrnmgq7JQmhRgMCrorfj'
-      }
+        wif: 'Kzq8EEyjkXGzDmBbWxHWY8bxayxXawVDmrnmgq7JQmhRgMCrorfj',
+        json: true
+      })
 
-      const result = await uut.run(flags)
-
-      assert.equal(result, true)
+      assert.equal(code, 0)
+      assert.equal(err.text(), '')
+      const parsed = JSON.parse(out.text())
+      assert.equal(parsed.txid, 'fake-txid')
+      assert.equal(parsed.explorerUrl, 'https://bch.loping.net/tx/fake-txid')
     })
 
-    it('should handle an error', async () => {
-      const result = await uut.run()
+    it('prints the human sweep lines', async () => {
+      sandbox.stub(uut, 'sweepWif').resolves('fake-txid')
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      uut.stdout = out.stream
 
-      assert.equal(result, 0)
+      const code = await uut.run({ name: 'test123', wif: 'wif' })
+
+      assert.equal(code, 0)
+      assert.include(out.text(), 'BCH successfully swept from the private key')
+      assert.include(out.text(), 'TXID: fake-txid')
+    })
+
+    it('reports a missing wallet source as a usage error (exit 2)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ json: true })
+
+      assert.equal(code, 2)
+      assert.deepEqual(JSON.parse(err.text()), {
+        error: 'You must specify a wallet name with the -n flag.'
+      })
+    })
+
+    it('reports a sweep failure as a runtime error (exit 1)', async () => {
+      sandbox.stub(uut, 'sweepWif').rejects(new Error('sweep failed'))
+      uut.walletUtil = { instanceWallet: async () => ({}) }
+      const out = captureStream()
+      const err = captureStream()
+      uut.stdout = out.stream
+      uut.stderr = err.stream
+
+      const code = await uut.run({ name: 'test123', wif: 'wif', json: true })
+
+      assert.equal(code, 1)
+      assert.deepEqual(JSON.parse(err.text()), { error: 'sweep failed' })
     })
 
     it('should not echo the swept private key in its output', async () => {
@@ -149,10 +192,13 @@ describe('#wallet-sweep', () => {
         })
       }
       sandbox.stub(uut, 'sweepWif').resolves(txid)
+      const out = captureStream()
+      uut.stdout = out.stream
 
-      const output = await captureConsole(() => uut.run({ name: 'test123', wif }))
-      assert.notInclude(output, wif)
-      assert.include(output, txid)
+      await uut.run({ name: 'test123', wif })
+
+      assert.notInclude(out.text(), wif)
+      assert.include(out.text(), txid)
     })
   })
 })

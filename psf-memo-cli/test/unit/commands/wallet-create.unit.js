@@ -1,5 +1,9 @@
 /*
   Unit tests for the wallet-create command.
+
+  The command now adopts the shared output contract: human output unchanged,
+  --json prints one public-metadata object, a missing flag exits 2, and a
+  runtime failure exits 1.
 */
 
 // Global npm libraries
@@ -10,9 +14,20 @@ import { promises as fs } from 'fs'
 // Local libraries
 import WalletCreate from '../../../src/commands/wallet-create.js'
 import BchWalletMock from '../../mocks/msw-mock.js'
+import { UsageError } from '../../../src/lib/reporter.js'
+import { captureStream } from '../../support/capture.js'
 
 const __dirname = import.meta.dirname
 const filename = `${__dirname.toString()}/../../../.wallets/test123.json`
+
+function makeCommand ({ stdout, stderr } = {}) {
+  return new WalletCreate({
+    BchWallet: BchWalletMock,
+    walletUtil: { saveWallet: async () => true },
+    stdout: stdout?.stream,
+    stderr: stderr?.stream
+  })
+}
 
 describe('#wallet-create', () => {
   let uut
@@ -97,10 +112,13 @@ describe('#wallet-create', () => {
       assert.equal(uut.validateFlags({ name: 'test' }), true, 'return true')
     })
 
-    it('validateFlags() should throw error if name is not supplied.', () => {
+    it('validateFlags() should throw a UsageError if name is not supplied.', () => {
       try {
         uut.validateFlags({})
+
+        assert.fail('Unexpected code path')
       } catch (err) {
+        assert.instanceOf(err, UsageError)
         assert.include(
           err.message,
           'You must specify a wallet name with the -n flag',
@@ -111,64 +129,58 @@ describe('#wallet-create', () => {
   })
 
   describe('#run()', () => {
-    it('should create the wallet with expected properties', async () => {
-      // Mock dependencies
-      uut.BchWallet = BchWalletMock
+    it('prints one JSON object with the wallet public metadata and no mnemonic', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = makeCommand({ stdout: out, stderr: err })
 
-      const flags = {
-        name: 'test123'
-      }
-      // Mock methods that will be tested elsewhere.
-      // sandbox.stub(uut, 'parse').returns({ flags })
+      const code = await command.run({ name: 'agent', description: 'first agent wallet', json: true })
 
-      const walletData = await uut.run(flags)
-      // console.log('walletData: ', walletData)
-
-      assert.property(walletData, 'mnemonic')
-      assert.property(walletData, 'privateKey')
-      assert.property(walletData, 'publicKey')
-      assert.property(walletData, 'address')
-      assert.property(walletData, 'cashAddress')
-      assert.property(walletData, 'slpAddress')
-      assert.property(walletData, 'legacyAddress')
-      assert.property(walletData, 'hdPath')
-      assert.property(walletData, 'description')
-
-      // Clean up.
-      await fs.rm(filename)
+      assert.equal(code, 0)
+      const parsed = JSON.parse(out.text())
+      assert.equal(parsed.name, 'agent')
+      assert.equal(parsed.description, 'first agent wallet')
+      assert.notProperty(parsed, 'mnemonic')
+      assert.notProperty(parsed, 'privateKey')
+      assert.equal(err.text(), '')
     })
 
-    it('should add a description when provided', async () => {
-      // Mock dependencies
-      uut.BchWallet = BchWalletMock
+    it('prints the human creation line in human mode', async () => {
+      const out = captureStream()
+      const command = makeCommand({ stdout: out })
 
-      const flags = {
-        name: 'test123',
-        description: 'test'
-      }
-      // Mock methods that will be tested elsewhere.
-      // sandbox.stub(uut, 'parse').returns({ flags })
+      const code = await command.run({ name: 'agent', description: 'first' })
 
-      const walletData = await uut.run(flags)
-
-      assert.property(walletData, 'mnemonic')
-      assert.property(walletData, 'privateKey')
-      assert.property(walletData, 'publicKey')
-      assert.property(walletData, 'address')
-      assert.property(walletData, 'cashAddress')
-      assert.property(walletData, 'slpAddress')
-      assert.property(walletData, 'legacyAddress')
-      assert.property(walletData, 'hdPath')
-      assert.property(walletData, 'description')
-
-      // Clean up.
-      await fs.rm(filename)
+      assert.equal(code, 0)
+      assert.include(out.text(), 'wallet-create executed with name agent and description first')
+      assert.notInclude(out.text(), 'mnemonic')
     })
 
-    it('should return 0 on errors', async () => {
-      const result = await uut.run({})
+    it('reports a missing name as a usage error (exit 2)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = makeCommand({ stdout: out, stderr: err })
 
-      assert.equal(result, 0)
+      const code = await command.run({ json: true })
+
+      assert.equal(code, 2)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), {
+        error: 'You must specify a wallet name with the -n flag.'
+      })
+    })
+
+    it('reports a runtime failure as a runtime error (exit 1)', async () => {
+      const out = captureStream()
+      const err = captureStream()
+      const command = makeCommand({ stdout: out, stderr: err })
+      command.createWallet = async () => { throw new Error('wallet backend unavailable') }
+
+      const code = await command.run({ name: 'agent', json: true })
+
+      assert.equal(code, 1)
+      assert.equal(out.text(), '')
+      assert.deepEqual(JSON.parse(err.text()), { error: 'wallet backend unavailable' })
     })
   })
 })
