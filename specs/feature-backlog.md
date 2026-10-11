@@ -35,6 +35,21 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **File status (`file-status`, 2026-10-11):** FH3 of the `psf-memo-cli`
+  file-hosting port. Adds the read-only `file-status` command: look up a file
+  record by CID (`-c`) via `GET /files/:cid` and print its CID, name, size,
+  status, hosting window (`not paid` when unset), and pins. The route returns no
+  download/view URLs, so it renders metadata and pins only; `file-check` carries
+  the links. No wallet. Pure renderer in `psf-memo-cli/src/lib/file-status.js`;
+  `HostingApi.getStatus` percent-encodes the CID path segment. Spec:
+  `psf-memo-cli/specs/file-status.feature`.
+  Merged to `master` at `b6ec762` (architect review commit `94c671b`; the later
+  `3527bfc` adds only the record and summary, so
+  `docs/reviews/file-status-verification.json` is valid for the merged tree).
+  Recorded `verify.sh cli` pass 4/4 at `94c671b` (unit 643/0, property 134/0,
+  acceptance all 41 suites, lint ok); independent acceptance check after merge:
+  `file-status` 8/8 example executions.
+
 - **File host (`file-host`, 2026-10-11):** FH2 of the `psf-memo-cli`
   file-hosting port. Adds `file-host`: upload a local file, pay the quote from a
   resolved wallet (`-n`/`--wif`), poll `POST /files/check-payment` (10 attempts,
@@ -1751,9 +1766,11 @@ architect review `af7cb4b`, `docs/reviews/file-upload-verification.json` pass
 4/4, independent acceptance 13/13). **FH2 `file-host` is DONE** (spec `7180fc9`,
 merged to `master` at `938bf7c`, architect review `d09f222`,
 `docs/reviews/file-host-verification.json` pass 4/4, independent acceptance
-14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. Next: FH3
-`file-status`, then FH4 `file-check` (prefix `file-*`, keep the 2,000-sat PSF
-donation).
+14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. **FH3
+`file-status` is DONE** (spec `b2adce1`, merged to `master` at `b6ec762`,
+architect review `94c671b`, `docs/reviews/file-status-verification.json` pass
+4/4, independent acceptance 8/8). Next: FH4 `file-check` (prefix `file-*`, keep
+the 2,000-sat PSF donation).
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
