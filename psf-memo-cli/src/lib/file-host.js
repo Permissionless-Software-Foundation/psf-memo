@@ -53,3 +53,7 @@ export async function pollPayment ({
 
   throw new Error('Payment not confirmed.')
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T17:16:56.007Z","module_hash":"2b62aab61238bf7246ff18cebbac61f533b53d40991cd7a104a52cb0f3f7396d","functions":[{"id":"func/formatFileHostMessage","name":"formatFileHostMessage","line":12,"end_line":33,"hash":"1f2219df944ffbddb6f0317575c8da96486ef9513996752c72d3ff59064f7a71"},{"id":"func/pollPayment","name":"pollPayment","line":38,"end_line":55,"hash":"53543d8fd7535d9f25f8b40494d90361000a6d1093d5e470ff441d8a68ded871"}]}
+// mutate4javascript-manifest-end

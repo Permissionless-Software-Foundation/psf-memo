@@ -36,11 +36,11 @@ async function runFileHost (world, flags) {
 
   world.stdoutText = stdout.text()
   world.stderrText = stderr.text()
-  world.fileHostJson = null
+  world.hostingJson = null
   try {
-    world.fileHostJson = JSON.parse(world.stdoutText)
+    world.hostingJson = JSON.parse(world.stdoutText)
   } catch (err) {
-    world.fileHostJson = null
+    world.hostingJson = null
   }
 }
 
@@ -69,7 +69,7 @@ function jsonFieldHandler ({ name, pattern, field }) {
     name,
     pattern,
     run (m, example, world) {
-      assertEqual(world.fileHostJson?.[field], resolveParam(m[1], example), `JSON ${field}`, { quote: true })
+      assertEqual(world.hostingJson?.[field], resolveParam(m[1], example), `JSON ${field}`, { quote: true })
     }
   }
 }
@@ -94,7 +94,7 @@ const fileHostHandlers = [
       world.exitCode = null
       world.stdoutText = ''
       world.stderrText = ''
-      world.fileHostJson = null
+      world.hostingJson = null
     }
   },
   {

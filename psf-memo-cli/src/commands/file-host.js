@@ -21,6 +21,7 @@ import HostingApi from '../lib/hosting-api.js'
 import { formatFileHostMessage, pollPayment } from '../lib/file-host.js'
 import { sendPayment } from '../lib/send-payment.js'
 import { resolveWalletSource, validateWalletSource } from '../lib/wallet-source.js'
+import { readLocalFile } from '../lib/read-local-file.js'
 import WalletUtil from '../lib/wallet-util.js'
 import { bindMethods } from '../lib/bind-methods.js'
 
@@ -55,7 +56,7 @@ class FileHost {
     this.stdout = stdout
     this.stderr = stderr
 
-    bindMethods(this, ['run', 'validateFlags', 'readLocalFile', 'resolveWallet', 'pollForPayment'])
+    bindMethods(this, ['run', 'validateFlags', 'resolveWallet', 'pollForPayment'])
   }
 
   // Upload, pay, and confirm. Returns the exit code (0/1/2) and assigns it to
@@ -64,7 +65,7 @@ class FileHost {
     const code = await runCommand(async () => {
       this.validateFlags(flags)
 
-      const buffer = this.readLocalFile(flags.file)
+      const buffer = readLocalFile(this.readFile, flags.file)
       const filename = path.basename(flags.file)
       const upload = await this.hostingApi.upload({ filename, buffer })
 
@@ -111,15 +112,6 @@ class FileHost {
     return validateWalletSource(flags)
   }
 
-  // Read the local file, mapping any read failure to the documented message.
-  readLocalFile (filePath) {
-    try {
-      return this.readFile(filePath)
-    } catch (err) {
-      throw new Error(`Cannot read file: ${filePath}`)
-    }
-  }
-
   // Resolve the signing wallet from the -n/--wif flags.
   resolveWallet (flags = {}) {
     return resolveWalletSource(
@@ -141,3 +133,7 @@ class FileHost {
 }
 
 export default FileHost
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T17:21:03.402Z","module_hash":"c4ea9a6638376c6ce0282fb09c6bea3fba43e5f386e77546594873ae3f8dea81","functions":[{"id":"func/FileHost.constructor","name":"FileHost.constructor","line":33,"end_line":60,"hash":"af6b5d81abe0db37431db98b2d5c0a2add393f65ad86719dcf793c21b503b3ec"},{"id":"func/FileHost.run","name":"FileHost.run","line":64,"end_line":102,"hash":"b6fcd86f931543285e06373cff6b6f8cb3c409f3eda5761975a55660b495b043"},{"id":"func/FileHost.validateFlags","name":"FileHost.validateFlags","line":107,"end_line":113,"hash":"7de071443c88c433b243cad4443413d5ad470e99598bf35f75c509ddc1e4d6a8"},{"id":"func/FileHost.resolveWallet","name":"FileHost.resolveWallet","line":116,"end_line":121,"hash":"80b02e9f7513db966e67e53e2ddc70cf91c01e0a84f3c986da472c506f8f9851"},{"id":"func/FileHost.pollForPayment","name":"FileHost.pollForPayment","line":124,"end_line":132,"hash":"9a2a7385c31bf403a0b3d90b38db38d3b8a5ca3344bc944b27ff61a3ff9c050d"}]}
+// mutate4javascript-manifest-end

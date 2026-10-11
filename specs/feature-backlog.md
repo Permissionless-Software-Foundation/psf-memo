@@ -35,6 +35,25 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## Recently completed
 
+- **File host (`file-host`, 2026-10-11):** FH2 of the `psf-memo-cli`
+  file-hosting port. Adds `file-host`: upload a local file, pay the quote from a
+  resolved wallet (`-n`/`--wif`), poll `POST /files/check-payment` (10 attempts,
+  3000 ms apart, injected sleep) until paid, then print the CID,
+  download/view/gateway URLs, and the payment txid. An already-hosted upload
+  short-circuits without paying. The task also upgraded `minimal-slp-wallet`
+  `5.12.1 → 7.1.5` (`@psf/bch-js` 7.1.14) and validated the `send()` path with
+  the 2,000-sat PSF donation. Pure renderer/poll loop in
+  `psf-memo-cli/src/lib/file-host.js`; wallet adapter in
+  `psf-memo-cli/src/lib/send-payment.js`; shared file reader in
+  `psf-memo-cli/src/lib/read-local-file.js`. Spec:
+  `psf-memo-cli/specs/file-host.feature`.
+  Merged to `master` at `938bf7c` (architect review commit `d09f222`; the later
+  `692f9ca` adds only the record and summary, so
+  `docs/reviews/file-host-verification.json` is valid for the merged tree).
+  Recorded `verify.sh cli` pass 4/4 at `d09f222` (unit 630/0, property 126/0,
+  acceptance all 40 suites, lint ok); independent acceptance check after merge:
+  `file-host` 14/14 example executions.
+
 - **File upload (`file-upload`, 2026-10-11):** FH1 of the `psf-memo-cli`
   file-hosting port. Adds the quote-only `file-upload` command: it uploads a
   local file to the `bch-file-hosting` REST API (`POST /files`, multipart field
@@ -1729,9 +1748,12 @@ requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
 7.1.5), the user reconfirmed the env-var default and adapter shape, and **FH1
 `file-upload` is DONE** (spec `bcacc9d274`, merged to `master` at `8fbb8d4`,
 architect review `af7cb4b`, `docs/reviews/file-upload-verification.json` pass
-4/4, independent acceptance 13/13). Next: FH2 `file-host`, then FH3
-`file-status` and FH4 `file-check` (prefix `file-*`, keep the 2,000-sat PSF
-donation, latest `minimal-slp-wallet`).
+4/4, independent acceptance 13/13). **FH2 `file-host` is DONE** (spec `7180fc9`,
+merged to `master` at `938bf7c`, architect review `d09f222`,
+`docs/reviews/file-host-verification.json` pass 4/4, independent acceptance
+14/14), including the `minimal-slp-wallet` `5.12.1 → 7.1.5` upgrade. Next: FH3
+`file-status`, then FH4 `file-check` (prefix `file-*`, keep the 2,000-sat PSF
+donation).
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
