@@ -241,3 +241,29 @@ test('single-resource routes percent-encode the identifier', async () => {
     assert.equal(new URL(requested).pathname, `/polls/${encodeURIComponent(addr)}`)
   }
 })
+
+test('getFollowingFeed carries the encoded address and the requested page', async () => {
+  for (let i = 0; i < 300; i++) {
+    const addr = randomAddress()
+    const limit = 1 + Math.floor(rng() * 100)
+    const offset = Math.floor(rng() * 1000)
+    const page = { posts: [], pagination: {} }
+    let requested
+
+    const client = new MemoDb({
+      envUrl: null,
+      fetchImpl: async (url) => {
+        requested = url
+        return jsonResponse(page)
+      }
+    })
+
+    const result = await client.getFollowingFeed(addr, { limit, offset })
+
+    const url = new URL(requested)
+    assert.equal(url.pathname, `/posts/following/${encodeURIComponent(addr)}`)
+    assert.equal(url.searchParams.get('limit'), String(limit))
+    assert.equal(url.searchParams.get('offset'), String(offset))
+    assert.deepEqual(result, page)
+  }
+})
