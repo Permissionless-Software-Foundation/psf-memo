@@ -423,9 +423,11 @@ team landed `HOSTING_API_URL` (default `http://localhost:5050`), the
 `fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, and
 `minimal-slp-wallet` 7.1.5. **FH1 `file-upload` is DONE** (merged to `master` at
 `8fbb8d4`; architect review `af7cb4b`; `verify.sh cli` pass 4/4, record
-`docs/reviews/file-upload-verification.json`; independent acceptance 13/13);
-FH2–FH4 are queued. Pending: upgrade `psf-memo-cli` `minimal-slp-wallet` to
-7.1.5 (own hardening task or folded into FH2).
+`docs/reviews/file-upload-verification.json`; independent acceptance 13/13).
+**FH2 `file-host` is in progress** with the `minimal-slp-wallet` `5.12.1 →
+7.1.5` upgrade bundled into the task: do the upgrade first and validate the
+`send()` path (including the 2,000-sat PSF donation), then add `file-host`.
+FH3–FH4 are queued.
 
 A second job beyond the Memo protocol: port a subset of the
 `bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the
