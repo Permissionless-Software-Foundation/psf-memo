@@ -61,12 +61,6 @@ test('explorerUrl builds a bch.loping.net transaction link', () => {
   assert.equal(page.explorerUrl(SAMPLE_TXID), NewPostPage.explorerUrl(SAMPLE_TXID))
 })
 
-test('the new post page is linked from the navigation menu', () => {
-  const page = new NewPostPage({ navigate: () => {} })
-
-  assert.equal(page.hasMenuLink('/posts/new'), true)
-})
-
 test('remainingCount returns the full budget for empty input', () => {
   const { memoPost } = makeMemoPost()
   const page = new NewPostPage({ memoPost, navigate: () => {} })

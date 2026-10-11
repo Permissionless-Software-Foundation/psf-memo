@@ -651,8 +651,7 @@ function createWorld () {
   // adapter updates the world's current path so navigation can be asserted.
   world.newPage = new NewPostPage({
     memoPost,
-    navigate: (path) => { world.currentPath = path },
-    menuLinks: []
+    navigate: (path) => { world.currentPath = path }
   })
 
   // The Reply Thread Page controller wraps the memo reply behavior. It does
@@ -963,7 +962,7 @@ const MINUTE_MS = 60 * 1000
 // A fixed clock keeps the countdown and quote-expiry steps deterministic.
 const HOSTING_FIXED_NOW = Date.parse('2026-10-09T12:00:00Z')
 
-// Default API base for the hosting API and the dashboard download links.
+// Default API base for the hosting API and the dashboard download-link fallback.
 const HOSTING_API_BASE = 'https://file-hosting-api.blippost.com'
 
 // Fake hosting API: upload returns the configured response or throws the
@@ -1068,8 +1067,8 @@ function rowCellText (rowHtml, cellClass) {
 }
 
 // Build a complete feed file record from the fields a scenario configures.
-function feedRecord ({ status, cid, filename = '', sizeBytes = 0, paidAt = '2026-01-02T00:00:00.000Z', hostedUntil = '2027-01-02T00:00:00.000Z', paymentAddress = 'bitcoincash:qfeed', gatewayUrls = [] }) {
-  return { status, cid, filename, sizeBytes: Number(sizeBytes), paidAt, hostedUntil, paymentAddress, gatewayUrls, pins: [] }
+function feedRecord ({ status, cid, filename = '', sizeBytes = 0, paidAt = '2026-01-02T00:00:00.000Z', hostedUntil = '2027-01-02T00:00:00.000Z', paymentAddress = 'bitcoincash:qfeed', downloadUrl = '', viewUrl = '' }) {
+  return { status, cid, filename, sizeBytes: Number(sizeBytes), paidAt, hostedUntil, paymentAddress, downloadUrl, viewUrl, pins: [] }
 }
 
 // Parse a comma-separated scenario value into trimmed, non-empty items.
@@ -5737,7 +5736,7 @@ const handlers = [
     run (m, example, world) {
       world.response = {
         alreadyHosted: true,
-        downloadUrl: resolveParam(m[1], example)
+        viewUrl: resolveParam(m[1], example)
       }
     }
   },
@@ -5777,18 +5776,17 @@ const handlers = [
         status: 'paid',
         cid: resolveParam(m[1], example),
         filename: 'upload.bin',
-        downloadUrl: '',
-        gatewayUrls: []
+        viewUrl: ''
       }
       world.pendingPaid = paid
       world.checkResults.push(paid)
     }
   },
   {
-    name: 'the hosting API reports the download URL of the paid invoice',
-    pattern: /^the hosting API reports the download URL (.+)$/,
+    name: 'the hosting API reports the view URL of the paid invoice',
+    pattern: /^the hosting API reports the view URL (.+)$/,
     run (m, example, world) {
-      world.pendingPaid.downloadUrl = resolveParam(m[1], example)
+      world.pendingPaid.viewUrl = resolveParam(m[1], example)
     }
   },
   {
@@ -5796,13 +5794,6 @@ const handlers = [
     pattern: /^the hosting API reports the paid file name (\S+)$/,
     run (m, example, world) {
       world.pendingPaid.filename = resolveParam(m[1], example)
-    }
-  },
-  {
-    name: 'the hosting API reports a gateway URL of the paid invoice',
-    pattern: /^the hosting API reports the gateway URL (.+)$/,
-    run (m, example, world) {
-      world.pendingPaid.gatewayUrls.push(resolveParam(m[1], example))
     }
   },
   {
@@ -5934,12 +5925,12 @@ const handlers = [
     }
   },
   {
-    name: 'the page shows the download URL',
-    pattern: /^the page shows the download URL (\S+)$/,
+    name: 'the page shows the view URL',
+    pattern: /^the page shows the view URL (\S+)$/,
     run (m, example, world) {
       const expected = resolveParam(m[1], example)
-      if (world.state.downloadUrl !== expected) throw new Error(`Expected the page to show the download URL ${expected}, got "${world.state.downloadUrl}".`)
-      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the download URL ${expected}.`)
+      if (world.state.viewUrl !== expected) throw new Error(`Expected the page to show the view URL ${expected}, got "${world.state.viewUrl}".`)
+      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the view URL ${expected}.`)
     }
   },
   {
@@ -5952,26 +5943,17 @@ const handlers = [
     }
   },
   {
-    name: 'the page shows the gateway URL',
-    pattern: /^the page shows the gateway URL (\S+)$/,
-    run (m, example, world) {
-      const expected = resolveParam(m[1], example)
-      if (!(world.state.gatewayUrls || []).includes(expected)) throw new Error(`Expected the page to show the gateway URL ${expected}.`)
-      if (!renderHostingPage(world).includes(expected)) throw new Error(`Rendered page does not show the gateway URL ${expected}.`)
-    }
-  },
-  {
-    name: 'the gateway URL has a link target',
-    pattern: /^the gateway URL (\S+) has link target (\S+)$/,
+    name: 'the view URL has a link target',
+    pattern: /^the view URL (\S+) has link target (\S+)$/,
     run (m, example, world) {
       const url = resolveParam(m[1], example)
       const expected = resolveParam(m[2], example)
       const anchors = renderHostingPage(world).match(/<a [^>]*>/g) || []
       const anchor = anchors.find((tag) => tag.includes(`href="${url}"`))
-      if (!anchor) throw new Error(`Rendered page does not link the gateway URL ${url}.`)
+      if (!anchor) throw new Error(`Rendered page does not link the view URL ${url}.`)
       const opensInNewTab = anchor.includes('target="_blank"')
-      if (expected === '_blank' && !opensInNewTab) throw new Error(`Expected the gateway link ${url} to open in a new tab.`)
-      if (expected !== '_blank' && opensInNewTab) throw new Error(`Expected the gateway link ${url} to keep the default target.`)
+      if (expected === '_blank' && !opensInNewTab) throw new Error(`Expected the view link ${url} to open in a new tab.`)
+      if (expected !== '_blank' && opensInNewTab) throw new Error(`Expected the view link ${url} to keep the default target.`)
     }
   },
   {
@@ -6024,14 +6006,6 @@ const handlers = [
     }
   },
   {
-    name: 'the hosting API base URL',
-    pattern: /^the hosting API base URL is (\S+)$/,
-    run (m, example, world) {
-      const base = resolveParam(m[1], example)
-      if (world.dashboardPage) world.dashboardPage.downloadBaseUrl = base
-    }
-  },
-  {
     name: 'the hosting API feed lists a pinned file',
     pattern: /^the hosting API feed lists a pinned file (\S+) named (\S+)$/,
     run (m, example, world) {
@@ -6043,14 +6017,15 @@ const handlers = [
     }
   },
   {
-    name: 'the hosting API feed lists a pinned file with a gateway URL',
-    pattern: /^the hosting API feed lists a pinned file (\S+) named (\S+) with the gateway URL (\S+)$/,
+    name: 'the hosting API feed lists a pinned file with view and download URLs',
+    pattern: /^the hosting API feed lists a pinned file (\S+) named (\S+) with the view URL (\S+) and download URL (\S+)$/,
     run (m, example, world) {
       world.feedFiles.push(feedRecord({
         status: 'pinned',
         cid: resolveParam(m[1], example),
         filename: resolveParam(m[2], example),
-        gatewayUrls: [resolveParam(m[3], example)]
+        viewUrl: resolveParam(m[3], example),
+        downloadUrl: resolveParam(m[4], example)
       }))
     }
   },

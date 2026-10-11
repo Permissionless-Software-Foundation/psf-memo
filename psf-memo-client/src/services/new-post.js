@@ -24,27 +24,12 @@ class NewPostPage extends PageController {
   constructor (deps = {}) {
     super(deps)
     this.memoPost = deps.memoPost || null
-    this.menuLinks = deps.menuLinks || []
     this.posting = false
     // Navigation is deferred until the result modal is dismissed.
     this.successPath = null
     this.validationCodes = ['memo_validation', 'memo_length']
     this.showResultModal = false
     this.lastResult = null
-
-    // The navigation menu links to the new post page.
-    this.addMenuLink(NEW_POST_PATH)
-  }
-
-  // Record a navigation menu link offered by the app.
-  addMenuLink (path) {
-    if (!this.menuLinks.includes(path)) this.menuLinks.push(path)
-    return this
-  }
-
-  // Whether the navigation menu exposes a link to the given path.
-  hasMenuLink (path) {
-    return this.menuLinks.includes(path)
   }
 
   // Characters remaining before the memo limit is reached.
@@ -101,5 +86,5 @@ NewPostPage.explorerUrl = blockExplorerTxUrl
 module.exports = NewPostPage
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-16T19:19:23.763Z","module_hash":"a285c6a2a27006b4e90960ebfe9968651e6cfd7a4f12e600fca76d521eda2751","functions":[{"id":"func/NewPostPage.constructor","name":"NewPostPage.constructor","line":24,"end_line":37,"hash":"ea4edf077e9c3631366acadc62f27b8cf4d5087cc6d2e317db9086b1d0d18347"},{"id":"func/NewPostPage.addMenuLink","name":"NewPostPage.addMenuLink","line":40,"end_line":43,"hash":"bac97164d2d70bfdb946c4d54e67983c43cad093bac558f1d169e1739ca97137"},{"id":"func/NewPostPage.hasMenuLink","name":"NewPostPage.hasMenuLink","line":46,"end_line":48,"hash":"7e1abf5d0833aaf3b3da3a024de9eb2b80da900b2930e832c7e92d77e0e50344"},{"id":"func/NewPostPage.remainingCount","name":"NewPostPage.remainingCount","line":51,"end_line":53,"hash":"521ce4ed841f62099529b327f2245a9e94c09af2f67ed5d91839e52607bcea37"},{"id":"func/NewPostPage._setBusy","name":"NewPostPage._setBusy","line":56,"end_line":58,"hash":"af4c51d75a9bbfc4d8c2566414ee950704d83831ad915ee04eea8bf2fab65a3e"},{"id":"func/NewPostPage._perform","name":"NewPostPage._perform","line":61,"end_line":66,"hash":"e66f893a4913b5d6f3cc4fcc1ad58e21557b4a316f0150050c961e3ece237795"},{"id":"func/NewPostPage.explorerUrl","name":"NewPostPage.explorerUrl","line":69,"end_line":71,"hash":"947125deea2b19ae2dff9d9bd9449a23f10b6bf6075a9c9be4bc588cd211ff56"},{"id":"func/NewPostPage.submit","name":"NewPostPage.submit","line":75,"end_line":84,"hash":"56282a4dea0927a6ab8bd3e6452f1860b978bcf4598d17cdcf86f6083b561b17"},{"id":"func/NewPostPage.dismissResult","name":"NewPostPage.dismissResult","line":87,"end_line":93,"hash":"35cae53c6e851cd96e5b81dfe5a2b954f458bdacd60d8228676779c025820c73"}]}
+// {"version":1,"tested_at":"2026-10-10T03:34:42.805Z","module_hash":"f2a814aa71ad17007212eff416a76f3a253fa721e5c5e836616d6b91d2c0394b","functions":[{"id":"func/NewPostPage.constructor","name":"NewPostPage.constructor","line":24,"end_line":33,"hash":"2dcd83dc69393eaca9ee61e480f662b1904ee0dd2c9ab33dc982e43dfc3f08d3"},{"id":"func/NewPostPage.remainingCount","name":"NewPostPage.remainingCount","line":36,"end_line":38,"hash":"521ce4ed841f62099529b327f2245a9e94c09af2f67ed5d91839e52607bcea37"},{"id":"func/NewPostPage._setBusy","name":"NewPostPage._setBusy","line":41,"end_line":43,"hash":"af4c51d75a9bbfc4d8c2566414ee950704d83831ad915ee04eea8bf2fab65a3e"},{"id":"func/NewPostPage._perform","name":"NewPostPage._perform","line":46,"end_line":51,"hash":"e66f893a4913b5d6f3cc4fcc1ad58e21557b4a316f0150050c961e3ece237795"},{"id":"func/NewPostPage.explorerUrl","name":"NewPostPage.explorerUrl","line":54,"end_line":56,"hash":"947125deea2b19ae2dff9d9bd9449a23f10b6bf6075a9c9be4bc588cd211ff56"},{"id":"func/NewPostPage.submit","name":"NewPostPage.submit","line":60,"end_line":69,"hash":"56282a4dea0927a6ab8bd3e6452f1860b978bcf4598d17cdcf86f6083b561b17"},{"id":"func/NewPostPage.dismissResult","name":"NewPostPage.dismissResult","line":72,"end_line":78,"hash":"35cae53c6e851cd96e5b81dfe5a2b954f458bdacd60d8228676779c025820c73"}]}
 // mutate4javascript-manifest-end

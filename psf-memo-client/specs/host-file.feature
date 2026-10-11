@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-10-10T03:05:39.003165309Z","feature_name":"Host File","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/host-file.feature","background_hash":"12fbdded241357f187a94e8ac9637048a085e4f588708a502d95d541132afa51","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Host File - 1 a selected file shows the hosting quote","scenario_hash":"cae75c5494f21b5e3adb651d0f3596126b020a0fcc04f32bd031e9e1b07b426d","mutation_count":12,"result":{"Total":12,"Killed":12,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":1,"name":"Host File - 2 an already hosted file shows the download link","scenario_hash":"36ce77779e532a1f4df6028ead980fe5af6862ba443757d9c3ffd811fc574115","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":3,"name":"Host File - 4 an API rejection shows the error","scenario_hash":"a641ffd464ea3257cac5937ae6f435b28972d090a875a812c84e8265eb2b9de0","mutation_count":12,"result":{"Total":12,"Killed":12,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":4,"name":"Host File - 5 the quote shows the file size and a separate billed size","scenario_hash":"3b1df45d68b714a52300ebc70e9e45693daa28a31578b1a179dd69ca1ef82fa7","mutation_count":20,"result":{"Total":20,"Killed":20,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":5,"name":"Host File - 6 a file at or above the billing minimum shows no separate billed size","scenario_hash":"d50a4cbdbb21b26374fd26cd291943cd6c7325a3e593b8825f6ede1f849deb58","mutation_count":18,"result":{"Total":18,"Killed":18,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":6,"name":"Host File - 7 the quote shows a QR code and an expiry countdown","scenario_hash":"90f5d4f38202eb7deff19cd2b3b3d4f968fe767abbfdc5218e51cecacb8eef5f","mutation_count":18,"result":{"Total":18,"Killed":18,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":7,"name":"Host File - 8 Pay now sends the price to the payment address","scenario_hash":"edb2fe7d21e8935ca1f48804eb31a55cd0952eeed6020309123f4829777bfa16","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":8,"name":"Host File - 9 a confirmed payment shows the hosting result","scenario_hash":"d2dd08ff177c1b6fee48cbd14055d9e285fbb280700aabd92d27b54055ada416","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":10,"name":"Host File - 11 a wallet payment failure shows the error","scenario_hash":"7d3513f9d6de4a2da1aedf6570a16ab85c3fbbe133c0fea265799aa260857e87","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":12,"name":"Host File - 13 a check-payment failure shows the error","scenario_hash":"e696ed690dc20e73890933b644a5102d29af39f25314f90e907d231bde660dc0","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":14,"name":"Host File - 15 the upload is posted to the configured hosting API URL","scenario_hash":"0ef01be245527c5eade69c3b969d8f4c2008fef98331b063b0ceff381e6cee27","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"}]}
+# {"version":1,"tested_at":"2026-10-10T03:35:22.335127932Z","feature_name":"Host File","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/host-file.feature","background_hash":"12fbdded241357f187a94e8ac9637048a085e4f588708a502d95d541132afa51","implementation_hash":"unknown","scenarios":[{"index":16,"name":"Host File - 17 the navigation menu shows File Upload between Account and BCH","scenario_hash":"7b379581d765383c48adf0874f62757cdf6fc37afd9e32f4349fd7e90796408c","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:33:00.892518358Z"},{"index":0,"name":"Host File - 1 a selected file shows the hosting quote","scenario_hash":"cae75c5494f21b5e3adb651d0f3596126b020a0fcc04f32bd031e9e1b07b426d","mutation_count":12,"result":{"Total":12,"Killed":12,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":1,"name":"Host File - 2 an already hosted file shows the download link","scenario_hash":"36ce77779e532a1f4df6028ead980fe5af6862ba443757d9c3ffd811fc574115","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":3,"name":"Host File - 4 an API rejection shows the error","scenario_hash":"a641ffd464ea3257cac5937ae6f435b28972d090a875a812c84e8265eb2b9de0","mutation_count":12,"result":{"Total":12,"Killed":12,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":4,"name":"Host File - 5 the quote shows the file size and a separate billed size","scenario_hash":"3b1df45d68b714a52300ebc70e9e45693daa28a31578b1a179dd69ca1ef82fa7","mutation_count":20,"result":{"Total":20,"Killed":20,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":5,"name":"Host File - 6 a file at or above the billing minimum shows no separate billed size","scenario_hash":"d50a4cbdbb21b26374fd26cd291943cd6c7325a3e593b8825f6ede1f849deb58","mutation_count":18,"result":{"Total":18,"Killed":18,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":6,"name":"Host File - 7 the quote shows a QR code and an expiry countdown","scenario_hash":"90f5d4f38202eb7deff19cd2b3b3d4f968fe767abbfdc5218e51cecacb8eef5f","mutation_count":18,"result":{"Total":18,"Killed":18,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":7,"name":"Host File - 8 Pay now sends the price to the payment address","scenario_hash":"edb2fe7d21e8935ca1f48804eb31a55cd0952eeed6020309123f4829777bfa16","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":8,"name":"Host File - 9 a confirmed payment shows the hosting result","scenario_hash":"d2dd08ff177c1b6fee48cbd14055d9e285fbb280700aabd92d27b54055ada416","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":10,"name":"Host File - 11 a wallet payment failure shows the error","scenario_hash":"7d3513f9d6de4a2da1aedf6570a16ab85c3fbbe133c0fea265799aa260857e87","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":12,"name":"Host File - 13 a check-payment failure shows the error","scenario_hash":"e696ed690dc20e73890933b644a5102d29af39f25314f90e907d231bde660dc0","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"},{"index":14,"name":"Host File - 15 the upload is posted to the configured hosting API URL","scenario_hash":"0ef01be245527c5eade69c3b969d8f4c2008fef98331b063b0ceff381e6cee27","mutation_count":16,"result":{"Total":16,"Killed":16,"Survived":0,"Errors":0},"tested_at":"2026-10-10T03:05:39.003165309Z"}]}
 # acceptance-mutation-manifest-end
 
 # Scenarios: Host File - 1, Host File - 2, Host File - 3, Host File - 4, Host File - 5, Host File - 6, Host File - 7, Host File - 8, Host File - 9, Host File - 10, Host File - 11, Host File - 12, Host File - 13, Host File - 14, Host File - 15, Host File - 16, Host File - 17
@@ -9,9 +9,10 @@
 # read from REACT_APP_FILE_HOSTING_URL and defaults to
 # https://file-hosting-api.blippost.com. A chosen file is POSTed to
 # <base>/files, which answers with a quote (priceSats + paymentAddress) or an
-# already-hosted record; Pay now sends the quote amount to the payment address,
-# then the page polls <base>/files/check-payment until the invoice is paid
-# (showing the CID, download URL, gateway URLs, and payment txid) or expired.
+# already-hosted record with a view URL; Pay now sends the quote amount to the
+# payment address, then the page polls <base>/files/check-payment until the
+# invoice is paid (showing the CID, the API view URL, and the payment txid) or
+# expired.
 # This is a client-only feature: it broadcasts no Memo action and changes no
 # psf-memo-db data. The /status page is intentionally not ported, so the paid
 # result links to no status page.
@@ -32,16 +33,16 @@ Feature: Host File
       | photo.jpg   | 2000     | bitcoincash:qquoteaddress00000000000000000000000000000 | photo.jpg   | 2000       | bitcoincash:qquoteaddress00000000000000000000000000000 |
       | archive.tar | 62500    | bitcoincash:qotheraddress00000000000000000000000000000 | archive.tar | 62500      | bitcoincash:qotheraddress00000000000000000000000000000 |
 
-  Scenario Outline: Host File - 2 an already hosted file shows the download link
-    Given the hosting API reports the file is already hosted at <api_download_url>
+  Scenario Outline: Host File - 2 an already hosted file shows the view link
+    Given the hosting API reports the file is already hosted at <api_view_url>
     When the visitor uploads the file <upload_name>
     Then the page shows the file name <shown_name>
-    And the page shows the download URL <shown_download_url>
+    And the page shows the view URL <shown_view_url>
 
     Examples:
-      | upload_name | api_download_url                                                                             | shown_name  | shown_download_url                                                                           |
-      | photo.jpg   | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | photo.jpg   | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi |
-      | archive.tar | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | archive.tar | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
+      | upload_name | api_view_url                                                                                 | shown_name  | shown_view_url                                                                               |
+      | photo.jpg   | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | photo.jpg   | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi |
+      | archive.tar | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | archive.tar | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 
   Scenario: Host File - 3 uploading without a file shows a prompt
     When the visitor uploads no file
@@ -122,19 +123,17 @@ Feature: Host File
     And the wallet will broadcast the transaction <api_txid>
     And the hosting API reports the payment as unpaid
     And the hosting API reports a paid invoice with CID <paid_cid>
-    And the hosting API reports the download URL <paid_download_url>
-    And the hosting API reports the gateway URL <paid_gateway_url>
+    And the hosting API reports the view URL <paid_view_url>
     When the visitor pays the quote from the wallet
     And the visitor waits for the payment to be confirmed
     Then the page shows the CID <shown_cid>
-    And the page shows the download URL <shown_download_url>
-    And the page shows the gateway URL <shown_gateway_url>
+    And the page shows the view URL <shown_view_url>
     And the page shows the payment transaction <shown_txid>
 
     Examples:
-      | api_txid                                                     | paid_cid                                                     | paid_download_url                                                                                                   | paid_gateway_url                                                                                   | shown_cid                                                    | shown_download_url                                                                                                 | shown_gateway_url                                                                                 | shown_txid                                                   |
-      | 1111111111111111111111111111111111111111111111111111111111111111 | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://ipfs.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/download/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://ipfs.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg | 1111111111111111111111111111111111111111111111111111111111111111 |
-      | 2222222222222222222222222222222222222222222222222222222222222222 | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://dweb.link/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/download/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://dweb.link/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | 2222222222222222222222222222222222222222222222222222222222222222 |
+      | api_txid                                                     | paid_cid                                                     | paid_view_url                                                                     | shown_cid                                                    | shown_view_url                                                                    | shown_txid                                                   |
+      | 1111111111111111111111111111111111111111111111111111111111111111 | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | 1111111111111111111111111111111111111111111111111111111111111111 |
+      | 2222222222222222222222222222222222222222222222222222222222222222 | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | 2222222222222222222222222222222222222222222222222222222222222222 |
 
   Scenario: Host File - 10 an expired quote shows the expired message
     Given an open hosting quote
@@ -173,20 +172,20 @@ Feature: Host File
       | Hosting API unavailable | Hosting API unavailable |
       | Payment check failed    | Payment check failed    |
 
-  Scenario Outline: Host File - 14 an image gateway link opens in a new tab
+  Scenario Outline: Host File - 14 an image view link opens in a new tab
     Given an open hosting quote
     And the hosting API reports the payment as unpaid
     And the hosting API reports a paid invoice with CID <paid_cid>
     And the hosting API reports the paid file name <paid_name>
-    And the hosting API reports the gateway URL <paid_gateway_url>
+    And the hosting API reports the view URL <paid_view_url>
     When the visitor pays the quote from the wallet
     And the visitor waits for the payment to be confirmed
-    Then the gateway URL <shown_gateway_url> has link target <shown_target>
+    Then the view URL <shown_view_url> has link target <shown_target>
 
     Examples:
-      | paid_name   | paid_cid                                                     | paid_gateway_url                                                                                                  | shown_gateway_url                                                                                                 | shown_target |
-      | photo.jpg   | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://gateway.lighthouse.storage/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg   | https://gateway.lighthouse.storage/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/photo.jpg   | _blank       |
-      | archive.tar | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://gateway.lighthouse.storage/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | https://gateway.lighthouse.storage/ipfs/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/archive.tar | none         |
+      | paid_name   | paid_cid                                                     | paid_view_url                                                                                     | shown_view_url                                                                                    | shown_target |
+      | photo.jpg   | bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | https://file-hosting-api.blippost.com/view/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | _blank       |
+      | archive.tar | bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | https://file-hosting-api.blippost.com/view/bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | none         |
 
   Scenario Outline: Host File - 15 the upload is posted to the configured hosting API URL
     Given an upload page whose API adapter uses the browser fetch transport at <api_base>
