@@ -13,12 +13,24 @@
 // the size up.
 export function formatFileUploadMessage (result = {}) {
   if (result.alreadyHosted) {
-    return [
-      `Download URL: ${result.downloadUrl}`,
-      `View URL: ${result.viewUrl}`
-    ].join('\n')
+    return formatHostedMessage(result)
   }
 
+  return formatQuoteMessage(result)
+}
+
+// An already-hosted file exposes only its download and view links.
+function formatHostedMessage (result) {
+  return [
+    `Download URL: ${result.downloadUrl}`,
+    `View URL: ${result.viewUrl}`
+  ].join('\n')
+}
+
+// A price quote lists the priced fields, plus the optional file metadata, the
+// billed-size note when billing rounds the size up, and the expiry only when
+// the API reports them.
+function formatQuoteMessage (result) {
   const lines = []
 
   if (result.filename !== undefined) {
