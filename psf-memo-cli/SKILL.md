@@ -54,9 +54,14 @@ memo() { node /home/trout/work/psf/code/psf-memo/psf-memo-cli/psf-memo-cli.js "$
 - Read-only safety: read commands do not need a wallet unless viewer-relative
   data is requested.
 
-> `--json` is implemented on all `memo-*` and `file-*` commands. The wallet,
-> send, and message-signing commands (`wallet-*`, `send-*`, `msg-*`) currently
-> print human-readable text only; parse them as text.
+> `--json` is implemented on **every** command, including `wallet-*`, `send-*`,
+> and `msg-*`. Wallet/send/sign shapes: `wallet-create` →
+> `{ name, description, cashAddress, slpAddress, legacyAddress }` (no mnemonic),
+> `wallet-list` → `{ wallets: [{ name, description }] }`, `wallet-addrs` →
+> `{ name, cashAddress, slpAddress, legacyAddress }`, `wallet-balance` →
+> `{ name, address, bchBalance, tokens }`, `wallet-sweep`/`send-bch`/`send-tokens`
+> → `{ txid, explorerUrl }`, `msg-sign` → `{ address, message, signature }`,
+> `msg-verify` → `{ address, message, valid }`.
 
 ## Async visibility (critical)
 
@@ -89,7 +94,10 @@ Wallets are simple JSON files under `psf-memo-cli/.wallets/<name>.json`. The
 wallet's mnemonic is the Memo identity; its first derived key pair authors every
 write. List existing wallets with `wallet-list`.
 
-> `wallet-create`/`wallet-list` are human-readable; there is no `--json` yet.
+> `wallet-create --json` returns the public wallet metadata
+> (`name`, `description`, `cashAddress`, `slpAddress`, `legacyAddress`); it never
+> returns the mnemonic — key material stays in the wallet file. `wallet-list
+> --json` returns `{ wallets: [{ name, description }] }`.
 
 ### 2. Get receive addresses (and fund the wallet)
 
@@ -105,6 +113,8 @@ of a saved wallet, pass `--wif <wif>` to any write command.
 
 ```sh
 node psf-memo-cli.js wallet-balance -n wallet1
+node psf-memo-cli.js wallet-balance -n wallet1 --json
+# => {"message":"...","name":"wallet1","address":"bitcoincash:q...","bchBalance":0.001,"tokens":[...]}
 ```
 
 Reports BCH and SLP token balances. `memo-identity -n wallet1 --json` also
@@ -138,6 +148,17 @@ node psf-memo-cli.js memo-feed --limit 10 --viewer bitcoincash:q... --json  # mu
 
 Result: `{ message, posts, pagination }`. Each post carries its `txid`, author
 `addr`, `text`, block height, and seen time. Use `pagination.hasMore` to page.
+
+For the **Following** feed — top-level posts from the profiles your wallet
+follows (the web client's Following tab; replies and your own posts are excluded
+by the server):
+
+```sh
+node psf-memo-cli.js memo-following-feed -n wallet1 --limit 10 --json
+# => {"message":"...","posts":[...],"pagination":{...}}
+```
+
+The single-author feed is `memo-posts -a <addr>`.
 
 ### 6. Read a single post and its thread
 
@@ -340,17 +361,21 @@ node psf-memo-cli.js memo-wait -t <txid> --timeout 600000 --interval 5000 --json
 ### 23. Prove address ownership (sign / verify)
 
 ```sh
-node psf-memo-cli.js msg-sign   -n wallet1 -m "hello"          # prints a signature
-node psf-memo-cli.js msg-verify -a <addr> -m "hello" -s <sig>  # verifies it
+node psf-memo-cli.js msg-sign   -n wallet1 -m "hello" --json
+# => {"message":"...","address":"bitcoincash:q...","message":"hello","signature":"..."}
+node psf-memo-cli.js msg-verify -a <addr> -m "hello" -s <sig> --json
+# => {"message":"...","address":"...","message":"hello","valid":true}
 ```
 
 ### 24. Send BCH or SLP tokens
 
 ```sh
-node psf-memo-cli.js send-bch    -n wallet1 -q 0.00001 -a bitcoincash:q...
-node psf-memo-cli.js send-tokens -n wallet1 -q 0.5 -a simpleledger:q... -t <tokenId>
-node psf-memo-cli.js wallet-sweep -n wallet1 -w <wif>   # sweep a WIF into a saved wallet
+node psf-memo-cli.js send-bch    -n wallet1 -q 0.00001 -a bitcoincash:q... --json
+node psf-memo-cli.js send-tokens -n wallet1 -q 0.5 -a simpleledger:q... -t <tokenId> --json
+node psf-memo-cli.js wallet-sweep -n wallet1 -w <wif> --json   # sweep a WIF into a saved wallet
 ```
+
+Each returns `{ message, txid, explorerUrl }`; the WIF is never echoed.
 
 ### 25. Read a page while filtering by viewer
 
@@ -368,7 +393,7 @@ node psf-memo-cli.js memo-feed --viewer "$addr" --limit 20 --json
 | Web UI (psf-memo-client) | CLI |
 |---|---|
 | Recent feed | `memo-feed` |
-| Following feed (tab) | `memo-following` + `memo-posts -a <addr>` (no single follow-feed command yet) |
+| Following feed (tab) | `memo-following-feed` |
 | Open a post / thread | `memo-get-post`, `memo-thread` |
 | New post | `memo-post`, `memo-topic-post` |
 | Reply | `memo-reply` |

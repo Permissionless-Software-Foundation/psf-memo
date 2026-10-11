@@ -1398,7 +1398,13 @@ handed off. AF1 then completed the pipeline (coder `03abf5e`, refactorer
 `verify.sh cli` passed 4/4 (43 suites). AF2 (`--json` on every command) is next.
 Then specified AF2 as `cli-json-output` (`psf-memo-cli/specs/cli-json-output.feature`,
 12 scenarios: per-command JSON shapes, exit 2 usage / exit 1 runtime errors,
-human mode unchanged, no key material) and committed it at `b8b892c`; handed off.
+human mode unchanged, no key material) and committed it at `b8b892c`; handed off. AF2 then completed the pipeline (coder
+`8a2df93`, refactorer `27e7bd9`, architect review `8aa7669`, record/summary
+`5c034e7`), merged to `master` at `d65e256`; the merged feature's acceptance
+re-ran clean (25/25), secret-hygiene passed 6/6, and `verify.sh cli` passed 4/4
+(44 suites). Then did AF3: updated `psf-memo-cli/SKILL.md` to document
+`memo-following-feed` and the new `--json` shapes and drop the wallet/send/sign
+caveat. AF1–AF3 are complete.
 
 Previous session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
 Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
@@ -2156,9 +2162,9 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `b8b892c` (`Specify cli-json-output (AF2): --json on the wallet, send, and signing commands`);
-this session's docs commit follows. FH1–FH4 and AF1 are merged and verified;
-AF2 is in the pipeline.
+Current `master` HEAD: `d65e256` (`Merge cli-json-output (AF2) into master`);
+this session's docs/skill commit follows. FH1–FH4 and the AF1–AF3 agent-interface
+parity work are merged/verified/complete.
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2205,13 +2211,12 @@ the requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
 `psf-memo-cli/dev-docs/file-hosting-features.md`,
 `psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, and gotcha #93.
 
-Next action: **wait for the architect's completion handoff for `cli-json-output`
-(AF2)**, then merge, sound the chime, and verify. Then spec AF3 — update
-`psf-memo-cli/SKILL.md` to document `memo-following-feed` and the new `--json`
-shapes, and remove the caveat that the `wallet-*`/`send-*`/`msg-*` commands lack
-`--json`. The fallback is the client front-end backlog — front-end improvements
-to `psf-memo-client` in `specs/feature-backlog.md`. The active backlog is
-otherwise the completed
+Next action: **ask the user for the next feature.** The `psf-memo-cli`
+agent-interface parity work (AF1–AF3) is complete: the CLI mirrors the web UI's
+Following feed (`memo-following-feed`), every command supports `--json`, and
+`SKILL.md` documents it. The next direction is the client front-end backlog —
+front-end improvements to `psf-memo-client` in `specs/feature-backlog.md`. The
+active backlog is otherwise the completed
 `psf-memo-cli` file-hosting port
 (`psf-memo-cli/dev-docs/feature-backlog.md`, FH2–FH4); the client front-end
 backlog remains the fallback — `psf-memo-client` improvements in

@@ -1794,10 +1794,12 @@ architect review `dea6b87`, `docs/reviews/file-check-verification.json` pass
 is the `psf-memo-cli` **agent-interface parity** work in
 `psf-memo-cli/dev-docs/feature-backlog.md`: **AF1 is DONE** — `memo-following-feed`,
 the wallet-relative viewer's Following feed (`GET /posts/following/:addr`, spec
-`2af4690`, merged at `7a2614c`, independent acceptance 13/13) — plus **AF2 is in
-progress** (`cli-json-output`, spec `b8b892c`: `--json` on every command that
-lacks it, `wallet-*`/`send-*`/`msg-*`) and (AF3) update `psf-memo-cli/SKILL.md`
-after AF2 lands. The client front-end backlog remains the fallback.
+`2af4690`, merged at `7a2614c`, independent acceptance 13/13) — plus **AF2 is
+DONE** (`cli-json-output`, spec `b8b892c`, merged at `d65e256`: `--json` on every
+command that lacked it, `wallet-*`/`send-*`/`msg-*`, with exit 2 usage / exit 1
+runtime errors). **AF3 is DONE** — `SKILL.md` now documents `memo-following-feed`
+and the new `--json` shapes. The agent-interface parity work (AF1–AF3) is
+complete; the next direction is the client front-end backlog.
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read
@@ -1806,9 +1808,10 @@ decision) are done, and the full cross-cutting series X1–X7 (command reference
 docs, error surfacing, secret hygiene, read-only safety, quality audit,
 pagination fidelity, async visibility) is now complete. W14–W16 remain deferred
 until the indexer/DB handle those action bytes. New agent-interface parity items
-AF1–AF3 are queued in `psf-memo-cli/dev-docs/feature-backlog.md` (one-address /
-Following feed command; `--json` on every command; update the skill after those
-land). The client front-end backlog remains the fallback — front-end
+The agent-interface parity items AF1–AF3 are DONE in
+`psf-memo-cli/dev-docs/feature-backlog.md` (`memo-following-feed`, `--json` on
+every command, and the skill update). The next direction is the client front-end
+backlog — front-end
 improvements to `psf-memo-client` (UI/UX polish, accessibility, performance,
 responsiveness, state handling, error surfacing). Ask the user for the next
 feature.
