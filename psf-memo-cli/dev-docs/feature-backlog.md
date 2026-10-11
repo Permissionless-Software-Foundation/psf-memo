@@ -416,10 +416,13 @@ architect summary: `docs/reviews/cli-topic-writes-summary.md`.
 
 ---
 
-## File-hosting commands (planned — new 2026-10-11)
+## File-hosting commands (in progress — resumed 2026-10-11)
 
-**Status**: PLANNED, blocked on an external request to the `bch-file-hosting`
-team. No Gherkin or handoff yet.
+**Status**: IN PROGRESS. The external blocker is cleared: the `bch-file-hosting`
+team landed `HOSTING_API_URL` (default `http://localhost:5050`), the
+`fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, and
+`minimal-slp-wallet` 7.1.5. FH1 `file-upload` is specified and handed off;
+FH2–FH4 are queued.
 
 A second job beyond the Memo protocol: port a subset of the
 `bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the

@@ -1700,19 +1700,20 @@ Reference: https://memo.sv/protocol (Wayback snapshot 2025-12-15)
 
 ## Next up: TBD
 
-**Planned (blocked externally): `psf-memo-cli` file-hosting commands.** On
-2026-10-11 the user asked to port three `bch-file-hosting` CLI capabilities into
-`psf-memo-cli`: upload-and-pay, check status, and (via the returned URLs) get a
-hosted file. A download/`file-get` command was explicitly dropped. The decisions
-and plan are captured in
-`psf-memo-cli/dev-docs/file-hosting-features.md`, and the required changes to
-the `bch-file-hosting` CLI/API were written up in
-`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` for the user to hand to
-that team. **No Gherkin has been written.** When the bch team lands its
-changes, resume here and reconfirm the env-var default and adapter shape with
-the user before speccing `file-upload`, `file-host`, `file-status`, and
-`file-check` (prefix `file-*`, env var `HOSTING_API_URL`, keep the 2,000-sat PSF
-donation, latest `minimal-slp-wallet`).
+**In progress: `psf-memo-cli` file-hosting commands.** On 2026-10-11 the user
+asked to port three `bch-file-hosting` CLI capabilities into `psf-memo-cli`:
+upload-and-pay, check status, and (via the returned URLs) get a hosted file. A
+download/`file-get` command was explicitly dropped. The decisions and plan are
+captured in `psf-memo-cli/dev-docs/file-hosting-features.md`, and the request to
+the `bch-file-hosting` team is in
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`. The team landed the
+requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
+`fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, `minimal-slp-wallet`
+7.1.5), the user reconfirmed the env-var default and adapter shape, and **FH1
+`file-upload` was specified and handed to the coder**
+(`psf-memo-cli/specs/file-upload.feature`, commit `bcacc9d274`). Next: FH2
+`file-host`, then FH3 `file-status` and FH4 `file-check` (prefix `file-*`, keep
+the 2,000-sat PSF donation, latest `minimal-slp-wallet`).
 
 Active work is otherwise the `psf-memo-cli` Memo-protocol backlog:
 `psf-memo-cli/dev-docs/feature-backlog.md`. The foundation (F1–F6), all read

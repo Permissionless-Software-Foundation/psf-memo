@@ -1344,7 +1344,24 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
+Current session (2026-10-11, `file-upload`): resumed the file-hosting port.
+Verified the `bch-file-hosting` team landed the request (`HOSTING_API_URL`
+default `http://localhost:5050` shared by CLI/web, `fetch` bound to
+`globalThis` in `HostingApi`, `dev-docs/api-contract.md` committed,
+`minimal-slp-wallet` 7.1.5) and the user reconfirmed the env-var default and
+adapter shape (copy the documented `HostingApi`; adapter documented, not
+published). Wrote `psf-memo-cli/specs/file-upload.feature` (FH1, 7 scenarios,
+quote-only, no wallet): quote fields, already-hosted links with no payment
+address, missing `-f` usage error, API rejection, missing local file, `--json`
+one-object output, and the conditional billed-size line. Pruned the upstream
+`upload_path` weak column; kept separate `api_*`/`printed_*` columns so quote
+mutations are killed. `bb gherkin-parser` and `bb gherkin-ir-dry-checker` clean
+(15 advisory near-duplicate/synonym findings, no duplicates/errors). Committed
+at `bcacc9d274` and handed off to the coder as task `file-upload`. Pending:
+upgrade `psf-memo-cli` `minimal-slp-wallet` to 7.1.5 (planned as its own
+hardening task or folded into FH2).
+
+Previous session (2026-10-11, `file-hosting-cli-port-planning`): no code and no
 Gherkin. The user decided to port three `bch-file-hosting` CLI capabilities
 into `psf-memo-cli` and to capture the decisions before implementation. Created
 `psf-memo-cli/dev-docs/file-hosting-features.md` (plan, locked decisions, API
@@ -2100,7 +2117,8 @@ intrinsic survivors (self-consistent example values, gotcha #12 class); max CC
 and CRAP 5.0. Architect summary:
 `docs/reviews/feed-pagination-scroll-summary.md`.
 
-Current `master` HEAD: `5ce6f0c` (`Record file-view-api-links architect review and verification`).
+Current `master` HEAD: `bcacc9d274` (`Specify file-upload (FH1): quote-only hosting upload`);
+this session's backlog/briefing docs follow.
 Historical note — `mute-persistence` (merged at
 `04275c4`): the DB record `docs/reviews/mute-persistence-verification.json`
 names the architect code-review commit `5de0ab1`; the later tip `04275c4` adds
@@ -2139,17 +2157,19 @@ and `psf-memo-client/specs/following-feed.feature` now describe the retired
 following feed. The architect also logged the two copy-confirmation
 implementations (#53) as an accepted, documented tradeoff.
 
-Pending external dependency (2026-10-11): the `psf-memo-cli` file-hosting port
-(`file-upload`, `file-host`, `file-status`, `file-check`) is planned but blocked
-on the `bch-file-hosting` team's changes to its CLI/API. All decisions and the
-change request are captured in
-`psf-memo-cli/dev-docs/file-hosting-features.md` and
-`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md` (gotcha #93). Do not spec
-it until the user confirms the changes landed and reconfirms the env-var default
-and adapter shape.
+External dependency resolved (2026-10-11): the `bch-file-hosting` team landed
+the requested changes (`HOSTING_API_URL` default `http://localhost:5050`,
+`fetch`-bound `HostingApi`, `dev-docs/api-contract.md`, `minimal-slp-wallet`
+7.1.5), and the user reconfirmed the env-var default and adapter shape. FH1
+`file-upload` is specified and handed off. See
+`psf-memo-cli/dev-docs/file-hosting-features.md`,
+`psf-memo-cli/dev-docs/bch-file-hosting-cli-request.md`, and gotcha #93.
 
-Next action: **ask the user for the next feature.** The active backlog is the
-client front-end backlog — front-end improvements to `psf-memo-client` in
+Next action: **wait for the architect's completion handoff for `file-upload`**,
+then merge, sound the chime, and spec FH2 `file-host` (or ask the user). The
+active backlog is the resumed `psf-memo-cli` file-hosting port
+(`psf-memo-cli/dev-docs/feature-backlog.md`, FH2–FH4); the client front-end
+backlog remains the fallback — `psf-memo-client` improvements in
 `specs/feature-backlog.md` (the latest feature is `file-view-api-links`,
 merged at `5ce6f0c`, after `nav-file-hosting-labels` at `ab6a572`, after
 `host-file-pages` at `c7c05ee`, after
