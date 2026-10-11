@@ -47,6 +47,7 @@ import MemoTopicPost from './src/commands/memo-topic-post.js'
 import MemoTopicFollow from './src/commands/memo-topic-follow.js'
 import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
 import FileUpload from './src/commands/file-upload.js'
+import FileHost from './src/commands/file-host.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -89,6 +90,7 @@ const memoTopicPost = new MemoTopicPost()
 const memoTopicFollow = new MemoTopicFollow()
 const memoTopicUnfollow = new MemoTopicUnfollow()
 const fileUpload = new FileUpload()
+const fileHost = new FileHost()
 
 const program = new Command()
 
@@ -407,6 +409,14 @@ program.command('file-upload')
   .option('-f, --file <string>', 'local file to upload')
   .option('--json', 'print the result as one JSON object')
   .action(fileUpload.run)
+
+program.command('file-host')
+  .description('Upload a file, pay the hosting quote, and print the hosted result')
+  .option('-f, --file <string>', 'local file to upload')
+  .option('-n, --name <string>', 'wallet name')
+  .option('--wif <string>', 'WIF private key')
+  .option('--json', 'print the result as one JSON object')
+  .action(fileHost.run)
 
 program.parseAsync(process.argv)
 

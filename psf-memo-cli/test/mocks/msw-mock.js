@@ -22,7 +22,8 @@ class BchWallet {
       description: ''
     }
 
-    this.bchjs = new BCHJS()
+    // @psf/bch-js 7.x requires an explicit REST URL when constructed.
+    this.bchjs = new BCHJS({ restURL: 'https://free-bch.fullstack.cash' })
 
     // Environment variable is used by wallet-balance.unit.js to force an error.
     if (process.env.NO_UTXO) {

@@ -36,6 +36,7 @@ import { memoAvatarHandlers } from './steps/memo-avatar.js'
 import { addressCommandHandlers } from './steps/address-commands.js'
 import { topicCommandHandlers } from './steps/topic-commands.js'
 import { fileUploadHandlers } from './steps/file-upload.js'
+import { fileHostHandlers } from './steps/file-host.js'
 import { readResultHandlers } from './steps/read-result.js'
 import { identityHandlers } from './steps/identity-support.js'
 import { broadcastCommandHandlers } from './steps/broadcast-command.js'
@@ -74,6 +75,7 @@ const handlers = [
   ...addressCommandHandlers,
   ...topicCommandHandlers,
   ...fileUploadHandlers,
+  ...fileHostHandlers,
   ...readResultHandlers,
   ...identityHandlers,
   ...broadcastCommandHandlers,
@@ -120,9 +122,17 @@ async function createWorld () {
     identityWallets: {},
     missingProfiles: new Set(),
     hostingQuote: null,
-    hostingAlreadyHosted: null,
+    hostingAlreadyHosted: false,
+    hostingDownloadUrl: null,
+    hostingViewUrl: null,
+    hostingPaid: null,
     hostingError: null,
+    hostingUnpaidFirst: false,
+    hostingNeverConfirms: false,
+    hostingCheckPaymentCount: 0,
     localFiles: { './photo.jpg': 'photo bytes' },
+    walletPayments: [],
+    sleepCalls: [],
     unreachable: false,
     lastRequest: null,
     lastResult: null,
@@ -147,11 +157,33 @@ async function createWorld () {
       }
       if (world.hostingAlreadyHosted) {
         return jsonResponse(
-          { success: true, alreadyHosted: true, ...world.hostingAlreadyHosted },
+          {
+            success: true,
+            alreadyHosted: true,
+            downloadUrl: world.hostingDownloadUrl,
+            viewUrl: world.hostingViewUrl
+          },
           200
         )
       }
       return jsonResponse({ success: true, ...(world.hostingQuote || {}) }, 200)
+    }
+
+    if (world.lastRequest.pathname === '/files/check-payment' && options.method === 'POST') {
+      world.hostingCheckPaymentCount++
+      if (world.hostingNeverConfirms || (world.hostingUnpaidFirst && world.hostingCheckPaymentCount === 1)) {
+        return jsonResponse({ success: true, status: 'unpaid' }, 200)
+      }
+      return jsonResponse(
+        {
+          success: true,
+          status: 'paid',
+          ...(world.hostingPaid || {}),
+          downloadUrl: world.hostingDownloadUrl,
+          viewUrl: world.hostingViewUrl
+        },
+        200
+      )
     }
 
     if (world.lastRequest.pathname.startsWith('/level/name/')) {

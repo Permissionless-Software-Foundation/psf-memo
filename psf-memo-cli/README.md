@@ -302,13 +302,22 @@ protocol action). The API base URL comes from `HOSTING_API_URL` (default
 | Command | Required flags | Optional flags | JSON data fields |
 |---------|----------------|----------------|------------------|
 | `file-upload` | `-f/--file` | `--json` | the API quote (`filename`, `sizeBytes`, `billedBytes`, `priceSats`, `paymentAddress`, `quoteExpiresAt`) or the already-hosted `downloadUrl`/`viewUrl` |
+| `file-host` | `-f/--file` and a wallet source (`-n/--name` or `--wif`) | `--json` | the hosted result (`cid`, `downloadUrl`, `viewUrl`, `gatewayUrls`, `txid`, `paymentAddress`) or the already-hosted `downloadUrl`/`viewUrl` |
 
 `file-upload` is quote-only: it reads a local file, uploads it, and prints the
 price quote (or the already-hosted links). It never touches a wallet, so a
 caller can pay the quote from any external wallet.
 
+`file-host` does the whole job: it uploads, pays the quote from the resolved
+wallet, polls check-payment (10 attempts, 3,000 ms apart) until the payment
+confirms, then prints the CID, download/view/gateway links, and payment txid.
+An already-hosted upload short-circuits without paying. Payment goes through
+`minimal-slp-wallet`'s `send()`, which adds a 2,000-sat PSF donation on top of
+the quote plus the miner fee.
+
 ```sh
 node psf-memo-cli.js file-upload -f ./photo.jpg --json
+node psf-memo-cli.js file-host -f ./photo.jpg -n wallet1 --json
 ```
 
 
