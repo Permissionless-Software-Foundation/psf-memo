@@ -305,4 +305,25 @@ describe('#file-host command', () => {
     assert.throws(() => command.validateFlags({}), UsageError, 'You must specify a file with the -f flag.')
     assert.throws(() => command.validateFlags({ file: 'f' }), UsageError, NO_WALLET)
   })
+
+  it('uses the real timer sleep by default between unpaid polls', async () => {
+    const fake = fakeHostingApi({
+      upload: { result: { priceSats: 2000, paymentAddress: 'bitcoincash:qinvoice' } },
+      checks: [
+        { result: { status: 'unpaid' } },
+        { result: { status: 'paid', cid: 'bafy-default-sleep', downloadUrl: 'd', viewUrl: 'v' } }
+      ]
+    })
+    // No injected sleep, with a zero delay so the default setTimeout resolves
+    // immediately, covers the production timer implementation.
+    const { command, out } = makeCommand(fake, {
+      paymentCheckAttempts: 2,
+      paymentCheckDelayMs: 0
+    })
+
+    const code = await command.run({ file: './photo.jpg', name: 'payer', json: true })
+
+    assert.equal(code, 0)
+    assert.equal(JSON.parse(out.text()).cid, 'bafy-default-sleep')
+  })
 })
