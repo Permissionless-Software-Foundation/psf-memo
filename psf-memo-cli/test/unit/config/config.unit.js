@@ -9,6 +9,7 @@ describe('#config', () => {
   const originalWalletUrl = process.env.WALLET_URL
   const originalInterface = process.env.INTERFACE
   const originalMemoDbUrl = process.env.MEMO_DB_URL
+  const originalHostingApiUrl = process.env.HOSTING_API_URL
 
   after(() => {
     if (originalWalletUrl === undefined) delete process.env.WALLET_URL
@@ -17,12 +18,15 @@ describe('#config', () => {
     else process.env.INTERFACE = originalInterface
     if (originalMemoDbUrl === undefined) delete process.env.MEMO_DB_URL
     else process.env.MEMO_DB_URL = originalMemoDbUrl
+    if (originalHostingApiUrl === undefined) delete process.env.HOSTING_API_URL
+    else process.env.HOSTING_API_URL = originalHostingApiUrl
   })
 
   it('should fall back to the defaults when the env vars are unset', async () => {
     delete process.env.WALLET_URL
     delete process.env.INTERFACE
     delete process.env.MEMO_DB_URL
+    delete process.env.HOSTING_API_URL
 
     // A cache-busting query forces a fresh evaluation of the module.
     const { default: config } = await import(
@@ -32,6 +36,7 @@ describe('#config', () => {
     assert.equal(config.restURL, 'https://free-bch.fullstack.cash')
     assert.equal(config.interface, 'consumer-api')
     assert.equal(config.memoDbUrl, 'https://memo-api.fullstackcash.net')
+    assert.equal(config.hostingApiUrl, 'http://localhost:5050')
   })
 
   it('should honor the WALLET_URL and INTERFACE overrides', async () => {
@@ -54,5 +59,15 @@ describe('#config', () => {
     )
 
     assert.equal(config.memoDbUrl, 'http://localhost:5021')
+  })
+
+  it('should honor the HOSTING_API_URL override', async () => {
+    process.env.HOSTING_API_URL = 'https://file-hosting-api.blippost.com'
+
+    const { default: config } = await import(
+      `../../../config/index.js?hosting=${Date.now()}`
+    )
+
+    assert.equal(config.hostingApiUrl, 'https://file-hosting-api.blippost.com')
   })
 })
