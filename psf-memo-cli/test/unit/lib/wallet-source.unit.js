@@ -10,7 +10,7 @@
 import { assert } from 'chai'
 
 // Local libraries
-import { resolveWalletSource } from '../../../src/lib/wallet-source.js'
+import { resolveWalletSource, validateWalletSource } from '../../../src/lib/wallet-source.js'
 import { UsageError } from '../../../src/lib/reporter.js'
 
 // A factory stand-in that maps names and WIFs to cash addresses.
@@ -81,5 +81,36 @@ describe('#wallet-source', () => {
     }
 
     assert.instanceOf(err, Error)
+  })
+
+  describe('#validateWalletSource', () => {
+    it('accepts exactly one source', () => {
+      assert.equal(validateWalletSource({ name: 'wallet1' }), true)
+      assert.equal(validateWalletSource({ wif: 'wif-one' }), true)
+    })
+
+    it('rejects no source with a usage error', () => {
+      let err
+      try {
+        validateWalletSource({})
+      } catch (e) {
+        err = e
+      }
+
+      assert.instanceOf(err, UsageError)
+      assert.include(err.message, '-n flag')
+    })
+
+    it('rejects both sources with a usage error', () => {
+      let err
+      try {
+        validateWalletSource({ name: 'wallet1', wif: 'wif-one' })
+      } catch (e) {
+        err = e
+      }
+
+      assert.instanceOf(err, UsageError)
+      assert.include(err.message, 'not both')
+    })
   })
 })

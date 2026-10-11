@@ -49,6 +49,23 @@ class HostingApi {
 
     return body
   }
+
+  // Check a payment address at POST /files/check-payment. Returns the payment
+  // status document: unpaid, paid (with CID and links), or expired.
+  async checkPayment ({ paymentAddress } = {}) {
+    const response = await this.fetch(`${this.config.hostingApiUrl}/files/check-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentAddress })
+    })
+    const body = await readJson(response)
+
+    if (!response.ok) {
+      throw new HostingApiError(errorMessage(response, body))
+    }
+
+    return body
+  }
 }
 
 export { HostingApiError }

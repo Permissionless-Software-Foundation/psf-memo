@@ -71,19 +71,15 @@ function setQuoteField (world, field, value) {
   world.hostingQuote = { ...(world.hostingQuote || {}), [field]: value }
 }
 
-// Apply a field from the current example row to the pending already-hosted
-// result.
-function setAlreadyHostedField (world, field, value) {
-  world.hostingAlreadyHosted = { ...(world.hostingAlreadyHosted || {}), [field]: value }
-}
-
 const fileUploadHandlers = [
   {
     name: 'a file-upload command',
     pattern: /^a file-upload command$/,
     run (m, example, world) {
       world.hostingQuote = null
-      world.hostingAlreadyHosted = null
+      world.hostingAlreadyHosted = false
+      world.hostingDownloadUrl = null
+      world.hostingViewUrl = null
       world.hostingError = null
       world.exitCode = null
       world.stdoutText = ''
@@ -131,14 +127,15 @@ const fileUploadHandlers = [
     name: 'hosting API reports the file is already hosted',
     pattern: /^the hosting API reports the file is already hosted at (.+)$/,
     run (m, example, world) {
-      setAlreadyHostedField(world, 'downloadUrl', resolveParam(m[1], example))
+      world.hostingAlreadyHosted = true
+      world.hostingDownloadUrl = resolveParam(m[1], example)
     }
   },
   {
     name: 'hosting API reports the view URL',
     pattern: /^the hosting API reports the view URL (.+)$/,
     run (m, example, world) {
-      setAlreadyHostedField(world, 'viewUrl', resolveParam(m[1], example))
+      world.hostingViewUrl = resolveParam(m[1], example)
     }
   },
   {
