@@ -430,8 +430,9 @@ independent acceptance 14/14), including the `minimal-slp-wallet` `5.12.1 →
 7.1.5` upgrade with the `send()` path and the 2,000-sat PSF donation validated.
 **FH3 `file-status` is DONE** (merged to `master` at `b6ec762`; architect review
 `94c671b`; `verify.sh cli` pass 4/4, record
-`docs/reviews/file-status-verification.json`; independent acceptance 8/8). FH4
-`file-check` is queued.
+`docs/reviews/file-status-verification.json`; independent acceptance 8/8).
+**FH4 `file-check` is in progress** (spec
+`psf-memo-cli/specs/file-check.feature`).
 
 A second job beyond the Memo protocol: port a subset of the
 `bch-file-hosting-cli` into `psf-memo-cli` so agents can host files on the
