@@ -468,11 +468,16 @@ download command are out of scope.
 remaining parity gaps between the two interfaces. Each is delivered as its own
 specifier → coder → refactorer → architect cycle.
 
-### AF1 — The Following feed (`memo-following-feed`) — IN PROGRESS
+### AF1 — The Following feed (`memo-following-feed`) — DONE
 
-**Specified:** `psf-memo-cli/specs/memo-following-feed.feature` (wallet-relative
-`memo-following-feed`, reads `GET /posts/following/:addr`, reports
-`{ posts, pagination }`).
+**Spec/merge:** `psf-memo-cli/specs/memo-following-feed.feature` (spec
+`2af4690`), merged to `master` at `7a2614c` (architect review `87856e5`;
+`verify.sh cli` pass 4/4, record
+`docs/reviews/memo-following-feed-verification.json`; independent acceptance
+13/13). Wallet-relative `memo-following-feed` reads `GET /posts/following/:addr`
+and reports `{ posts, pagination }`; it reuses `ListReadCommand`,
+`resolveWalletSource`, `parseFollowingFeedFlags`, `MemoDb.getFollowingFeed`, and
+`formatFeedMessage` (`memo-feed`).
 
 Resolved: the single-author feed already exists as `memo-posts -a <addr>`
 (`GET /posts/by/:addr`), so the genuinely missing parity feature is the web's
