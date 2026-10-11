@@ -66,6 +66,23 @@ class HostingApi {
 
     return body
   }
+
+  // Look up a file record at GET /files/:cid. The CID is a path segment, so
+  // encode it: an unencoded value such as `../admin/invoices` would be
+  // normalized by the URL parser and change the requested endpoint.
+  async getStatus ({ cid } = {}) {
+    const response = await this.fetch(
+      `${this.config.hostingApiUrl}/files/${encodeURIComponent(cid)}`,
+      { method: 'GET' }
+    )
+    const body = await readJson(response)
+
+    if (!response.ok) {
+      throw new HostingApiError(errorMessage(response, body))
+    }
+
+    return body
+  }
 }
 
 export { HostingApiError }

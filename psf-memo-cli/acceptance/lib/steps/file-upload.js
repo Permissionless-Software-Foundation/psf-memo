@@ -32,11 +32,11 @@ async function runFileUpload (world, flags) {
 
   world.stdoutText = stdout.text()
   world.stderrText = stderr.text()
-  world.uploadJson = null
+  world.hostingJson = null
   try {
-    world.uploadJson = JSON.parse(world.stdoutText)
+    world.hostingJson = JSON.parse(world.stdoutText)
   } catch (err) {
-    world.uploadJson = null
+    world.hostingJson = null
   }
 }
 
@@ -61,7 +61,7 @@ function jsonFieldHandler ({ name, pattern, field, parse }) {
     pattern,
     run (m, example, world) {
       const expected = parse(resolveParam(m[1], example))
-      assertEqual(world.uploadJson?.[field], expected, `JSON ${field}`, { quote: true })
+      assertEqual(world.hostingJson?.[field], expected, `JSON ${field}`, { quote: true })
     }
   }
 }
@@ -69,6 +69,12 @@ function jsonFieldHandler ({ name, pattern, field, parse }) {
 // Apply a field from the current example row to the pending hosting quote.
 function setQuoteField (world, field, value) {
   world.hostingQuote = { ...(world.hostingQuote || {}), [field]: value }
+}
+
+// Apply a field from the current example row to the shared hosting file
+// metadata, which both the quote and the status responses carry.
+function setHostingFileField (world, field, value) {
+  world.hostingFile = { ...(world.hostingFile || {}), [field]: value }
 }
 
 const fileUploadHandlers = [
@@ -81,10 +87,11 @@ const fileUploadHandlers = [
       world.hostingDownloadUrl = null
       world.hostingViewUrl = null
       world.hostingError = null
+      world.hostingFile = {}
       world.exitCode = null
       world.stdoutText = ''
       world.stderrText = ''
-      world.uploadJson = null
+      world.hostingJson = null
     }
   },
   {
@@ -99,14 +106,14 @@ const fileUploadHandlers = [
     name: 'hosting API reports the file name',
     pattern: /^the hosting API reports the file name (.+)$/,
     run (m, example, world) {
-      setQuoteField(world, 'filename', resolveParam(m[1], example))
+      setHostingFileField(world, 'filename', resolveParam(m[1], example))
     }
   },
   {
     name: 'hosting API reports the file size',
     pattern: /^the hosting API reports the file size (.+)$/,
     run (m, example, world) {
-      setQuoteField(world, 'sizeBytes', Number.parseInt(resolveParam(m[1], example), 10))
+      setHostingFileField(world, 'sizeBytes', Number.parseInt(resolveParam(m[1], example), 10))
     }
   },
   {

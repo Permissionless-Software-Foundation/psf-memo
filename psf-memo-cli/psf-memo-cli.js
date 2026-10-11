@@ -48,6 +48,7 @@ import MemoTopicFollow from './src/commands/memo-topic-follow.js'
 import MemoTopicUnfollow from './src/commands/memo-topic-unfollow.js'
 import FileUpload from './src/commands/file-upload.js'
 import FileHost from './src/commands/file-host.js'
+import FileStatus from './src/commands/file-status.js'
 
 // Instantiate the subcommands
 const walletCreate = new WalletCreate()
@@ -91,6 +92,7 @@ const memoTopicFollow = new MemoTopicFollow()
 const memoTopicUnfollow = new MemoTopicUnfollow()
 const fileUpload = new FileUpload()
 const fileHost = new FileHost()
+const fileStatus = new FileStatus()
 
 const program = new Command()
 
@@ -417,6 +419,12 @@ program.command('file-host')
   .option('--wif <string>', 'WIF private key')
   .option('--json', 'print the result as one JSON object')
   .action(fileHost.run)
+
+program.command('file-status')
+  .description('Look up a hosted file by CID and print its status and pins')
+  .option('-c, --cid <string>', 'file CID')
+  .option('--json', 'print the result as one JSON object')
+  .action(fileStatus.run)
 
 program.parseAsync(process.argv)
 
