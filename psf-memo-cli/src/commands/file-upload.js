@@ -19,6 +19,7 @@ import config from '../../config/index.js'
 import { runCommand, UsageError } from '../lib/reporter.js'
 import HostingApi from '../lib/hosting-api.js'
 import { formatFileUploadMessage } from '../lib/file-upload.js'
+import { readLocalFile } from '../lib/read-local-file.js'
 import { bindMethods } from '../lib/bind-methods.js'
 
 class FileUpload {
@@ -38,7 +39,7 @@ class FileUpload {
     this.stdout = stdout
     this.stderr = stderr
 
-    bindMethods(this, ['run', 'validateFlags', 'readLocalFile'])
+    bindMethods(this, ['run', 'validateFlags'])
   }
 
   // Upload the file and report the quote. Returns the exit code (0/1/2) and
@@ -47,7 +48,7 @@ class FileUpload {
     const code = await runCommand(async () => {
       this.validateFlags(flags)
 
-      const buffer = this.readLocalFile(flags.file)
+      const buffer = readLocalFile(this.readFile, flags.file)
       const filename = path.basename(flags.file)
       const result = await this.hostingApi.upload({ filename, buffer })
 
@@ -71,19 +72,10 @@ class FileUpload {
 
     return true
   }
-
-  // Read the local file, mapping any read failure to the documented message.
-  readLocalFile (filePath) {
-    try {
-      return this.readFile(filePath)
-    } catch (err) {
-      throw new Error(`Cannot read file: ${filePath}`)
-    }
-  }
 }
 
 export default FileUpload
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T16:26:44.008Z","module_hash":"6969e176e2c622dc687390de0f31e5430f9396883d9523904fbd9d0502269a24","functions":[{"id":"func/FileUpload.constructor","name":"FileUpload.constructor","line":25,"end_line":42,"hash":"dcd24fa209ce2800da6b4b38e84032b8ae81c3b2dac223dea2739dd8e4cbc6c9"},{"id":"func/FileUpload.run","name":"FileUpload.run","line":46,"end_line":63,"hash":"644310eadd259a221cc6de20694e9c54a1eaa170b2a3bad640996222ce3273a9"},{"id":"func/FileUpload.validateFlags","name":"FileUpload.validateFlags","line":67,"end_line":73,"hash":"14cbac7224cdb917a6c5c721e1db989de1804292b5036081639d5c1abfb83d4a"},{"id":"func/FileUpload.readLocalFile","name":"FileUpload.readLocalFile","line":76,"end_line":82,"hash":"35bdfa4044f7e030781a2d9964ebc04f75d01a7ead115f296e9f3546b71d18c6"}]}
+// {"version":1,"tested_at":"2026-10-11T17:20:38.062Z","module_hash":"7914e674ec1c78b288d3c54d8278566968d25ac7e3edfa86d64b935b0bd6dead","functions":[{"id":"func/FileUpload.constructor","name":"FileUpload.constructor","line":26,"end_line":43,"hash":"e83657c986a655b5aced2bbae97703d157d2f6d49ad8da7d9e30499d4aa6ebee"},{"id":"func/FileUpload.run","name":"FileUpload.run","line":47,"end_line":64,"hash":"ef4b8ebe63f7057f8d1567a7945332253ede6a7064aa86320244111e4ffd7a96"},{"id":"func/FileUpload.validateFlags","name":"FileUpload.validateFlags","line":68,"end_line":74,"hash":"14cbac7224cdb917a6c5c721e1db989de1804292b5036081639d5c1abfb83d4a"}]}
 // mutate4javascript-manifest-end

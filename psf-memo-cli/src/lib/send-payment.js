@@ -17,3 +17,7 @@ export async function sendPayment ({ wallet, toAddress, amountSats } = {}) {
 
   return txid
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T17:22:13.355Z","module_hash":"654a859ad5d9fa280779f73af9c2baa7277a5b998fe972bc90c70018db284c1d","functions":[{"id":"func/sendPayment","name":"sendPayment","line":10,"end_line":19,"hash":"68f74b60ce504860300284cbe12c077c3851f8d474ba396f4d0bceddd2fc08e8"}]}
+// mutate4javascript-manifest-end
