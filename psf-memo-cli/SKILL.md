@@ -40,6 +40,24 @@ location.
 | `INTERFACE` | `consumer-api` | Wallet backend interface. |
 | `HOSTING_API_URL` | `http://localhost:5050` | Base URL for the `file-*` hosting commands. Production: `https://file-hosting-api.blippost.com`. |
 
+## Endpoint reference for agent checks
+
+For agent-side verification, prefer these over `bch.loping.net`:
+
+| Need | Endpoint |
+|---|---|
+| Chain tip / block height | `GET https://bch.fullstack.cash/v6/full-node/blockchain/getBlockCount` |
+| Tx status (confirmations, block) | `GET https://bch.fullstack.cash/v6/full-node/rawtransactions/getRawTransaction/<txid>?verbose=true` |
+| Is a tx still in the mempool? | `GET https://bch.fullstack.cash/v6/full-node/blockchain/getMempoolEntry/<txid>` |
+| Wallet ops + tx data | `POST https://free-bch.fullstack.cash/bch/txData` with `{"txids":["<txid>"]}` |
+
+- `WALLET_URL` (`https://free-bch.fullstack.cash`) is the
+  `ipfs-bch-wallet-consumer` proxy; it has no block-height endpoint, so use
+  `bch.fullstack.cash` for the tip.
+- `bch.loping.net` (the `explorerUrl` host the CLI prints) is fronted by an
+  anti-bot page that returns HTTP 200 with HTML, not transaction data. Do not
+  treat its 200 as confirmation.
+
 ## Output contract (read this first)
 
 - Adding `--json` makes the command print **exactly one JSON object to stdout**.
