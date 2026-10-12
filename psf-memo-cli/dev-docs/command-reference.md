@@ -48,7 +48,7 @@ result, and its exit codes without reading source.
 - Wallet source: wallet-relative commands require exactly one of
   `-n, --name <wallet>` or `--wif <wif>`; neither or both is exit `2`.
 - DB endpoint: `--db-url <url>` overrides `MEMO_DB_URL`; default production
-  `https://memo-api.fullstackcash.net`; local dev `http://localhost:5021`.
+  `https://api.blippost.com`; local dev `http://localhost:5021`.
 - Page flags: `-l, --limit` (default 50) and `-o, --offset` (default 0). The
   service pagination object `{ limit, offset, total, hasMore }` is passed
   through unchanged; `total` is capped at 500 (gotcha #21), so do not claim an

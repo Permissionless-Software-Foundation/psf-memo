@@ -11,6 +11,13 @@ describe('#config', () => {
   const originalMemoDbUrl = process.env.MEMO_DB_URL
   const originalHostingApiUrl = process.env.HOSTING_API_URL
 
+  // Single-variable overrides that each map an env var to the config field it
+  // feeds. `cacheKey` forces a fresh module evaluation per case.
+  const ENV_OVERRIDES = [
+    { env: 'MEMO_DB_URL', cacheKey: 'memodb', value: 'http://localhost:5021', field: 'memoDbUrl' },
+    { env: 'HOSTING_API_URL', cacheKey: 'hosting', value: 'https://file-hosting-api.blippost.com', field: 'hostingApiUrl' }
+  ]
+
   after(() => {
     if (originalWalletUrl === undefined) delete process.env.WALLET_URL
     else process.env.WALLET_URL = originalWalletUrl
@@ -35,7 +42,7 @@ describe('#config', () => {
 
     assert.equal(config.restURL, 'https://free-bch.fullstack.cash')
     assert.equal(config.interface, 'consumer-api')
-    assert.equal(config.memoDbUrl, 'https://memo-api.fullstackcash.net')
+    assert.equal(config.memoDbUrl, 'https://api.blippost.com')
     assert.equal(config.hostingApiUrl, 'http://localhost:5050')
   })
 
@@ -51,23 +58,15 @@ describe('#config', () => {
     assert.equal(config.interface, 'rest-api')
   })
 
-  it('should honor the MEMO_DB_URL override', async () => {
-    process.env.MEMO_DB_URL = 'http://localhost:5021'
+  for (const { env, cacheKey, value, field } of ENV_OVERRIDES) {
+    it(`should honor the ${env} override`, async () => {
+      process.env[env] = value
 
-    const { default: config } = await import(
-      `../../../config/index.js?memodb=${Date.now()}`
-    )
+      const { default: config } = await import(
+        `../../../config/index.js?${cacheKey}=${Date.now()}`
+      )
 
-    assert.equal(config.memoDbUrl, 'http://localhost:5021')
-  })
-
-  it('should honor the HOSTING_API_URL override', async () => {
-    process.env.HOSTING_API_URL = 'https://file-hosting-api.blippost.com'
-
-    const { default: config } = await import(
-      `../../../config/index.js?hosting=${Date.now()}`
-    )
-
-    assert.equal(config.hostingApiUrl, 'https://file-hosting-api.blippost.com')
-  })
+      assert.equal(config[field], value)
+    })
+  }
 })

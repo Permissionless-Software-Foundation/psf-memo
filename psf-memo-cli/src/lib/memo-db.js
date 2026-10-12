@@ -9,9 +9,9 @@
   is reported as an error.
 */
 
-// Production memo-db. Local development points MEMO_DB_URL at
-// http://localhost:5021 instead.
-export const DEFAULT_MEMO_DB_URL = 'https://memo-api.fullstackcash.net'
+// Production memo-db (the project's production home). Local development
+// points MEMO_DB_URL at http://localhost:5021 instead.
+export const DEFAULT_MEMO_DB_URL = 'https://api.blippost.com'
 
 // Resolve the endpoint with --db-url > MEMO_DB_URL > production default.
 export function resolveMemoDbUrl ({ flagUrl, envUrl } = {}) {
