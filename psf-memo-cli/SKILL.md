@@ -472,9 +472,9 @@ node psf-memo-cli.js memo-feed --viewer "$addr" --limit 20 --json
 
 ## Limits, gaps, and safety
 
-- Post text is **217 UTF-16 code units**; replies are ≤ 184 **UTF-8 bytes**;
-  topic room + message ≤ 214 UTF-8 bytes; name ≤ 77 UTF-8 bytes; bio/avatar
-  ≤ 217 UTF-8 bytes.
+- Post text is **217 UTF-16 code units** (JavaScript `String.length`, not
+  UTF-8 bytes); replies are ≤ 184 **UTF-8 bytes**; topic room + message ≤ 214
+  UTF-8 bytes; name ≤ 77 UTF-8 bytes; bio/avatar ≤ 217 UTF-8 bytes.
 - Writes cost a miner fee; `file-host` and `memo-like --tip` additionally spend
   2,000 sat (PSF donation) and the tip respectively.
 - **Secret hygiene:** never echo or log a wallet's mnemonic or a `--wif` value.
