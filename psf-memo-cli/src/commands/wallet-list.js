@@ -3,9 +3,9 @@
 */
 
 // Global npm libraries
-import shelljs from 'shelljs'
 import Table from 'cli-table'
-import { readFile as readFileImpl } from 'fs/promises'
+import { readdir as readdirImpl, readFile as readFileImpl } from 'fs/promises'
+import path from 'path'
 
 // Local libraries
 import { bindMethods } from '../lib/bind-methods.js'
@@ -14,12 +14,15 @@ import { runCommand } from '../lib/reporter.js'
 // Global variables
 const __dirname = import.meta.dirname
 
+const WALLETS_DIR = `${__dirname.toString()}/../../.wallets`
+
 class WalletList {
-  constructor ({ shelljs: shell = shelljs, Table: TableClass = Table, readFile = readFileImpl, stdout, stderr } = {}) {
+  constructor ({ readdir = readdirImpl, Table: TableClass = Table, readFile = readFileImpl, walletDir = WALLETS_DIR, stdout, stderr } = {}) {
     // Encapsulate dependencies
-    this.shelljs = shell
+    this.readdir = readdir
     this.Table = TableClass
     this.readFile = readFile
+    this.walletDir = walletDir
     this.stdout = stdout
     this.stderr = stderr
 
@@ -47,29 +50,26 @@ class WalletList {
     return code
   }
 
-  // Parse data from the wallets directory into a formatted array.
+  // Parse data from the wallets directory into a formatted array. An absent or
+  // empty directory is an empty list; no shell error reaches stderr.
   async parseWallets () {
-    const fileList = this.shelljs.ls(
-      `${__dirname.toString()}/../../.wallets/*.json`
-    )
+    let fileList
+    try {
+      fileList = await this.readdir(this.walletDir)
+    } catch (err) {
+      if (err.code === 'ENOENT') return []
+      throw err
+    }
 
     const retData = []
 
-    // Loop through each wallet returned.
-    for (const thisFile of fileList) {
-      const lastPart = thisFile.indexOf('.json')
-
-      const lastSlash = thisFile.indexOf('.wallets/') + 1
-
-      let name = thisFile.slice(8, lastPart)
-
-      name = name.slice(lastSlash)
-
+    // Loop through each wallet file, in stable name order.
+    for (const name of fileList.filter((file) => file.endsWith('.json')).sort()) {
       // Read the contents of the wallet file.
-      const walletStr = await this.readFile(thisFile)
+      const walletStr = await this.readFile(path.join(this.walletDir, name))
       const walletInfo = JSON.parse(walletStr)
 
-      retData.push([name, walletInfo.wallet.description])
+      retData.push([name.slice(0, -'.json'.length), walletInfo.wallet.description])
     }
 
     return retData
