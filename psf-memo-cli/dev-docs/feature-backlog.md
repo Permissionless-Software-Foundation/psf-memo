@@ -490,11 +490,15 @@ existing DB route `GET /posts/following/:addr` and the client
 exclusion, and ordering (X6 pagination fidelity). A friendlier single-author
 command/alias remains a possible separate tweak, not this item.
 
-### AF2 — `--json` on every command — IN PROGRESS
+### AF2 — `--json` on every command — DONE
 
-**Specified:** `psf-memo-cli/specs/cli-json-output.feature` — one JSON object per
-command, usage errors exit 2, runtime errors exit 1 (fixing the legacy
-swallowed-error exit 0), human output unchanged, no key material in JSON.
+**Spec/merge:** `psf-memo-cli/specs/cli-json-output.feature` (spec `b8b892c`),
+merged to `master` at `d65e256` (architect review `8aa7669`; `verify.sh cli` pass
+4/4, record `docs/reviews/cli-json-output-verification.json`; independent
+acceptance 25/25, plus secret-hygiene 6/6). One JSON object per command, usage
+errors exit 2, runtime errors exit 1 (fixing the legacy swallowed-error exit 0),
+human output unchanged, no key material in JSON. The refactorer shared
+`initCommand`/`initWalletCommand` and split `wallet-balance.js`.
 
 Resolved decision 4 (2026-10-06) is "`--json` on every command", but the wallet,
 send, and signing commands still print human-readable text only:
@@ -509,12 +513,13 @@ with a stable data shape — for example `wallet-list` → `{ wallets: [...] }`,
 `msg-verify` → `{ address, message, valid }`. Keep the existing human output
 unchanged. This makes the whole CLI machine-readable.
 
-### AF3 — Update `psf-memo-cli/SKILL.md`
+### AF3 — Update `psf-memo-cli/SKILL.md` — DONE
 
-After AF1 and AF2 land, update the skill to document the new feed command and
-the new `--json` shapes, and remove the caveat that the
-`wallet-*`/`send-*`/`msg-*` commands lack `--json`. Add the new commands to the
-Web UI → CLI map and the use-case examples.
+Updated `psf-memo-cli/SKILL.md`: `memo-following-feed` is documented (use case
+and the "Following feed (tab)" map row), the `--json` caveat for the
+`wallet-*`/`send-*`/`msg-*` commands is removed, and the new per-command JSON
+shapes (including the no-mnemonic `wallet-create`) are recorded in the contract
+and examples.
 
 ---
 

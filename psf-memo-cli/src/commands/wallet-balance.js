@@ -2,9 +2,6 @@
   Check the balance of a wallet in terms of BCH and SLP tokens.
 */
 
-// Global npm libraries
-import BchWallet from 'minimal-slp-wallet'
-
 // Local libraries
 import { initWalletCommand } from '../lib/init-command.js'
 import { validateRequiredFlags } from '../lib/flag-validator.js'
@@ -13,7 +10,7 @@ import { runCommand } from '../lib/reporter.js'
 
 class WalletBalance {
   constructor (options = {}) {
-    initWalletCommand(this, options, ['getBalances'], { BchWallet: options.BchWallet || BchWallet })
+    initWalletCommand(this, options, ['getBalances'])
   }
 
   async run (flags = {}) {
@@ -74,5 +71,5 @@ class WalletBalance {
 export default WalletBalance
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T18:37:57.157Z","module_hash":"18e2d43322ac073552f5ba585d4cbbefef2ec2b6c1ab8f6ecbcedc8a7a673df4","functions":[{"id":"func/WalletBalance.constructor","name":"WalletBalance.constructor","line":15,"end_line":17,"hash":"6e5514088cecbab50ec98b33efeace47157c5beda4710b551429182cf6129e79"},{"id":"func/WalletBalance.run","name":"WalletBalance.run","line":19,"end_line":46,"hash":"a49466c88faf2134e551d47e35eba30528e17a4f8c0048f7c2f043e2f69157b2"},{"id":"func/WalletBalance.validateFlags","name":"WalletBalance.validateFlags","line":48,"end_line":52,"hash":"30f3abcad0c161990ba603b85114028f03c80fa51bc831d5b19bfbec8c247177"},{"id":"func/WalletBalance.getBalances","name":"WalletBalance.getBalances","line":56,"end_line":71,"hash":"07b4ef796e4a3ae3f073461d81fcffdc4ac37ab74b4ee9c77e1b8fd696e2a16b"}]}
+// {"version":1,"tested_at":"2026-10-11T18:48:53.485Z","module_hash":"b3eab129560d18f1ed80e66b7abb11feeb1d87d93313dd446cc8ad21de988b77","functions":[{"id":"func/WalletBalance.constructor","name":"WalletBalance.constructor","line":12,"end_line":14,"hash":"5179131daba8d9c0ce9bdcd5754fdffae1b53a8080795c18801b8f685cdf2816"},{"id":"func/WalletBalance.run","name":"WalletBalance.run","line":16,"end_line":43,"hash":"a49466c88faf2134e551d47e35eba30528e17a4f8c0048f7c2f043e2f69157b2"},{"id":"func/WalletBalance.validateFlags","name":"WalletBalance.validateFlags","line":45,"end_line":49,"hash":"30f3abcad0c161990ba603b85114028f03c80fa51bc831d5b19bfbec8c247177"},{"id":"func/WalletBalance.getBalances","name":"WalletBalance.getBalances","line":53,"end_line":68,"hash":"07b4ef796e4a3ae3f073461d81fcffdc4ac37ab74b4ee9c77e1b8fd696e2a16b"}]}
 // mutate4javascript-manifest-end

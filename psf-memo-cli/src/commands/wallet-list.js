@@ -53,16 +53,10 @@ class WalletList {
       `${__dirname.toString()}/../../.wallets/*.json`
     )
 
-    if (fileList.length === 0) {
-      return []
-    }
-
     const retData = []
 
     // Loop through each wallet returned.
-    for (let i = 0; i < fileList.length; i++) {
-      const thisFile = fileList[i]
-
+    for (const thisFile of fileList) {
       const lastPart = thisFile.indexOf('.json')
 
       const lastSlash = thisFile.indexOf('.wallets/') + 1
@@ -96,3 +90,7 @@ class WalletList {
 }
 
 export default WalletList
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:51:28.562Z","module_hash":"9de5dfe2cb739932873e0128b7720716071e738aee60d1218b86232cad03fb37","functions":[{"id":"func/WalletList.constructor","name":"WalletList.constructor","line":18,"end_line":28,"hash":"13110defc60e3c5b5c084ae36ebb7ac37757439a0a6e149755d465c53fb5bf48"},{"id":"func/WalletList.run","name":"WalletList.run","line":30,"end_line":48,"hash":"dd214c3f9cc422965ce56657eead88f49e008823a99a1130cab3932df047cdac"},{"id":"func/WalletList.parseWallets","name":"WalletList.parseWallets","line":51,"end_line":76,"hash":"f04295eb4ece4ac7ba00bf033acbd1b6bae8271a41f045a02d525614f44b726a"},{"id":"func/WalletList.displayTable","name":"WalletList.displayTable","line":80,"end_line":89,"hash":"5f6b01ddda20a710385315b5303236e184b7622050d98a1db0d423e73071af00"}]}
+// mutate4javascript-manifest-end

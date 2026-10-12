@@ -10,6 +10,9 @@
   `runCommand` returns the code; the command assigns it to process.exitCode.
 */
 
+// Local libraries
+import { withWalletBanner } from './wallet-banner.js'
+
 export const EXIT_SUCCESS = 0
 export const EXIT_FAILURE = 1
 export const EXIT_USAGE = 2
@@ -57,7 +60,9 @@ export class Reporter {
 export async function runCommand (command, { json = false, stdout = process.stdout, stderr = process.stderr } = {}) {
   const reporter = new Reporter({ json, stdout, stderr })
   try {
-    const outcome = await command()
+    // The wallet library logs its initialization banner with console.log while
+    // it constructs a wallet; keep that banner off stdout.
+    const outcome = await withWalletBanner({ json, stderr }, command)
     return reporter.result(outcome?.message, outcome?.data)
   } catch (err) {
     if (err instanceof UsageError) return reporter.usage(err)

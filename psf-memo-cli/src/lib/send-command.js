@@ -37,3 +37,7 @@ export async function runSendCommand ({ command, flags, send, explorerUrl }) {
   process.exitCode = code
   return code
 }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-11T18:41:54.251Z","module_hash":"015038ad081de2e64d5899cfd8cb6fb487658b0b4bfc0509429f648d038b5508","functions":[{"id":"func/runSendCommand","name":"runSendCommand","line":17,"end_line":39,"hash":"f3be62479bdc947e319821fff8f180990dfc70da31a71763a489cdddc7c0f6ee"}]}
+// mutate4javascript-manifest-end
