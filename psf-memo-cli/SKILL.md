@@ -15,7 +15,7 @@ features.
 - Every command is non-interactive and designed to be chained and parsed.
 
 ```sh
-cd /home/trout/work/psf/code/psf-memo/psf-memo-cli
+cd /path/to/psf-memo/psf-memo-cli   # the directory where you cloned psf-memo
 npm install          # once
 node psf-memo-cli.js help
 node psf-memo-cli.js help <command>
@@ -24,8 +24,12 @@ node psf-memo-cli.js help <command>
 An alias keeps commands short:
 
 ```sh
-memo() { node /home/trout/work/psf/code/psf-memo/psf-memo-cli/psf-memo-cli.js "$@"; }
+memo() { node /path/to/psf-memo/psf-memo-cli/psf-memo-cli.js "$@"; }
 ```
+
+The checkout path depends on where you cloned `psf-memo`; replace
+`/path/to/psf-memo` with that directory. Nothing in the CLI assumes a fixed
+location.
 
 ## Environment
 
