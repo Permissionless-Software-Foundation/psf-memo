@@ -7,7 +7,9 @@
 # F1: the shared read-only client for the psf-memo-db REST API, and the endpoint
 # configuration that selects it. The client is not user-visible on its own;
 # every memo-* read command uses it. Endpoint precedence is the --db-url flag,
-# then the MEMO_DB_URL environment variable, then the production memo-db. A
+# then the MEMO_DB_URL environment variable, then the production memo-db
+# (https://api.blippost.com, the project's production home; the SKILL.md
+# Environment table lists the same default and the --db-url override). A
 # missing /level/* resource resolves to no data, while a transport or server
 # failure is reported as an error.
 Feature: Memo DB Client
@@ -18,7 +20,7 @@ Feature: Memo DB Client
   Scenario: Memo DB Client - 1 the default endpoint is the production memo-db
     Given no Memo DB endpoint override is configured
     When the Memo DB client resolves its endpoint
-    Then the resolved endpoint is https://memo-api.fullstackcash.net
+    Then the resolved endpoint is https://api.blippost.com
 
   Scenario Outline: Memo DB Client - 2 the MEMO_DB_URL environment variable selects the endpoint
     Given the MEMO_DB_URL environment variable is <env_url>
