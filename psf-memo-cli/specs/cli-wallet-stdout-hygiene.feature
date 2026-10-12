@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=4265e99a6c0e8d78a9cd5a036538434f053ce75c12655916b3ae935a74a214b4
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-12T23:48:38.778767182Z","feature_name":"CLI Wallet Stdout Hygiene","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/cli-wallet-stdout-hygiene.feature","background_hash":"12f95ab7037f87f5ec4a9de5e85a11ca2701c1ddfa4c8085321248421561ddf1","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: CLI Wallet Stdout Hygiene - 1, CLI Wallet Stdout Hygiene - 2, CLI Wallet Stdout Hygiene - 3
 # Wallet-backed commands construct minimal-slp-wallet, whose adapter logs
 # "Initializing minimal-slp-wallet routers with this interface: <interface>"

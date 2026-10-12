@@ -28,6 +28,29 @@ export function resolveTemplate (template, example) {
   })
 }
 
+// Parse one line of text as a single JSON object, or throw a clear failure.
+// Shared by the output-contract and wallet-stdout-hygiene steps, which both
+// assert that a captured stream carries exactly one JSON object.
+export function parseSingleJsonObject (text, label) {
+  const trimmed = text.trim()
+  if (trimmed === '' || trimmed.split('\n').length !== 1) {
+    throw new Error(`Expected ${label} to be a single JSON object, got "${text}"`)
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch (err) {
+    throw new Error(`Expected ${label} to be JSON, got "${text}"`)
+  }
+
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`Expected ${label} to be a JSON object, got "${text}"`)
+  }
+
+  return parsed
+}
+
 // Assert a value equals the expected value, with a consistent failure message.
 // `quote` wraps both rendered values in double quotes for text assertions.
 export function assertEqual (actual, expected, label, { quote = false } = {}) {

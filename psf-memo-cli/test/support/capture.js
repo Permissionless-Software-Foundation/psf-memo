@@ -15,6 +15,20 @@ export function captureStream () {
   }
 }
 
+// Run `fn` while routing console.log through `sink`, then restore the original
+// console.log even when `fn` throws. The wallet library logs its construction
+// banner with console.log, so this makes that output observable on a captured
+// sink instead of the real process stdout.
+export async function withConsoleLog (sink, fn) {
+  const original = console.log
+  console.log = (...args) => sink.write(`${args.join(' ')}\n`)
+  try {
+    return await fn()
+  } finally {
+    console.log = original
+  }
+}
+
 // Run `fn` while replacing console.log/console.error with a recording sink,
 // then restore them and return everything printed.
 export async function captureConsole (fn) {

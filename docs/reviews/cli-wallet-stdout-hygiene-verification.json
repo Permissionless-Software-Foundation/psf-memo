@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task": "cli-wallet-stdout-hygiene",
+  "component": "psf-memo-cli",
+  "git_sha": "a9d6c475de8dd7105973f4adcc7298a4afbe2025",
+  "branch": "swarmforge-architect",
+  "timestamp": "2026-10-12T23:49:41.612Z",
+  "commands": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "exit": 0,
+      "duration_ms": 6501,
+      "summary": "702 passing"
+    },
+    {
+      "name": "property",
+      "command": "npm run property",
+      "exit": 0,
+      "duration_ms": 1215,
+      "summary": "158 pass / 0 fail"
+    },
+    {
+      "name": "acceptance",
+      "command": "npm run acceptance",
+      "exit": 0,
+      "duration_ms": 14217,
+      "summary": "all 45 acceptance suites passed"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit": 0,
+      "duration_ms": 867,
+      "summary": "ok"
+    }
+  ],
+  "result": "pass"
+}

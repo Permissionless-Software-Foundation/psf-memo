@@ -8,29 +8,8 @@
 
 // Local libraries
 import { runCommand } from '../../../src/lib/reporter.js'
-import { captureStream } from '../../../test/support/capture.js'
-import { resolveParam } from '../step-support.js'
-
-// Parse one line of text as a single JSON object, or throw a clear failure.
-function parseSingleJsonObject (text, label) {
-  const trimmed = text.trim()
-  if (trimmed === '' || trimmed.split('\n').length !== 1) {
-    throw new Error(`Expected ${label} to be a single JSON object, got "${text}"`)
-  }
-
-  let parsed
-  try {
-    parsed = JSON.parse(trimmed)
-  } catch (err) {
-    throw new Error(`Expected ${label} to be JSON, got "${text}"`)
-  }
-
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`Expected ${label} to be a JSON object, got "${text}"`)
-  }
-
-  return parsed
-}
+import { captureStream, withConsoleLog } from '../../../test/support/capture.js'
+import { parseSingleJsonObject, resolveParam } from '../step-support.js'
 
 // Build a handler that reads one JSON field from a captured stream and checks
 // it against the value from the current example row.
@@ -49,15 +28,22 @@ function jsonFieldHandler ({ name, pattern, field, label, read }) {
 }
 
 // Run the scenario's command through the real reporter and capture its output.
+// console.log is process stdout in a real run, so route it to the captured
+// stdout while the command runs; the wallet library logs its construction
+// banner there.
 async function runReporterCommand (world) {
   const stdout = captureStream()
   const stderr = captureStream()
 
-  world.exitCode = await runCommand(world.command, {
+  // console.log is process stdout in a real run, so route it to the captured
+  // stdout while the command runs; the wallet library logs its construction
+  // banner there.
+  world.exitCode = await withConsoleLog(stdout.stream, () => runCommand(world.command, {
     json: world.json,
     stdout: stdout.stream,
     stderr: stderr.stream
-  })
+  }))
+
   world.stdoutText = stdout.text()
   world.stderrText = stderr.text()
 }
