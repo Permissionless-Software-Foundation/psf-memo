@@ -14,46 +14,17 @@ import path from 'node:path'
 
 // Local libraries
 import { resolveParam } from '../step-support.js'
+import {
+  PUBLIC_REGISTRY,
+  PUBLISHED_INTEGRITY,
+  nonPublicRegistryResolves,
+  lockedPackage
+} from '../lockfile.js'
 
 const __dirname = import.meta.dirname
 
-// The public npm registry prefix every registry-resolved package must use.
-const PUBLIC_REGISTRY = 'https://registry.npmjs.org/'
-
 // The lockfile under test.
 const LOCKFILE_PATH = path.resolve(__dirname, '../../../package-lock.json')
-
-// The integrity hashes published on the public npm registry for packages these
-// scenarios pin. A repointed registry URL must not change the content hash.
-const PUBLISHED_INTEGRITY = {
-  'bch-token-sweep': 'sha512-f4UGEpPXzea7HQMRSEb6h/amXiwrlsMBAjl1dVYg5//26IDWeG+e3qVNtMJhm00NMZ0BS+LasUa2xlz0UVziZA=='
-}
-
-// The set of registry-resolved packages in the lockfile that do not use the
-// public npm registry. Entries without an http(s) resolved URL (git, file, and
-// workspace dependencies) are skipped.
-function nonPublicRegistryResolves (lockfile) {
-  const offenders = []
-
-  for (const [name, entry] of Object.entries(lockfile.packages || {})) {
-    if (name === '' || !entry || typeof entry.resolved !== 'string') continue
-    if (!/^https?:\/\//.test(entry.resolved)) continue
-    if (!entry.resolved.startsWith(PUBLIC_REGISTRY)) {
-      offenders.push(`${name} -> ${entry.resolved}`)
-    }
-  }
-
-  return offenders
-}
-
-// The lockfile entry for a package name, or throw a clear failure.
-function lockedPackage (lockfile, name) {
-  const entry = (lockfile.packages || {})[`node_modules/${name}`]
-  if (!entry) {
-    throw new Error(`Expected a locked package "${name}"`)
-  }
-  return entry
-}
 
 const lockfileRegistryHandlers = [
   {
