@@ -14,7 +14,7 @@ import { assert } from 'chai'
 
 // Local libraries
 import { runCommand } from '../../../src/lib/reporter.js'
-import { captureStream } from '../../support/capture.js'
+import { captureStream, withConsoleLog } from '../../support/capture.js'
 import {
   WALLET_BANNER_PREFIX,
   isWalletBanner,
@@ -104,14 +104,12 @@ describe('#wallet-banner', () => {
 async function runWithConsoleOnStdout (command, json) {
   const stdout = captureStream()
   const stderr = captureStream()
-  const original = console.log
-  console.log = (...args) => stdout.stream.write(`${args.join(' ')}\n`)
-  try {
-    const code = await runCommand(command, { json, stdout: stdout.stream, stderr: stderr.stream })
-    return { code, stdout: stdout.text(), stderr: stderr.text() }
-  } finally {
-    console.log = original
-  }
+  const code = await withConsoleLog(stdout.stream, () => runCommand(command, {
+    json,
+    stdout: stdout.stream,
+    stderr: stderr.stream
+  }))
+  return { code, stdout: stdout.text(), stderr: stderr.text() }
 }
 
 describe('#runCommand wallet banner hygiene', () => {
