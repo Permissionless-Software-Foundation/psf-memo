@@ -35,7 +35,7 @@ describe('#config', () => {
 
     assert.equal(config.restURL, 'https://free-bch.fullstack.cash')
     assert.equal(config.interface, 'consumer-api')
-    assert.equal(config.memoDbUrl, 'https://memo-api.fullstackcash.net')
+    assert.equal(config.memoDbUrl, 'https://api.blippost.com')
     assert.equal(config.hostingApiUrl, 'http://localhost:5050')
   })
 
