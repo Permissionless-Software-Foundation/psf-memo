@@ -49,15 +49,25 @@ function jsonFieldHandler ({ name, pattern, field, label, read }) {
 }
 
 // Run the scenario's command through the real reporter and capture its output.
+// console.log is process stdout in a real run, so route it to the captured
+// stdout while the command runs; the wallet library logs its construction
+// banner there.
 async function runReporterCommand (world) {
   const stdout = captureStream()
   const stderr = captureStream()
 
-  world.exitCode = await runCommand(world.command, {
-    json: world.json,
-    stdout: stdout.stream,
-    stderr: stderr.stream
-  })
+  const originalLog = console.log
+  console.log = (...args) => stdout.stream.write(`${args.join(' ')}\n`)
+  try {
+    world.exitCode = await runCommand(world.command, {
+      json: world.json,
+      stdout: stdout.stream,
+      stderr: stderr.stream
+    })
+  } finally {
+    console.log = originalLog
+  }
+
   world.stdoutText = stdout.text()
   world.stderrText = stderr.text()
 }
