@@ -57,9 +57,16 @@ describe('#wallet-list', () => {
       await fs.rm(filename)
     })
 
-    it('should return an empty array when no wallets are found', async () => {
-      // Force shelljs.ls to return an empty array.
-      sandbox.stub(uut.shelljs, 'ls').returns([])
+    it('returns an empty array when the wallet store has no wallet files', async () => {
+      sandbox.stub(uut, 'readdir').resolves([])
+
+      const data = await uut.parseWallets()
+
+      assert.deepEqual(data, [])
+    })
+
+    it('returns an empty array when the wallet store directory does not exist', async () => {
+      sandbox.stub(uut, 'readdir').rejects(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
 
       const data = await uut.parseWallets()
 
@@ -69,10 +76,7 @@ describe('#wallet-list', () => {
     it('parses every wallet file the store returns, in order', async () => {
       // Pin a controlled store so the parse loop is not dependent on which
       // wallet files happen to be in .wallets/ on the test machine.
-      sandbox.stub(uut.shelljs, 'ls').returns([
-        '/root/.wallets/alpha.json',
-        '/root/.wallets/beta.json'
-      ])
+      sandbox.stub(uut, 'readdir').resolves(['beta.json', 'alpha.json'])
       sandbox.stub(uut, 'readFile').callsFake(async (file) =>
         JSON.stringify({ wallet: { description: file.includes('alpha') ? 'desc-A' : 'desc-B' } })
       )
@@ -83,6 +87,26 @@ describe('#wallet-list', () => {
         ['alpha', 'desc-A'],
         ['beta', 'desc-B']
       ])
+    })
+
+    it('ignores files that are not wallet files', async () => {
+      sandbox.stub(uut, 'readdir').resolves(['notes.txt', 'alpha.json'])
+      sandbox.stub(uut, 'readFile').resolves(JSON.stringify({ wallet: { description: 'desc' } }))
+
+      const data = await uut.parseWallets()
+
+      assert.deepEqual(data, [['alpha', 'desc']])
+    })
+
+    it('propagates a store read failure that is not a missing directory', async () => {
+      sandbox.stub(uut, 'readdir').rejects(new Error('permission denied'))
+
+      try {
+        await uut.parseWallets()
+        assert.fail('Unexpected code path')
+      } catch (err) {
+        assert.equal(err.message, 'permission denied')
+      }
     })
   })
 

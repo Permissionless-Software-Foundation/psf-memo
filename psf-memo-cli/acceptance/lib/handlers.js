@@ -51,6 +51,8 @@ import { secretHygieneHandlers } from './steps/secret-hygiene.js'
 import { readOnlySafetyHandlers } from './steps/read-only-safety.js'
 import { cliJsonOutputHandlers } from './steps/cli-json-output.js'
 import { walletStdoutHygieneHandlers } from './steps/wallet-stdout-hygiene.js'
+import { lockfileRegistryHandlers } from './steps/lockfile-registry.js'
+import { walletListEmptyStoreHandlers } from './steps/wallet-list-empty-store.js'
 
 const handlers = [
   ...memoDbHandlers,
@@ -94,7 +96,9 @@ const handlers = [
   ...wireEncodingHandlers,
   ...secretHygieneHandlers,
   ...readOnlySafetyHandlers,
-  ...walletStdoutHygieneHandlers
+  ...walletStdoutHygieneHandlers,
+  ...lockfileRegistryHandlers,
+  ...walletListEmptyStoreHandlers
 ]
 
 // A minimal fetch Response stand-in carrying a JSON body.

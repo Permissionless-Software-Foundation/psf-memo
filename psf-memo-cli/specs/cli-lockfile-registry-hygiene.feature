@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=0b69b965daedfe50ceed276a09a995458144fac6e7babe3b0d46712f84430c4e
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-12T23:55:15.001987922Z","feature_name":"CLI Lockfile Registry Hygiene","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/cli-lockfile-registry-hygiene.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: CLI Lockfile Registry Hygiene - 1, CLI Lockfile Registry Hygiene - 2
 # `psf-memo-cli/package-lock.json` pinned bch-token-sweep@2.2.1 to a private
 # registry (http://94.130.170.209:4873/...) that is unreachable off the PSF

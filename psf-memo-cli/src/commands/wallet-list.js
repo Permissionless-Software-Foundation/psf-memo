@@ -3,9 +3,9 @@
 */
 
 // Global npm libraries
-import shelljs from 'shelljs'
 import Table from 'cli-table'
-import { readFile as readFileImpl } from 'fs/promises'
+import { readdir as readdirImpl, readFile as readFileImpl } from 'fs/promises'
+import path from 'path'
 
 // Local libraries
 import { bindMethods } from '../lib/bind-methods.js'
@@ -14,12 +14,15 @@ import { runCommand } from '../lib/reporter.js'
 // Global variables
 const __dirname = import.meta.dirname
 
+const WALLETS_DIR = `${__dirname.toString()}/../../.wallets`
+
 class WalletList {
-  constructor ({ shelljs: shell = shelljs, Table: TableClass = Table, readFile = readFileImpl, stdout, stderr } = {}) {
+  constructor ({ readdir = readdirImpl, Table: TableClass = Table, readFile = readFileImpl, walletDir = WALLETS_DIR, stdout, stderr } = {}) {
     // Encapsulate dependencies
-    this.shelljs = shell
+    this.readdir = readdir
     this.Table = TableClass
     this.readFile = readFile
+    this.walletDir = walletDir
     this.stdout = stdout
     this.stderr = stderr
 
@@ -47,29 +50,26 @@ class WalletList {
     return code
   }
 
-  // Parse data from the wallets directory into a formatted array.
+  // Parse data from the wallets directory into a formatted array. An absent or
+  // empty directory is an empty list; no shell error reaches stderr.
   async parseWallets () {
-    const fileList = this.shelljs.ls(
-      `${__dirname.toString()}/../../.wallets/*.json`
-    )
+    let fileList
+    try {
+      fileList = await this.readdir(this.walletDir)
+    } catch (err) {
+      if (err.code === 'ENOENT') return []
+      throw err
+    }
 
     const retData = []
 
-    // Loop through each wallet returned.
-    for (const thisFile of fileList) {
-      const lastPart = thisFile.indexOf('.json')
-
-      const lastSlash = thisFile.indexOf('.wallets/') + 1
-
-      let name = thisFile.slice(8, lastPart)
-
-      name = name.slice(lastSlash)
-
+    // Loop through each wallet file, in stable name order.
+    for (const name of fileList.filter((file) => file.endsWith('.json')).sort()) {
       // Read the contents of the wallet file.
-      const walletStr = await this.readFile(thisFile)
+      const walletStr = await this.readFile(path.join(this.walletDir, name))
       const walletInfo = JSON.parse(walletStr)
 
-      retData.push([name, walletInfo.wallet.description])
+      retData.push([name.slice(0, -'.json'.length), walletInfo.wallet.description])
     }
 
     return retData
@@ -92,5 +92,5 @@ class WalletList {
 export default WalletList
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-10-11T18:51:28.562Z","module_hash":"9de5dfe2cb739932873e0128b7720716071e738aee60d1218b86232cad03fb37","functions":[{"id":"func/WalletList.constructor","name":"WalletList.constructor","line":18,"end_line":28,"hash":"13110defc60e3c5b5c084ae36ebb7ac37757439a0a6e149755d465c53fb5bf48"},{"id":"func/WalletList.run","name":"WalletList.run","line":30,"end_line":48,"hash":"dd214c3f9cc422965ce56657eead88f49e008823a99a1130cab3932df047cdac"},{"id":"func/WalletList.parseWallets","name":"WalletList.parseWallets","line":51,"end_line":76,"hash":"f04295eb4ece4ac7ba00bf033acbd1b6bae8271a41f045a02d525614f44b726a"},{"id":"func/WalletList.displayTable","name":"WalletList.displayTable","line":80,"end_line":89,"hash":"5f6b01ddda20a710385315b5303236e184b7622050d98a1db0d423e73071af00"}]}
+// {"version":1,"tested_at":"2026-10-12T23:53:01.465Z","module_hash":"2e45fa8003810c7c6ca17101d601f894538750b6b7c7cba6c9c1c456651d59ef","functions":[{"id":"func/WalletList.constructor","name":"WalletList.constructor","line":20,"end_line":31,"hash":"43c83c66327146bcaf9552111eb0519bc1218686f7dbcf19f7722c635f58be8e"},{"id":"func/WalletList.run","name":"WalletList.run","line":33,"end_line":51,"hash":"dd214c3f9cc422965ce56657eead88f49e008823a99a1130cab3932df047cdac"},{"id":"func/WalletList.parseWallets","name":"WalletList.parseWallets","line":55,"end_line":76,"hash":"d7ecea4cb25d1e3947d90ee700cca96781e1aff0ffec33f57fa4b23151131229"},{"id":"func/WalletList.displayTable","name":"WalletList.displayTable","line":80,"end_line":89,"hash":"5f6b01ddda20a710385315b5303236e184b7622050d98a1db0d423e73071af00"}]}
 // mutate4javascript-manifest-end

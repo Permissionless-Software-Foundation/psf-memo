@@ -35,7 +35,7 @@ location.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `MEMO_DB_URL` | `https://memo-api.fullstackcash.net` | Read endpoint for all `memo-*` reads (`--db-url` overrides). Local dev: `http://localhost:5021`. |
+| `MEMO_DB_URL` | `https://api.blippost.com` | Read endpoint for all `memo-*` reads (`--db-url` overrides). Local dev: `http://localhost:5021`. |
 | `WALLET_URL` | `https://free-bch.fullstack.cash` | BCH backend used by the wallet. |
 | `INTERFACE` | `consumer-api` | Wallet backend interface. |
 | `HOSTING_API_URL` | `http://localhost:5050` | Base URL for the `file-*` hosting commands. Production: `https://file-hosting-api.blippost.com`. |
