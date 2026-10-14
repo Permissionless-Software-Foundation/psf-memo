@@ -31,7 +31,17 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- None.
+- **Single post page (`single-post-page`, 2026-10-12):** a client-only permalink
+  page for one Memo post and its reply thread at `/posts/thread/<txid>`. A
+  post's timestamp links to the page, and the shared post-options menu copies
+  the page URL ("Copy post link"); the page also offers a copy-link action. The
+  page shows the root post and the oldest-first direct replies ten per page with
+  a "Load more replies" control, and keeps the normal like and reply actions on
+  the root and on every reply (replying to a reply targets that reply). Unknown
+  txids show "Post not found"; a failed request shows the error; the page loads
+  without a wallet. Spec: `psf-memo-client/specs/single-post-page.feature`.
+  `psf-memo-cli/SKILL.md` notes the permalink; the CLI already mirrors the
+  thread read with `memo-thread` and replies with `memo-reply -t`.
 
 ## Recently completed
 

@@ -70,6 +70,21 @@ describe('#wallet-banner', () => {
       assert.equal(stderr.text(), `${BANNER}\n`)
       assert.deepEqual(logged, ['keep me'])
     })
+
+    it('defaults to human mode when no options are given', () => {
+      const stderr = captureStream()
+      const logged = []
+      const log = createWalletLog({
+        stderr: stderr.stream,
+        log: (...args) => logged.push(args.join(' '))
+      })
+
+      log(BANNER)
+      log('keep me')
+
+      assert.equal(stderr.text(), `${BANNER}\n`)
+      assert.deepEqual(logged, ['keep me'])
+    })
   })
 
   describe('withWalletBanner', () => {
@@ -94,6 +109,16 @@ describe('#wallet-banner', () => {
       }
 
       assert.equal(console.log, original)
+    })
+
+    it('defaults to human mode and routes the banner to stderr', async () => {
+      const stderr = captureStream()
+
+      await withWalletBanner({ stderr: stderr.stream }, async () => {
+        console.log(BANNER)
+      })
+
+      assert.equal(stderr.text(), `${BANNER}\n`)
     })
   })
 })

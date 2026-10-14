@@ -15,7 +15,7 @@ features.
 - Every command is non-interactive and designed to be chained and parsed.
 
 ```sh
-cd /home/trout/work/psf/code/psf-memo/psf-memo-cli
+cd /path/to/psf-memo/psf-memo-cli   # the directory where you cloned psf-memo
 npm install          # once
 node psf-memo-cli.js help
 node psf-memo-cli.js help <command>
@@ -24,8 +24,12 @@ node psf-memo-cli.js help <command>
 An alias keeps commands short:
 
 ```sh
-memo() { node /home/trout/work/psf/code/psf-memo/psf-memo-cli/psf-memo-cli.js "$@"; }
+memo() { node /path/to/psf-memo/psf-memo-cli/psf-memo-cli.js "$@"; }
 ```
+
+The checkout path depends on where you cloned `psf-memo`; replace
+`/path/to/psf-memo` with that directory. Nothing in the CLI assumes a fixed
+location.
 
 ## Environment
 
@@ -35,6 +39,24 @@ memo() { node /home/trout/work/psf/code/psf-memo/psf-memo-cli/psf-memo-cli.js "$
 | `WALLET_URL` | `https://free-bch.fullstack.cash` | BCH backend used by the wallet. |
 | `INTERFACE` | `consumer-api` | Wallet backend interface. |
 | `HOSTING_API_URL` | `http://localhost:5050` | Base URL for the `file-*` hosting commands. Production: `https://file-hosting-api.blippost.com`. |
+
+## Endpoint reference for agent checks
+
+For agent-side verification, prefer these over `bch.loping.net`:
+
+| Need | Endpoint |
+|---|---|
+| Chain tip / block height | `GET https://bch.fullstack.cash/v6/full-node/blockchain/getBlockCount` |
+| Tx status (confirmations, block) | `GET https://bch.fullstack.cash/v6/full-node/rawtransactions/getRawTransaction/<txid>?verbose=true` |
+| Is a tx still in the mempool? | `GET https://bch.fullstack.cash/v6/full-node/blockchain/getMempoolEntry/<txid>` |
+| Wallet ops + tx data | `POST https://free-bch.fullstack.cash/bch/txData` with `{"txids":["<txid>"]}` |
+
+- `WALLET_URL` (`https://free-bch.fullstack.cash`) is the
+  `ipfs-bch-wallet-consumer` proxy; it has no block-height endpoint, so use
+  `bch.fullstack.cash` for the tip.
+- `bch.loping.net` (the `explorerUrl` host the CLI prints) is fronted by an
+  anti-bot page that returns HTTP 200 with HTML, not transaction data. Do not
+  treat its 200 as confirmation.
 
 ## Output contract (read this first)
 
@@ -168,6 +190,12 @@ node psf-memo-cli.js memo-thread -t <txid> --json     # post + nested replies
 ```
 
 A txid with no stored post is a not-found failure (exit `1`).
+
+The web client renders the same post as a **single-post page** (permalink) at
+`/posts/thread/<txid>`, reachable from a post's timestamp or its
+"Copy post link" menu item. The page shows the post plus up to ten replies per
+page with a "Load more replies" control; `memo-thread` is the agent-side
+equivalent and returns the full nested tree in one call.
 
 ### 7. Get a list of recent topics
 
@@ -394,7 +422,7 @@ node psf-memo-cli.js memo-feed --viewer "$addr" --limit 20 --json
 |---|---|
 | Recent feed | `memo-feed` |
 | Following feed (tab) | `memo-following-feed` |
-| Open a post / thread | `memo-get-post`, `memo-thread` |
+| Single-post page / thread (`/posts/thread/<txid>`) | `memo-get-post`, `memo-thread` |
 | New post | `memo-post`, `memo-topic-post` |
 | Reply | `memo-reply` |
 | Like / tip | `memo-like [--tip ... --author ...]` |
@@ -450,9 +478,9 @@ node psf-memo-cli.js memo-feed --viewer "$addr" --limit 20 --json
 
 ## Limits, gaps, and safety
 
-- Post text is **217 UTF-16 code units**; replies are ≤ 184 **UTF-8 bytes**;
-  topic room + message ≤ 214 UTF-8 bytes; name ≤ 77 UTF-8 bytes; bio/avatar
-  ≤ 217 UTF-8 bytes.
+- Post text is **217 UTF-16 code units** (JavaScript `String.length`, not
+  UTF-8 bytes); replies are ≤ 184 **UTF-8 bytes**; topic room + message ≤ 214
+  UTF-8 bytes; name ≤ 77 UTF-8 bytes; bio/avatar ≤ 217 UTF-8 bytes.
 - Writes cost a miner fee; `file-host` and `memo-like --tip` additionally spend
   2,000 sat (PSF donation) and the tip respectively.
 - **Secret hygiene:** never echo or log a wallet's mnemonic or a `--wif` value.

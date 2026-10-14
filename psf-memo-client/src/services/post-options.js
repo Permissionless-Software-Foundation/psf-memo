@@ -12,11 +12,14 @@
 */
 
 const { BLOCK_EXPLORER_TX_BASE, blockExplorerTxUrl } = require('./block-explorer')
+const { postPageUrl } = require('./post-permalink')
 
 const BLOCK_EXPLORER_LABEL = 'See on block explorer'
+const COPY_POST_LINK_LABEL = 'Copy post link'
 
-// The ordered menu items for a post. The block explorer link is first.
-function postOptionsItems (txid) {
+// The ordered menu items for a post. The block explorer link is first, then
+// the permalink copy action.
+function postOptionsItems (txid, { origin = '' } = {}) {
   return [
     {
       id: 'block-explorer',
@@ -24,8 +27,20 @@ function postOptionsItems (txid) {
       href: blockExplorerTxUrl(txid),
       target: '_blank',
       rel: 'noopener noreferrer'
+    },
+    {
+      id: 'copy-post-link',
+      label: COPY_POST_LINK_LABEL,
+      action: 'copy-post-link',
+      url: postPageUrl(txid, origin)
     }
   ]
+}
+
+// Copy a post's absolute permalink URL through the injected clipboard adapter.
+function copyPostLink (txid, { origin = '', copyToClipboard = () => {} } = {}) {
+  const url = postPageUrl(txid, origin)
+  return Promise.resolve(copyToClipboard(url)).then(() => url)
 }
 
 // A fresh, closed menu state.
@@ -93,9 +108,11 @@ function postOptionsKeyCommand (key, items = []) {
 
 module.exports = {
   BLOCK_EXPLORER_LABEL,
+  COPY_POST_LINK_LABEL,
   BLOCK_EXPLORER_TX_BASE,
   explorerTxUrl: blockExplorerTxUrl,
   postOptionsItems,
+  copyPostLink,
   initialPostOptionsState,
   openPostOptions,
   closePostOptions,

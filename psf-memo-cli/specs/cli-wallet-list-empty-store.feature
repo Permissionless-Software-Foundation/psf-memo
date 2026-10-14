@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=2bc98504894d80c8584916c2ae609f0c455e045eb580a4057a2c3c135cc079e3
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-12T23:55:15.589424443Z","feature_name":"CLI Wallet List Empty Store","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-cli/specs/cli-wallet-list-empty-store.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: CLI Wallet List Empty Store - 1, CLI Wallet List Empty Store - 2, CLI Wallet List Empty Store - 3
 # When the wallet directory holds no `*.json`, wallet-list's shelljs `ls` over
 # the glob path prints "ls: no such file or directory: .../.wallets/*.json" to

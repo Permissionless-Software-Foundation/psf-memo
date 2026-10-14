@@ -24,14 +24,17 @@ const {
 function PostOptionsMenu ({
   txid,
   initialOpen = false,
-  initialFocusedIndex = -1
+  initialFocusedIndex = -1,
+  origin,
+  onCopyPostLink = () => {}
 }) {
   const [state, setState] = React.useState(() => ({
     open: Boolean(initialOpen),
     focusedIndex: initialFocusedIndex
   }))
   const containerRef = React.useRef(null)
-  const items = postOptionsItems(txid)
+  const resolvedOrigin = origin ?? (typeof window !== 'undefined' && window.location ? window.location.origin : '')
+  const items = postOptionsItems(txid, { origin: resolvedOrigin })
 
   // Close the open menu when the user clicks anywhere outside it.
   React.useEffect(() => {
@@ -91,19 +94,32 @@ function PostOptionsMenu ({
               className: 'post-options-menu-item',
               role: 'none'
             },
-            React.createElement(
-              'a',
-              {
-                href: item.href,
-                target: item.target,
-                rel: item.rel,
-                role: 'menuitem',
-                className: 'post-options-link',
-                tabIndex: index === state.focusedIndex ? 0 : -1,
-                autoFocus: index === state.focusedIndex
-              },
-              item.label
-            )
+            item.action
+              ? React.createElement(
+                'button',
+                {
+                  type: 'button',
+                  role: 'menuitem',
+                  className: 'post-options-link post-options-action',
+                  tabIndex: index === state.focusedIndex ? 0 : -1,
+                  autoFocus: index === state.focusedIndex,
+                  onClick: () => onCopyPostLink(item.url)
+                },
+                item.label
+              )
+              : React.createElement(
+                'a',
+                {
+                  href: item.href,
+                  target: item.target,
+                  rel: item.rel,
+                  role: 'menuitem',
+                  className: 'post-options-link',
+                  tabIndex: index === state.focusedIndex ? 0 : -1,
+                  autoFocus: index === state.focusedIndex
+                },
+                item.label
+              )
           )
         )
       )
