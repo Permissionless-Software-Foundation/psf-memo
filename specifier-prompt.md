@@ -1344,7 +1344,29 @@ At the end of each session, update this file:
 - Note the current `master` HEAD commit.
 - State the next feature to work on.
 
-Current session (2026-10-11, `file-upload`): resumed the file-hosting port.
+Latest session (2026-10-14, `single-post-page`): specified the client-only
+single-post permalink page and, per the user, made no CLI code change (only a
+`SKILL.md` note). Wrote `psf-memo-client/specs/single-post-page.feature` (14
+scenarios): the `/posts/thread/<txid>` page, a post's timestamp and the shared
+post-options menu as entry points ("Copy post link" copies the absolute URL),
+ten-direct-replies-per-page pagination with "Load more replies", like and reply
+actions on the root and every reply (replying to a reply targets it), not-found
+and failed-request states, and no-wallet rendering. Parsed and DRY-checked clean
+(no in-scenario duplicates). Updated `psf-memo-cli/SKILL.md` §6 and the
+Web-UI→CLI map to reference the permalink, and recorded the feature in the
+backlog. Committed the spec at `82331889c3` and handed off to the coder as task
+`single-post-page`. The pipeline completed: coder `419fdc8`, refactorer
+`e19e47a4`, architect review `0e20ebe`, record/summary `f858436`; merged
+`swarmforge-architect` into `master` at `f858436` (fast-forward). The record
+`docs/reviews/single-post-page-verification.json` (`git_sha` `0e20ebe`) reports
+`pass` 5/5 (unit 937/0, property 260/0, acceptance all 52 suites, lint ok, build
+ok); language mutation 53/53 killed; soft Gherkin mutation 53/14 killed (39
+intrinsic single-character survivors); CRAP max 6.0. Independent acceptance
+after merge: single-post-page 30/30 example executions. Architect summary:
+`docs/reviews/single-post-page-summary.md`. The next direction is the client
+front-end backlog; ask the user for the next feature.
+
+Previous session (2026-10-11, `file-upload`): resumed the file-hosting port.
 Verified the `bch-file-hosting` team landed the request (`HOSTING_API_URL`
 default `http://localhost:5050` shared by CLI/web, `fetch` bound to
 `globalThis` in `HostingApi`, `dev-docs/api-contract.md` committed,

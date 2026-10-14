@@ -31,19 +31,33 @@ focus is **front-end improvements** to `psf-memo-client` (the React SPA).
 
 ## In progress
 
-- **Single post page (`single-post-page`, 2026-10-12):** a client-only permalink
-  page for one Memo post and its reply thread at `/posts/thread/<txid>`. A
-  post's timestamp links to the page, and the shared post-options menu copies
-  the page URL ("Copy post link"); the page also offers a copy-link action. The
-  page shows the root post and the oldest-first direct replies ten per page with
-  a "Load more replies" control, and keeps the normal like and reply actions on
-  the root and on every reply (replying to a reply targets that reply). Unknown
-  txids show "Post not found"; a failed request shows the error; the page loads
-  without a wallet. Spec: `psf-memo-client/specs/single-post-page.feature`.
-  `psf-memo-cli/SKILL.md` notes the permalink; the CLI already mirrors the
-  thread read with `memo-thread` and replies with `memo-reply -t`.
+- None.
 
 ## Recently completed
+
+- **Single post page (`single-post-page`, 2026-10-14):** a client-only permalink
+  page for one Memo post and its reply thread at `/posts/thread/<txid>`. A
+  post's timestamp now links to the page (`post-time-link.js`), and the shared
+  post-options menu copies the page's absolute URL ("Copy post link"); the page
+  also offers a copy-link action. `src/services/single-post-page.js` is a pure
+  controller (page size 10, oldest-first direct replies, "Load more replies")
+  over the pure `post-permalink.js`; the page keeps the normal like and reply
+  actions on the root and on every reply, and replying to a reply targets that
+  reply. Unknown txids show "Post not found"; a failed request shows the error;
+  the page loads without a wallet. Spec:
+  `psf-memo-client/specs/single-post-page.feature`. The architect unified
+  `thread-page.js` onto `post-permalink.js`'s `THREAD_PATH_PREFIX`. Merged to
+  `master` at `f858436` (fast-forward; architect review commit `0e20ebe`; the
+  later `f858436` adds only the record and summary, so
+  `docs/reviews/single-post-page-verification.json` is valid for the merged
+  tree). Recorded `verify.sh client` pass 5/5 at `0e20ebe` (unit 937/0, property
+  260/0, acceptance all 52 suites, lint ok, build ok); language mutation 53/53
+  killed; soft Gherkin mutation 53/14 killed (39 intrinsic single-character
+  survivors); CRAP max 6.0. Independent acceptance check after merge:
+  single-post-page 30/30 example executions. Architect summary:
+  `docs/reviews/single-post-page-summary.md`. `psf-memo-cli/SKILL.md` notes the
+  permalink (no CLI code change; `memo-thread`/`memo-reply -t` already cover the
+  read and reply parity).
 
 - **File check (`file-check`, 2026-10-11):** FH4 of the `psf-memo-cli`
   file-hosting port, completing FH1–FH4. Adds the read-only `file-check`
