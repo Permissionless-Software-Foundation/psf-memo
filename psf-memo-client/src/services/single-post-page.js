@@ -20,7 +20,6 @@ const REPLY_PAGE_SIZE = 10
 class SinglePostPage {
   constructor (deps = {}) {
     this.memoDb = deps.memoDb || null
-    this.wallet = deps.wallet || null
     this.copyToClipboard = deps.copyToClipboard || (() => {})
     this.origin = deps.origin || ''
     this.pageSize = deps.pageSize || REPLY_PAGE_SIZE
@@ -44,10 +43,6 @@ class SinglePostPage {
   // Build the absolute permalink URL, prepending the page origin when known.
   static postPageUrl (txid, origin = '') {
     return postPageUrl(txid, origin)
-  }
-
-  getMyAddress () {
-    return this.wallet?.walletInfo?.cashAddress || null
   }
 
   // Load the thread for a root post txid. Resolves with a result object and
@@ -103,10 +98,6 @@ class SinglePostPage {
   // The replies currently rendered on the page.
   visibleReplies () {
     return this.replies.slice(0, this.visibleCount)
-  }
-
-  replyCount () {
-    return this.replies.length
   }
 
   // True when more replies exist beyond the current page.
