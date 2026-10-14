@@ -26,6 +26,16 @@ function makeMemoDb (threads) {
   }
 }
 
+// A loaded page whose root post has `count` direct replies r0..r{N-1}.
+async function loadPageWithReplies (count) {
+  const replies = Array.from({ length: count }, (_, i) => reply(`r${i}`))
+  const page = new SinglePostPage({
+    memoDb: makeMemoDb({ root: { post: { txid: 'root', replies } } })
+  })
+  await page.load('root')
+  return page
+}
+
 test('threadPath builds the single post permalink path', () => {
   assert.equal(SinglePostPage.threadPath('abc'), '/posts/thread/abc')
 })
@@ -71,22 +81,14 @@ test('load flattens nested replies so replying to a reply stays visible', async 
 })
 
 test('load shows at most ten replies per page', async () => {
-  const replies = Array.from({ length: 23 }, (_, i) => reply(`r${i}`))
-  const memoDb = makeMemoDb({ root: { post: { txid: 'root', replies } } })
-  const page = new SinglePostPage({ memoDb })
-
-  await page.load('root')
+  const page = await loadPageWithReplies(23)
 
   assert.equal(page.visibleReplies().length, 10)
   assert.equal(page.canLoadMoreReplies(), true)
 })
 
 test('loadMoreReplies reveals the next ten replies and stops at the end', async () => {
-  const replies = Array.from({ length: 21 }, (_, i) => reply(`r${i}`))
-  const memoDb = makeMemoDb({ root: { post: { txid: 'root', replies } } })
-  const page = new SinglePostPage({ memoDb })
-
-  await page.load('root')
+  const page = await loadPageWithReplies(21)
   page.loadMoreReplies()
   assert.equal(page.visibleReplies().length, 20)
   assert.equal(page.canLoadMoreReplies(), true)

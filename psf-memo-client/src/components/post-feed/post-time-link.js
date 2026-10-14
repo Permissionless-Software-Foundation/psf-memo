@@ -31,3 +31,7 @@ function PostTimeLink ({ txid, seen, label, LinkComponent = 'a' }) {
 }
 
 module.exports = { PostTimeLink }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-10-14T14:24:59.431Z","module_hash":"74d4b302c509f477bab3bef5932395e14b146c96d4a9883712e32d5491fea0ae","functions":[{"id":"func/PostTimeLink","name":"PostTimeLink","line":14,"end_line":31,"hash":"bb4cf2e8c0a542e43115f83aa83979490f9a127b480529987ede364e23b4e989"}]}
+// mutate4javascript-manifest-end

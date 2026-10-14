@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-10-14T14:25:40.644740696Z","feature_name":"Single Post Page","feature_path":"/home/trout/work/psf/code/psf-memo/.worktrees/architect/psf-memo-client/specs/single-post-page.feature","background_hash":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b","implementation_hash":"unknown","scenarios":[{"index":6,"name":"Single Post Page - 7 the root post has an interactive like button","scenario_hash":"c3a947207392f43b804213c3458a3421dffce7c7c1d04c727d98b42b5239cb83","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-10-14T14:25:40.644740696Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Single Post Page - 1, Single Post Page - 2, Single Post Page - 3, Single Post Page - 4, Single Post Page - 5, Single Post Page - 6, Single Post Page - 7, Single Post Page - 8, Single Post Page - 9, Single Post Page - 10, Single Post Page - 11, Single Post Page - 12, Single Post Page - 13, Single Post Page - 14
 #
 # A single-post page is a permalink view for one Memo post and its reply

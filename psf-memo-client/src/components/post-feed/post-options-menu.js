@@ -129,5 +129,5 @@ function PostOptionsMenu ({
 module.exports = PostOptionsMenu
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-09-16T16:54:35.472Z","module_hash":"68c1b9ad46f613f4d84aecc6be2fc0a2e370b9f3c50b15e50f702f6587e93b45","functions":[{"id":"func/PostOptionsMenu","name":"PostOptionsMenu","line":24,"end_line":111,"hash":"df85571487654169765129cbe38d08247311fbd32bd94ad3a395834a202aa69b"}]}
+// {"version":1,"tested_at":"2026-10-14T14:23:47.541Z","module_hash":"a3b4f521d02e54a0263d3bbeb727b0af02a51c791699dc5f92a4bad17cff2f54","functions":[{"id":"func/PostOptionsMenu","name":"PostOptionsMenu","line":24,"end_line":127,"hash":"67fdbc18edfe236517c24a250514a5fe39b19dad075b833462082016748c4fb7"}]}
 // mutate4javascript-manifest-end
