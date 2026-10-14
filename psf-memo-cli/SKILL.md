@@ -191,6 +191,12 @@ node psf-memo-cli.js memo-thread -t <txid> --json     # post + nested replies
 
 A txid with no stored post is a not-found failure (exit `1`).
 
+The web client renders the same post as a **single-post page** (permalink) at
+`/posts/thread/<txid>`, reachable from a post's timestamp or its
+"Copy post link" menu item. The page shows the post plus up to ten replies per
+page with a "Load more replies" control; `memo-thread` is the agent-side
+equivalent and returns the full nested tree in one call.
+
 ### 7. Get a list of recent topics
 
 ```sh
@@ -416,7 +422,7 @@ node psf-memo-cli.js memo-feed --viewer "$addr" --limit 20 --json
 |---|---|
 | Recent feed | `memo-feed` |
 | Following feed (tab) | `memo-following-feed` |
-| Open a post / thread | `memo-get-post`, `memo-thread` |
+| Single-post page / thread (`/posts/thread/<txid>`) | `memo-get-post`, `memo-thread` |
 | New post | `memo-post`, `memo-topic-post` |
 | Reply | `memo-reply` |
 | Like / tip | `memo-like [--tip ... --author ...]` |
