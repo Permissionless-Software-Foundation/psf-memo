@@ -39,6 +39,7 @@ const FollowingFeedPage = require('../../src/services/following-feed-page')
 const FeedTabsPage = require('../../src/services/feed-tabs-page')
 const ProfilePage = require('../../src/services/profile-page')
 const ThreadPage = require('../../src/services/thread-page')
+const SinglePostPage = require('../../src/services/single-post-page')
 const TopicDiscoveryPage = require('../../src/services/topic-discovery-page')
 const { buildTopicsTable } = require('../../src/services/topics-table')
 const TopicFeedPage = require('../../src/services/topic-feed-page')
@@ -65,6 +66,7 @@ const { renderAccountSidebar } = require('./render-account-sidebar')
 const { renderAccountPostsFeed } = require('./render-account-posts-feed')
 const { formatSeen } = require('../../src/services/post-timestamp')
 const { renderPostOptions } = require('./render-post-options')
+const { renderPostTimeLink } = require('./render-post-time-link')
 const { renderLikeResult } = require('./render-like-result')
 const { renderMuteResult } = require('./render-mute-result')
 const { renderNotificationEntry } = require('./render-notification-entry')
@@ -248,6 +250,16 @@ function makeThread () {
   }
 }
 
+// Find a reply by txid within a nested reply list.
+function findReplyInThread (replies, txid) {
+  for (const reply of replies) {
+    if (reply.txid === txid) return reply
+    const nested = findReplyInThread(reply.replies || [], txid)
+    if (nested) return nested
+  }
+  return null
+}
+
 // A fake psf-memo-db API backing the read-only feed, profile, thread,
 // topic, and search pages used to verify read-side behavior.
 function makeMemoDb () {
@@ -270,6 +282,7 @@ function makeMemoDb () {
   const profileNames = new Map()
   const profilePics = new Map()
   const profileFailures = new Set()
+  const threadFailures = new Map()
 
   return {
     posts,
@@ -377,6 +390,44 @@ function makeMemoDb () {
     addThread (txid, thread) {
       threads[txid] = thread
     },
+    clearThread (txid) {
+      delete threads[txid]
+      threadFailures.delete(txid)
+    },
+    failThread (txid, message) {
+      threadFailures.set(txid, message)
+    },
+    addThreadReply (rootTxid, data = {}) {
+      const reply = {
+        txid: data.txid,
+        parentTxid: data.parentTxid || rootTxid,
+        addr: data.addr || 'bitcoincash:reply-author',
+        text: data.text || 'a reply',
+        blockHeight: data.blockHeight ?? 100,
+        seen: data.seen ?? 0,
+        likeCount: data.likeCount ?? 0,
+        replies: []
+      }
+      replyTxids.add(reply.txid)
+      // Share one reply object between the notification list, the post list
+      // (so a like increments the same object the page renders), and the
+      // thread tree.
+      replies.push(reply)
+      posts.push(reply)
+      const rootPost = posts.find((p) => p.txid === rootTxid) || { txid: rootTxid, replies: [] }
+      if (!threads[rootTxid]) threads[rootTxid] = { post: rootPost, replies: [] }
+      const thread = threads[rootTxid]
+      if (!thread.post.replies) thread.post.replies = []
+      const parent = reply.parentTxid === rootTxid
+        ? null
+        : findReplyInThread(thread.post.replies, reply.parentTxid)
+      if (parent) {
+        parent.replies.push(reply)
+      } else {
+        thread.post.replies.push(reply)
+      }
+      return reply
+    },
     setFollowState (followerAddr, followeeAddr, following) {
       followState[`${followerAddr}|${followeeAddr}`] = following
     },
@@ -437,7 +488,12 @@ function makeMemoDb () {
       return { posts: page, pagination: { total: filtered.length, limit, offset, hasMore: offset + page.length < filtered.length } }
     },
     async getPostThread (txid) {
-      return threads[txid] || { post: null }
+      if (threadFailures.has(txid)) throw new Error(threadFailures.get(txid))
+      if (threads[txid]) return threads[txid]
+      // A known post always has a thread: itself, with no explicit replies yet.
+      const post = posts.find((p) => p.txid === txid)
+      if (post) return { post }
+      return { post: null }
     },
     async getFollowState (followerAddr, followeeAddr) {
       return followState[`${followerAddr}|${followeeAddr}`] || false
@@ -588,6 +644,7 @@ function createWorld () {
     memoDb,
     currentPath: null,
     clipboard: null,
+    origin: 'https://psf-memo.example',
     menuOpen: false,
     likedTxids: new Set(),
     // File-hosting (/host and /dashboard) acceptance state. `now` is a fixed
@@ -628,6 +685,14 @@ function createWorld () {
   world.notificationsPage = new NotificationsPage({ memoDb, wallet })
   world.profilePage = new ProfilePage({ memoDb })
   world.threadPage = new ThreadPage({ memoDb })
+  // The single post permalink page shares the reply form and like modal with
+  // the thread modal; only the page data is page-specific.
+  world.singlePostPage = new SinglePostPage({
+    memoDb,
+    wallet,
+    origin: world.origin,
+    copyToClipboard: async (text) => { world.clipboard = text }
+  })
   world.topicDiscoveryPage = new TopicDiscoveryPage({
     memoDb,
     navigate: (path) => { world.currentPath = path }
@@ -799,6 +864,9 @@ function resolveTemplate (value, example) {
 function findDisplayedPost (txid, world) {
   const fromThread = world.threadPage.getPost(txid)
   if (fromThread) return fromThread
+
+  const fromSinglePost = world.singlePostPage?.getPost(txid)
+  if (fromSinglePost) return fromSinglePost
 
   const fromProfile = world.profilePage.getPost(txid)
   if (fromProfile) return fromProfile
@@ -1371,7 +1439,21 @@ const handlers = [
     name: 'submit reply',
     pattern: /^I submit the reply$/,
     async run (m, example, world) {
-      await world.replyPage.submit()
+      const result = await world.replyPage.submit()
+      // Reflect a successful reply optimistically on the single post page when
+      // that is the page currently open.
+      if (
+        result.ok &&
+        world.singlePostPage?.rootPost &&
+        world.currentPath === SinglePostPage.threadPath(world.singlePostPage.txid)
+      ) {
+        world.singlePostPage.addReply({
+          txid: result.txid,
+          addr: world.wallet.walletInfo.cashAddress,
+          text: world.replyPage.input,
+          parentTxid: world.replyPage.parentTxid
+        })
+      }
     }
   },
   {
@@ -2943,6 +3025,17 @@ const handlers = [
         throw new Error('No profile page is loaded.')
       }
       await world.profilePage.copyAddress()
+    }
+  },
+  {
+    name: 'clipboard contains the single post page URL',
+    pattern: /^the clipboard contains the post page URL for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const expected = SinglePostPage.postPageUrl(txid, world.origin)
+      if (world.clipboard !== expected) {
+        throw new Error(`Expected the clipboard to contain ${expected}, got ${world.clipboard}.`)
+      }
     }
   },
   {
@@ -4820,7 +4913,7 @@ const handlers = [
       const count = parseInt(resolveParam(m[1], example), 10)
       const parentTxid = resolveParam(m[2], example)
       for (let i = 0; i < count; i++) {
-        world.memoDb.addReply({
+        world.memoDb.addThreadReply(parentTxid, {
           txid: `reply-${i + 1}`.padEnd(64, '0'),
           parentTxid,
           text: `Reply ${i + 1}`,
@@ -6181,6 +6274,219 @@ const handlers = [
     run (m, example, world) {
       assertRowCell(world, resolveParam(m[1], example), 'dashboard-file-until', resolveParam(m[2], example))
     }
+  },
+
+  // -------------------------------------------------------------------------
+  // Single post page (/posts/thread/<txid>) steps
+  // -------------------------------------------------------------------------
+  {
+    name: 'API has no thread for a post',
+    pattern: /^the psf-memo-db API has no thread for the post with txid (.+)$/,
+    run (m, example, world) {
+      world.memoDb.clearThread(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'API fails the thread request',
+    pattern: /^the psf-memo-db API fails the thread request for the post with txid (.+) with the error (.+)$/,
+    run (m, example, world) {
+      world.memoDb.failThread(resolveParam(m[1], example), resolveParam(m[2], example))
+    }
+  },
+  {
+    name: 'API serves a reply to a post with text',
+    pattern: /^the psf-memo-db API serves a reply with txid (.+) to the post with txid (.+) with text (.+)$/,
+    run (m, example, world) {
+      const parentTxid = resolveParam(m[2], example)
+      world.memoDb.addThreadReply(parentTxid, {
+        txid: resolveParam(m[1], example),
+        parentTxid,
+        text: resolveText(m[3], example)
+      })
+    }
+  },
+  {
+    name: 'open single post page',
+    pattern: /^I open the single post page for the post with txid (.+)$/,
+    async run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      await world.singlePostPage.load(txid)
+      world.currentPath = SinglePostPage.threadPath(txid)
+      // The shared reply form composes the reply for this page.
+      world.thread.rootTxid = txid
+      world.replyPage.setParent(txid)
+    }
+  },
+  {
+    name: 'click Load more replies',
+    pattern: /^I click the Load more replies button(?: again)?$/,
+    run (m, example, world) {
+      world.singlePostPage.loadMoreReplies()
+    }
+  },
+  {
+    name: 'click copy link',
+    pattern: /^I click the copy link button$/,
+    async run (m, example, world) {
+      await world.singlePostPage.copyLink()
+    }
+  },
+  {
+    name: 'click reply on a post',
+    pattern: /^I click reply on the post with txid (.+)$/,
+    run (m, example, world) {
+      world.singlePostPage.selectReply(resolveParam(m[1], example))
+    }
+  },
+  {
+    name: 'type reply to the selected post',
+    pattern: /^I type a reply to the selected post with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.replyPage.setInput(example[param])
+      world.replyPage.setParent(world.singlePostPage.replyTargetTxid())
+    }
+  },
+  {
+    name: 'click Copy post link menu item',
+    pattern: /^I click the "Copy post link" item in the post options menu$/,
+    async run (m, example, world) {
+      await PostOptions.copyPostLink(world.activeMenuTxid, {
+        origin: world.origin,
+        copyToClipboard: async (text) => { world.clipboard = text }
+      })
+    }
+  },
+  {
+    name: 'timestamp link points to the post page',
+    pattern: /^the timestamp link for the post with txid (.+) points to \/posts\/thread\/(.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      const pathTxid = resolveParam(m[2], example)
+      const post = findDisplayedPost(txid, world)
+      if (!post) {
+        throw new Error(`No displayed post with txid ${txid}.`)
+      }
+      const html = renderPostTimeLink({ txid, label: formatSeen(post.seen) })
+      const expected = SinglePostPage.threadPath(pathTxid)
+      const href = anchorHref(html, 'post-time-link')
+      if (href !== expected) {
+        throw new Error(`Expected the timestamp link to point to ${expected}, got ${href}.`)
+      }
+    }
+  },
+  {
+    name: 'post options menu offers a Copy post link item',
+    pattern: /^the post options menu offers a "Copy post link" item$/,
+    run (m, example, world) {
+      const items = PostOptions.postOptionsItems(world.activeMenuTxid, { origin: world.origin })
+      if (!items.some((item) => item.label === 'Copy post link')) {
+        throw new Error('The post options menu does not offer a "Copy post link" item.')
+      }
+    }
+  },
+  {
+    name: 'single post page shows the post',
+    pattern: /^the single post page shows the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = resolveParam(m[1], example)
+      if (!world.singlePostPage.getPost(txid)) {
+        throw new Error(`The single post page does not show the post with txid ${txid}.`)
+      }
+    }
+  },
+  {
+    name: 'single post page shows N replies',
+    pattern: /^the single post page shows (\d+|<[A-Za-z0-9_]+>) (?:reply|replies)$/,
+    run (m, example, world) {
+      const expected = parseInt(resolveParam(m[1], example), 10)
+      const actual = world.singlePostPage.visibleReplies().length
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} replies on the single post page, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'single post page shows no replies',
+    pattern: /^the single post page shows no replies$/,
+    run (m, example, world) {
+      const actual = world.singlePostPage.visibleReplies().length
+      if (actual !== 0) {
+        throw new Error(`Expected no replies on the single post page, got ${actual}.`)
+      }
+    }
+  },
+  {
+    name: 'single post page offers a Load more replies button',
+    pattern: /^the single post page offers a Load more replies button$/,
+    run (m, example, world) {
+      if (!world.singlePostPage.canLoadMoreReplies()) {
+        throw new Error('Expected a Load more replies button on the single post page.')
+      }
+    }
+  },
+  {
+    name: 'single post page does not offer a Load more replies button',
+    pattern: /^the single post page does not offer a Load more replies button$/,
+    run (m, example, world) {
+      if (world.singlePostPage.canLoadMoreReplies()) {
+        throw new Error('Did not expect a Load more replies button on the single post page.')
+      }
+    }
+  },
+  {
+    name: 'single post page shows a reply form',
+    pattern: /^the single post page shows a reply form$/,
+    run (m, example, world) {
+      if (!world.singlePostPage.showsReplyForm()) {
+        throw new Error('Expected a reply form on the single post page.')
+      }
+    }
+  },
+  {
+    name: 'single post page shows a new reply from my address',
+    pattern: /^the single post page shows a new reply from my address with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const expectedText = example[m[1]]
+      const myAddress = world.wallet.walletInfo.cashAddress
+      const found = world.singlePostPage.visibleReplies().find(
+        (reply) => reply.text === expectedText && (reply.addr === myAddress || reply.address === myAddress)
+      )
+      if (!found) {
+        throw new Error(`The single post page does not show the new reply with text "${expectedText}".`)
+      }
+    }
+  },
+  {
+    name: 'single post page shows a link copied confirmation',
+    pattern: /^the single post page shows a link copied confirmation$/,
+    run (m, example, world) {
+      if (!world.singlePostPage.linkCopied) {
+        throw new Error('Expected a link copied confirmation on the single post page.')
+      }
+    }
+  },
+  {
+    name: 'single post page shows Post not found',
+    pattern: /^the single post page shows "Post not found"$/,
+    run (m, example, world) {
+      if (!world.singlePostPage.notFound) {
+        throw new Error('Expected the single post page to show "Post not found".')
+      }
+    }
+  },
+  {
+    name: 'single post page shows the error',
+    pattern: /^the single post page shows the error "(.+)"$/,
+    run (m, example, world) {
+      const expected = resolveText(m[1], example)
+      if (world.singlePostPage.error !== expected) {
+        throw new Error(`Expected the single post page error "${expected}", got "${world.singlePostPage.error}".`)
+      }
+    }
   }
 ]
 
@@ -6306,6 +6612,10 @@ function assertMemoBroadcastPrefix (world, addr, prefix, label) {
 function postsOnCurrentPage (world) {
   const path = world.currentPath || ''
   if (world.threadPage && world.threadPage.rootPost) return world.threadPage.allPosts || []
+  if (path.startsWith(SinglePostPage.THREAD_PATH_PREFIX)) {
+    const page = world.singlePostPage
+    if (page && page.rootPost) return [page.rootPost, ...page.visibleReplies()]
+  }
   if (path.startsWith(ProfilePage.PROFILE_PATH_PREFIX)) return world.profilePage?.posts || []
   if (path === AccountPage.ACCOUNT_PATH) return world.accountPage?.posts || []
   if (path.startsWith('/topics/')) return world.topicFeedPage?.posts || []

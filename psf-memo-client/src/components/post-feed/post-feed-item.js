@@ -17,6 +17,7 @@ import {
 } from './post-display'
 import PostContent from './post-content'
 import PostOptionsMenu from './post-options-menu'
+import { PostTimeLink } from './post-time-link'
 import './post-feed.css'
 
 const appUtil = new AppUtil()
@@ -87,6 +88,10 @@ function PostFeedItem ({
     setShowLikeModal(false)
   }
 
+  const handleCopyPostLink = (url) => {
+    if (url) appUtil.copyToClipboard(url)
+  }
+
   return (
     <Wrapper
       className={[
@@ -129,11 +134,15 @@ function PostFeedItem ({
           </div>
 
           <span className='posts-feed-item-seen'>
-            {formatRelativeSeen(post.seen)}
+            <PostTimeLink
+              txid={post.txid}
+              label={formatRelativeSeen(post.seen)}
+              LinkComponent={Link}
+            />
           </span>
         </div>
 
-        <PostOptionsMenu txid={post.txid} />
+        <PostOptionsMenu txid={post.txid} onCopyPostLink={handleCopyPostLink} />
       </header>
 
       <div className='posts-feed-item-content'>
