@@ -25,6 +25,12 @@ import '../../post-feed/post-feed.css'
 
 const PAGE_SIZE = 50
 
+function feedHeading (mode) {
+  if (mode === FeedTabsPage.RECENT_MODE) return 'Global Feed - Recent Posts'
+  if (mode === FeedTabsPage.FOLLOWING_MODE) return 'Global Feed - Following'
+  return 'Global Feed'
+}
+
 function RecentPosts (props) {
   const { appData } = props
   const wallet = appData?.wallet
@@ -140,7 +146,7 @@ function RecentPosts (props) {
       <Row className='justify-content-center'>
         <Col lg={8} md={10} xs={12}>
           <header className='recent-posts-heading'>
-            <h1>BCH Memo Posts</h1>
+            <h1>{feedHeading(mode)}</h1>
             <p>
               Recent messages published through the Memo protocol on Bitcoin Cash.
             </p>
